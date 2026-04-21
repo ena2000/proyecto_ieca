@@ -1,0 +1,7 @@
+{
+  "name": "proyecto_ieca",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}

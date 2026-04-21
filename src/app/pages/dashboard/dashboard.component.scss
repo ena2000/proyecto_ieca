@@ -1,0 +1,79 @@
+.dashboard-bg {
+  --background: #f8f9fc; // Gris muy claro de fondo
+}
+
+.welcome-header {
+  padding: 15px 10px 25px;
+  h1 { 
+    font-size: 1.8rem; 
+    font-weight: 800; 
+    color: #1b2f5f; 
+    margin: 0; 
+  }
+  p { 
+    color: #8e8e93; 
+    margin-top: 5px; 
+    font-size: 1rem; 
+  }
+}
+
+.cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px; // Espacio entre tarjetas para que no se vean pegadas
+}
+
+.card-item {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  padding: 18px;
+  border-radius: 20px;
+  // Sombra suave para dar profundidad
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+
+  &:active {
+    transform: scale(0.97);
+    background: #f5f5f5;
+  }
+
+  .icon-circle {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    
+    ion-icon { font-size: 1.6rem; }
+    
+    // Paleta de colores vibrantes para los iconos
+    &.blue { background: #eef2ff; color: #4f46e5; }
+    &.green { background: #f0fdf4; color: #16a34a; }
+    &.red { background: #fef2f2; color: #dc2626; }
+    &.orange { background: #fff7ed; color: #ea580c; }
+  }
+
+  .card-text {
+    flex: 1;
+    h2 { 
+      margin: 0; 
+      font-size: 1.1rem; 
+      font-weight: 700; 
+      color: #2c3e50; 
+    }
+    p { 
+      margin: 2px 0 0; 
+      font-size: 0.85rem; 
+      color: #94a3b8; 
+    }
+  }
+
+  .arrow {
+    color: #cbd5e1;
+    font-size: 1.3rem;
+  }
+}

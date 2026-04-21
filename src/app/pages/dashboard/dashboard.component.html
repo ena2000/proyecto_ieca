@@ -1,0 +1,61 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Inicio</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding dashboard-bg">
+  <div class="welcome-header">
+    <h1>Hola, Milena</h1>
+    <p>¿Qué gestión realizarás hoy?</p>
+  </div>
+
+  <div class="cards-list">
+    <div class="card-item" routerLink="/ministerios">
+      <div class="icon-circle blue">
+        <ion-icon name="business-outline"></ion-icon>
+      </div>
+      <div class="card-text">
+        <h2>Ministerios</h2>
+        <p>Gestión de áreas y departamentos</p>
+      </div>
+      <ion-icon name="chevron-forward-outline" class="arrow"></ion-icon>
+    </div>
+
+    <div class="card-item" routerLink="/ingresos">
+      <div class="icon-circle green">
+        <ion-icon name="cash-outline"></ion-icon>
+      </div>
+      <div class="card-text">
+        <h2>Ingresos</h2>
+        <p>Registro de entradas de dinero</p>
+      </div>
+      <ion-icon name="chevron-forward-outline" class="arrow"></ion-icon>
+    </div>
+
+    <div class="card-item" routerLink="/gastos">
+      <div class="icon-circle red">
+        <ion-icon name="trending-down-outline"></ion-icon>
+      </div>
+      <div class="card-text">
+        <h2>Gastos</h2>
+        <p>Registro de salidas de dinero</p>
+      </div>
+      <ion-icon name="chevron-forward-outline" class="arrow"></ion-icon>
+    </div>
+
+    <div class="card-item" routerLink="/reportes">
+      <div class="icon-circle orange">
+        <ion-icon name="bar-chart-outline"></ion-icon>
+      </div>
+      <div class="card-text">
+        <h2>Reportes</h2>
+        <p>Visualización de estadísticas</p>
+      </div>
+      <ion-icon name="chevron-forward-outline" class="arrow"></ion-icon>
+    </div>
+  </div>
+</ion-content>

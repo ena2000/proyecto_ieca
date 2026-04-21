@@ -1,0 +1,65 @@
+<ion-menu contentId="main-content" side="start" menuId="main-menu">
+  <aside class="sidebar">
+    <div class="sidebar-content">
+      <div class="menu-header">
+        <img src="assets/icon/logo_ieca.png" alt="IECA logo">
+        <div class="brand-text">
+          <p>Iglesia del Evangelio</p>
+          <h3>La Alborada</h3>
+        </div>
+      </div>
+
+      <ion-list lines="none" class="menu-list">
+        <ion-item detail="false" routerLink="/dashboard" routerLinkActive="item-active" [routerLinkActiveOptions]="{ exact: true }" routerDirection="root">
+          <ion-icon slot="start" name="grid-outline"></ion-icon>
+          <ion-label>Dashboard</ion-label>
+        </ion-item>
+        
+        <ion-item detail="false" routerLink="/ministerios" routerLinkActive="item-active" routerDirection="root">
+          <ion-icon slot="start" name="business-outline"></ion-icon>
+          <ion-label>Ministerios</ion-label>
+        </ion-item>
+        
+        <ion-item detail="false" routerLink="/ingresos" routerLinkActive="item-active" routerDirection="root">
+          <ion-icon slot="start" name="cash-outline"></ion-icon>
+          <ion-label>Ingresos</ion-label>
+        </ion-item>
+        
+        <ion-item detail="false" routerLink="/gastos" routerLinkActive="item-active" routerDirection="root">
+          <ion-icon slot="start" name="trending-down-outline"></ion-icon>
+          <ion-label>Gastos</ion-label>
+        </ion-item>
+        
+        <ion-item detail="false" routerLink="/reportes" routerLinkActive="item-active" routerDirection="root">
+          <ion-icon slot="start" name="bar-chart-outline"></ion-icon>
+          <ion-label>Reportes</ion-label>
+        </ion-item>
+        
+        <ion-item detail="false" routerLink="/usuarios" routerLinkActive="item-active" routerDirection="root">
+          <ion-icon slot="start" name="people-outline"></ion-icon>
+          <ion-label>Usuarios</ion-label>
+        </ion-item>
+      </ion-list>
+
+      <div class="menu-divider"></div>
+
+      <div class="menu-footer">
+        <div class="profile-card">
+          <div class="profile-avatar">
+            <img src="assets/icon/logo_ieca.png" alt="Usuario">
+          </div>
+          <div class="profile-info">
+            <p class="profile-name">Contadora</p>
+            <p class="profile-role">Equipo administrativo</p>
+          </div>
+          <ion-icon name="chevron-down-outline"></ion-icon>
+        </div>
+
+        <ion-item detail="false" routerLink="/login" class="logout-item" routerDirection="root">
+          <ion-icon slot="start" name="log-out-outline"></ion-icon>
+          <ion-label>Cerrar Sesión</ion-label>
+        </ion-item>
+      </div>
+    </div>
+  </aside>
+</ion-menu>

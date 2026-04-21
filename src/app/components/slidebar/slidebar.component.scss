@@ -1,0 +1,139 @@
+﻿ion-menu {
+  --width: 280px;
+  height: 100%;
+}
+
+.sidebar {
+  width: 280px;
+  height: 100vh; // Esto es clave para que se vea de arriba a abajo
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #1f3670 0%, #102048 100%) !important;
+  z-index: 999;
+}
+
+.sidebar-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: #ffffff;
+}
+
+.menu-header {
+  padding: 35px 24px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  img {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    object-fit: cover;
+  }
+
+  .brand-text {
+    p {
+      margin: 0;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.6);
+    }
+    h3 {
+      margin: 0;
+      font-size: 1.1rem;
+      color: #ffffff;
+      font-weight: 700;
+    }
+  }
+}
+
+.menu-list {
+  background: transparent; // Importante para que se vea el gradiente
+  margin-top: 15px;
+
+  ion-item {
+    --background: transparent;
+    --color: rgba(255, 255, 255, 0.85);
+    --border-radius: 16px;
+    margin: 4px 16px;
+    --padding-start: 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+
+    ion-icon {
+      font-size: 1.2rem;
+      padding: 8px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.08);
+      margin-right: 12px;
+    }
+
+    // Colores específicos para los iconos del menú
+    &[routerLink="/dashboard"] ion-icon { color: #f3b23f; }
+    &[routerLink="/ministerios"] ion-icon { color: #8b5cf6; }
+    &[routerLink="/ingresos"] ion-icon { color: #34d399; }
+    &[routerLink="/gastos"] ion-icon { color: #f97316; }
+    &[routerLink="/reportes"] ion-icon { color: #60a5fa; }
+    &[routerLink="/usuarios"] ion-icon { color: #ec4899; }
+  }
+
+  .item-active {
+    --background: rgba(255, 255, 255, 0.12);
+    --color: #ffffff;
+    
+    ion-icon {
+      background: rgba(255, 255, 255, 0.2);
+    }
+  }
+}
+
+.menu-divider {
+  margin: 20px 16px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.menu-footer {
+  margin-top: auto;
+  padding: 16px 16px 25px;
+
+  .profile-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+
+    .profile-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      overflow: hidden;
+      img { width: 100%; height: 100%; object-fit: cover; }
+    }
+
+    .profile-info {
+      flex: 1;
+      .profile-name { margin: 0; font-size: 0.9rem; font-weight: 700; color: #fff; }
+      .profile-role { margin: 0; font-size: 0.7rem; color: rgba(255, 255, 255, 0.6); }
+    }
+  }
+
+  .logout-item {
+    --background: rgba(255, 255, 255, 0.03);
+    --color: #fb7185;
+    margin-top: 15px;
+    --border-radius: 16px;
+    
+    ion-icon {
+      color: #fb7185;
+      background: rgba(251, 113, 133, 0.15);
+    }
+  }
+}

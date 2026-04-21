@@ -1,0 +1,75 @@
+/* 1. IMPORTAR FUENTE PROFESIONAL */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* 2. CONFIGURACIÓN BASE DE IONIC */
+:root {
+  --ion-font-family: 'Inter', sans-serif !important;
+}
+
+body {
+  font-family: 'Inter', sans-serif !important;
+  background-color: #f8f9fc !important; // Fondo gris ultra claro (estilo iOS/Premium)
+}
+
+ion-content {
+  --background: #f8f9fc !important;
+}
+
+/* 3. REGLAS PARA WEB - ESTRUCTURA Y VISIBILIDAD */
+@media (min-width: 992px) {
+  
+  // Forzamos que el panel de la izquierda sea visible y tenga el ancho correcto
+  .split-pane-side {
+    min-width: 280px !important;
+    max-width: 280px !important;
+    display: flex !important;
+    border-right: 1px solid rgba(0, 0, 0, 0.05) !important;
+  }
+
+  // Aseguramos que el contenido principal respete el espacio del menú
+  #main-content {
+    margin-left: 0 !important; 
+    width: auto !important;
+    position: relative !important;
+    display: block !important;
+    box-shadow: -10px 0 20px rgba(0, 0, 0, 0.02); // Sombra sutil entre menú y contenido
+  }
+
+  ion-split-pane {
+    --side-width: 280px;
+  }
+}
+
+/* 4. ESTILOS DE TEXTO GLOBALES (Look de la imagen) */
+h1 {
+  font-weight: 800 !important; // Extra negrita para el "Hola, Milena"
+  color: #1a202c !important;
+  letter-spacing: -0.03em !important;
+}
+
+h2 {
+  font-weight: 700 !important; // Negrita para títulos de tarjetas
+  color: #2d3748 !important;
+}
+
+p {
+  color: #718096; // Gris suave para descripciones
+}
+
+/* 5. AJUSTES TÉCNICOS DE COMPONENTES */
+ion-menu::part(container) {
+  background: transparent !important; // Permite ver el gradiente azul del sidebar
+  box-shadow: none !important;
+}
+
+ion-toolbar {
+  --background: #f8f9fc;
+  --border-style: none;
+}
+
+/* Estilo para las tarjetas en toda la app (si quieres reusarlas) */
+.custom-card-style {
+  background: #ffffff;
+  border-radius: 22px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+}
