@@ -1,69 +1,80 @@
-﻿ion-menu {
+﻿/* Esto asegura que el contenedor de Ionic no tape tu diseño */
+ion-menu::part(container) {
+  background: var(--ieca-blue) !important;
+}
+
+ion-menu {
   --width: 280px;
   height: 100%;
 }
 
 .sidebar {
   width: 280px;
-  height: 100vh; // Esto es clave para que se vea de arriba a abajo
+  height: 100vh; /* Esto es lo que evita que se vea en blanco */
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, #1f3670 0%, #102048 100%) !important;
+  background: linear-gradient(180deg, var(--ieca-blue) 0%, #151a42 100%) !important;
   z-index: 999;
-}
-
-.sidebar-content {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
   color: #ffffff;
 }
 
+/* --- HEADER --- */
 .menu-header {
-  padding: 35px 24px 20px;
+  padding: 40px 24px 25px;
   display: flex;
   align-items: center;
   gap: 14px;
 
   img {
-    width: 46px;
-    height: 46px;
-    border-radius: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    object-fit: cover;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    padding: 5px;
+    background: white;
+    border: 2px solid var(--ieca-yellow);
+    object-fit: contain;
   }
 
   .brand-text {
     p {
       margin: 0;
-      font-size: 0.7rem;
-      letter-spacing: 0.1em;
+      font-size: 0.65rem;
+      letter-spacing: 1.5px;
       text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.6);
+      color: var(--ieca-yellow);
+      font-weight: 700;
     }
     h3 {
       margin: 0;
-      font-size: 1.1rem;
+      font-size: 1.15rem;
       color: #ffffff;
-      font-weight: 700;
+      font-weight: 800;
     }
   }
 }
 
+/* --- LISTA DE NAVEGACIÓN (Con Scroll Inteligente) --- */
 .menu-list {
-  background: transparent; // Importante para que se vea el gradiente
-  margin-top: 15px;
+  background: transparent;
+  flex: 1; /* Esto hace que crezca y empuje el footer hacia abajo */
+  overflow-y: auto; /* Permite scroll si haces mucho zoom */
+  margin-top: 10px;
+
+  /* Estilo de la barra de scroll para que sea elegante */
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
 
   ion-item {
     --background: transparent;
-    --color: rgba(255, 255, 255, 0.85);
-    --border-radius: 16px;
+    --color: rgba(255, 255, 255, 0.7);
+    --border-radius: 14px;
     margin: 4px 16px;
     --padding-start: 12px;
     font-size: 0.95rem;
     font-weight: 600;
     transition: all 0.2s ease;
 
+    /* Contenedor del icono (Efecto profesional) */
     ion-icon {
       font-size: 1.2rem;
       padding: 8px;
@@ -72,68 +83,85 @@
       margin-right: 12px;
     }
 
-    // Colores específicos para los iconos del menú
-    &[routerLink="/dashboard"] ion-icon { color: #f3b23f; }
-    &[routerLink="/ministerios"] ion-icon { color: #8b5cf6; }
-    &[routerLink="/ingresos"] ion-icon { color: #34d399; }
-    &[routerLink="/gastos"] ion-icon { color: #f97316; }
-    &[routerLink="/reportes"] ion-icon { color: #60a5fa; }
-    &[routerLink="/usuarios"] ion-icon { color: #ec4899; }
+    /* Colores por icono */
+    &[routerLink="/dashboard"] ion-icon { color: var(--ieca-yellow); }
+    &[routerLink="/ingresos"] ion-icon { color: var(--ieca-yellow); }
+    &[routerLink="/gastos"] ion-icon { color: var(--ieca-red); }
+    &[routerLink="/usuarios"] ion-icon { color: var(--ieca-purple); }
+
+    &:hover {
+      --color: #ffffff;
+      --background: rgba(255, 255, 255, 0.05);
+    }
   }
 
   .item-active {
-    --background: rgba(255, 255, 255, 0.12);
+    --background: var(--ieca-purple) !important; /* Morado Institucional */
     --color: #ffffff;
+    font-weight: 700;
     
     ion-icon {
       background: rgba(255, 255, 255, 0.2);
+      color: #ffffff !important;
     }
   }
 }
 
 .menu-divider {
-  margin: 20px 16px;
+  margin: 15px 20px;
   height: 1px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.1);
 }
 
+/* --- FOOTER --- */
 .menu-footer {
   margin-top: auto;
-  padding: 16px 16px 25px;
+  padding: 15px 16px 25px;
 
   .profile-card {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 14px;
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 12px;
+    border-radius: 16px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 
     .profile-avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 12px;
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
       overflow: hidden;
-      img { width: 100%; height: 100%; object-fit: cover; }
+      background: white;
+      img { width: 100%; height: 100%; object-fit: contain; }
     }
 
     .profile-info {
       flex: 1;
-      .profile-name { margin: 0; font-size: 0.9rem; font-weight: 700; color: #fff; }
-      .profile-role { margin: 0; font-size: 0.7rem; color: rgba(255, 255, 255, 0.6); }
+      .profile-name { margin: 0; font-size: 0.85rem; font-weight: 700; color: #fff; }
+      .profile-role { margin: 0; font-size: 0.65rem; color: var(--ieca-yellow); }
     }
+    
+    ion-icon { color: var(--ieca-yellow); font-size: 14px; }
   }
 
   .logout-item {
-    --background: rgba(255, 255, 255, 0.03);
-    --color: #fb7185;
-    margin-top: 15px;
-    --border-radius: 16px;
+    --background: rgba(228, 32, 33, 0.12); /* Rojo suave */
+    --color: var(--ieca-red);
+    margin-top: 12px;
+    --border-radius: 14px;
+    font-weight: 700;
     
     ion-icon {
-      color: #fb7185;
-      background: rgba(251, 113, 133, 0.15);
+      color: #ffffff;
+      background: var(--ieca-red);
+      padding: 6px;
+      border-radius: 8px;
+    }
+    
+    &:hover {
+        --background: var(--ieca-red);
+        --color: #ffffff;
     }
   }
 }

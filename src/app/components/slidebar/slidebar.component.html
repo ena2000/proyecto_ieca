@@ -1,6 +1,10 @@
 <ion-menu contentId="main-content" side="start" menuId="main-menu">
+  <!-- ASIDE es el contenedor principal que recibe el fondo gradiente en el SCSS -->
   <aside class="sidebar">
+    
     <div class="sidebar-content">
+      
+      <!-- 1. CABECERA: Logo e Identidad -->
       <div class="menu-header">
         <img src="assets/icon/logo_ieca.png" alt="IECA logo">
         <div class="brand-text">
@@ -9,7 +13,10 @@
         </div>
       </div>
 
+      <!-- 2. NAVEGACIÓN: Lista de módulos -->
       <ion-list lines="none" class="menu-list">
+        
+        <!-- Dashboard - Color Amarillo -->
         <ion-item detail="false" routerLink="/dashboard" routerLinkActive="item-active" [routerLinkActiveOptions]="{ exact: true }" routerDirection="root">
           <ion-icon slot="start" name="grid-outline"></ion-icon>
           <ion-label>Dashboard</ion-label>
@@ -20,11 +27,13 @@
           <ion-label>Ministerios</ion-label>
         </ion-item>
         
+        <!-- Ingresos - Color Amarillo (Dinero) -->
         <ion-item detail="false" routerLink="/ingresos" routerLinkActive="item-active" routerDirection="root">
           <ion-icon slot="start" name="cash-outline"></ion-icon>
           <ion-label>Ingresos</ion-label>
         </ion-item>
         
+        <!-- Gastos - Color Rojo (Salidas) -->
         <ion-item detail="false" routerLink="/gastos" routerLinkActive="item-active" routerDirection="root">
           <ion-icon slot="start" name="trending-down-outline"></ion-icon>
           <ion-label>Gastos</ion-label>
@@ -35,30 +44,38 @@
           <ion-label>Reportes</ion-label>
         </ion-item>
         
+        <!-- Usuarios - Color Morado -->
         <ion-item detail="false" routerLink="/usuarios" routerLinkActive="item-active" routerDirection="root">
           <ion-icon slot="start" name="people-outline"></ion-icon>
           <ion-label>Usuarios</ion-label>
         </ion-item>
       </ion-list>
 
+      <!-- Línea divisora estética -->
       <div class="menu-divider"></div>
 
+      <!-- 3. FOOTER: Perfil del usuario y cierre de sesión -->
       <div class="menu-footer">
+        
+        <!-- Tarjeta de Perfil -->
         <div class="profile-card">
           <div class="profile-avatar">
+            <!-- Logo pequeño o foto del usuario -->
             <img src="assets/icon/logo_ieca.png" alt="Usuario">
           </div>
           <div class="profile-info">
             <p class="profile-name">Contadora</p>
-            <p class="profile-role">Equipo administrativo</p>
+            <p class="profile-role">Administración IECA</p>
           </div>
           <ion-icon name="chevron-down-outline"></ion-icon>
         </div>
 
+        <!-- Botón de Cerrar Sesión con estilo Rojo Institucional -->
         <ion-item detail="false" routerLink="/login" class="logout-item" routerDirection="root">
           <ion-icon slot="start" name="log-out-outline"></ion-icon>
           <ion-label>Cerrar Sesión</ion-label>
         </ion-item>
+        
       </div>
     </div>
   </aside>
