@@ -1,24 +1,54 @@
 /* 1. IMPORTAR FUENTE PROFESIONAL */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-/* 2. CONFIGURACIÓN BASE DE IONIC */
+/* 2. DEFINICIÓN DE COLORES INSTITUCIONALES (IECA) */
 :root {
   --ion-font-family: 'Inter', sans-serif !important;
+
+  /* Colores Base */
+  --ieca-red: #E42021;
+  --ieca-purple: #66318D;
+  --ieca-blue: #2E358F;
+  --ieca-yellow: #F4E530;
+  --ieca-charcoal: #353432;
+
+  /* --- ASIGNACIÓN A COLORES DE IONIC --- */
+  /* Primario: Azul (Para encabezados y estructura) */
+  --ion-color-primary: var(--ieca-blue);
+  --ion-color-primary-rgb: 46, 53, 143;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-shade: #292f7e;
+  --ion-color-primary-tint: #43499a;
+
+  /* Secundario: Morado (Para botones de acción y selección) */
+  --ion-color-secondary: var(--ieca-purple);
+  --ion-color-secondary-rgb: 102, 49, 141;
+  --ion-color-secondary-contrast: #ffffff;
+  --ion-color-secondary-shade: #5a2b7c;
+  --ion-color-secondary-tint: #754698;
+
+  /* Peligro: Rojo (Para alertas y errores) */
+  --ion-color-danger: var(--ieca-red);
+  --ion-color-danger-contrast: #ffffff;
+
+  /* Advertencia: Amarillo (Para resaltes) */
+  --ion-color-warning: var(--ieca-yellow);
+  --ion-color-warning-contrast: var(--ieca-charcoal);
 }
 
+/* 3. CONFIGURACIÓN BASE DEL CUERPO */
 body {
   font-family: 'Inter', sans-serif !important;
-  background-color: #f8f9fc !important; // Fondo gris ultra claro (estilo iOS/Premium)
+  background-color: #f8f9fc !important; // Mantenemos el fondo limpio estilo iOS
+  color: var(--ieca-charcoal); // Texto principal en color carbón
 }
 
 ion-content {
   --background: #f8f9fc !important;
 }
 
-/* 3. REGLAS PARA WEB - ESTRUCTURA Y VISIBILIDAD */
+/* 4. REGLAS PARA WEB - ESTRUCTURA Y VISIBILIDAD */
 @media (min-width: 992px) {
-  
-  // Forzamos que el panel de la izquierda sea visible y tenga el ancho correcto
   .split-pane-side {
     min-width: 280px !important;
     max-width: 280px !important;
@@ -26,13 +56,12 @@ ion-content {
     border-right: 1px solid rgba(0, 0, 0, 0.05) !important;
   }
 
-  // Aseguramos que el contenido principal respete el espacio del menú
   #main-content {
     margin-left: 0 !important; 
     width: auto !important;
     position: relative !important;
     display: block !important;
-    box-shadow: -10px 0 20px rgba(0, 0, 0, 0.02); // Sombra sutil entre menú y contenido
+    box-shadow: -10px 0 20px rgba(0, 0, 0, 0.02);
   }
 
   ion-split-pane {
@@ -40,36 +69,52 @@ ion-content {
   }
 }
 
-/* 4. ESTILOS DE TEXTO GLOBALES (Look de la imagen) */
+/* 5. ESTILOS DE TEXTO GLOBALES */
 h1 {
-  font-weight: 800 !important; // Extra negrita para el "Hola, Milena"
-  color: #1a202c !important;
+  font-weight: 800 !important;
+  color: var(--ieca-blue) !important; // Títulos principales en Azul IECA
   letter-spacing: -0.03em !important;
 }
 
 h2 {
-  font-weight: 700 !important; // Negrita para títulos de tarjetas
-  color: #2d3748 !important;
+  font-weight: 700 !important;
+  color: var(--ieca-purple) !important; // Subtítulos en Morado
 }
 
 p {
-  color: #718096; // Gris suave para descripciones
+  color: #718096; // Gris suave para descripciones (facilita lectura)
 }
 
-/* 5. AJUSTES TÉCNICOS DE COMPONENTES */
+/* 6. AJUSTES DE COMPONENTES */
 ion-menu::part(container) {
-  background: transparent !important; // Permite ver el gradiente azul del sidebar
+  background: transparent !important;
   box-shadow: none !important;
 }
 
 ion-toolbar {
   --background: #f8f9fc;
+  --color: var(--ieca-blue);
   --border-style: none;
+  font-weight: 700;
 }
 
-/* Estilo para las tarjetas en toda la app (si quieres reusarlas) */
+/* Botones con estilo institucional */
+ion-button {
+  --border-radius: 12px !important;
+  font-weight: 600;
+  text-transform: none; // Evita que todo sea mayúsculas
+}
+
+/* Estilo para las tarjetas en toda la app */
 .custom-card-style {
   background: #ffffff;
   border-radius: 22px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.02);
 }
+
+/* Clases utilitarias de colores (Para usar en iconos o textos específicos) */
+.text-red { color: var(--ieca-red); }
+.text-purple { color: var(--ieca-purple); }
+.text-blue { color: var(--ieca-blue); }
+.text-yellow { color: var(--ieca-yellow); }
