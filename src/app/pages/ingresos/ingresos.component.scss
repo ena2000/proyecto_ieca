@@ -1,0 +1,149 @@
+/* Contenedor principal: Ampliado para usar más espacio horizontal */
+.container-wrapper {
+  max-width: 1000px; /* De 600px a 1000px */
+  margin: 0 auto;
+  padding-bottom: 40px;
+}
+
+/* Títulos y Encabezado */
+.page-header {
+  margin: 10px 0 30px;
+  padding-left: 20px;
+  h1 {
+    font-size: 1.5rem; /* Lo subí un poco para que destaque más */
+    font-weight: 800;
+    margin: 0;
+    line-height: 1.2;
+  }
+  
+  p {
+    font-size: 1rem;
+    margin-top: 5px;
+    color: var(--ieca-text-gray);
+    opacity: 0.9;
+  }
+}
+
+/* Estructura del Formulario en Rejilla */
+.ieca-grid-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Dos columnas iguales */
+  gap: 20px; /* Espacio entre campos */
+
+  /* Los campos marcados como full-width ocuparán las dos columnas */
+  .full-width {
+    grid-column: span 2;
+  }
+}
+
+.form-card {
+  padding: 40px; /* Más aire interno */
+  background: #ffffff;
+}
+
+.input-group {
+  .ieca-label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 700;
+    color: var(--ieca-charcoal);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+}
+
+/* Estilo de los Inputs */
+.ieca-input-item {
+  --background: #fdfdfd;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  height: 56px;
+  transition: all 0.3s ease;
+
+  &.item-has-focus {
+    border-color: var(--ieca-blue);
+    box-shadow: 0 0 0 4px rgba(46, 53, 143, 0.05);
+  }
+
+  ion-icon {
+    font-size: 24px;
+    margin-right: 12px;
+  }
+}
+
+.amount-input {
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--ieca-blue);
+}
+
+/* Zona de carga: Ahora se verá más ancha y elegante */
+.upload-zone {
+  border: 2px dashed var(--ieca-blue);
+  background: rgba(46, 53, 143, 0.02);
+  border-radius: 20px;
+  padding: 40px;
+  text-align: center;
+  position: relative;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(46, 53, 143, 0.05);
+    border-color: var(--ieca-purple);
+  }
+
+  ion-icon { font-size: 40px; margin-bottom: 10px; }
+  p { font-size: 1.1rem; font-weight: 600; color: var(--ieca-blue); margin: 0; }
+  span { font-size: 0.85rem; color: #94a3b8; }
+  .file-overlay { position: absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor:pointer; }
+}
+
+/* Botón principal */
+.main-save-button {
+  height: 60px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-top: 20px;
+}
+
+/* Toolbar */
+.ieca-toolbar {
+  --background: #f8f9fc;
+  --color: var(--ieca-blue);
+  --padding-top: 15px;
+  --padding-bottom: 15px;
+  
+  .main-title {
+    font-weight: 800;
+    font-size: 1.8rem;
+  }
+}
+
+/* Datetime y Modal */
+ion-datetime-button {
+  --background: #f0f4f8;
+  --color: var(--ieca-blue);
+  --border-radius: 10px;
+  padding: 5px;
+}
+
+ion-modal#date-modal {
+  --width: 350px;
+  --height: 450px;
+  --border-radius: 20px;
+}
+
+/* Ajuste para móviles: Volver a 1 columna */
+@media (max-width: 768px) {
+  .ieca-grid-form {
+    grid-template-columns: 1fr;
+    .full-width { grid-column: span 1; }
+  }
+  .form-card { padding: 20px; }
+}
+
+/* Colores utilitarios */
+.text-blue { color: var(--ieca-blue); }
+.text-yellow { color: var(--ieca-yellow); }
+.text-red { color: var(--ieca-red); }

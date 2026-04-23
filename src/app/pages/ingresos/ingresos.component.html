@@ -1,19 +1,79 @@
 <ion-header class="ion-no-border">
-  <ion-toolbar>
-    <ion-title>Ingresos</ion-title>
+  <ion-toolbar class="ieca-toolbar">
+    <ion-buttons slot="start">
+      <ion-menu-button color="primary"></ion-menu-button>
+    </ion-buttons>
+    <ion-title class="main-title">Ingresos</ion-title>
+    <ion-buttons slot="end">
+      <ion-button class="text-blue">
+        <ion-icon name="notifications-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
 <ion-content class="ion-padding">
-  <div class="page-panel">
-    <div class="page-panel-header">
-      <div>
-        <h2>Ingresos</h2>
-        <p>Registra entradas de dinero y revisa el estado de caja.</p>
-      </div>
+  <div class="container-wrapper">
+    
+    <div class="page-header">
+      <h1 class="text-blue">Registrar Ingreso</h1>
+      <p>Completa la información para el registro contable.</p>
     </div>
-    <div class="page-panel-body">
-      <p>En esta sección podrás ingresar nuevos registros y consultar los ingresos recientes.</p>
+
+    <div class="custom-card-style form-card">
+      <form class="ieca-grid-form">
+        
+        <!-- Fila 1: Fecha y Monto (2 Columnas) -->
+        <div class="input-group">
+          <ion-label class="ieca-label">Fecha del Ingreso</ion-label>
+          <ion-item lines="none" class="ieca-input-item">
+            <ion-icon slot="start" name="calendar-outline" class="text-blue"></ion-icon>
+            <ion-datetime-button datetime="date-picker"></ion-datetime-button>
+          </ion-item>
+          <ion-modal [keepContentsMounted]="true" id="date-modal">
+            <ng-template>
+              <ion-datetime id="date-picker" presentation="date" [showDefaultButtons]="true" doneText="Seleccionar" cancelText="Cancelar"></ion-datetime>
+            </ng-template>
+          </ion-modal>
+        </div>
+
+        <div class="input-group">
+          <ion-label class="ieca-label">Monto ($)</ion-label>
+          <ion-item lines="none" class="ieca-input-item">
+            <ion-icon slot="start" name="cash-outline" class="text-yellow"></ion-icon>
+            <ion-input type="number" placeholder="0.00" class="amount-input"></ion-input>
+          </ion-item>
+        </div>
+
+        <!-- Fila 2: Descripción (Ancho completo) -->
+        <div class="input-group full-width">
+          <ion-label class="ieca-label">Descripción o Concepto</ion-label>
+          <ion-item lines="none" class="ieca-input-item">
+            <ion-icon slot="start" name="document-text-outline" class="text-blue"></ion-icon>
+            <ion-input type="text" placeholder="Ej. Diezmos Semanales, Ofrendas, Donaciones..."></ion-input>
+          </ion-item>
+        </div>
+
+        <!-- Fila 3: Comprobante (Ancho completo) -->
+        <div class="input-group full-width">
+          <ion-label class="ieca-label">Comprobante de respaldo</ion-label>
+          <div class="upload-zone">
+            <ion-icon name="cloud-upload-outline" class="text-red"></ion-icon>
+            <p>Subir imagen del comprobante</p>
+            <span>JPG o PNG (Máximo 5MB)</span>
+            <input type="file" class="file-overlay" accept="image/*">
+          </div>
+        </div>
+
+        <!-- Botón (Ancho completo) -->
+        <div class="button-container full-width">
+          <ion-button color="secondary" expand="block" class="main-save-button">
+            <ion-icon slot="start" name="save-outline"></ion-icon>
+            Guardar Registro Contable
+          </ion-button>
+        </div>
+
+      </form>
     </div>
   </div>
 </ion-content>
