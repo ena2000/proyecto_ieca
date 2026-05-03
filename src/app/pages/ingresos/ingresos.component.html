@@ -28,16 +28,18 @@
           <ion-label class="ieca-label">Fecha del Ingreso</ion-label>
           <ion-item lines="none" class="ieca-input-item">
             <ion-icon slot="start" name="calendar-outline" class="text-blue"></ion-icon>
+            <!-- ID "date-picker" debe coincidir con el datetime de abajo -->
             <ion-datetime-button datetime="date-picker"></ion-datetime-button>
           </ion-item>
           
-          <ion-modal [keepContentsMounted]="true" id="date-modal" #dateModal>
+          <!-- El Modal -->
+          <ion-modal [keepContentsMounted]="true" #dateModal>
             <ng-template>
-              <!-- Se quitan los botones y se agrega ionChange -->
               <ion-datetime 
                 id="date-picker" 
                 presentation="date"
                 [(ngModel)]="fechaSeleccionada"
+                name="fecha"
                 (ionChange)="onFechaChange($event, dateModal)">
               </ion-datetime>
             </ng-template>
@@ -48,7 +50,7 @@
           <ion-label class="ieca-label">Monto ($)</ion-label>
           <ion-item lines="none" class="ieca-input-item">
             <ion-icon slot="start" name="cash-outline" class="text-yellow"></ion-icon>
-            <ion-input type="number" placeholder="0.00" class="amount-input"></ion-input>
+            <ion-input type="number" name="monto" placeholder="0.00" class="amount-input"></ion-input>
           </ion-item>
         </div>
 
@@ -57,7 +59,7 @@
           <ion-label class="ieca-label">Descripción o Concepto</ion-label>
           <ion-item lines="none" class="ieca-input-item">
             <ion-icon slot="start" name="document-text-outline" class="text-blue"></ion-icon>
-            <ion-input type="text" placeholder="Ej. Diezmos Semanales, Ofrendas, Donaciones..."></ion-input>
+            <ion-input type="text" name="descripcion" placeholder="Ej. Diezmos Semanales, Ofrendas, Donaciones..."></ion-input>
           </ion-item>
         </div>
 
@@ -74,7 +76,7 @@
 
         <!-- Botón (Ancho completo) -->
         <div class="button-container full-width">
-          <ion-button color="secondary" expand="block" class="main-save-button">
+          <ion-button type="button" color="secondary" expand="block" class="main-save-button">
             <ion-icon slot="start" name="save-outline"></ion-icon>
             Guardar Registro Contable
           </ion-button>

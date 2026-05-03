@@ -1,24 +1,37 @@
-﻿/* Esto asegura que el contenedor de Ionic no tape tu diseño */
-ion-menu::part(container) {
-  background: var(--ieca-blue) !important;
-}
-
-ion-menu {
+﻿ion-menu {
   --width: 280px;
   height: 100%;
 }
 
-.sidebar {
-  width: 280px;
-  height: 100vh; /* Esto es lo que evita que se vea en blanco */
+/* 1. Quitamos el scrollbar visualmente pero permitimos el movimiento */
+ion-content {
+  --background: transparent; // El fondo lo pondremos en el contenedor
+  
+  /* 2. OCULTAR BARRA DE SCROLL (Ionic Shadow DOM) */
+  &::part(scroll) {
+    &::-webkit-scrollbar {
+      display: none;
+      width: 0 !important;
+    }
+    -ms-overflow-style: none; /* IE/Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+}
+
+
+/* 2. El contenedor principal con el fondo */
+.sidebar-content {
+  width: 100%;
+  /* CAMBIO CLAVE: min-height 100% para que el fondo llegue siempre hasta abajo */
+  min-height: 100%; 
   display: flex;
   flex-direction: column;
+  /* El degradado aquí para que cubra todo */
   background: linear-gradient(180deg, var(--ieca-blue) 0%, #151a42 100%) !important;
-  z-index: 999;
   color: #ffffff;
 }
 
-/* --- HEADER --- */
+/* --- CABECERA --- */
 .menu-header {
   padding: 40px 24px 25px;
   display: flex;
@@ -53,16 +66,12 @@ ion-menu {
   }
 }
 
-/* --- LISTA DE NAVEGACIÓN (Con Scroll Inteligente) --- */
+/* --- LISTA DE NAVEGACIÓN --- */
 .menu-list {
-  background: transparent;
-  flex: 1; /* Esto hace que crezca y empuje el footer hacia abajo */
-  overflow-y: auto; /* Permite scroll si haces mucho zoom */
+  background: transparent !important;
+  flex: 1; /* Esto empuja el footer hacia abajo */
   margin-top: 10px;
-
-  /* Estilo de la barra de scroll para que sea elegante */
-  &::-webkit-scrollbar { width: 4px; }
-  &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+  padding: 0;
 
   ion-item {
     --background: transparent;
@@ -74,7 +83,6 @@ ion-menu {
     font-weight: 600;
     transition: all 0.2s ease;
 
-    /* Contenedor del icono (Efecto profesional) */
     ion-icon {
       font-size: 1.2rem;
       padding: 8px;
@@ -83,7 +91,7 @@ ion-menu {
       margin-right: 12px;
     }
 
-    /* Colores por icono */
+    /* Colores por ruta */
     &[routerLink="/dashboard"] ion-icon { color: var(--ieca-yellow); }
     &[routerLink="/ingresos"] ion-icon { color: var(--ieca-yellow); }
     &[routerLink="/gastos"] ion-icon { color: var(--ieca-red); }
@@ -96,7 +104,7 @@ ion-menu {
   }
 
   .item-active {
-    --background: var(--ieca-purple) !important; /* Morado Institucional */
+    --background: var(--ieca-purple) !important;
     --color: #ffffff;
     font-weight: 700;
     
@@ -115,7 +123,7 @@ ion-menu {
 
 /* --- FOOTER --- */
 .menu-footer {
-  margin-top: auto;
+  margin-top: auto; /* Empuja hacia abajo en flex */
   padding: 15px 16px 25px;
 
   .profile-card {
@@ -146,7 +154,7 @@ ion-menu {
   }
 
   .logout-item {
-    --background: rgba(228, 32, 33, 0.12); /* Rojo suave */
+    --background: rgba(228, 32, 33, 0.12);
     --color: var(--ieca-red);
     margin-top: 12px;
     --border-radius: 14px;
@@ -160,8 +168,8 @@ ion-menu {
     }
     
     &:hover {
-        --background: var(--ieca-red);
-        --color: #ffffff;
+      --background: var(--ieca-red);
+      --color: #ffffff;
     }
   }
 }

@@ -8,7 +8,13 @@ import { addIcons } from 'ionicons';
 import { 
   gridOutline, businessOutline, cashOutline, 
   trendingDownOutline, barChartOutline, peopleOutline, 
-  logOutOutline, chevronDownOutline, menuOutline 
+  logOutOutline, chevronDownOutline, menuOutline,
+  settingsOutline, // <--- Agregamos este para Administración
+  calendarOutline, // <--- Agregamos estos para que se vean en toda la app
+  documentTextOutline,
+  cloudUploadOutline,
+  saveOutline,
+  notificationsOutline
 } from 'ionicons/icons';
 
 @Component({
@@ -18,7 +24,7 @@ import {
   imports: [
     IonApp, 
     IonRouterOutlet, 
-    IonSplitPane,      // <--- ¡Asegúrate de importar esto!
+    IonSplitPane,      
     SlidebarComponent, 
     CommonModule
   ],
@@ -27,17 +33,7 @@ export class AppComponent {
   public mostrarMenu = true;
 
   constructor(private router: Router) {
-    this.router.events.pipe(
-      filter(event => event instanceof NavigationEnd)
-    ).subscribe((event: any) => {
-      // Si la URL contiene 'login', ocultamos el menú
-      const url = event.urlAfterRedirects || event.url;
-      this.mostrarMenu = !url.toLowerCase().includes('login');
-    });
-  }
-}
-
-    // Registra los iconos una sola vez aquí para toda la app
+    // 1. Registro de Iconos (Dentro del constructor)
     addIcons({ 
       'grid-outline': gridOutline,
       'business-outline': businessOutline,
@@ -47,5 +43,25 @@ export class AppComponent {
       'people-outline': peopleOutline,
       'log-out-outline': logOutOutline,
       'chevron-down-outline': chevronDownOutline,
-      'menu-outline': menuOutline
+      'menu-outline': menuOutline,
+      'settings-outline': settingsOutline, // Icono para Administración
+      'calendar-outline': calendarOutline,
+      'document-text-outline': documentTextOutline,
+      'cloud-upload-outline': cloudUploadOutline,
+      'save-outline': saveOutline,
+      'notifications-outline': notificationsOutline
     });
+
+ // 2. Lógica mejorada para detectar la ruta inicial y cambios
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe((event: any) => {
+      this.actualizarVisibilidadMenu(event.urlAfterRedirects || event.url);
+    });
+  }
+
+  private actualizarVisibilidadMenu(url: string) {
+    // Esto asegura que si estás en /login o /login?retry=true funcione
+    this.mostrarMenu = !url.toLowerCase().includes('login');
+  }
+}

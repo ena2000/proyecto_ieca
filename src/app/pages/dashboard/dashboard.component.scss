@@ -1,79 +1,118 @@
-.dashboard-bg {
-  --background: #f8f9fc; // Gris muy claro de fondo
+.gray-bg {
+  --background: #f8f9fc;
+}
+
+.container-wrapper {
+  max-width: 1100px;
+  margin: 0 auto;
 }
 
 .welcome-header {
-  padding: 15px 10px 25px;
-  h1 { 
-    font-size: 1.8rem; 
-    font-weight: 800; 
-    color: #1b2f5f; 
-    margin: 0; 
-  }
-  p { 
-    color: #8e8e93; 
-    margin-top: 5px; 
-    font-size: 1rem; 
-  }
+  margin: 15px 0 25px 10px;
+  h1 { font-weight: 800; margin: 0; font-size: 1.8rem; }
+  p { margin: 5px 0; color: #64748b; font-size: 1rem; }
 }
 
-.cards-list {
-  display: flex;
-  flex-direction: column;
-  gap: 15px; // Espacio entre tarjetas para que no se vean pegadas
-}
+/* Tarjetas de Estadísticas */
+.stat-card {
+  border-radius: 18px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  margin: 8px;
+  border: none;
 
-.card-item {
-  display: flex;
-  align-items: center;
-  background: #ffffff;
-  padding: 18px;
-  border-radius: 20px;
-  // Sombra suave para dar profundidad
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-
-  &:active {
-    transform: scale(0.97);
-    background: #f5f5f5;
+  ion-card-content {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    gap: 15px;
   }
 
-  .icon-circle {
-    width: 52px;
-    height: 52px;
-    border-radius: 14px;
+  .stat-icon-wrapper {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-right: 15px;
-    
-    ion-icon { font-size: 1.6rem; }
-    
-    // Paleta de colores vibrantes para los iconos
-    &.blue { background: #eef2ff; color: #4f46e5; }
-    &.green { background: #f0fdf4; color: #16a34a; }
-    &.red { background: #fef2f2; color: #dc2626; }
-    &.orange { background: #fff7ed; color: #ea580c; }
+    font-size: 24px;
   }
 
-  .card-text {
-    flex: 1;
-    h2 { 
-      margin: 0; 
-      font-size: 1.1rem; 
-      font-weight: 700; 
-      color: #2c3e50; 
-    }
-    p { 
-      margin: 2px 0 0; 
-      font-size: 0.85rem; 
-      color: #94a3b8; 
-    }
+  .stat-text {
+    p { margin: 0; font-size: 0.8rem; color: #64748b; font-weight: 600; text-transform: uppercase; }
+    h3 { margin: 2px 0 0; font-size: 1.3rem; font-weight: 800; }
   }
+}
 
-  .arrow {
-    color: #cbd5e1;
-    font-size: 1.3rem;
+.balance-card {
+  background: var(--ieca-blue);
+  color: white;
+  .stat-icon-wrapper { background: rgba(255,255,255,0.2); color: white; }
+  .stat-text p { color: rgba(255,255,255,0.7); }
+}
+
+.income-card .stat-icon-wrapper { background: #e7f9f0; color: #2dce89; }
+.expense-card .stat-icon-wrapper { background: #fef1f2; color: #f5365c; }
+
+/* Listas */
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 20px 10px 10px;
+  h2 { font-size: 1.1rem; font-weight: 700; margin: 0; }
+}
+
+.section-subtitle { font-size: 1.1rem; font-weight: 700; margin: 20px 10px 10px; }
+
+.white-card {
+  border-radius: 18px;
+  margin: 8px;
+}
+
+.icon-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  &.ingreso { background: #e7f9f0; color: #2dce89; }
+  &.gasto { background: #fef1f2; color: #f5365c; }
+}
+
+/* Acciones Rápidas */
+.action-card {
+  margin: 8px;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: transform 0.2s;
+  
+  &:active { transform: scale(0.98); }
+
+  ion-card-content {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 18px;
+    color: white;
+    ion-icon { font-size: 24px; }
+    p { margin: 0; font-weight: 700; font-size: 0.95rem; }
   }
+}
+
+.bg-purple { background: var(--ieca-purple); }
+.bg-blue { background: #3b82f6; }
+
+/* Colores IECA */
+.text-blue { color: var(--ieca-blue); }
+.text-success { color: #2dce89; }
+.text-red { color: #f5365c; }
+
+.ieca-toolbar {
+  --background: #ffffff;
+  --color: var(--ieca-blue);
+  --padding-top: 10px;
+  --padding-bottom: 10px;
+  .main-title { font-weight: 800; font-size: 1.4rem; }
 }

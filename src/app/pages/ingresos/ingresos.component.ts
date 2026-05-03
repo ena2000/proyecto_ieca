@@ -1,15 +1,16 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonicModule, IonModal } from '@ionic/angular';
-import { FormsModule } from '@angular/forms'; // <--- IMPORTANTE: Agrega esto
+import { FormsModule } from '@angular/forms';
+// Importamos los componentes específicos para asegurar compatibilidad
+import { 
+  IonHeader, IonToolbar, IonButtons, IonMenuButton, 
+  IonTitle, IonContent, IonIcon, IonItem, IonLabel, 
+  IonDatetime, IonDatetimeButton, IonModal, IonInput, IonButton, IonNote
+} from '@ionic/angular/standalone'; 
 import { addIcons } from 'ionicons';
 import { 
-  calendarOutline, 
-  cashOutline, 
-  documentTextOutline, 
-  cloudUploadOutline, 
-  saveOutline,
-  notificationsOutline 
+  calendarOutline, cashOutline, documentTextOutline, 
+  cloudUploadOutline, saveOutline, notificationsOutline 
 } from 'ionicons/icons';
 
 @Component({
@@ -17,11 +18,16 @@ import {
   templateUrl: './ingresos.component.html',
   styleUrls: ['./ingresos.component.scss'],
   standalone: true,
-  // Agrega FormsModule aquí abajo:
-  imports: [IonicModule, CommonModule, FormsModule] 
+  imports: [
+    CommonModule, 
+    FormsModule,
+    // Listamos los componentes de Ionic aquí:
+    IonHeader, IonToolbar, IonButtons, IonMenuButton, 
+    IonTitle, IonContent, IonIcon, IonItem, IonLabel, 
+    IonDatetime, IonDatetimeButton, IonModal, IonInput, IonButton, IonNote
+  ] 
 })
 export class IngresosComponent {
-  // Inicializamos con la fecha de hoy
   fechaSeleccionada: string = new Date().toISOString();
 
   constructor() {
@@ -35,9 +41,8 @@ export class IngresosComponent {
     });
   }
 
-  // Esta función cierra el modal apenas tocas un día
-  onFechaChange(event: any, modal: IonModal) {
+  onFechaChange(event: any, modal: any) {
     this.fechaSeleccionada = event.detail.value;
-    modal.dismiss(); // Cierra el modal automáticamente
+    modal.dismiss();
   }
 }
