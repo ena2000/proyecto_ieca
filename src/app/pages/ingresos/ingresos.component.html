@@ -23,16 +23,23 @@
     <div class="custom-card-style form-card">
       <form class="ieca-grid-form">
         
-        <!-- Fila 1: Fecha y Monto (2 Columnas) -->
+        <!-- Fila 1: Fecha y Monto -->
         <div class="input-group">
           <ion-label class="ieca-label">Fecha del Ingreso</ion-label>
           <ion-item lines="none" class="ieca-input-item">
             <ion-icon slot="start" name="calendar-outline" class="text-blue"></ion-icon>
             <ion-datetime-button datetime="date-picker"></ion-datetime-button>
           </ion-item>
-          <ion-modal [keepContentsMounted]="true" id="date-modal">
+          
+          <ion-modal [keepContentsMounted]="true" id="date-modal" #dateModal>
             <ng-template>
-              <ion-datetime id="date-picker" presentation="date" [showDefaultButtons]="true" doneText="Seleccionar" cancelText="Cancelar"></ion-datetime>
+              <!-- Se quitan los botones y se agrega ionChange -->
+              <ion-datetime 
+                id="date-picker" 
+                presentation="date"
+                [(ngModel)]="fechaSeleccionada"
+                (ionChange)="onFechaChange($event, dateModal)">
+              </ion-datetime>
             </ng-template>
           </ion-modal>
         </div>

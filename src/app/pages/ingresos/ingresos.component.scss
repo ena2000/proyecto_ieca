@@ -121,17 +121,25 @@
 }
 
 /* Datetime y Modal */
-ion-datetime-button {
-  --background: #f0f4f8;
-  --color: var(--ieca-blue);
-  --border-radius: 10px;
-  padding: 5px;
+/* Estilo para que el círculo de la fecha seleccionada sea azul IECA */
+ion-datetime {
+  --ion-color-base: var(--ieca-blue) !important;
+  --ion-color-primary: var(--ieca-blue) !important;
+  
+  /* Esto asegura que el día seleccionado tenga el fondo de tu marca */
+  &::part(calendar-day active),
+  &::part(calendar-day selected) {
+    background: var(--ieca-blue);
+    color: white;
+  }
 }
 
+/* Ajuste del modal para que no se vea como una pantalla completa en web */
 ion-modal#date-modal {
-  --width: 350px;
-  --height: 450px;
-  --border-radius: 20px;
+  --width: fit-content;
+  --height: fit-content;
+  --border-radius: 16px;
+  --box-shadow: 0 28px 48px rgba(0, 0, 0, 0.4);
 }
 
 /* Ajuste para móviles: Volver a 1 columna */
