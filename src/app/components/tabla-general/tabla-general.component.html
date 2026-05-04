@@ -1,0 +1,65 @@
+<div class="table-container card-style">
+  <div class="table-responsive">
+    <table class="ieca-table">
+
+      <thead>
+        <tr>
+          <th *ngFor="let col of columns">
+            {{ col.header }}
+          </th>
+          <th *ngIf="actions.edit || actions.delete">
+            Acciones
+          </th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr *ngFor="let row of data">
+
+          <td *ngFor="let col of columns">
+
+            <!-- BADGE -->
+            <ng-container *ngIf="col.type === 'badge'">
+              <span class="badge">
+                {{ row[col.field] }}
+              </span>
+            </ng-container>
+
+            <!-- MONEDA -->
+            <ng-container *ngIf="col.type === 'currency'">
+              <span class="font-bold text-blue">
+                ${{ row[col.field] }}
+              </span>
+            </ng-container>
+
+            <!-- NORMAL -->
+            <ng-container *ngIf="!col.type">
+              {{ row[col.field] }}
+            </ng-container>
+
+          </td>
+
+          <td *ngIf="actions.edit || actions.delete">
+            <div class="action-buttons">
+
+              <button class="btn-edit" (click)="edit(row)" *ngIf="actions.edit">
+                <ion-icon name="pencil-outline"></ion-icon>
+              </button>
+
+              <button class="btn-delete" (click)="delete(row)" *ngIf="actions.delete">
+                <ion-icon name="trash-outline"></ion-icon>
+              </button>
+
+            </div>
+          </td>
+
+        </tr>
+      </tbody>
+
+    </table>
+  </div>
+
+  <div class="table-footer">
+    <p>Mostrando {{ data.length }} registros</p>
+  </div>
+</div>
