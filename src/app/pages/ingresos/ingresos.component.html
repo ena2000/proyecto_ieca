@@ -12,77 +12,136 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding">
+<ion-content class="ion-padding gray-bg">
   <div class="container-wrapper">
-    
+
+    <!-- =========================
+         FORMULARIO
+    ========================== -->
     <div class="page-header">
-      <h1 class="text-blue">Registrar Ingreso</h1>
+      <h1 class="text-blue">
+        {{ modoEdicion ? 'Editar Ingreso' : 'Registrar Ingreso' }}
+      </h1>
       <p>Completa la información para el registro contable.</p>
     </div>
 
     <div class="custom-card-style form-card">
       <form class="ieca-grid-form">
-        
-        <!-- Fila 1: Fecha y Monto -->
+
+        <!-- FECHA -->
         <div class="input-group">
           <ion-label class="ieca-label">Fecha del Ingreso</ion-label>
+
           <ion-item lines="none" class="ieca-input-item">
             <ion-icon slot="start" name="calendar-outline" class="text-blue"></ion-icon>
-            <!-- ID "date-picker" debe coincidir con el datetime de abajo -->
-            <ion-datetime-button datetime="date-picker"></ion-datetime-button>
+            <ion-datetime-button datetime="date-picker-ingresos"></ion-datetime-button>
           </ion-item>
-          
-          <!-- El Modal -->
-          <ion-modal [keepContentsMounted]="true" #dateModal>
+
+          <ion-modal [keepContentsMounted]="true" #dateModal class="date-modal">
             <ng-template>
-              <ion-datetime 
-                id="date-picker" 
+              <ion-datetime
+                id="date-picker-ingresos"
                 presentation="date"
-                [(ngModel)]="fechaSeleccionada"
-                name="fecha"
+                [(ngModel)]="nuevoIngreso.fecha"
                 (ionChange)="onFechaChange($event, dateModal)">
               </ion-datetime>
             </ng-template>
           </ion-modal>
         </div>
 
+        <!-- MONTO -->
         <div class="input-group">
           <ion-label class="ieca-label">Monto ($)</ion-label>
+
           <ion-item lines="none" class="ieca-input-item">
-            <ion-icon slot="start" name="cash-outline" class="text-yellow"></ion-icon>
-            <ion-input type="number" name="monto" placeholder="0.00" class="amount-input"></ion-input>
+            <ion-icon slot="start" name="cash-outline" class="text-green"></ion-icon>
+            <ion-input
+              type="number"
+              [(ngModel)]="nuevoIngreso.monto"
+              name="monto"
+              placeholder="0.00"
+              class="amount-input">
+            </ion-input>
           </ion-item>
         </div>
 
-        <!-- Fila 2: Descripción (Ancho completo) -->
+        <!-- DESCRIPCIÓN -->
         <div class="input-group full-width">
-          <ion-label class="ieca-label">Descripción o Concepto</ion-label>
+          <ion-label class="ieca-label">Descripción</ion-label>
+
           <ion-item lines="none" class="ieca-input-item">
             <ion-icon slot="start" name="document-text-outline" class="text-blue"></ion-icon>
-            <ion-input type="text" name="descripcion" placeholder="Ej. Diezmos Semanales, Ofrendas, Donaciones..."></ion-input>
+            <ion-input
+              type="text"
+              [(ngModel)]="nuevoIngreso.descripcion"
+              name="descripcion"
+              placeholder="Ej. Diezmos Semanales...">
+            </ion-input>
           </ion-item>
         </div>
 
-        <!-- Fila 3: Comprobante (Ancho completo) -->
+        <!-- FOTO -->
         <div class="input-group full-width">
-          <ion-label class="ieca-label">Comprobante de respaldo</ion-label>
+          <ion-label class="ieca-label">Comprobante</ion-label>
+
           <div class="upload-zone">
-            <ion-icon name="cloud-upload-outline" class="text-red"></ion-icon>
+            <ion-icon name="cloud-upload-outline"></ion-icon>
             <p>Subir imagen del comprobante</p>
-            <span>JPG o PNG (Máximo 5MB)</span>
-            <input type="file" class="file-overlay" accept="image/*">
+            <span>JPG o PNG (Máx 5MB)</span>
+
+            <input
+              type="file"
+              class="file-overlay"
+              accept="image/*"
+              (change)="onFileChange($event)">
           </div>
         </div>
 
-        <!-- Botón (Ancho completo) -->
-        <div class="button-container full-width">
-          <ion-button type="button" color="secondary" expand="block" class="main-save-button">
-            <ion-icon slot="start" name="save-outline"></ion-icon>
-            Guardar Registro Contable
+        <!-- BOTÓN -->
+        <div class="button-container full-width ion-margin-top">
+          <ion-button
+            type="button"
+            expand="block"
+            class="ieca-registro-button"
+            (click)="registrarIngreso()">
+
+            <ion-icon name="save-outline"></ion-icon>
+            <span>
+              {{ modoEdicion ? 'Actualizar' : 'Registrar' }}
+            </span>
+
           </ion-button>
         </div>
 
       </form>
     </div>
+
+    <!-- =========================
+         LISTA
+    ========================== -->
+    <div class="list-section-header">
+      <h2 class="text-blue">Lista de Ingresos</h2>
+
+      <div class="header-actions">
+        <ion-searchbar
+          placeholder="Buscar ingreso..."
+          class="custom-search">
+        </ion-searchbar>
+
+        <ion-button fill="outline" class="filter-btn">
+          <ion-icon slot="icon-only" name="filter-outline"></ion-icon>
+        </ion-button>
+      </div>
+    </div>
+
+    <!-- TABLA -->
+    <app-tabla-general
+      [columns]="columnsIngresos"
+      [data]="listaIngresos"
+      [actions]="acciones"
+      (onEdit)="editarIngreso($event)"
+      (onDelete)="eliminarIngreso($event)">
+    </app-tabla-general>
+
   </div>
 </ion-content>
