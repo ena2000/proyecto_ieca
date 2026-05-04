@@ -1,0 +1,48 @@
+<ion-modal [isOpen]="isOpen" class="ieca-modal">
+  <ng-template>
+
+    <div class="modal-container">
+
+      <!-- HEADER -->
+      <div class="modal-header">
+        <h2>{{ titulo }}</h2>
+      </div>
+
+      <!-- FORM -->
+      <form class="form-grid">
+
+        <div *ngFor="let field of fields" class="input-group">
+
+          <label>{{ field.label }}</label>
+
+          <ion-item lines="none" class="input-item">
+            <ion-input
+              [(ngModel)]="data[field.name]"
+              [name]="field.name"
+              [type]="field.type || 'text'"
+              [placeholder]="field.placeholder">
+            </ion-input>
+          </ion-item>
+
+        </div>
+
+      </form>
+
+      <!-- BOTONES -->
+      <div class="modal-actions">
+
+        <ion-button fill="outline" class="btn-cancel" (click)="cerrar()">
+          Cancelar
+        </ion-button>
+
+        <!-- 🔥 reutiliza tu botón global -->
+        <ion-button class="ieca-registro-button" (click)="guardar()">
+          Guardar cambios
+        </ion-button>
+
+      </div>
+
+    </div>
+
+  </ng-template>
+</ion-modal>
