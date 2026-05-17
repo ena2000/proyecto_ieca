@@ -1,303 +1,699 @@
-/* --- VARIABLES Y CONTENEDOR --- */
+/* =========================================
+   FONDO GENERAL
+========================================= */
 .gray-bg {
---background: #f4f7fa;
+  --background: #f4f7fa;
 }
 
+/* =========================================
+   CONTENEDOR PRINCIPAL
+========================================= */
 .container-wrapper {
-max-width: 1000px;
-margin: 0 auto;
-padding-bottom: 60px;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding-bottom: 60px;
 }
 
+/* =========================================
+   HEADER
+========================================= */
 .page-header {
-margin: 20px 0 30px;
-padding-left: 10px;
+  margin: 20px 0 30px;
+  padding-left: 10px;
 }
 
 .page-header h1 {
-font-size: 1.8rem;
-font-weight: 800;
-margin: 0;
-letter-spacing: -0.5px;
+  font-size: 1.8rem;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -0.5px;
 }
 
 .page-header p {
-font-size: 1rem;
-margin-top: 5px;
-color: #64748b;
+  font-size: 1rem;
+  margin-top: 5px;
+  color: #64748b;
 }
 
-/* --- FORMULARIO --- */
+/* =========================================
+   FORMULARIO GRID
+========================================= */
 .ieca-grid-form {
-display: grid;
-grid-template-columns: 1fr 1fr;
-gap: 24px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
 }
 
 .ieca-grid-form .full-width {
-grid-column: span 2;
+  grid-column: span 2;
 }
 
+/* =========================================
+   CARD
+========================================= */
 .form-card {
-padding: 40px;
-background: #ffffff;
-border-radius: 24px;
-box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04);
-border: 1px solid rgba(0, 0, 0, 0.02);
+  padding: 40px;
+  background: #ffffff;
+  border-radius: 24px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.02);
 }
 
+/* =========================================
+   LABELS
+========================================= */
 .input-group .ieca-label {
-display: block;
-margin-bottom: 10px;
-font-weight: 700;
-color: #1e293b;
-font-size: 0.8rem;
-text-transform: uppercase;
-letter-spacing: 0.05em;
+  display: block;
+  margin-bottom: 10px;
+  font-weight: 700;
+  color: #1e293b;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
+/* =========================================
+   INPUTS
+========================================= */
 .ieca-input-item {
---background: #f8fafc;
---border-color: #e2e8f0;
-border: 1.5px solid #e2e8f0;
-border-radius: 16px;
-height: 60px;
-transition: all 0.2s ease-in-out;
+  --background: #f8fafc;
+  --border-color: #e2e8f0;
+
+  border: 1.5px solid #e2e8f0;
+  border-radius: 16px;
+  height: 60px;
+
+  transition: all 0.2s ease-in-out;
 }
 
 .ieca-input-item.item-has-focus {
-border-color: var(--ieca-blue);
---background: #ffffff;
-box-shadow: 0 0 0 4px rgba(46, 53, 143, 0.08);
+  border-color: var(--ieca-blue);
+  --background: #ffffff;
+
+  box-shadow: 0 0 0 4px rgba(46, 53, 143, 0.08);
 }
 
 .ieca-input-item ion-icon {
-font-size: 22px;
-margin-right: 12px;
+  font-size: 22px;
+  margin-right: 12px;
 }
 
+/* =========================================
+   INPUT MONTO
+========================================= */
 .amount-input {
-font-weight: 800;
-font-size: 1.4rem;
---color: #10b981;
+  font-weight: 800;
+  font-size: 1.4rem;
+  --color: #10b981;
 }
 
-/* 4. ZONA DE CARGA (UPLOAD) - INGRESOS */
+/* =========================================
+   VALIDACIONES
+========================================= */
+.error-border {
+  border-color: #ef4444 !important;
+  --background: #fffafa !important;
+}
+
+.error-text {
+  color: #ef4444;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-top: 5px;
+  display: block;
+}
+
+.text-danger {
+  color: #ef4444 !important;
+}
+
+/* =========================================
+   BOTÓN DESHABILITADO
+========================================= */
+.button-disabled {
+  --background: #cbd5e1;
+  --color: #64748b;
+  --box-shadow: none;
+}
+
+/* =========================================
+   ZONA DE SUBIDA
+========================================= */
+.upload-container {
+  min-height: 140px;
+}
+
 .upload-zone {
-  border: 2px dashed var(--ieca-green);
+  border: 2px dashed #10b981;
   background: rgba(16, 185, 129, 0.02);
   border-radius: 20px;
   padding: 40px;
   text-align: center;
   position: relative;
   transition: all 0.3s ease;
+}
 
-  &:hover {
+.upload-zone:hover {
   background: rgba(16, 185, 129, 0.05);
-  }
+}
 
-  ion-icon {
+.upload-zone ion-icon {
   font-size: 40px;
   margin-bottom: 10px;
-  color: var(--ieca-green);
-  }
+  color: #10b981;
+}
 
-  p {
+.upload-zone p {
   font-size: 1.1rem;
   font-weight: 600;
-  color: var(--ieca-green);
+  color: #10b981;
   margin: 0;
-  }
+}
 
-  span {
+.upload-zone span {
   font-size: 0.85rem;
   color: #94a3b8;
-  }
+}
 
-  .file-overlay {
+.file-overlay {
   position: absolute;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  opacity:0;
-  cursor:pointer;
-  }
-}
+  top: 0;
+  left: 0;
 
-/* --- BOTÓN --- */
-.ieca-registro-button {
---background: linear-gradient(135deg, var(--ieca-blue) 0%, #3b448b 100%);
---background-activated: linear-gradient(135deg, #151a42 0%, var(--ieca-blue) 100%);
---border-radius: 18px;
---color: #ffffff;
---box-shadow: 0 10px 25px rgba(46, 53, 147, 0.25);
-
-height: 68px;
-font-size: 1.1rem;
-font-weight: 700;
-}
-
-.button-container {
-padding: 10px 0;
-display: flex;
-justify-content: center;
-}
-
-/* --- HEADER LISTA (BUSCADOR) --- */
-.list-section-header {
-display: flex;
-justify-content: space-between;
-align-items: center;
-margin: 50px 0 20px;
-padding: 0 10px;
-}
-
-.list-section-header h2 {
-font-size: 1.4rem;
-font-weight: 800;
-margin: 0;
-}
-
-.header-actions {
-display: flex;
-gap: 12px;
-}
-
-.custom-search {
---background: #ffffff;
---border-radius: 14px;
-width: 300px;
-border: 1px solid #e2e8f0;
-}
-
-.filter-btn {
---border-radius: 14px;
---background: #ffffff;
---color: #64748b;
-border: 1px solid #e2e8f0;
-height: 48px;
-}
-
-/* --- TOOLBAR --- */
-.ieca-toolbar {
---background: #ffffff;
---color: var(--ieca-blue);
-}
-
-.main-title {
-font-weight: 800;
-font-size: 1.5rem;
-}
-
-/* Estilo para el modal del calendario */
-.date-modal{
-  --width: 350px;       /* Un poco más ancho para que no se amontone */
-  --height: 450px;      /* Altura suficiente para los controles */
-  --border-radius: 16px;
-  --background: #ffffff;
-  --box-shadow: 0 28px 48px rgba(0, 0, 0, 0.4);
-
-  /* Centrado perfecto */
-  &::part(content) {
-    border-radius: 16px;
-  }
-}
-
-/* Estilo para el componente datetime dentro del modal */
-ion-datetime {
   width: 100%;
   height: 100%;
-  --background: #ffffff;
-  --ion-color-base: var(--ieca-green) !important;
-  --ion-color-primary: var(--ieca-green) !important;
 
-  /* Estilo de los días */
-  &::part(calendar-day active), 
-  &::part(calendar-day selected) {
-    background: var(--ieca-green);
-    color: white;
-    font-weight: bold;
-  }
+  opacity: 0;
+  cursor: pointer;
 }
 
+/* =========================================
+   PREVIEW FOTO
+========================================= */
+.preview-container {
+  display: flex;
+  align-items: center;
+  gap: 20px;
 
-/* --- UTILIDADES --- */
-.text-blue { color: var(--ieca-blue); }
-.text-red { color: #ef4444; }
+  background: #f8fafc;
+  padding: 16px;
 
-/* --- RESPONSIVE --- */
-@media (max-width: 768px) {
-  .ieca-grid-form {
-  grid-template-columns: 1fr;
-  }
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+}
 
-  .ieca-grid-form .full-width {
-  grid-column: span 1;
-  }
+.preview-card {
+  position: relative;
 
-  .form-card {
-  padding: 25px;
-  }
+  width: 100px;
+  height: 100px;
 
-  .list-section-header {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 15px;
-  }
+  border-radius: 12px;
+  overflow: hidden;
 
-  .custom-search {
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.preview-card img {
   width: 100%;
-  }
+  height: 100%;
+  object-fit: cover;
 }
 
-/* --- BOTÓN PREMIUM (CON ANIMACIÓN) --- */
+.preview-overlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+
+  background: rgba(255, 255, 255, 0.8);
+  border-bottom-left-radius: 10px;
+}
+
+.preview-overlay ion-button {
+  --padding-start: 4px;
+  --padding-end: 4px;
+
+  height: 30px;
+  margin: 0;
+}
+
+.preview-info p {
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 4px 0;
+}
+
+.preview-info small {
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+/* =========================================
+   BOTÓN PRINCIPAL
+========================================= */
 .ieca-registro-button {
-  --background: linear-gradient(135deg, var(--ieca-blue) 0%, #3b448b 100%);
-  --background-activated: linear-gradient(135deg, #151a42 0%, var(--ieca-blue) 100%);
+  --background: linear-gradient(135deg, #2e358f 0%, #3b448b 100%);
   --border-radius: 18px;
   --color: #ffffff;
   --box-shadow: 0 10px 25px rgba(46, 53, 147, 0.25);
 
   height: 68px;
-  margin: 0;
+
   font-size: 1.1rem;
   font-weight: 700;
-  letter-spacing: 0.5px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
-  /* CONTENIDO INTERNO */
-  .button-content {
+.button-container {
+  padding: 10px 0;
   display: flex;
-  align-items: center;
   justify-content: center;
+}
+
+/* =========================================
+   TOOLBAR
+========================================= */
+.ieca-toolbar {
+  --background: #ffffff;
+  --color: #2e358f;
+}
+
+.main-title {
+  font-weight: 800;
+  font-size: 1.5rem;
+}
+
+/* =========================================
+   MODAL FECHA
+========================================= */
+.date-modal {
+  --width: 350px;
+  --height: 450px;
+  --border-radius: 16px;
+  --background: #ffffff;
+  --box-shadow: 0 28px 48px rgba(0, 0, 0, 0.4);
+}
+
+.date-modal::part(content) {
+  border-radius: 16px;
+}
+
+ion-datetime {
+  width: 100%;
+  height: 100%;
+
+  --background: #ffffff;
+  --ion-color-base: #10b981 !important;
+  --ion-color-primary: #10b981 !important;
+}
+
+ion-datetime::part(calendar-day active),
+ion-datetime::part(calendar-day selected) {
+  background: #10b981;
+  color: white;
+  font-weight: bold;
+}
+
+/* =========================================
+   COLORES
+========================================= */
+.text-blue {
+  color: #2e358f;
+}
+
+.text-red {
+  color: #ef4444;
+}
+
+/* =========================================
+   ALERTA CUSTOM
+========================================= */
+::ng-deep .custom-alert {
+  --background: #ffffff;
+  --border-radius: 20px;
+}
+
+::ng-deep .custom-alert .alert-title {
+  color: #1e293b;
+  font-weight: 800;
+}
+
+::ng-deep .custom-alert .alert-message {
+  color: #64748b;
+}
+
+::ng-deep .custom-alert .alert-button-delete {
+  color: #ef4444 !important;
+  font-weight: 700;
+}
+
+::ng-deep .custom-alert .alert-button-cancel {
+  color: #64748b !important;
+}
+
+/* =========================================
+   LISTADO
+========================================= */
+.list-container {
+  margin-top: 40px;
+}
+
+.list-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+
+  margin-bottom: 20px;
+  gap: 20px;
+}
+
+.title-box h2 {
+  font-weight: 800;
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.badge-count {
+  background: #e2e8f0;
+  color: #475569;
+
+  padding: 4px 10px;
+  border-radius: 20px;
+
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.search-wrapper {
+  flex: 1;
+  max-width: 400px;
+}
+
+/* =========================================
+   SEARCHBAR PROFESIONAL
+========================================= */
+.professional-search {
+  --background: #ffffff;
+  --border-radius: 16px;
+  --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+
+  --placeholder-color: #94a3b8;
+  --icon-color: #2e358f;
+
+  padding: 0;
+
+  /* QUITA X NATIVA DE IONIC */
+  --clear-button-display: never;
+}
+
+/* QUITA X EXTRA DEL NAVEGADOR */
+.professional-search input[type="search"]::-webkit-search-cancel-button {
+  display: none;
+}
+
+/* =========================================
+   ESTILOS DE FILTROS AVANZADOS ACTUALIZADOS
+========================================= */
+.advanced-filters {
+  background: #ffffff;
+  padding: 18px;
+  border-radius: 20px;
+  margin-bottom: 25px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+  border: 1px solid #edf2f7;
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
   gap: 12px;
+  align-items: center;
+}
 
+.filter-item {
+  flex: 1;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 
-  ion-icon {
-    font-size: 24px;
-    transition: transform 0.3s ease;
-  }
-
-
-  }
-
-  /* HOVER */
-  &:hover {
-  --box-shadow: 0 15px 35px rgba(46, 53, 147, 0.35);
-  transform: translateY(-2px);
-
-  ion-icon {
-    transform: scale(1.1) rotate(-10deg);
-  }
-
-
-  }
-
-  /* CLICK */
-  &:active {
-  transform: translateY(1px) scale(0.98);
+  ion-label {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    padding-left: 5px;
   }
 }
 
+/* Contenedor que imita al ieca-input-item */
+.filter-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #f8fafc; // IGUAL AL FORMULARIO
+  border: 1.5px solid #e2e8f0; // IGUAL AL FORMULARIO
+  border-radius: 12px;
+  height: 48px;
+  transition: all 0.2s ease;
 
+  &:focus-within {
+    border-color: #2e358f;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(46, 53, 143, 0.06);
+  }
+
+  .filter-icon {
+    position: absolute;
+    left: 12px;
+    font-size: 18px;
+    pointer-events: none;
+    z-index: 2;
+  }
+}
+
+/* Inputs limpios */
+.custom-date-filter, 
+.custom-amount-filter {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent;
+  padding: 0 12px 0 40px; // Espacio para el icono a la izquierda
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1e293b;
+  outline: none;
+  font-family: inherit;
+
+  &::placeholder {
+    color: #94a3b8;
+    font-weight: 400;
+  }
+}
+
+/* Ajuste para que el input de fecha nativo no rompa el diseño */
+input[type="date"] {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+/* Estilo del icono del calendario nativo (Chrome/Edge) */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+  filter: invert(0.5);
+}
+
+.text-green {
+  color: #10b981;
+}
+
+@media (max-width: 768px) {
+  .filter-item {
+    flex: 1 1 calc(50% - 12px); // 2 por fila en tablet/móvil grande
+  }
+}
+
+@media (max-width: 480px) {
+  .filter-item {
+    flex: 1 1 100%; // 1 por fila en móvil pequeño
+  }
+}
+
+/* =========================================
+   TOASTS (ALERTAS DE ÉXITO/ERROR)
+========================================= */
+ion-toast {
+  --background: #ffffff;
+  --box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  --border-radius: 12px;
+  --color: #1e293b;
+  font-weight: 600;
+}
+
+ion-toast.toast-success {
+  --border-color: #10b981;
+  border-left: 6px solid var(--border-color);
+}
+
+ion-toast.toast-error {
+  --border-color: #ef4444;
+  border-left: 6px solid var(--border-color);
+}
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+@media (max-width: 768px) {
+
+  .ieca-grid-form {
+    grid-template-columns: 1fr;
+  }
+
+  .ieca-grid-form .full-width {
+    grid-column: span 1;
+  }
+
+  .form-card {
+    padding: 25px;
+  }
+
+  .list-section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .custom-search,
+  .search-wrapper {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .filter-item {
+    flex: 1 1 45%; /* Dos filtros por fila en móviles */
+  }
+}
+
+@media (max-width: 480px) {
+  .filter-item {
+    flex: 1 1 100%; /* Un filtro por fila en pantallas muy pequeñas */
+  }
+}
+
+.custom-datetime-btn::part(native) {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.clickable-wrapper {
+  cursor: pointer;
+  ion-datetime-button {
+    margin-left: 25px; /* Deja espacio para el icono azul */
+  }
+}
+
+/* =========================================
+   DATETIME ESTILO CALENDARIO CLÁSICO
+========================================= */
+
+/* Contenedor del Input Híbrido */
+.hybrid-date-container {
+  display: flex;
+  align-items: center;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 16px;
+  height: 60px;
+  padding: 0 10px;
+  transition: all 0.2s ease;
+
+  &:focus-within {
+    border-color: #2e358f;
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(46, 53, 143, 0.08);
+  }
+
+  .manual-input {
+    --padding-start: 10px;
+    font-weight: 600;
+    font-size: 1rem;
+    color: #1e293b;
+  }
+
+  .calendar-icon-btn {
+    --color: #2e358f;
+    font-size: 1.4rem;
+  }
+}
+
+/* Estilo del Calendario (Basado en tu imagen) */
+.image-style-popover::part(content) {
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  width: 320px;
+}
+
+ion-datetime.image-style-popover, 
+.image-style-popover ion-datetime {
+  --background: #ffffff;
+  --ion-color-primary: #00adef; /* Azul celeste de tu imagen */
+  
+  /* Botones de Mes y Año arriba */
+  &::part(calendar-header) {
+    background: white;
+  }
+
+  /* Estilo de las cajas grises para Mes y Año */
+  &::part(month-year-button) {
+    background: #f1f3f5;
+    border-radius: 12px;
+    padding: 8px 16px;
+    font-weight: 700;
+    color: #333;
+    margin: 5px;
+  }
+
+  /* Cabeceras de días (SUN, MON...) */
+  &::part(calendar-day-header) {
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #666;
+  }
+
+  /* Días del calendario */
+  &::part(calendar-day) {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #444;
+  }
+
+  /* Día seleccionado (Circulo azul) */
+  &::part(calendar-day active) {
+    background: #00adef;
+    color: white;
+    border-radius: 50%;
+  }
+
+  /* Días de otros meses (difuminados como en la imagen) */
+  &::part(calendar-day out-of-month) {
+    opacity: 0.3;
+  }
+}
+
+/* Asegura que el contenedor híbrido del formulario se vea igual de alto que los inputs de al lado */
+.input-group .hybrid-date-container {
+  height: 60px; /* Igual al ieca-input-item para consistencia en el formulario */
+}
+
+/* Ajuste del Popover para que el calendario se vea igual de moderno */
+.image-style-popover::part(content) {
+  --background: #ffffff;
+  border-radius: 20px;
+}

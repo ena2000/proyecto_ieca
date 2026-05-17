@@ -11,6 +11,8 @@
   --ieca-blue: #2E358F;
   --ieca-yellow: #F4E530;
   --ieca-charcoal: #353432;
+  --ieca-green: #15891a;
+
 
   /* --- ASIGNACIÓN A COLORES DE IONIC --- */
   /* Primario: Azul (Para encabezados y estructura) */
@@ -118,3 +120,53 @@ ion-button {
 .text-purple { color: var(--ieca-purple); }
 .text-blue { color: var(--ieca-blue); }
 .text-yellow { color: var(--ieca-yellow); }
+.text-green { color: var(--ieca-green); }
+
+/* BOTÓN GLOBAL IECA */
+.ieca-registro-button {
+  --background: linear-gradient(135deg, var(--ieca-blue) 0%, #3b448b 100%);
+  --background-activated: linear-gradient(135deg, #151a42 0%, var(--ieca-blue) 100%);
+  --border-radius: 18px;
+  --color: #ffffff;
+  --box-shadow: 0 10px 25px rgba(46, 53, 147, 0.25);
+
+  height: 68px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+/* Contenido interno */
+.ieca-registro-button .button-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.ieca-registro-button ion-icon {
+  font-size: 24px;
+  transition: transform 0.3s ease;
+}
+
+/* Hover */
+.ieca-registro-button:hover {
+  transform: translateY(-2px);
+  --box-shadow: 0 15px 35px rgba(46, 53, 147, 0.35);
+}
+
+.ieca-registro-button:hover ion-icon {
+  transform: scale(1.1) rotate(-10deg);
+}
+
+/* Click */
+.ieca-registro-button:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+.ieca-modal::part(content) {
+  border-radius: 24px;
+  padding: 0;
+}
