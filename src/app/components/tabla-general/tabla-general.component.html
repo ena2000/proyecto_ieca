@@ -1,65 +1,71 @@
 <div class="table-container card-style">
   <div class="table-responsive">
     <table class="ieca-table">
-
       <thead>
         <tr>
-          <th *ngFor="let col of columns">
-            {{ col.header }}
-          </th>
-          <th *ngIf="actions.edit || actions.delete">
-            Acciones
-          </th>
+          <th *ngFor="let col of columns">{{ col.header }}</th>
+          <th *ngIf="actions.edit || actions.delete" style="text-align: center;">Acciones</th>
         </tr>
       </thead>
 
       <tbody>
-        <tr *ngFor="let row of data">
-
+        <!-- 🔥 Usamos pagedData en lugar de data -->
+        <tr *ngFor="let row of pagedData">
           <td *ngFor="let col of columns">
+            
+            <!-- CASO IMAGEN -->
+            <ng-container *ngIf="col.type === 'image'">
+              <div class="table-img-container">
+                <img *ngIf="row[col.field]" [src]="row[col.field]" class="table-thumbnail">
+                <ion-icon *ngIf="!row[col.field]" name="image-outline" class="placeholder-icon"></ion-icon>
+              </div>
+            </ng-container>
 
             <!-- BADGE -->
             <ng-container *ngIf="col.type === 'badge'">
-              <span class="badge">
-                {{ row[col.field] }}
-              </span>
+              <span class="badge">{{ row[col.field] }}</span>
             </ng-container>
 
             <!-- MONEDA -->
             <ng-container *ngIf="col.type === 'currency'">
-              <span class="font-bold text-blue">
-                ${{ row[col.field] }}
-              </span>
+              <span class="font-bold text-blue">${{ row[col.field] | number:'1.2-2' }}</span>
             </ng-container>
 
             <!-- NORMAL -->
             <ng-container *ngIf="!col.type">
               {{ row[col.field] }}
             </ng-container>
-
           </td>
 
           <td *ngIf="actions.edit || actions.delete">
             <div class="action-buttons">
-
               <button class="btn-edit" (click)="edit(row)" *ngIf="actions.edit">
                 <ion-icon name="pencil-outline"></ion-icon>
               </button>
-
               <button class="btn-delete" (click)="delete(row)" *ngIf="actions.delete">
                 <ion-icon name="trash-outline"></ion-icon>
               </button>
-
             </div>
           </td>
-
         </tr>
       </tbody>
-
     </table>
   </div>
 
+  <!-- 🔥 FOOTER CON PAGINACIÓN MEJORADA -->
   <div class="table-footer">
-    <p>Mostrando {{ data.length }} registros</p>
+    <p>Mostrando {{ pagedData.length }} de {{ data.length }} registros</p>
+    
+    <div class="pagination-controls" *ngIf="data.length > itemsPerPage">
+      <button class="page-btn" [disabled]="currentPage === 1" (click)="prevPage()">
+        <ion-icon name="chevron-back-outline"></ion-icon>
+      </button>
+      
+      <span class="page-indicator">Página {{ currentPage }} de {{ totalPages }}</span>
+      
+      <button class="page-btn" [disabled]="currentPage === totalPages" (click)="nextPage()">
+        <ion-icon name="chevron-forward-outline"></ion-icon>
+      </button>
+    </div>
   </div>
 </div>
