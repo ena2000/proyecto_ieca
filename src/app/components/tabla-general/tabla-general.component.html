@@ -1,71 +1,276 @@
 <div class="table-container card-style">
+
+  <!-- =====================================================
+       TABLA RESPONSIVE
+  ====================================================== -->
   <div class="table-responsive">
+
     <table class="ieca-table">
+
+      <!-- =====================================================
+           HEADER
+      ====================================================== -->
       <thead>
         <tr>
-          <th *ngFor="let col of columns">{{ col.header }}</th>
-          <th *ngIf="actions.edit || actions.delete" style="text-align: center;">Acciones</th>
+          <th *ngFor="let col of columns">
+            {{ col.header }}
+          </th>
+
+          <th
+            *ngIf="actions.edit || actions.delete"
+            class="actions-header"
+            style="text-align: center;">
+
+            Acciones
+
+          </th>
         </tr>
       </thead>
 
-      <tbody>
-        <!-- 🔥 Usamos pagedData en lugar de data -->
-        <tr *ngFor="let row of pagedData">
+      <!-- =====================================================
+           SKELETON LOADING
+      ====================================================== -->
+      <tbody *ngIf="loading">
+
+        <tr *ngFor="let item of [1,2,3,4,5]">
+
           <td *ngFor="let col of columns">
-            
-            <!-- CASO IMAGEN -->
-            <ng-container *ngIf="col.type === 'image'">
-              <div class="table-img-container">
-                <img *ngIf="row[col.field]" [src]="row[col.field]" class="table-thumbnail">
-                <ion-icon *ngIf="!row[col.field]" name="image-outline" class="placeholder-icon"></ion-icon>
-              </div>
-            </ng-container>
-
-            <!-- BADGE -->
-            <ng-container *ngIf="col.type === 'badge'">
-              <span class="badge">{{ row[col.field] }}</span>
-            </ng-container>
-
-            <!-- MONEDA -->
-            <ng-container *ngIf="col.type === 'currency'">
-              <span class="font-bold text-blue">${{ row[col.field] | number:'1.2-2' }}</span>
-            </ng-container>
-
-            <!-- NORMAL -->
-            <ng-container *ngIf="!col.type">
-              {{ row[col.field] }}
-            </ng-container>
+            <div class="skeleton skeleton-text"></div>
           </td>
 
           <td *ngIf="actions.edit || actions.delete">
-            <div class="action-buttons">
-              <button class="btn-edit" (click)="edit(row)" *ngIf="actions.edit">
-                <ion-icon name="pencil-outline"></ion-icon>
-              </button>
-              <button class="btn-delete" (click)="delete(row)" *ngIf="actions.delete">
-                <ion-icon name="trash-outline"></ion-icon>
-              </button>
-            </div>
+            <div class="skeleton skeleton-btn"></div>
           </td>
+
         </tr>
+
       </tbody>
+
+      <!-- =====================================================
+           DATA REAL
+      ====================================================== -->
+      <tbody *ngIf="!loading">
+
+        <tr
+          *ngFor="let row of pagedData"
+          [class.editing-row]="isEditing(row)">
+
+          <!-- =====================================================
+               COLUMNAS DINÁMICAS
+          ====================================================== -->
+          <td *ngFor="let col of columns">
+
+            <!-- ================= IMAGE ================= -->
+            <ng-container *ngIf="col.type === 'image'">
+
+              <div
+                class="table-img-container"
+                [class.clickable-img]="row[col.field]"
+                (click)="row[col.field] && openLightbox(row[col.field])"
+                role="button"
+                tabindex="0"
+                [attr.aria-label]="'Ver imagen'">
+
+                <img
+                  *ngIf="row[col.field]"
+                  [src]="row[col.field]"
+                  class="table-thumbnail"
+                  loading="lazy"
+                  alt="imagen del registro">
+
+                <div class="img-hover-overlay" *ngIf="row[col.field]">
+                  <ion-icon name="search-outline"></ion-icon>
+                </div>
+
+                <ion-icon
+                  *ngIf="!row[col.field]"
+                  name="image-outline"
+                  class="placeholder-icon"
+                  aria-hidden="true">
+                </ion-icon>
+
+              </div>
+
+            </ng-container>
+
+            <!-- ================= BADGE ================= -->
+            <ng-container *ngIf="col.type === 'badge'">
+              <span class="badge">
+                {{ row[col.field] }}
+              </span>
+            </ng-container>
+
+            <!-- ================= CURRENCY ================= -->
+            <ng-container *ngIf="col.type === 'currency'">
+              <span class="font-bold text-blue">
+                $ {{ row[col.field] | number:'1.2-2' }}
+              </span>
+            </ng-container>
+
+            <!-- ================= DATE ================= -->
+            <ng-container *ngIf="col.type === 'date'">
+              {{ row[col.field] | date:'dd/MM/yyyy' }}
+            </ng-container>
+
+            <!-- ================= TEXT ================= -->
+            <ng-container *ngIf="!col.type">
+              {{ row[col.field] }}
+            </ng-container>
+
+          </td>
+
+          <!-- =====================================================
+               ACCIONES
+          ====================================================== -->
+          <td *ngIf="actions.edit || actions.delete">
+
+            <div class="action-buttons">
+
+              <!-- ================= EDIT ================= -->
+              <button
+                *ngIf="actions.edit"
+                class="btn-edit"
+                (click)="edit(row)"
+                title="Editar"
+                aria-label="Editar registro">
+
+                <ion-icon name="pencil-outline"></ion-icon>
+
+              </button>
+
+              <!-- ================= DELETE ================= -->
+              <button
+                *ngIf="actions.delete"
+                class="btn-delete"
+                [disabled]="isDeleting(row)"
+                (click)="delete(row)"
+                title="Eliminar"
+                aria-label="Eliminar registro">
+
+                <!-- LOADING -->
+                <ion-spinner
+                  *ngIf="isDeleting(row)"
+                  name="crescent">
+                </ion-spinner>
+
+                <!-- ICON -->
+                <ion-icon
+                  *ngIf="!isDeleting(row)"
+                  name="trash-outline">
+                </ion-icon>
+
+              </button>
+
+            </div>
+
+          </td>
+
+        </tr>
+
+        <!-- =====================================================
+             EMPTY STATE
+        ====================================================== -->
+        <tr *ngIf="data.length === 0">
+
+          <td [attr.colspan]="columns.length + (actions.edit || actions.delete ? 1 : 0)">
+
+            <div class="empty-state">
+
+              <ion-icon name="folder-open-outline"></ion-icon>
+
+              <p>No se encontraron registros</p>
+
+            </div>
+
+          </td>
+
+        </tr>
+
+      </tbody>
+
     </table>
+
   </div>
 
-  <!-- 🔥 FOOTER CON PAGINACIÓN MEJORADA -->
+  <!-- =====================================================
+       FOOTER + PAGINACIÓN
+  ====================================================== -->
   <div class="table-footer">
-    <p>Mostrando {{ pagedData.length }} de {{ data.length }} registros</p>
-    
-    <div class="pagination-controls" *ngIf="data.length > itemsPerPage">
-      <button class="page-btn" [disabled]="currentPage === 1" (click)="prevPage()">
+
+    <p>
+      Mostrando
+      <strong>{{ pagedData.length }}</strong>
+      de
+      <strong>{{ data.length }}</strong>
+      registros
+    </p>
+
+    <div
+      class="pagination-controls"
+      *ngIf="data.length > itemsPerPage">
+
+      <button
+        class="page-btn"
+        [disabled]="currentPage === 1"
+        (click)="prevPage()"
+        aria-label="Página anterior">
+
         <ion-icon name="chevron-back-outline"></ion-icon>
+
       </button>
-      
-      <span class="page-indicator">Página {{ currentPage }} de {{ totalPages }}</span>
-      
-      <button class="page-btn" [disabled]="currentPage === totalPages" (click)="nextPage()">
+
+      <span class="page-indicator">
+        Página <strong>{{ currentPage }}</strong>
+        de <strong>{{ totalPages }}</strong>
+      </span>
+
+      <button
+        class="page-btn"
+        [disabled]="currentPage >= totalPages"
+        (click)="nextPage()"
+        aria-label="Página siguiente">
+
         <ion-icon name="chevron-forward-outline"></ion-icon>
+
       </button>
+
     </div>
+
   </div>
+
+</div>
+
+<!-- =====================================================
+     LIGHTBOX
+====================================================== -->
+<div
+  class="lightbox-overlay"
+  *ngIf="selectedImage"
+  (click)="closeLightbox()"
+  role="dialog"
+  aria-modal="true">
+
+  <button
+    class="close-lightbox"
+    (click)="closeLightbox()"
+    aria-label="Cerrar imagen">
+
+    <ion-icon name="close-outline"></ion-icon>
+
+  </button>
+
+  <div
+    class="lightbox-content"
+    (click)="$event.stopPropagation()">
+
+    <img
+      [src]="selectedImage"
+      alt="imagen del registro">
+
+    <div class="lightbox-caption">
+      Evidencia del registro
+    </div>
+
+  </div>
+
 </div>

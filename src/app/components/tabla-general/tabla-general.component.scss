@@ -1,134 +1,199 @@
-/* --- TABLA GENERAL (TUS ESTILOS MANTENIDOS) --- */
+/* =========================================================
+   CONTENEDOR PRINCIPAL
+========================================================= */
 .table-container {
   background: #ffffff;
   border-radius: 24px;
   box-shadow: 0 4px 25px rgba(0, 0, 0, 0.03);
   overflow: hidden;
-  border: 1px solid rgba(0,0,0,0.03);
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  margin-bottom: 20px;
 }
 
+/* =========================================================
+   RESPONSIVE
+========================================================= */
 .table-responsive {
   overflow-x: auto;
 }
 
+/* =========================================================
+   TABLA
+========================================================= */
 .ieca-table {
   width: 100%;
   border-collapse: collapse;
+
+  thead {
+    background: #f8fafc;
+
+    th {
+      padding: 20px 24px;
+      color: #64748b;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      text-align: left;
+
+      /* HEADER FIJO */
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: #f8fafc;
+    }
+  }
+
+  tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+
+    transition:
+      background 0.25s ease,
+      transform 0.25s ease,
+      box-shadow 0.25s ease;
+
+    &:hover {
+      background: #fbfcfe;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+    }
+  }
+
+  td {
+    padding: 18px 24px;
+    color: #334155;
+    font-size: 0.95rem;
+    vertical-align: middle;
+  }
 }
 
-.ieca-table thead {
-  background: #f8fafc;
+/* =========================================================
+   FILA EN EDICIÓN
+========================================================= */
+.editing-row {
+  background: #eff6ff !important;
+  border-left: 4px solid #3b82f6;
+
+  td {
+    color: #1e3a8a;
+    font-weight: 600;
+  }
 }
 
-.ieca-table th {
-  padding: 20px 24px;
-  color: #64748b;
-  font-size: 0.75rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  text-align: left;
-}
-
-.ieca-table tbody tr {
-  border-bottom: 1px solid #f1f5f9;
-  transition: all 0.2s;
-}
-
-.ieca-table tbody tr:hover {
-  background: #fbfcfe;
-}
-
-.ieca-table td {
-  padding: 18px 24px;
-  color: #334155;
-  font-size: 0.95rem;
-  vertical-align: middle; /* Alineación central */
-}
-
-/* BADGES */
+/* =========================================================
+   BADGES
+========================================================= */
 .badge {
   padding: 6px 12px;
   border-radius: 10px;
   font-size: 0.75rem;
   font-weight: 800;
+  background: #e2e8f0;
+  color: #475569;
 }
 
-/* ACCIONES */
+/* =========================================================
+   TEXTO
+========================================================= */
+.font-bold {
+  font-weight: 700;
+}
+
+.text-blue {
+  color: #2e358f;
+}
+
+/* =========================================================
+   BOTONES DE ACCIÓN
+========================================================= */
 .action-buttons {
   display: flex;
   gap: 10px;
   justify-content: center;
+
+  button {
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    cursor: pointer;
+    color: white;
+
+    transition:
+      transform 0.2s ease,
+      background 0.2s ease,
+      opacity 0.2s ease,
+      box-shadow 0.2s ease;
+
+    ion-icon {
+      font-size: 18px;
+    }
+
+    &:hover:not(:disabled) {
+      transform: scale(1.08);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+  }
 }
 
-.action-buttons button {
-  border: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: white;
-  transition: transform 0.2s;
-}
-
+/* =========================================================
+   BOTÓN EDITAR
+========================================================= */
 .btn-edit {
   background: #3b82f6;
   box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+
+  &:hover:not(:disabled) {
+    background: #2563eb;
+  }
 }
 
+/* =========================================================
+   BOTÓN ELIMINAR
+========================================================= */
 .btn-delete {
   background: #ef4444;
   box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
+
+  &:hover:not(:disabled) {
+    background: #dc2626;
+  }
 }
 
+/* =========================================================
+   FOOTER
+========================================================= */
 .table-footer {
   padding: 20px 24px;
+
   display: flex;
   justify-content: space-between;
   align-items: center;
+
   background: #f8fafc;
+  border-top: 1px solid #f1f5f9;
+
+  p {
+    color: #94a3b8;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin: 0;
+  }
 }
 
-.table-footer p {
-  color: #94a3b8;
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-/* -------------------------------------------
-   ✨ ESTILOS PARA LA IMAGEN EN LA TABLA
----------------------------------------------- */
-.table-img-container {
-  width: 44px;
-  height: 44px;
-  background: #f1f5f9;
-  border-radius: 12px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #e2e8f0;
-}
-
-.table-thumbnail {
-  width: 100%;
-  height: 100%;
-  object-fit: cover; /* Recorte perfecto */
-}
-
-.placeholder-icon {
-  font-size: 20px;
-  color: #94a3b8;
-}
-
-.font-bold { font-weight: 700; }
-.text-blue { color: #2e358f; }
-
-
-/* --- ESTILOS PAGINACIÓN --- */
+/* =========================================================
+   PAGINACIÓN
+========================================================= */
 .pagination-controls {
   display: flex;
   align-items: center;
@@ -138,19 +203,28 @@
 .page-btn {
   width: 34px;
   height: 34px;
+
   border-radius: 10px;
   border: 1px solid #e2e8f0;
   background: white;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   cursor: pointer;
   color: #64748b;
-  transition: all 0.2s;
+
+  transition: all 0.2s ease;
+
+  ion-icon {
+    font-size: 18px;
+  }
 
   &:hover:not(:disabled) {
     background: #f1f5f9;
-    color: var(--ieca-blue);
+    color: #2e358f;
+    transform: translateY(-1px);
   }
 
   &:disabled {
@@ -165,18 +239,297 @@
   color: #475569;
 }
 
-/* Ajuste imagen tabla */
+/* =========================================================
+   IMÁGENES DE TABLA
+========================================================= */
 .table-img-container {
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
-  overflow: hidden;
+  position: relative;
+
+  width: 48px;
+  height: 48px;
+
   background: #f1f5f9;
-  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+
+  overflow: hidden;
+
   display: flex;
   align-items: center;
   justify-content: center;
 
-  img { width: 100%; height: 100%; object-fit: cover; }
-  ion-icon { font-size: 20px; color: #94a3b8; }
+  border: 1px solid #e2e8f0;
+
+  &.clickable-img {
+    cursor: pointer;
+
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
+
+    &:hover {
+      transform: scale(1.08);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+
+      .img-hover-overlay {
+        opacity: 1;
+      }
+    }
+  }
+
+  .table-thumbnail {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .placeholder-icon {
+    font-size: 20px;
+    color: #94a3b8;
+  }
+}
+
+/* =========================================================
+   OVERLAY HOVER IMAGEN
+========================================================= */
+.img-hover-overlay {
+  position: absolute;
+  inset: 0;
+
+  background: rgba(46, 53, 143, 0.45);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  opacity: 0;
+
+  transition: opacity 0.2s ease;
+
+  ion-icon {
+    color: white;
+    font-size: 1.2rem;
+  }
+}
+
+/* =========================================================
+   LIGHTBOX
+========================================================= */
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+
+  z-index: 99999;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  animation: fadeIn 0.3s ease;
+
+  cursor: zoom-out;
+
+  .close-lightbox {
+    position: absolute;
+    top: 80px;
+    right: 20px;
+
+    width: 44px;
+    height: 44px;
+
+    background: rgba(255, 255, 255, 0.1);
+
+    border: none;
+    border-radius: 50%;
+
+    color: white;
+
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    transition: all 0.2s ease;
+
+    ion-icon {
+      font-size: 24px;
+    }
+
+    &:hover {
+      background: #ef4444;
+      transform: scale(1.1);
+    }
+  }
+
+  .lightbox-content {
+    max-width: 70%;
+    max-height: 70%;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+
+    cursor: default;
+
+    animation: zoomIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    img {
+      max-width: 100%;
+      max-height: 60vh;
+
+      object-fit: contain;
+
+      border-radius: 16px;
+
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+
+      border: 3px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .lightbox-caption {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 0.85rem;
+      font-weight: 500;
+
+      background: rgba(255, 255, 255, 0.1);
+
+      padding: 6px 18px;
+      border-radius: 20px;
+    }
+  }
+}
+
+/* =========================================================
+   SKELETON LOADING
+========================================================= */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: #e2e8f0;
+  border-radius: 10px;
+
+  &::after {
+    content: '';
+
+    position: absolute;
+    top: 0;
+    left: -150px;
+
+    width: 100px;
+    height: 100%;
+
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.6),
+      transparent
+    );
+
+    animation: shimmer 1.3s infinite;
+  }
+}
+
+.skeleton-text {
+  width: 100%;
+  height: 16px;
+}
+
+.skeleton-btn {
+  width: 36px;
+  height: 36px;
+  margin: auto;
+  border-radius: 10px;
+}
+
+/* =========================================================
+   EMPTY STATE
+========================================================= */
+.empty-state {
+  padding: 2rem;
+  text-align: center;
+  color: #94a3b8;
+
+  ion-icon {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+}
+
+/* =========================================================
+   ANIMACIONES
+========================================================= */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    left: 120%;
+  }
+}
+
+/* =========================================================
+   RESPONSIVE MOBILE
+========================================================= */
+@media (max-width: 768px) {
+  .ieca-table {
+    th,
+    td {
+      padding: 14px 16px;
+      font-size: 0.85rem;
+    }
+  }
+
+  .table-footer {
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+  }
+
+  .pagination-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .lightbox-overlay {
+    .lightbox-content {
+      max-width: 92%;
+      max-height: 80%;
+
+      img {
+        max-height: 55vh;
+      }
+    }
+  }
 }
