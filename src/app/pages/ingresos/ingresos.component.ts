@@ -1,27 +1,38 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule, registerLocaleData } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import localeEs from '@angular/common/locales/es';
 
+// Importación selectiva de componentes de Ionic (Standalone)
 import {
   IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent,
-  IonIcon, IonItem, IonLabel, IonDatetime, IonDatetimeButton, IonModal,
-  IonInput, IonButton, IonSearchbar, IonThumbnail,
-  ToastController, IonPopover 
+  IonIcon, IonItem, IonLabel, IonDatetime, IonInput, IonButton, 
+  IonSearchbar, ToastController, IonPopover, IonBadge, IonGrid, IonRow, IonCol, IonSelect, IonSelectOption
 } from '@ionic/angular/standalone';
 
 import { AlertController } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import {
   calendarOutline, cashOutline, documentTextOutline, cloudUploadOutline,
-  saveOutline, notificationsOutline, searchOutline, filterOutline,
-  pencilOutline, trashOutline, imageOutline, closeCircleOutline,
-  funnelOutline, calendar, save
+  saveOutline, notificationsOutline, pencilOutline, trashOutline, 
+  closeCircleOutline, expandOutline, closeOutline, addCircleOutline, optionsOutline
 } from 'ionicons/icons';
 
-import { TablaGeneralComponent } from 'src/app/components/tabla-general/tabla-general.component';
+import { TablaGeneralComponent, TableColumn } from 'src/app/components/tabla-general/tabla-general.component';
 
 registerLocaleData(localeEs);
+
+// Interfaz para definir la estructura de un Ingreso
+interface Ingreso {
+  id: number;
+  fecha: string;
+  descripcion: string;
+  monto: number | null;
+  foto: string;
+  tipo: string;
+  ministerio: string;
+  fechaFormateada?: string;
+}
 
 @Component({
   selector: 'app-ingresos',
@@ -29,46 +40,69 @@ registerLocaleData(localeEs);
   styleUrls: ['./ingresos.component.scss'],
   standalone: true,
   imports: [
-    CommonModule, FormsModule, IonHeader, IonToolbar, IonButtons,
-    IonMenuButton, IonTitle, IonContent, IonIcon, IonItem, IonLabel,
-    IonDatetime, IonDatetimeButton, IonModal, IonInput, IonButton,
-    IonSearchbar, IonThumbnail, IonPopover, TablaGeneralComponent
+    CommonModule,
+    FormsModule,
+    IonHeader,
+    IonToolbar,
+    IonButtons,
+    IonMenuButton,
+    IonTitle,
+    IonContent,
+    IonIcon,
+    IonItem,
+    IonLabel,
+    IonDatetime,
+    IonInput,
+    IonButton,
+    IonSearchbar,
+    IonPopover,
+    IonBadge,
+    IonGrid,
+    IonRow,
+    IonCol,
+    IonSelectOption,
+    IonSelect,
+    TablaGeneralComponent
   ],
   providers: [AlertController, ToastController] 
 })
 export class IngresosComponent implements OnInit {
 
-  // --- VARIABLES PARA EL FORMULARIO (Sincronizadas con tu HTML) ---
-  fechaManualForm: string = ''; // Antes era fechaManualRegistro
+  // Control de fecha manual en formato DD/MM/AAAA para el formulario principal
+  fechaManualForm: string = '';
+  
+  // Objeto enlazado al formulario de registro/edición
+  nuevoIngreso: Ingreso = {
+    id: 0,
+    fecha: new Date().toISOString(),
+    descripcion: '',
+    monto: null,
+    foto: '',
+    tipo: 'Ofrenda',
+    ministerio: 'General'
+  };
 
-  // --- VARIABLES PARA FILTROS ---
+  // Estados de control de flujo
+  intentoEnvio = false;
+  modoEdicion = false;
+  idEditando: number | null = null;
+  contadorId = 0;
+  listaIngresos: Ingreso[] = [];
+
+  // Propiedades para búsquedas y filtros
+  searchTerm: string = '';
   fechaManualDesde: string = '';
   fechaManualHasta: string = '';
   filtroFechaInicio: string = '';
   filtroFechaFin: string = '';
   filtroMontoMin: number | null = null;
   filtroMontoMax: number | null = null;
-  searchTerm: string = '';
 
-  // Modelo de Ingreso
-  nuevoIngreso: any = {
-    id: 0,
-    fecha: new Date().toISOString(),
-    descripcion: '',
-    monto: null,
-    foto: '',
-    tipo: 'Diezmo',
-    ministerio: 'Jóvenes'
-  };
+  // Estado para la previsualización a pantalla completa (Lightbox)
+  fotoSeleccionada: string | null = null;
 
-  intentoEnvio = false;
-  modoEdicion = false;
-  idEditando: number | null = null;
-  contadorId = 0;
-  listaIngresos: any[] = [];
-
-  // Configuración de Tabla
-  columnsIngresos = [
+  // Configuración de las columnas para la tabla general reutilizable
+  columnsIngresos: TableColumn[] = [
     { field: 'foto', header: 'Evidencia', type: 'image' },
     { field: 'fechaFormateada', header: 'Fecha' },
     { field: 'tipo', header: 'Tipo', type: 'badge' },
@@ -77,53 +111,63 @@ export class IngresosComponent implements OnInit {
     { field: 'monto', header: 'Monto', type: 'currency' }
   ];
 
-  acciones = { edit: true, delete: true };
+  // Configuración de las acciones permitidas en la tabla
+  acciones = {
+    edit: true,
+    delete: true
+  };
 
   constructor(
     private alertController: AlertController,
     private toastController: ToastController 
   ) {
+    // Inicialización explícita de íconos requeridos para Ionic Standalone
     addIcons({
-      'calendar': calendar,
       'calendar-outline': calendarOutline,
       'cash-outline': cashOutline,
       'document-text-outline': documentTextOutline,
       'cloud-upload-outline': cloudUploadOutline,
-      'save': save,
       'save-outline': saveOutline,
       'notifications-outline': notificationsOutline,
-      'search-outline': searchOutline,
-      'filter-outline': filterOutline,
       'pencil-outline': pencilOutline,
       'trash-outline': trashOutline,
-      'image-outline': imageOutline,
       'close-circle-outline': closeCircleOutline,
-      'funnel-outline': funnelOutline 
+      'expand-outline': expandOutline,
+      'close-outline': closeOutline,
+      'add-circle-outline': addCircleOutline,
+      'options-outline': optionsOutline
     });
   }
 
   ngOnInit() {
-    // Inicializar fecha del formulario
+    // Sincroniza la fecha inicial del datepicker con la máscara de texto manual
     this.fechaManualForm = this.formatearISOaDDMMYYYY(this.nuevoIngreso.fecha);
-    
-    const data = localStorage.getItem('ingresos');
-    if (data) {
-      try {
-        this.listaIngresos = JSON.parse(data);
-        if (this.listaIngresos.length > 0) {
-          const ids = this.listaIngresos.map(i => i.id || 0);
-          this.contadorId = Math.max(...ids);
-        }
-      } catch (e) {
-        this.listaIngresos = [];
-      }
+    this.cargarDatos();
+  }
+  
+  // Escucha global del teclado para cerrar el visor de imágenes con la tecla Escape
+  @HostListener('document:keydown.escape', [])
+  handleEscapeKey() {
+    if (this.fotoSeleccionada) {
+      this.cerrarImagen();
     }
   }
 
-  // =========================================
-  // LÓGICA DE FECHAS (MANUAL + PICKER)
-  // =========================================
+ // Activa el overlay para ver la imagen en tamaño completo
+verImagen(foto: any) { // Cambiado de string | null | undefined a any
+  if (foto && typeof foto === 'string') {
+    this.fotoSeleccionada = foto;
+    document.body.style.overflow = 'hidden'; // Bloquea scroll de fondo
+  }
+}
 
+  // Desactiva el visor de imágenes y restablece el scroll
+  cerrarImagen() {
+    this.fotoSeleccionada = null;
+    document.body.style.overflow = 'auto'; // Libera scroll
+  }
+  
+  // Transforma una cadena ISO string a formato legible DD/MM/AAAA
   private formatearISOaDDMMYYYY(iso: string): string {
     if (!iso) return '';
     const date = new Date(iso);
@@ -133,32 +177,11 @@ export class IngresosComponent implements OnInit {
     return `${dd}/${mm}/${yyyy}`;
   }
 
-  // Esta función sirve para los filtros (Desde/Hasta)
-  validarFechaManual(event: any, tipo: 'desde' | 'hasta') {
-    let val = event.target.value.replace(/\D/g, ''); 
-    if (val.length > 2) val = val.substring(0, 2) + '/' + val.substring(2);
-    if (val.length > 5) val = val.substring(0, 5) + '/' + val.substring(5, 9);
-    
-    if (tipo === 'desde') this.fechaManualDesde = val;
-    else if (tipo === 'hasta') this.fechaManualHasta = val;
-
-    if (val.length === 10) {
-      const parts = val.split('/');
-      const dateObj = new Date(+parts[2], +parts[1] - 1, +parts[0]);
-      if (!isNaN(dateObj.getTime())) {
-        const iso = dateObj.toISOString();
-        if (tipo === 'desde') this.filtroFechaInicio = iso;
-        else if (tipo === 'hasta') this.filtroFechaFin = iso;
-      }
-    }
-  }
-
-  // Esta función es específica para el FORMULARIO (Evita el error en el template)
+  // Máscara y validación en tiempo real para el input de fecha del formulario
   validarFechaManualForm(event: any) {
     let val = event.target.value.replace(/\D/g, ''); 
     if (val.length > 2) val = val.substring(0, 2) + '/' + val.substring(2);
     if (val.length > 5) val = val.substring(0, 5) + '/' + val.substring(5, 9);
-    
     this.fechaManualForm = val;
 
     if (val.length === 10) {
@@ -170,43 +193,63 @@ export class IngresosComponent implements OnInit {
     }
   }
 
-  // Para los Pickers de los FILTROS
-  onPickerDateChange(event: any, tipo: 'desde' | 'hasta') {
+  // Maneja el cambio originado desde el selector de fecha visual (IonDatetime) del formulario
+  onFechaPickerChange(event: any, popover: IonPopover) {
     const fechaIso = event.detail.value;
-    const formateada = this.formatearISOaDDMMYYYY(fechaIso);
+    if (fechaIso) {
+      this.nuevoIngreso.fecha = fechaIso;
+      this.fechaManualForm = this.formatearISOaDDMMYYYY(fechaIso);
+      popover.dismiss(); // Cierra el popover flotante inmediatamente
+    }
+  }
 
+  // Máscara de texto para las fechas de los filtros avanzados en la tabla
+  validarFechaManual(event: any, tipo: 'desde' | 'hasta') {
+    let val = event.target.value.replace(/\D/g, ''); 
+    if (val.length > 2) val = val.substring(0, 2) + '/' + val.substring(2);
+    if (val.length > 5) val = val.substring(0, 5) + '/' + val.substring(5, 9);
+    
     if (tipo === 'desde') {
-      this.filtroFechaInicio = fechaIso;
-      this.fechaManualDesde = formateada;
+      this.fechaManualDesde = val;
     } else if (tipo === 'hasta') {
-      this.filtroFechaFin = fechaIso;
-      this.fechaManualHasta = formateada;
+      this.fechaManualHasta = val;
+    }
+
+    if (val.length === 10) {
+      const parts = val.split('/');
+      const dateObj = new Date(+parts[2], +parts[1] - 1, +parts[0]);
+      if (!isNaN(dateObj.getTime())) {
+        const iso = dateObj.toISOString();
+        if (tipo === 'desde') {
+          this.filtroFechaInicio = iso;
+        } else {
+          this.filtroFechaFin = iso;
+        }
+      }
     }
   }
 
-  // Para el Picker del FORMULARIO (Evita el error en el template)
-  onFechaPickerChange(event: any) {
+  // Maneja el cambio originado por los IonDatetime de la sección de filtros avanzados
+  onPickerDateChange(event: any, tipo: 'desde' | 'hasta', popover: IonPopover) {
     const fechaIso = event.detail.value;
-    this.nuevoIngreso.fecha = fechaIso;
-    this.fechaManualForm = this.formatearISOaDDMMYYYY(fechaIso);
-  }
-
-  // Mantenemos por compatibilidad con popovers antiguos si existen
-  onFechaChange(event: any, popover: any) {
-    if (event.detail.value) {
-      this.nuevoIngreso.fecha = event.detail.value;
-      this.fechaManualForm = this.formatearISOaDDMMYYYY(this.nuevoIngreso.fecha);
+    if (fechaIso) {
+      const formateada = this.formatearISOaDDMMYYYY(fechaIso);
+      if (tipo === 'desde') {
+        this.filtroFechaInicio = fechaIso;
+        this.fechaManualDesde = formateada;
+      } else {
+        this.filtroFechaFin = fechaIso;
+        this.fechaManualHasta = formateada;
+      }
+      popover.dismiss();
     }
-    popover.dismiss();
   }
 
-  // =========================================
-  // GESTIÓN DE DATOS
-  // =========================================
-
+  // Getter que devuelve la lista filtrada dinámicamente según términos, montos y rangos de fechas
   get listaFiltrada() {
     let filtrados = [...this.listaIngresos];
 
+    // Filtro por término de búsqueda (Descripción o Tipo)
     if (this.searchTerm) {
       const search = this.searchTerm.toLowerCase();
       filtrados = filtrados.filter(i => 
@@ -215,29 +258,34 @@ export class IngresosComponent implements OnInit {
       );
     }
 
+    // Filtro por rango: Fecha Inicial (00:00:00)
     if (this.filtroFechaInicio) {
       const inicio = new Date(this.filtroFechaInicio).setHours(0,0,0,0);
       filtrados = filtrados.filter(i => new Date(i.fecha).setHours(0,0,0,0) >= inicio);
     }
+
+    // Filtro por rango: Fecha Final (23:59:59)
     if (this.filtroFechaFin) {
-      const fin = new Date(this.filtroFechaFin).setHours(0,0,0,0);
+      const fin = new Date(this.filtroFechaFin).setHours(23,59,59,999);
       filtrados = filtrados.filter(i => new Date(i.fecha).setHours(0,0,0,0) <= fin);
     }
 
+    // Filtro por rangos de valores numéricos (Montos)
     if (this.filtroMontoMin !== null) {
-      filtrados = filtrados.filter(i => i.monto >= (this.filtroMontoMin || 0));
+      filtrados = filtrados.filter(i => (i.monto || 0) >= this.filtroMontoMin!);
     }
     if (this.filtroMontoMax !== null) {
-      filtrados = filtrados.filter(i => i.monto <= (this.filtroMontoMax || Infinity));
+      filtrados = filtrados.filter(i => (i.monto || 0) <= this.filtroMontoMax!);
     }
 
     return filtrados;
   }
 
+  // Ejecuta la inserción o actualización del registro contable
   registrarIngreso() {
     this.intentoEnvio = true;
     if (!this.esFormularioValido) {
-      this.mostrarToast('Por favor, revisa los campos marcados en rojo', 'danger');
+      this.mostrarToast('Por favor, completa los campos obligatorios correctamente.', 'danger');
       return;
     }
 
@@ -247,34 +295,42 @@ export class IngresosComponent implements OnInit {
       const index = this.listaIngresos.findIndex(i => i.id === this.idEditando);
       if (index !== -1) {
         this.listaIngresos[index] = { ...this.nuevoIngreso, fechaFormateada };
-        this.mostrarToast('Ingreso actualizado con éxito', 'success');
+        this.mostrarToast('Registro actualizado exitosamente', 'success');
       }
     } else {
       this.contadorId++;
       const nuevoRegistro = { ...this.nuevoIngreso, id: this.contadorId, fechaFormateada };
       this.listaIngresos = [nuevoRegistro, ...this.listaIngresos];
-      this.mostrarToast('Ingreso registrado con éxito', 'success');
+      this.mostrarToast('Registro creado exitosamente', 'success');
     }
 
     this.guardarLocalStorage();
-    this.resetFormulario();
+    this.resetFormulario(); 
   }
 
-  editarIngreso(item: any) {
-    this.nuevoIngreso = { ...item };
-    this.fechaManualForm = this.formatearISOaDDMMYYYY(this.nuevoIngreso.fecha);
-    this.modoEdicion = true;
-    this.idEditando = item.id;
-    this.intentoEnvio = false;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Carga un registro existente en el formulario y realiza un scroll suave hacia arriba
+  editarIngreso(item: Ingreso) {
+    this.nuevoIngreso.foto = ''; 
+    setTimeout(() => {
+      this.nuevoIngreso = { ...item };
+      this.fechaManualForm = this.formatearISOaDDMMYYYY(this.nuevoIngreso.fecha);
+      this.modoEdicion = true;
+      this.idEditando = item.id;
+      this.intentoEnvio = false;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 50);
   }
 
-  async eliminarIngreso(item: any) {
+  // Despliega una alerta de confirmación nativa antes de remover un registro
+  async eliminarIngreso(item: Ingreso) {
     const alert = await this.alertController.create({
       header: 'Confirmar eliminación',
-      message: `¿Estás seguro de eliminar el registro "${item.descripcion}"?`,
+      message: `¿Estás seguro de eliminar el registro #${item.id}?`,
       buttons: [
-        { text: 'Cancelar', role: 'cancel' },
+        {
+          text: 'Cancelar',
+          role: 'cancel'
+        },
         {
           text: 'Eliminar',
           role: 'destructive',
@@ -289,10 +345,16 @@ export class IngresosComponent implements OnInit {
     await alert.present();
   }
 
+  // Limpia el formulario y restablece los valores iniciales correctos de la aplicación
   resetFormulario() {
     this.nuevoIngreso = {
-      id: 0, fecha: new Date().toISOString(), descripcion: '',
-      monto: null, foto: '', tipo: 'Diezmo', ministerio: 'Jóvenes'
+      id: 0,
+      fecha: new Date().toISOString(),
+      descripcion: '',
+      monto: null,
+      foto: '',
+      tipo: 'Ofrenda', // Mantiene la consistencia inicial
+      ministerio: 'General'
     };
     this.fechaManualForm = this.formatearISOaDDMMYYYY(this.nuevoIngreso.fecha);
     this.modoEdicion = false;
@@ -300,16 +362,67 @@ export class IngresosComponent implements OnInit {
     this.intentoEnvio = false;
   }
 
-  // =========================================
-  // UTILS Y MEDIA
-  // =========================================
+  // Captura la imagen subida, reduce proporcionalmente su tamaño usando HTML5 Canvas y la guarda en Base64
+  onFileChange(event: any) {
+    const file = event.target.files[0];
+    if (!file) return;
 
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      const img = new Image();
+      img.src = e.target.result;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800; // Ancho máximo de optimización
+        let width = img.width;
+        let height = img.height;
+
+        if (width > MAX_WIDTH) {
+          height *= MAX_WIDTH / width;
+          width = MAX_WIDTH;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        // Conversión a formato JPEG comprimido al 70% de calidad para no saturar LocalStorage
+        this.nuevoIngreso.foto = canvas.toDataURL('image/jpeg', 0.7);
+      };
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Elimina la referencia en base64 de la foto cargada en el formulario
+  eliminarFoto() {
+    this.nuevoIngreso.foto = '';
+  }
+
+  // Persistencia de los datos del array actual en el LocalStorage
   guardarLocalStorage() {
     localStorage.setItem('ingresos', JSON.stringify(this.listaIngresos));
   }
 
+  // Recupera los registros del LocalStorage manejando excepciones de parsing JSON
+  cargarDatos() {
+    const data = localStorage.getItem('ingresos');
+    if (data) {
+      try {
+        this.listaIngresos = JSON.parse(data);
+        if (this.listaIngresos.length > 0) {
+          const ids = this.listaIngresos.map(i => i.id || 0);
+          this.contadorId = Math.max(...ids);
+        }
+      } catch (e) {
+        this.listaIngresos = [];
+      }
+    }
+  }
+
+  // Helper centralizado para desplegar Toasts flotantes informativos de Ionic
   async mostrarToast(mensaje: string, color: string) {
-    // CORRECCIÓN: Se eliminó .controller, se usa directo this.toastController
     const toast = await this.toastController.create({
       message: mensaje,
       duration: 2000,
@@ -318,37 +431,8 @@ export class IngresosComponent implements OnInit {
     });
     await toast.present();
   }
-
-  onFileChange(event: any) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e: any) => {
-      const img = new Image();
-      img.src = e.target.result;
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 800;
-        let width = img.width;
-        let height = img.height;
-        if (width > MAX_WIDTH) {
-          height *= MAX_WIDTH / width;
-          width = MAX_WIDTH;
-        }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
-        this.nuevoIngreso.foto = canvas.toDataURL('image/jpeg', 0.7);
-      };
-    };
-    reader.readAsDataURL(file);
-  }
-
-  eliminarFoto() {
-    this.nuevoIngreso.foto = '';
-  }
-
+  
+  // Evalúa que las condiciones obligatorias del formulario de negocio se cumplan al 100%
   get esFormularioValido(): boolean {
     return (
       this.nuevoIngreso.descripcion?.trim().length >= 3 &&

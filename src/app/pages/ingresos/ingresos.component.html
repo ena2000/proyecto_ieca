@@ -1,249 +1,467 @@
 <ion-header class="ion-no-border">
+
   <ion-toolbar class="ieca-toolbar">
+
     <ion-buttons slot="start">
-      <ion-menu-button color="primary"></ion-menu-button>
+      <ion-menu-button
+        color="primary"
+        aria-label="Abrir menú">
+      </ion-menu-button>
     </ion-buttons>
-    <ion-title class="main-title">Ingresos</ion-title>
+
+    <ion-title class="main-title">
+      Ingresos
+    </ion-title>
+
     <ion-buttons slot="end">
-      <ion-button class="text-blue">
+      <ion-button
+        class="text-blue"
+        type="button"
+        aria-label="Notificaciones">
         <ion-icon name="notifications-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
+
   </ion-toolbar>
+
 </ion-header>
 
 <ion-content class="ion-padding gray-bg">
+
   <div class="container-wrapper">
 
     <div class="page-header">
+
       <h1 class="text-blue">
         {{ modoEdicion ? 'Editar Ingreso' : 'Registrar Ingreso' }}
       </h1>
-      <p>Completa la información para el registro contable.</p>
+
+      <div
+        class="edit-status-badge"
+        *ngIf="modoEdicion">
+        <ion-icon name="pencil-outline"></ion-icon>
+        <span>
+          Editando ingreso <strong>#{{ idEditando }}</strong>
+        </span>
+      </div>
+
+      <p *ngIf="!modoEdicion">
+        Registra los nuevos movimientos contables del ministerio.
+      </p>
+      <p *ngIf="modoEdicion">
+        Modifica la información y guarda los cambios del registro contable.
+      </p>
+
     </div>
 
-    <div class="custom-card-style form-card">
-      <form class="ieca-grid-form">
+    <div class="ieca-card form-card">
 
-        <!-- FECHA (BLOQUE ACTUALIZADO SEGÚN LA IMAGEN) -->
+      <form
+        class="ieca-grid-form"
+        autocomplete="off">
+
         <div class="input-group">
-          <ion-label class="ieca-label">Fecha *</ion-label>
-          
+          <ion-label class="ieca-label">
+            Fecha del ingreso *
+          </ion-label>
           <div class="hybrid-date-container">
-            <!-- Input manual -->
-            <ion-input 
-              [(ngModel)]="fechaManualForm" 
+            <ion-input
+              [(ngModel)]="fechaManualForm"
               name="fechaManualForm"
               placeholder="DD/MM/AAAA"
-              (ionInput)="validarFechaManualForm($event)"
               maxlength="10"
-              class="manual-input">
+              class="manual-input"
+              inputmode="numeric"
+              autocomplete="off"
+              (ionInput)="validarFechaManualForm($event)">
             </ion-input>
-
-            <!-- Botón que abre el calendario -->
-            <ion-button fill="clear" id="btn-fecha-registro" class="calendar-icon-btn">
-              <ion-icon slot="icon-only" name="calendar-outline"></ion-icon>
+            <ion-button
+              fill="clear"
+              type="button"
+              id="btn-fecha-form"
+              class="calendar-icon-btn"
+              aria-label="Seleccionar fecha">
+              <ion-icon
+                slot="icon-only"
+                name="calendar-outline">
+              </ion-icon>
             </ion-button>
           </div>
-
-          <!-- Popover con el calendario (mismo estilo que filtros) -->
-          <ion-popover trigger="btn-fecha-registro" triggerAction="click" class="image-style-popover">
+          <ion-popover
+            trigger="btn-fecha-form"
+            triggerAction="click"
+            class="image-style-popover"
+            #popoverFechaForm>
             <ng-template>
-              <ion-datetime 
-                presentation="date" 
-                [(ngModel)]="nuevoIngreso.fecha" 
-                name="fechaForm"
-                (ionChange)="onFechaPickerChange($event)"
+              <ion-datetime
+                presentation="date"
                 size="cover"
-                locale="es-ES">
+                locale="es-ES"
+                [showDefaultButtons]="false"
+                [(ngModel)]="nuevoIngreso.fecha"
+                name="fechaForm"
+                (ionChange)="onFechaPickerChange($event, popoverFechaForm)">
               </ion-datetime>
             </ng-template>
           </ion-popover>
         </div>
 
-        <!-- MONTO -->
         <div class="input-group">
-          <ion-label class="ieca-label" [class.text-danger]="intentoEnvio && (!nuevoIngreso.monto || nuevoIngreso.monto <= 0)">
-            Monto ($) *
+          <ion-label
+            class="ieca-label"
+            [class.text-danger]="intentoEnvio && (!nuevoIngreso.monto || nuevoIngreso.monto <= 0)">
+            Monto a ingresar ($) *
           </ion-label>
-          <ion-item lines="none" class="ieca-input-item" [class.error-border]="intentoEnvio && (!nuevoIngreso.monto || nuevoIngreso.monto <= 0)">
-            <ion-icon slot="start" name="cash-outline" class="text-green"></ion-icon>
-            <ion-input type="number" [(ngModel)]="nuevoIngreso.monto" name="monto" placeholder="0.00" class="amount-input">
+          <ion-item
+            lines="none"
+            class="ieca-input-item ieca-input"
+            [class.error-border]="intentoEnvio && (!nuevoIngreso.monto || nuevoIngreso.monto <= 0)">
+            <ion-icon
+              slot="start"
+              name="cash-outline"
+              class="text-green">
+            </ion-icon>
+            <ion-input
+              type="number"
+              inputmode="decimal"
+              [(ngModel)]="nuevoIngreso.monto"
+              name="monto"
+              placeholder="0.00"
+              class="amount-input">
             </ion-input>
           </ion-item>
-          <small class="error-text" *ngIf="intentoEnvio && (!nuevoIngreso.monto || nuevoIngreso.monto <= 0)">
-            Ingrese un monto válido mayor a 0
+          <small
+            class="error-text"
+            *ngIf="intentoEnvio && (!nuevoIngreso.monto || nuevoIngreso.monto <= 0)">
+            El monto debe ser mayor a cero.
           </small>
         </div>
 
-        <!-- DESCRIPCIÓN -->
-        <div class="input-group full-width">
-          <ion-label class="ieca-label" [class.text-danger]="intentoEnvio && nuevoIngreso.descripcion.length < 3">
-            Descripción *
+        <div class="input-group">
+          <ion-label class="ieca-label">
+            Tipo de ingreso *
           </ion-label>
-          <ion-item lines="none" class="ieca-input-item" [class.error-border]="intentoEnvio && nuevoIngreso.descripcion.length < 3">
-            <ion-icon slot="start" name="document-text-outline" class="text-blue"></ion-icon>
-            <ion-input type="text" [(ngModel)]="nuevoIngreso.descripcion" name="descripcion"
-              placeholder="Ej. Diezmos Semanales...">
+          <ion-item
+            lines="none"
+            class="ieca-input-item ieca-input">
+            <ion-icon
+              slot="start"
+              name="options-outline"
+              class="text-blue">
+            </ion-icon>
+            <ion-select
+              interface="popover"
+              [(ngModel)]="nuevoIngreso.tipo"
+              name="tipo"
+              class="ieca-select"
+              placeholder="Seleccione uno">
+              <ion-select-option value="Ofrenda">Ofrenda</ion-select-option>
+              <ion-select-option value="Donación">Donación</ion-select-option>
+              <ion-select-option value="Talento">Talento</ion-select-option>
+              <ion-select-option value="Otro">Otro</ion-select-option>
+            </ion-select>
+          </ion-item>
+        </div>
+
+        <div class="input-group">
+          <ion-label
+            class="ieca-label"
+            [class.text-danger]="intentoEnvio && nuevoIngreso.descripcion.length < 3">
+            Detalle del ingreso *
+          </ion-label>
+          <ion-item
+            lines="none"
+            class="ieca-input-item ieca-input"
+            [class.error-border]="intentoEnvio && nuevoIngreso.descripcion.length < 3">
+            <ion-icon
+              slot="start"
+              name="document-text-outline"
+              class="text-blue">
+            </ion-icon>
+            <ion-input
+              type="text"
+              [(ngModel)]="nuevoIngreso.descripcion"
+              name="descripcion"
+              placeholder="Ej. Ofrendas de culto dominical...">
             </ion-input>
           </ion-item>
-          <small class="error-text" *ngIf="intentoEnvio && nuevoIngreso.descripcion.length < 3">
-            La descripción debe tener al menos 3 caracteres
+          <small
+            class="error-text"
+            *ngIf="intentoEnvio && nuevoIngreso.descripcion.length < 3">
+            Ingresa una descripción más detallada del registro.
           </small>
         </div>
 
-        <!-- FOTO -->
-        <div class="input-group full-width">
-          <ion-label class="ieca-label">Comprobante (Evidencia)</ion-label>
+        <div class="input-group full-width-group">
+          <ion-label class="ieca-label">
+            Comprobante de respaldo
+          </ion-label>
           <div class="upload-container">
-            <div class="upload-zone" *ngIf="!nuevoIngreso.foto">
+
+            <div
+              class="upload-zone"
+              *ngIf="!nuevoIngreso.foto">
               <ion-icon name="cloud-upload-outline"></ion-icon>
-              <p>Subir imagen del comprobante</p>
-              <span>JPG o PNG (Optimizado automáticamente)</span>
-              <input type="file" class="file-overlay" accept="image/*" (change)="onFileChange($event)">
+              <p>Haz clic para subir o arrastra una imagen</p>
+              <span>Formatos permitidos: JPG y PNG</span>
+              <input
+                type="file"
+                class="file-overlay"
+                accept="image/*"
+                (change)="onFileChange($event)">
             </div>
 
-            <div class="preview-container" *ngIf="nuevoIngreso.foto">
-              <div class="preview-card">
-                <img [src]="nuevoIngreso.foto" alt="Vista previa">
-                <div class="preview-overlay">
-                  <ion-button fill="clear" color="danger" (click)="eliminarFoto()">
-                    <ion-icon name="close-circle-outline" slot="icon-only"></ion-icon>
+            <div
+              class="preview-container"
+              *ngIf="nuevoIngreso.foto">
+              <div
+                class="preview-card"
+                (click)="verImagen(nuevoIngreso.foto)">
+                <img
+                  [src]="nuevoIngreso.foto"
+                  alt="Evidencia cargada">
+                <div class="preview-zoom-overlay">
+                  <ion-icon name="expand-outline"></ion-icon>
+                </div>
+                <div
+                  class="preview-overlay"
+                  (click)="$event.stopPropagation()">
+                  <ion-button
+                    fill="clear"
+                    color="danger"
+                    type="button"
+                    aria-label="Eliminar imagen"
+                    (click)="eliminarFoto()">
+                    <ion-icon
+                      slot="icon-only"
+                      name="close-circle-outline">
+                    </ion-icon>
                   </ion-button>
                 </div>
               </div>
               <div class="preview-info">
-                <p>Imagen cargada</p>
-                <small>Haga clic en la "X" para cambiarla</small>
+                <p>Imagen cargada correctamente</p>
+                <small>Haz clic en la vista previa para expandir.</small>
               </div>
             </div>
+
           </div>
         </div>
 
-        <!-- BOTÓN -->
-        <div class="button-container full-width ion-margin-top">
-          <ion-button type="button" expand="block" 
-            [class.ieca-registro-button]="esFormularioValido || !intentoEnvio"
-            [class.button-disabled]="intentoEnvio && !esFormularioValido"
-            (click)="registrarIngreso()">
-            <ion-icon [name]="modoEdicion ? 'save-outline' : 'save-outline'"></ion-icon>
-            <span>{{ modoEdicion ? 'Actualizar Ingreso' : 'Registrar Ingreso' }}</span>
-          </ion-button>
+        <div class="form-footer-container">
+          <div class="action-buttons-group">
+            
+            <ion-button
+              expand="block"
+              type="button"
+              class="ieca-button-primary btn-main"
+              [class.button-disabled]="intentoEnvio && !esFormularioValido"
+              (click)="registrarIngreso()">
+              <ion-icon [name]="modoEdicion ? 'save-outline' : 'add-circle-outline'"></ion-icon>
+              <span>
+                {{ modoEdicion ? 'Guardar Cambios' : 'Registrar Ingreso' }}
+              </span>
+            </ion-button>
+
+            <ion-button
+              *ngIf="modoEdicion"
+              expand="block"
+              fill="outline"
+              color="medium"
+              type="button"
+              class="ieca-button-secondary btn-cancel"
+              (click)="resetFormulario()">
+              <ion-icon
+                slot="start"
+                name="close-outline">
+              </ion-icon>
+              <span>Cancelar edición</span>
+            </ion-button>
+
+          </div>
         </div>
 
       </form>
     </div>
 
-
-    <!-- SECCIÓN DE BÚSQUEDA PROFESIONAL -->
     <div class="list-container">
+
       <div class="list-section-header">
         <div class="title-box">
-          <h2 class="text-blue">Historial de Ingresos</h2>
-          <span class="badge-count">{{ listaFiltrada.length }} registros</span>
+          <h2 class="text-blue">
+            Historial Contable de Ingresos
+          </h2>
+          <span class="badge-count">
+            {{ listaFiltrada.length }} registros encontrados
+          </span>
         </div>
         <div class="search-wrapper">
-          <ion-searchbar 
-            type="text"
-            placeholder="Buscar por descripción..." 
-            [(ngModel)]="searchTerm" 
-            class="professional-search"
+          <ion-searchbar
             mode="ios"
-            animated="true">
+            animated="true"
+            debounce="300"
+            class="professional-search"
+            placeholder="Buscar por descripción..."
+            [(ngModel)]="searchTerm">
           </ion-searchbar>
         </div>
       </div>
 
-      <!-- PANEL DE FILTROS AVANZADOS -->
       <div class="advanced-filters">
         <div class="filter-row">
-          
-          <!-- FILTRO DESDE -->
+
           <div class="filter-item">
-            <ion-label>Desde:</ion-label>
-            <div class="hybrid-date-container">
-              <ion-input 
-                [(ngModel)]="fechaManualDesde" 
+            <ion-label>Desde la fecha</ion-label>
+            <div class="hybrid-date-container table-hybrid-fix small-hybrid">
+              <ion-input
+                [(ngModel)]="fechaManualDesde"
                 placeholder="DD/MM/AAAA"
-                (ionInput)="validarFechaManual($event, 'desde')"
                 maxlength="10"
-                class="manual-input">
+                class="manual-input"
+                inputmode="numeric"
+                autocomplete="off"
+                (ionInput)="validarFechaManual($event, 'desde')">
               </ion-input>
-              <ion-button fill="clear" id="btn-desde" class="calendar-icon-btn">
-                <ion-icon slot="icon-only" name="calendar-outline"></ion-icon>
+              <ion-button
+                fill="clear"
+                type="button"
+                id="btn-desde"
+                class="calendar-icon-btn">
+                <ion-icon
+                  slot="icon-only"
+                  name="calendar-outline">
+                </ion-icon>
               </ion-button>
             </div>
-            <ion-popover trigger="btn-desde" triggerAction="click" class="image-style-popover">
+            <ion-popover
+              trigger="btn-desde"
+              triggerAction="click"
+              class="image-style-popover"
+              #popoverDesde>
               <ng-template>
-                <ion-datetime 
-                  presentation="date" 
-                  [(ngModel)]="filtroFechaInicio" 
-                  (ionChange)="onPickerDateChange($event, 'desde')"
-                  size="cover">
+                <ion-datetime
+                  presentation="date"
+                  size="cover"
+                  [showDefaultButtons]="false"
+                  [(ngModel)]="filtroFechaInicio"
+                  (ionChange)="onPickerDateChange($event, 'desde', popoverDesde)">
                 </ion-datetime>
               </ng-template>
             </ion-popover>
           </div>
 
-          <!-- FILTRO HASTA -->
           <div class="filter-item">
-            <ion-label>Hasta:</ion-label>
-            <div class="hybrid-date-container">
-              <ion-input 
-                [(ngModel)]="fechaManualHasta" 
+            <ion-label>Hasta la fecha</ion-label>
+            <div class="hybrid-date-container table-hybrid-fix small-hybrid">
+              <ion-input
+                [(ngModel)]="fechaManualHasta"
                 placeholder="DD/MM/AAAA"
-                (ionInput)="validarFechaManual($event, 'hasta')"
                 maxlength="10"
-                class="manual-input">
+                class="manual-input"
+                inputmode="numeric"
+                autocomplete="off"
+                (ionInput)="validarFechaManual($event, 'hasta')">
               </ion-input>
-              <ion-button fill="clear" id="btn-hasta" class="calendar-icon-btn">
-                <ion-icon slot="icon-only" name="calendar-outline"></ion-icon>
+              <ion-button
+                fill="clear"
+                type="button"
+                id="btn-hasta"
+                class="calendar-icon-btn">
+                <ion-icon
+                  slot="icon-only"
+                  name="calendar-outline">
+                </ion-icon>
               </ion-button>
             </div>
-            <ion-popover trigger="btn-hasta" triggerAction="click" class="image-style-popover">
+            <ion-popover
+              trigger="btn-hasta"
+              triggerAction="click"
+              class="image-style-popover"
+              #popoverHasta>
               <ng-template>
-                <ion-datetime 
-                  presentation="date" 
-                  [(ngModel)]="filtroFechaFin" 
-                  (ionChange)="onPickerDateChange($event, 'hasta')"
-                  size="cover">
+                <ion-datetime
+                  presentation="date"
+                  size="cover"
+                  [showDefaultButtons]="false"
+                  [(ngModel)]="filtroFechaFin"
+                  (ionChange)="onPickerDateChange($event, 'hasta', popoverHasta)">
                 </ion-datetime>
               </ng-template>
             </ion-popover>
+          </div>
+
+          <div class="filter-item">
+            <ion-label>Monto mínimo $</ion-label>
+            <div class="filter-input-wrapper">
+              <ion-icon
+                name="cash-outline"
+                class="filter-icon text-green">
+              </ion-icon>
+              <input
+                type="number"
+                inputmode="decimal"
+                class="custom-amount-filter"
+                [(ngModel)]="filtroMontoMin"
+                placeholder="0.00">
+            </div>
+          </div>
+
+          <div class="filter-item">
+            <ion-label>Monto máximo $</ion-label>
+            <div class="filter-input-wrapper">
+              <ion-icon
+                name="cash-outline"
+                class="filter-icon text-green">
+              </ion-icon>
+              <input
+                type="number"
+                inputmode="decimal"
+                class="custom-amount-filter"
+                [(ngModel)]="filtroMontoMax"
+                placeholder="Sin límite">
+            </div>
           </div>
 
         </div>
+      </div>
 
-          <!-- Filtro Min -->
-          <div class="filter-item">
-          <!-- SEGUNDA FILA: MONTOS (Aquí está el cambio) -->
-            <div class="filter-row" style="margin-top: 15px;"> 
-              <!-- Filtro Min -->
-              <div class="filter-item">
-                <ion-label>Min $:</ion-label>
-                <div class="filter-input-wrapper">
-                  <ion-icon name="cash-outline" class="filter-icon text-green"></ion-icon>
-                  <input type="number" [(ngModel)]="filtroMontoMin" placeholder="0.00" class="custom-amount-filter">
-                </div>
-              </div>
-
-              <!-- Filtro Max -->
-              <div class="filter-item">
-                <ion-label>Max $:</ion-label>
-                <div class="filter-input-wrapper">
-                  <ion-icon name="cash-outline" class="filter-icon text-green"></ion-icon>
-                  <input type="number" [(ngModel)]="filtroMontoMax" placeholder="999..." class="custom-amount-filter">
-                </div>
-              </div>
-            </div>
-          </div>
-
-      <app-tabla-general 
-        [columns]="columnsIngresos" [data]="listaFiltrada" [actions]="acciones"
-        (onEdit)="editarIngreso($event)" (onDelete)="eliminarIngreso($event)">
+      <app-tabla-general
+        [columns]="columnsIngresos"
+        [data]="listaFiltrada"
+        [actions]="acciones"
+        (onEdit)="editarIngreso($event)"
+        (onDelete)="eliminarIngreso($event)"
+        (onImageClick)="verImagen($event)">
       </app-tabla-general>
+
     </div>
+
   </div>
-</div>
+
+  <div
+    class="lightbox-overlay"
+    *ngIf="fotoSeleccionada"
+    (click)="cerrarImagen()">
+
+    <button
+      type="button"
+      class="close-lightbox"
+      aria-label="Cerrar imagen"
+      (click)="cerrarImagen()">
+      <ion-icon name="close-outline"></ion-icon>
+    </button>
+
+    <div
+      class="lightbox-content"
+      (click)="$event.stopPropagation()">
+      <img
+        [src]="fotoSeleccionada"
+        alt="Evidencia ampliada en pantalla completa">
+      <div class="lightbox-caption">
+        Evidencia de respaldo del registro contable
+      </div>
+    </div>
+
+  </div>
 
 </ion-content>

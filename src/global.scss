@@ -1,172 +1,370 @@
-/* 1. IMPORTAR FUENTE PROFESIONAL */
+/* ==========================================================================
+   IMPORTAR FUENTE
+   ========================================================================== */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-/* 2. DEFINICIÓN DE COLORES INSTITUCIONALES (IECA) */
+/* ==========================================================================
+   VARIABLES GLOBALES
+   ========================================================================== */
 :root {
   --ion-font-family: 'Inter', sans-serif !important;
 
-  /* Colores Base */
-  --ieca-red: #E42021;
-  --ieca-purple: #66318D;
-  --ieca-blue: #2E358F;
-  --ieca-yellow: #F4E530;
+  /* ==========================================================================
+     COLORES IECA
+     ========================================================================== */
+  --ieca-red: #e42021;
+  --ieca-purple: #66318d;
+  --ieca-blue: #2e358f;
+  --ieca-blue-light: #3b448b;
+  --ieca-yellow: #f4e530;
   --ieca-charcoal: #353432;
-  --ieca-green: #15891a;
+  --ieca-green: #10b981;
 
+  /* ==========================================================================
+     TEXTO
+     ========================================================================== */
+  --ieca-text-primary: #1e293b;
+  --ieca-text-secondary: #475569;
 
-  /* --- ASIGNACIÓN A COLORES DE IONIC --- */
-  /* Primario: Azul (Para encabezados y estructura) */
+  /* ==========================================================================
+     FONDOS
+     ========================================================================== */
+  --ieca-bg: #f4f7fb;
+  --ieca-surface: #ffffff;
+
+  /* ==========================================================================
+     BORDES
+     ========================================================================== */
+  --ieca-border: #e2e8f0;
+
+  /* ==========================================================================
+     SPACING SYSTEM (Ajustado un 20% adicional para simular zoom del 80%)
+     ========================================================================== */
+  --space-1: 2px;
+  --space-2: 4px;
+  --space-3: 8px;
+  --space-4: 11px;
+  --space-5: 13px;
+  --space-6: 16px;
+  --space-7: 19px;
+  --space-8: 26px;
+  --space-9: 32px;
+
+  /* ==========================================================================
+     BORDER RADIUS (Ligeramente reducidos para no verse grotescos a escala menor)
+     ========================================================================== */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 11px;
+  --radius-xl: 13px;
+  --radius-pill: 999px;
+
+  /* ==========================================================================
+     ALTURAS GLOBALES (Simula el 80% real: 42px -> ~34px)
+     ========================================================================== */
+  --input-height: 34px;
+  --button-height: 34px;
+  --toolbar-height: 52px;
+
+  /* ==========================================================================
+     SOMBRAS
+     ========================================================================== */
+  --ieca-shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.03);
+  --ieca-shadow-md: 0 6px 18px rgba(0, 0, 0, 0.04);
+  --ieca-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.06);
+
+  /* ==========================================================================
+     TRANSICIONES
+     ========================================================================== */
+  --ieca-transition-fast: all 0.2s ease;
+  --ieca-transition-medium: all 0.3s ease;
+
+  /* ==========================================================================
+     IONIC COLORS
+     ========================================================================== */
   --ion-color-primary: var(--ieca-blue);
   --ion-color-primary-rgb: 46, 53, 143;
   --ion-color-primary-contrast: #ffffff;
-  --ion-color-primary-shade: #292f7e;
-  --ion-color-primary-tint: #43499a;
 
-  /* Secundario: Morado (Para botones de acción y selección) */
   --ion-color-secondary: var(--ieca-purple);
   --ion-color-secondary-rgb: 102, 49, 141;
   --ion-color-secondary-contrast: #ffffff;
-  --ion-color-secondary-shade: #5a2b7c;
-  --ion-color-secondary-tint: #754698;
 
-  /* Peligro: Rojo (Para alertas y errores) */
   --ion-color-danger: var(--ieca-red);
   --ion-color-danger-contrast: #ffffff;
 
-  /* Advertencia: Amarillo (Para resaltes) */
   --ion-color-warning: var(--ieca-yellow);
-  --ion-color-warning-contrast: var(--ieca-charcoal);
+  --ion-color-warning-contrast: #353432;
 }
 
-/* 3. CONFIGURACIÓN BASE DEL CUERPO */
+/* ==========================================================================
+   BODY
+   ========================================================================== */
 body {
   font-family: 'Inter', sans-serif !important;
-  background-color: #f8f9fc !important; // Mantenemos el fondo limpio estilo iOS
-  color: var(--ieca-charcoal); // Texto principal en color carbón
+  background: var(--ieca-bg);
+  color: var(--ieca-text-primary);
+  font-size: 0.82rem; /* Reducción ejecutiva estricta */
 }
 
+/* ==========================================================================
+   ION CONTENT
+   ========================================================================== */
 ion-content {
-  --background: #f8f9fc !important;
+  --background: var(--ieca-bg);
 }
 
-/* 4. REGLAS PARA WEB - ESTRUCTURA Y VISIBILIDAD */
+/* ==========================================================================
+   TOOLBAR
+   ========================================================================== */
+ion-toolbar {
+  --background: #ffffff;
+  --color: var(--ieca-blue);
+  --border-width: 0;
+  --min-height: var(--toolbar-height);
+  padding-inline: var(--space-3);
+}
+
+.main-title {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--ieca-blue);
+}
+
+/* ==========================================================================
+   SPLIT PANE WEB
+   ========================================================================== */
 @media (min-width: 992px) {
   .split-pane-side {
-    min-width: 280px !important;
-    max-width: 280px !important;
-    display: flex !important;
-    border-right: 1px solid rgba(0, 0, 0, 0.05) !important;
-  }
-
-  #main-content {
-    margin-left: 0 !important; 
-    width: auto !important;
-    position: relative !important;
-    display: block !important;
-    box-shadow: -10px 0 20px rgba(0, 0, 0, 0.02);
+    min-width: 220px !important; /* Más angosto para balancear el contenido */
+    max-width: 220px !important;
+    border-right: 1px solid rgba(0, 0, 0, 0.05);
   }
 
   ion-split-pane {
-    --side-width: 280px;
+    --side-width: 220px;
   }
 }
 
-/* 5. ESTILOS DE TEXTO GLOBALES */
+/* ==========================================================================
+   TIPOGRAFÍA (Escala recalculada a modo compacto)
+   ========================================================================== */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+}
+
 h1 {
-  font-weight: 800 !important;
-  color: var(--ieca-blue) !important; // Títulos principales en Azul IECA
-  letter-spacing: -0.03em !important;
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
 }
 
 h2 {
-  font-weight: 700 !important;
-  color: var(--ieca-purple) !important; // Subtítulos en Morado
+  font-size: 1.1rem;
+  font-weight: 800;
 }
 
 p {
-  color: #718096; // Gris suave para descripciones (facilita lectura)
+  color: var(--ieca-text-secondary);
+  line-height: 1.4;
+  font-size: 0.78rem;
 }
 
-/* 6. AJUSTES DE COMPONENTES */
-ion-menu::part(container) {
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-ion-toolbar {
-  --background: #f8f9fc;
-  --color: var(--ieca-blue);
-  --border-style: none;
-  font-weight: 700;
-}
-
-/* Botones con estilo institucional */
-ion-button {
-  --border-radius: 12px !important;
-  font-weight: 600;
-  text-transform: none; // Evita que todo sea mayúsculas
-}
-
-/* Estilo para las tarjetas en toda la app */
-.custom-card-style {
-  background: #ffffff;
-  border-radius: 22px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
-  border: 1px solid rgba(0, 0, 0, 0.02);
-}
-
-/* Clases utilitarias de colores (Para usar en iconos o textos específicos) */
+/* ==========================================================================
+   UTILIDADES
+   ========================================================================== */
+.text-blue { color: var(--ieca-blue); }
+.text-green { color: var(--ieca-green); }
 .text-red { color: var(--ieca-red); }
 .text-purple { color: var(--ieca-purple); }
-.text-blue { color: var(--ieca-blue); }
-.text-yellow { color: var(--ieca-yellow); }
-.text-green { color: var(--ieca-green); }
+.gray-bg { --background: var(--ieca-bg); }
 
-/* BOTÓN GLOBAL IECA */
-.ieca-registro-button {
-  --background: linear-gradient(135deg, var(--ieca-blue) 0%, #3b448b 100%);
-  --background-activated: linear-gradient(135deg, #151a42 0%, var(--ieca-blue) 100%);
-  --border-radius: 18px;
-  --color: #ffffff;
-  --box-shadow: 0 10px 25px rgba(46, 53, 147, 0.25);
-
-  height: 68px;
-  font-size: 1.1rem;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  transition: all 0.3s ease;
-  overflow: hidden;
+.page-section {
+  margin-top: var(--space-6);
 }
 
-/* Contenido interno */
-.ieca-registro-button .button-content {
+.flex-between {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 12px;
+  justify-content: space-between;
 }
 
-.ieca-registro-button ion-icon {
-  font-size: 24px;
-  transition: transform 0.3s ease;
+.flex-gap-sm { display: flex; gap: var(--space-2); }
+.flex-gap-md { display: flex; gap: var(--space-3); }
+.flex-gap-lg { display: flex; gap: var(--space-5); }
+
+/* ==========================================================================
+   CONTENEDOR WEB
+   ========================================================================== */
+.page-container {
+  width: 100%;
+  max-width: 1100px; /* Reducido para que no estire de más horizontalmente */
+  margin: 0 auto;
+  padding-inline: var(--space-5);
 }
 
-/* Hover */
-.ieca-registro-button:hover {
-  transform: translateY(-2px);
-  --box-shadow: 0 15px 35px rgba(46, 53, 147, 0.35);
+/* ==========================================================================
+   CARD GLOBAL
+   ========================================================================== */
+.ieca-card {
+  background: #ffffff;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--ieca-shadow-md);
+  border: 1px solid rgba(0, 0, 0, 0.03);
 }
 
-.ieca-registro-button:hover ion-icon {
-  transform: scale(1.1) rotate(-10deg);
+/* ==========================================================================
+   INPUT GLOBAL
+   ========================================================================== */
+.ieca-input {
+  --background: #f8fafc;
+  --padding-start: var(--space-3);
+  border: 1.5px solid var(--ieca-border);
+  border-radius: var(--radius-md);
+  min-height: var(--input-height);
+  font-size: 0.82rem;
+  transition: var(--ieca-transition-fast);
 }
 
-/* Click */
-.ieca-registro-button:active {
-  transform: translateY(1px) scale(0.98);
+.ieca-input.item-has-focus {
+  border-color: var(--ieca-blue);
+  --background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(46, 53, 143, 0.08);
 }
 
-.ieca-modal::part(content) {
-  border-radius: 24px;
-  padding: 0;
+/* ==========================================================================
+   BOTONES
+   ========================================================================== */
+ion-button {
+  cursor: pointer;
+}
+
+.ieca-button-primary {
+  --background: linear-gradient(135deg, var(--ieca-blue) 0%, var(--ieca-blue-light) 100%);
+  --background-activated: linear-gradient(135deg, #1d245f 0%, var(--ieca-blue) 100%);
+  --border-radius: var(--radius-lg);
+  --color: #ffffff;
+  --box-shadow: 0 4px 12px rgba(46, 53, 143, 0.15);
+  height: var(--button-height);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: none;
+  transition: var(--ieca-transition-medium);
+}
+
+.ieca-button-primary:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.03);
+}
+
+.ieca-button-secondary {
+  --border-radius: var(--radius-lg);
+  --border-width: 1.5px;
+  --border-color: #cbd5e1;
+  --color: #64748b;
+  height: var(--button-height);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: none;
+  transition: var(--ieca-transition-fast);
+}
+
+.ieca-button-secondary:hover {
+  --border-color: var(--ieca-red);
+  --color: var(--ieca-red);
+}
+
+.button-disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   SEARCHBAR
+   ========================================================================== */
+ion-searchbar {
+  --background: #ffffff;
+  --border-radius: var(--radius-md);
+  --box-shadow: var(--ieca-shadow-sm);
+  --min-height: 32px;
+  --padding-start: 8px;
+  --padding-end: 8px;
+}
+
+/* ==========================================================================
+   ICONOS GLOBALES
+   ========================================================================== */
+ion-icon {
+  font-size: 15px; /* Iconos más refinados */
+}
+
+/* ==========================================================================
+   MENU
+   ========================================================================== */
+ion-menu::part(container) {
+  background: #ffffff;
+  border-right: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+/* ==========================================================================
+   SCROLLBAR WEB
+   ========================================================================== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+  border-radius: 999px;
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+@media (max-width: 768px) {
+  :root {
+    --input-height: 40px;
+    --button-height: 40px;
+  }
+}
+
+ion-datetime {
+  background: var(--ion-background-color, #ffffff);
+  border-radius: 8px;
+  font-family: inherit;
+  padding: 4px;
+
+  &::part(calendar-navigation) {
+    font-weight: 700;
+    color: var(--ion-color-primary, #3880ff);
+  }
+  &::part(calendar-weekday) {
+    color: var(--ion-color-step-500, #808080);
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+  &::part(day-today) {
+    border: 2px dashed var(--ion-color-primary, #3880ff) !important;
+    color: var(--ion-color-primary, #3880ff);
+    font-weight: bold;
+    border-radius: 50%;
+  }
+  &::part(day-active) {
+    background: var(--ion-color-primary, #3880ff) !important;
+    color: var(--ion-color-primary-contrast, #ffffff) !important;
+    border-radius: 50%;
+    font-weight: bold;
+    box-shadow: 0 3px 8px rgba(56, 128, 255, 0.2);
+  }
+}
+
+ion-popover {
+  --width: 240px;
+  --max-height: 300px;
+  --box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --border-radius: 8px;
+  &::part(content) {
+    background: var(--ion-background-color, #ffffff);
+  }
 }
