@@ -15,7 +15,7 @@ import { addIcons } from 'ionicons';
 import {
   calendarOutline, cashOutline, documentTextOutline, cloudUploadOutline,
   saveOutline, notificationsOutline, pencilOutline, trashOutline, 
-  closeCircleOutline, expandOutline, closeOutline, addCircleOutline, optionsOutline, businessOutline
+  closeCircleOutline, expandOutline, closeOutline, addCircleOutline, optionsOutline
 } from 'ionicons/icons';
 
 import { TablaGeneralComponent, TableColumn } from 'src/app/components/tabla-general/tabla-general.component';
@@ -88,7 +88,6 @@ export class GastosComponent implements OnInit {
   idEditando: number | null = null;
   contadorId = 0;
   listaGastos: Gasto[] = [];
-  listaFiltrada: Gasto[] = [];
 
   // Propiedades para búsquedas y filtros
   searchTerm: string = '';
@@ -98,7 +97,6 @@ export class GastosComponent implements OnInit {
   filtroFechaFin: string = '';
   filtroMontoMin: number | null = null;
   filtroMontoMax: number | null = null;
-  filtroCategoria: string = 'Todos';
 
   // Estado para la previsualización a pantalla completa (Lightbox)
   fotoSeleccionada: string | null = null;
@@ -147,15 +145,13 @@ export class GastosComponent implements OnInit {
       'expand-outline': expandOutline,
       'close-outline': closeOutline,
       'add-circle-outline': addCircleOutline,
-      'options-outline': optionsOutline,
-      'business-outline': businessOutline
+      'options-outline': optionsOutline
     });
   }
 
   ngOnInit() {
     this.fechaManualForm = this.formatearISOaDDMMYYYY(this.nuevoGasto.fecha);
     this.cargarDatos();
-    this.filtrarGastos();
   }
   
   @HostListener('document:keydown.escape', [])
@@ -165,18 +161,21 @@ export class GastosComponent implements OnInit {
     }
   }
 
-  verImagen(foto: any) {
+  // Activa el overlay para ver la imagen en tamaño completo
+  verImagen(foto: any) { 
     if (foto && typeof foto === 'string') {
       this.fotoSeleccionada = foto;
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden'; 
     }
   }
 
+  // Desactiva el visor de imágenes y restablece el scroll
   cerrarImagen() {
     this.fotoSeleccionada = null;
-    document.body.style.overflow = 'auto';
+    document.body.style.overflow = 'auto'; 
   }
 
+  // Transforma una cadena ISO string a formato legible DD/MM/AAAA
   private formatearISOaDDMMYYYY(iso: string): string {
     if (!iso) return '';
     const date = new Date(iso);
@@ -186,8 +185,9 @@ export class GastosComponent implements OnInit {
     return `${dd}/${mm}/${yyyy}`;
   }
 
+  // Máscara y validación en tiempo real para el input de fecha del formulario
   validarFechaManualForm(event: any) {
-    let val = event.target.value.replace(/\D/g, '');
+    let val = event.target.value.replace(/\D/g, ''); 
     if (val.length > 2) val = val.substring(0, 2) + '/' + val.substring(2);
     if (val.length > 5) val = val.substring(0, 5) + '/' + val.substring(5, 9);
     this.fechaManualForm = val;
@@ -197,118 +197,155 @@ export class GastosComponent implements OnInit {
       const dateObj = new Date(+parts[2], +parts[1] - 1, +parts[0]);
       if (!isNaN(dateObj.getTime())) {
         this.nuevoGasto.fecha = dateObj.toISOString();
-        this.filtrarGastos();
       }
     }
   }
 
-  onFechaPickerChange(event: any, popoverRef: IonPopover) {
-    const isoString = event.detail.value;
-    if (isoString) {
-      this.nuevoGasto.fecha = isoString;
-      this.fechaManualForm = this.formatearISOaDDMMYYYY(isoString);
+  // Maneja el cambio originado desde el selector de fecha visual (IonDatetime) del formulario
+  onFechaPickerChange(event: any, popover: IonPopover) {
+    const fechaIso = event.detail.value;
+    if (fechaIso) {
+      this.nuevoGasto.fecha = fechaIso;
+      this.fechaManualForm = this.formatearISOaDDMMYYYY(fechaIso);
+      popover.dismiss(); 
     }
-    popoverRef.dismiss();
   }
 
-  onArchivoSeleccionado(event: any) {
-    const file = event.target.files[0];
-    if (!file) return;
+  // Máscara de texto para las fechas de los filtros avanzados en la tabla
+  validarFechaManual(event: any, tipo: 'desde' | 'hasta') {
+    let val = event.target.value.replace(/\D/g, ''); 
+    if (val.length > 2) val = val.substring(0, 2) + '/' + val.substring(2);
+    if (val.length > 5) val = val.substring(0, 5) + '/' + val.substring(5, 9);
+    
+    if (tipo === 'desde') {
+      this.fechaManualDesde = val;
+    } else if (tipo === 'hasta') {
+      this.fechaManualHasta = val;
+    }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const img = new Image();
-      img.src = reader.result as string;
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 600;
-        let width = img.width;
-        let height = img.height;
-        
-        if (width > MAX_WIDTH) {
-          height *= MAX_WIDTH / width;
-          width = MAX_WIDTH;
+    if (val.length === 10) {
+      const parts = val.split('/');
+      const dateObj = new Date(+parts[2], +parts[1] - 1, +parts[0]);
+      if (!isNaN(dateObj.getTime())) {
+        const iso = dateObj.toISOString();
+        if (tipo === 'desde') {
+          this.filtroFechaInicio = iso;
+        } else {
+          this.filtroFechaFin = iso;
         }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
-        
-        this.nuevoGasto.foto = canvas.toDataURL('image/jpeg', 0.7);
-      };
-    };
-    reader.readAsDataURL(file);
+      }
+    }
   }
 
-  eliminarFoto() {
-    this.nuevoGasto.foto = '';
+  // Maneja el cambio originado por los IonDatetime de la sección de filtros avanzados
+  onPickerDateChange(event: any, tipo: 'desde' | 'hasta', popover: IonPopover) {
+    const fechaIso = event.detail.value;
+    if (fechaIso) {
+      const formateada = this.formatearISOaDDMMYYYY(fechaIso);
+      if (tipo === 'desde') {
+        this.filtroFechaInicio = fechaIso;
+        this.fechaManualDesde = formateada;
+      } else {
+        this.filtroFechaFin = fechaIso;
+        this.fechaManualHasta = formateada;
+      }
+      popover.dismiss();
+    }
   }
 
-  guardarGasto() {
+  // Getter que devuelve la lista filtrada dinámicamente según términos, montos y rangos de fechas
+  get listaFiltrada() {
+    let filtrados = [...this.listaGastos];
+
+    // Filtro por término de búsqueda (Descripción o Proveedor)
+    if (this.searchTerm) {
+      const search = this.searchTerm.toLowerCase();
+      filtrados = filtrados.filter(g => 
+        g.descripcion?.toLowerCase().includes(search) || 
+        g.proveedor?.toLowerCase().includes(search)
+      );
+    }
+
+    // Filtro por rango: Fecha Inicial (00:00:00)
+    if (this.filtroFechaInicio) {
+      const inicio = new Date(this.filtroFechaInicio).setHours(0,0,0,0);
+      filtrados = filtrados.filter(g => new Date(g.fecha).setHours(0,0,0,0) >= inicio);
+    }
+
+    // Filtro por rango: Fecha Final (23:59:59)
+    if (this.filtroFechaFin) {
+      const fin = new Date(this.filtroFechaFin).setHours(23,59,59,999);
+      filtrados = filtrados.filter(g => new Date(g.fecha).setHours(0,0,0,0) <= fin);
+    }
+
+    // Filtro por rangos de valores numéricos (Montos)
+    if (this.filtroMontoMin !== null) {
+      filtrados = filtrados.filter(g => (g.monto || 0) >= this.filtroMontoMin!);
+    }
+    if (this.filtroMontoMax !== null) {
+      filtrados = filtrados.filter(g => (g.monto || 0) <= this.filtroMontoMax!);
+    }
+
+    return filtrados;
+  }
+
+  // Ejecuta la inserción o actualización del registro contable
+  registrarGasto() {
     this.intentoEnvio = true;
-
-    if (!this.nuevoGasto.monto || this.nuevoGasto.monto <= 0 || 
-        this.nuevoGasto.descripcion.trim().length < 3 || 
-        this.nuevoGasto.proveedor.trim().length < 2 || 
-        this.fechaManualForm.length !== 10) {
-      this.mostrarToast('Por favor, llene todos los campos obligatorios correctamente.', 'danger');
+    if (!this.esFormularioValido) {
+      this.mostrarToast('Por favor, completa los campos obligatorios correctamente.', 'danger');
       return;
     }
 
-    if (this.modoEdicion && this.idEditando !== null) {
+    const fechaFormateada = this.fechaManualForm;
+
+    if (this.modoEdicion) {
       const index = this.listaGastos.findIndex(g => g.id === this.idEditando);
       if (index !== -1) {
-        this.listaGastos[index] = {
-          ...this.nuevoGasto,
-          id: this.idEditando,
-          fechaFormateada: this.fechaManualForm
-        };
-        this.mostrarToast('Gasto modificado exitosamente.', 'success');
+        this.listaGastos[index] = { ...this.nuevoGasto, fechaFormateada };
+        this.mostrarToast('Registro actualizado exitosamente', 'success');
       }
     } else {
       this.contadorId++;
-      const gastoAGuardar: Gasto = {
-        ...this.nuevoGasto,
-        id: this.contadorId,
-        fechaFormateada: this.fechaManualForm
-      };
-      this.listaGastos.push(gastoAGuardar);
-      this.mostrarToast('Gasto registrado exitosamente.', 'success');
+      const nuevoRegistro = { ...this.nuevoGasto, id: this.contadorId, fechaFormateada };
+      this.listaGastos = [nuevoRegistro, ...this.listaGastos];
+      this.mostrarToast('Registro creado exitosamente', 'success');
     }
 
     this.guardarLocalStorage();
-    this.resetFormulario();
-    this.filtrarGastos();
+    this.resetFormulario(); 
   }
 
-  editarGasto(gasto: Gasto) {
-    this.modoEdicion = true;
-    this.idEditando = gasto.id;
-    this.nuevoGasto = { ...gasto };
-    this.fechaManualForm = this.formatearISOaDDMMYYYY(gasto.fecha);
-    this.intentoEnvio = false;
-    
-    const content = document.querySelector('ion-content');
-    if (content) content.scrollToTop(400);
+  // Carga un registro existente en el formulario y realiza un scroll suave hacia arriba
+  editarGasto(item: Gasto) {
+    this.nuevoGasto.foto = ''; 
+    setTimeout(() => {
+      this.nuevoGasto = { ...item };
+      this.fechaManualForm = this.formatearISOaDDMMYYYY(this.nuevoGasto.fecha);
+      this.modoEdicion = true;
+      this.idEditando = item.id;
+      this.intentoEnvio = false;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 50);
   }
 
-  async eliminarGasto(gasto: Gasto) {
+  // Despliega una alerta de confirmación nativa antes de remover un registro
+  async eliminarGasto(item: Gasto) {
     const alert = await this.alertController.create({
-      header: 'Confirmar Eliminación',
-      message: `¿Está seguro de eliminar el registro de gasto #${gasto.id}?`,
+      header: 'Confirmar eliminación',
+      message: `¿Estás seguro de eliminar el registro #${item.id}?`,
       buttons: [
-        { text: 'Cancelar', role: 'cancel' },
+        {
+          text: 'Cancelar',
+          role: 'cancel'
+        },
         {
           text: 'Eliminar',
           role: 'destructive',
           handler: () => {
-            this.listaGastos = this.listaGastos.filter(g => g.id !== gasto.id);
+            this.listaGastos = this.listaGastos.filter(g => g.id !== item.id);
             this.guardarLocalStorage();
-            this.filtrarGastos();
-            this.mostrarToast('Registro eliminado.', 'danger');
-            if (this.modoEdicion && this.idEditando === gasto.id) {
-              this.resetFormulario();
-            }
+            this.mostrarToast('Registro eliminado', 'warning');
           }
         }
       ]
@@ -316,10 +353,7 @@ export class GastosComponent implements OnInit {
     await alert.present();
   }
 
-  cancelarEdicion() {
-    this.resetFormulario();
-  }
-
+  // Limpia el formulario y restablece los valores iniciales correctos de la aplicación
   resetFormulario() {
     this.nuevoGasto = {
       id: 0,
@@ -336,26 +370,49 @@ export class GastosComponent implements OnInit {
     this.intentoEnvio = false;
   }
 
-  filtrarGastos() {
-    this.listaFiltrada = this.listaGastos.filter(gasto => {
-      const cumpleBuscar = this.searchTerm.trim() === '' || 
-        gasto.descripcion.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-        gasto.proveedor.toLowerCase().includes(this.searchTerm.toLowerCase());
-      
-      const cumpleCategoria = this.filtroCategoria === 'Todos' || gasto.categoria === this.filtroCategoria;
-      
-      let cumpleMonto = true;
-      if (this.filtroMontoMin !== null && (gasto.monto === null || gasto.monto < this.filtroMontoMin)) cumpleMonto = false;
-      if (this.filtroMontoMax !== null && (gasto.monto === null || gasto.monto > this.filtroMontoMax)) cumpleMonto = false;
-      
-      return cumpleBuscar && cumpleCategoria && cumpleMonto;
-    });
+  // Captura la imagen subida, reduce proporcionalmente su tamaño usando HTML5 Canvas y la guarda en Base64
+  onFileChange(event: any) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      const img = new Image();
+      img.src = e.target.result;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800; 
+        let width = img.width;
+        let height = img.height;
+
+        if (width > MAX_WIDTH) {
+          height *= MAX_WIDTH / width;
+          width = MAX_WIDTH;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        this.nuevoGasto.foto = canvas.toDataURL('image/jpeg', 0.7);
+      };
+    };
+    reader.readAsDataURL(file);
   }
 
+  // Elimina la referencia en base64 de la foto cargada en el formulario
+  eliminarFoto() {
+    this.nuevoGasto.foto = '';
+  }
+
+  // Persistencia de los datos del array actual en el LocalStorage
   guardarLocalStorage() {
     localStorage.setItem('gastos', JSON.stringify(this.listaGastos));
   }
 
+  // Recupera los registros del LocalStorage manejando excepciones de parsing JSON
   cargarDatos() {
     const data = localStorage.getItem('gastos');
     if (data) {
@@ -371,6 +428,7 @@ export class GastosComponent implements OnInit {
     }
   }
 
+  // Helper centralizado para desplegar Toasts flotantes informativos de Ionic
   async mostrarToast(mensaje: string, color: string) {
     const toast = await this.toastController.create({
       message: mensaje,
@@ -379,5 +437,16 @@ export class GastosComponent implements OnInit {
       position: 'top'
     });
     await toast.present();
+  }
+  
+  // Evalúa que las condiciones obligatorias del formulario de negocio se cumplan al 100%
+  get esFormularioValido(): boolean {
+    return (
+      this.nuevoGasto.descripcion?.trim().length >= 3 &&
+      this.nuevoGasto.monto !== null &&
+      this.nuevoGasto.monto > 0 &&
+      this.nuevoGasto.proveedor?.trim().length >= 2 &&
+      this.fechaManualForm.length === 10
+    );
   }
 }

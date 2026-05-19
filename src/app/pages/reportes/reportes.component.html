@@ -1,19 +1,105 @@
 <ion-header class="ion-no-border">
-  <ion-toolbar>
-    <ion-title>Reportes</ion-title>
+
+  <ion-toolbar class="ieca-toolbar">
+
+    <ion-buttons slot="start">
+      <ion-menu-button
+        color="primary"
+        aria-label="Abrir menú">
+      </ion-menu-button>
+    </ion-buttons>
+
+    <ion-title class="main-title">
+      Reportes
+    </ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button
+        class="text-blue"
+        type="button"
+        aria-label="Notificaciones">
+        <ion-icon name="notifications-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+
   </ion-toolbar>
+
 </ion-header>
 
-<ion-content class="ion-padding">
-  <div class="page-panel">
-    <div class="page-panel-header">
-      <div>
-        <h2>Reportes</h2>
-        <p>Visualiza los informes financieros y el rendimiento por ministerio.</p>
+<ion-content class="ion-padding gray-bg">
+
+  <div class="container-wrapper">
+
+    <div class="page-header">
+
+      <h1 class="text-blue">
+        Reportes Financieros
+      </h1>
+
+      <p>
+        Visualiza los informes financieros y el rendimiento por período.
+      </p>
+
+    </div>
+
+    <div class="list-container">
+
+      <div class="list-section-header">
+        <div class="title-box">
+          <h2 class="text-blue">
+            Historial de Reportes
+          </h2>
+          <span class="badge-count">
+            {{ listaFiltrada.length }} reportes encontrados
+          </span>
+        </div>
+        <div class="search-wrapper">
+          <ion-searchbar
+            mode="ios"
+            animated="true"
+            debounce="300"
+            class="professional-search"
+            placeholder="Buscar por título..."
+            [(ngModel)]="searchTerm">
+          </ion-searchbar>
+        </div>
+      </div>
+
+      <app-tabla-general
+        [columns]="columnsReportes"
+        [data]="listaFiltrada"
+        (onEdit)="descargarReporte($event)"
+        (onImageClick)="verImagen($event)">
+      </app-tabla-general>
+
+    </div>
+
+  </div>
+
+  <div
+    class="lightbox-overlay"
+    *ngIf="fotoSeleccionada"
+    (click)="cerrarImagen()">
+
+    <button
+      type="button"
+      class="close-lightbox"
+      aria-label="Cerrar imagen"
+      (click)="cerrarImagen()">
+      <ion-icon name="close-outline"></ion-icon>
+    </button>
+
+    <div
+      class="lightbox-content"
+      (click)="$event.stopPropagation()">
+      <img
+        [src]="fotoSeleccionada"
+        alt="Reporte ampliado en pantalla completa">
+      <div class="lightbox-caption">
+        Vista previa del reporte
       </div>
     </div>
-    <div class="page-panel-body">
-      <p>Aquí aparecerán gráficos, métricas clave y tablas comparativas.</p>
-    </div>
+
   </div>
+
 </ion-content>

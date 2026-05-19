@@ -1,19 +1,459 @@
 <ion-header class="ion-no-border">
-  <ion-toolbar>
-    <ion-title>Ministerios</ion-title>
+
+  <ion-toolbar class="ieca-toolbar">
+
+    <ion-buttons slot="start">
+      <ion-menu-button
+        color="primary"
+        aria-label="Abrir menú">
+      </ion-menu-button>
+    </ion-buttons>
+
+    <ion-title class="main-title">
+      Ministerios
+    </ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button
+        class="text-blue"
+        type="button"
+        aria-label="Notificaciones">
+        <ion-icon name="notifications-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+
   </ion-toolbar>
+
 </ion-header>
 
-<ion-content class="ion-padding">
-  <div class="page-panel">
-    <div class="page-panel-header">
-      <div>
-        <h2>Ministerios</h2>
-        <p>Organiza áreas, eventos y actividades de la iglesia.</p>
+<ion-content class="ion-padding gray-bg">
+
+  <div class="container-wrapper">
+
+    <div class="page-header">
+
+      <h1 class="text-blue">
+        {{ modoEdicion ? 'Editar Ministerio' : 'Registrar Ministerio' }}
+      </h1>
+
+      <div
+        class="edit-status-badge"
+        *ngIf="modoEdicion">
+        <ion-icon name="pencil-outline"></ion-icon>
+        <span>
+          Editando ministerio <strong>#{{ idEditando }}</strong>
+        </span>
+      </div>
+
+      <p *ngIf="!modoEdicion">
+        Registra los ministerios, áreas y departamentos de tu iglesia.
+      </p>
+      <p *ngIf="modoEdicion">
+        Modifica la información y guarda los cambios del ministerio.
+      </p>
+
+    </div>
+
+    <div class="ieca-card form-card">
+
+      <form
+        class="ieca-grid-form"
+        autocomplete="off">
+
+        <div class="input-group">
+          <ion-label class="ieca-label">
+            Fecha de creación *
+          </ion-label>
+          <div class="hybrid-date-container">
+            <ion-input
+              [(ngModel)]="fechaManualForm"
+              name="fechaManualForm"
+              placeholder="DD/MM/AAAA"
+              maxlength="10"
+              class="manual-input"
+              inputmode="numeric"
+              autocomplete="off"
+              (ionInput)="validarFechaManualForm($event)">
+            </ion-input>
+            <ion-button
+              fill="clear"
+              type="button"
+              id="btn-fecha-form"
+              class="calendar-icon-btn"
+              aria-label="Seleccionar fecha">
+              <ion-icon
+                slot="icon-only"
+                name="calendar-outline">
+              </ion-icon>
+            </ion-button>
+          </div>
+          <ion-popover
+            trigger="btn-fecha-form"
+            triggerAction="click"
+            class="image-style-popover"
+            #popoverFechaForm>
+            <ng-template>
+              <ion-datetime
+                presentation="date"
+                size="cover"
+                locale="es-ES"
+                [showDefaultButtons]="false"
+                [(ngModel)]="nuevoMinisterio.fecha"
+                name="fechaForm"
+                (ionChange)="onFechaPickerChange($event, popoverFechaForm)">
+              </ion-datetime>
+            </ng-template>
+          </ion-popover>
+        </div>
+
+        <div class="input-group">
+          <ion-label
+            class="ieca-label"
+            [class.text-danger]="intentoEnvio && nuevoMinisterio.nombre.trim().length < 3">
+            Nombre del ministerio *
+          </ion-label>
+          <ion-item
+            lines="none"
+            class="ieca-input-item ieca-input"
+            [class.error-border]="intentoEnvio && nuevoMinisterio.nombre.trim().length < 3">
+            <ion-icon
+              slot="start"
+              name="options-outline"
+              class="text-blue">
+            </ion-icon>
+            <ion-input
+              type="text"
+              [(ngModel)]="nuevoMinisterio.nombre"
+              name="nombre"
+              placeholder="Ej. Alabanza y Adoración...">
+            </ion-input>
+          </ion-item>
+          <small
+            class="error-text"
+            *ngIf="intentoEnvio && nuevoMinisterio.nombre.trim().length < 3">
+            Ingresa un nombre válido.
+          </small>
+        </div>
+
+        <div class="input-group">
+          <ion-label class="ieca-label">
+            Estado *
+          </ion-label>
+          <ion-item
+            lines="none"
+            class="ieca-input-item ieca-input">
+            <ion-icon
+              slot="start"
+              name="options-outline"
+              class="text-blue">
+            </ion-icon>
+            <ion-select
+              interface="popover"
+              [(ngModel)]="nuevoMinisterio.estado"
+              name="estado"
+              class="ieca-select"
+              placeholder="Seleccione uno">
+              <ion-select-option *ngFor="let est of estadosMinisterio" [value]="est">{{ est }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+        </div>
+
+        <div class="input-group">
+          <ion-label
+            class="ieca-label"
+            [class.text-danger]="intentoEnvio && nuevoMinisterio.responsable.trim().length < 2">
+            Responsable *
+          </ion-label>
+          <ion-item
+            lines="none"
+            class="ieca-input-item ieca-input"
+            [class.error-border]="intentoEnvio && nuevoMinisterio.responsable.trim().length < 2">
+            <ion-icon
+              slot="start"
+              name="options-outline"
+              class="text-blue">
+            </ion-icon>
+            <ion-input
+              type="text"
+              [(ngModel)]="nuevoMinisterio.responsable"
+              name="responsable"
+              placeholder="Ej. Pastor Juan...">
+            </ion-input>
+          </ion-item>
+          <small
+            class="error-text"
+            *ngIf="intentoEnvio && nuevoMinisterio.responsable.trim().length < 2">
+            Ingresa el nombre del responsable.
+          </small>
+        </div>
+
+        <div class="input-group full-width-group">
+          <ion-label
+            class="ieca-label"
+            [class.text-danger]="intentoEnvio && nuevoMinisterio.descripcion.trim().length < 3">
+            Descripción *
+          </ion-label>
+          <ion-item
+            lines="none"
+            class="ieca-input-item ieca-input"
+            [class.error-border]="intentoEnvio && nuevoMinisterio.descripcion.trim().length < 3">
+            <ion-icon
+              slot="start"
+              name="document-text-outline"
+              class="text-blue">
+            </ion-icon>
+            <ion-input
+              type="text"
+              [(ngModel)]="nuevoMinisterio.descripcion"
+              name="descripcion"
+              placeholder="Ej. Ministerio encargado de...">
+            </ion-input>
+          </ion-item>
+          <small
+            class="error-text"
+            *ngIf="intentoEnvio && nuevoMinisterio.descripcion.trim().length < 3">
+            Ingresa una descripción más detallada.
+          </small>
+        </div>
+
+        <div class="input-group full-width-group">
+          <ion-label class="ieca-label">
+            Logo del ministerio
+          </ion-label>
+          <div class="upload-container">
+
+            <div
+              class="upload-zone"
+              *ngIf="!nuevoMinisterio.foto">
+              <ion-icon name="cloud-upload-outline"></ion-icon>
+              <p>Haz clic para subir o arrastra una imagen</p>
+              <span>Formatos permitidos: JPG y PNG</span>
+              <input
+                type="file"
+                class="file-overlay"
+                accept="image/*"
+                (change)="onFileChange($event)">
+            </div>
+
+            <div
+              class="preview-container"
+              *ngIf="nuevoMinisterio.foto">
+              <div
+                class="preview-card"
+                (click)="verImagen(nuevoMinisterio.foto)">
+                <img
+                  [src]="nuevoMinisterio.foto"
+                  alt="Logo cargado">
+                <div class="preview-zoom-overlay">
+                  <ion-icon name="expand-outline"></ion-icon>
+                </div>
+                <div
+                  class="preview-overlay"
+                  (click)="$event.stopPropagation()">
+                  <ion-button
+                    fill="clear"
+                    color="danger"
+                    type="button"
+                    aria-label="Eliminar imagen"
+                    (click)="eliminarFoto()">
+                    <ion-icon
+                      slot="icon-only"
+                      name="close-circle-outline">
+                    </ion-icon>
+                  </ion-button>
+                </div>
+              </div>
+              <div class="preview-info">
+                <p>Logo cargado correctamente</p>
+                <small>Haz clic en la vista previa para expandir.</small>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="form-footer-container">
+          <div class="action-buttons-group">
+
+            <ion-button
+              expand="block"
+              type="button"
+              class="ieca-button-primary btn-main"
+              [class.button-disabled]="intentoEnvio && !esFormularioValido"
+              (click)="registrarMinisterio()">
+              <ion-icon [name]="modoEdicion ? 'save-outline' : 'add-circle-outline'"></ion-icon>
+              <span>
+                {{ modoEdicion ? 'Guardar Cambios' : 'Registrar Ministerio' }}
+              </span>
+            </ion-button>
+
+            <ion-button
+              *ngIf="modoEdicion"
+              expand="block"
+              fill="outline"
+              color="medium"
+              type="button"
+              class="ieca-button-secondary btn-cancel"
+              (click)="resetFormulario()">
+              <ion-icon
+                slot="start"
+                name="close-outline">
+              </ion-icon>
+              <span>Cancelar edición</span>
+            </ion-button>
+
+          </div>
+        </div>
+
+      </form>
+    </div>
+
+    <div class="list-container">
+
+      <div class="list-section-header">
+        <div class="title-box">
+          <h2 class="text-blue">
+            Historial de Ministerios
+          </h2>
+          <span class="badge-count">
+            {{ listaFiltrada.length }} registros encontrados
+          </span>
+        </div>
+        <div class="search-wrapper">
+          <ion-searchbar
+            mode="ios"
+            animated="true"
+            debounce="300"
+            class="professional-search"
+            placeholder="Buscar por nombre..."
+            [(ngModel)]="searchTerm">
+          </ion-searchbar>
+        </div>
+      </div>
+
+      <div class="advanced-filters">
+        <div class="filter-row">
+
+          <div class="filter-item">
+            <ion-label>Desde la fecha</ion-label>
+            <div class="hybrid-date-container table-hybrid-fix small-hybrid">
+              <ion-input
+                [(ngModel)]="fechaManualDesde"
+                placeholder="DD/MM/AAAA"
+                maxlength="10"
+                class="manual-input"
+                inputmode="numeric"
+                autocomplete="off"
+                (ionInput)="validarFechaManual($event, 'desde')">
+              </ion-input>
+              <ion-button
+                fill="clear"
+                type="button"
+                id="btn-desde"
+                class="calendar-icon-btn">
+                <ion-icon
+                  slot="icon-only"
+                  name="calendar-outline">
+                </ion-icon>
+              </ion-button>
+            </div>
+            <ion-popover
+              trigger="btn-desde"
+              triggerAction="click"
+              class="image-style-popover"
+              #popoverDesde>
+              <ng-template>
+                <ion-datetime
+                  presentation="date"
+                  size="cover"
+                  [showDefaultButtons]="false"
+                  [(ngModel)]="filtroFechaInicio"
+                  (ionChange)="onPickerDateChange($event, 'desde', popoverDesde)">
+                </ion-datetime>
+              </ng-template>
+            </ion-popover>
+          </div>
+
+          <div class="filter-item">
+            <ion-label>Hasta la fecha</ion-label>
+            <div class="hybrid-date-container table-hybrid-fix small-hybrid">
+              <ion-input
+                [(ngModel)]="fechaManualHasta"
+                placeholder="DD/MM/AAAA"
+                maxlength="10"
+                class="manual-input"
+                inputmode="numeric"
+                autocomplete="off"
+                (ionInput)="validarFechaManual($event, 'hasta')">
+              </ion-input>
+              <ion-button
+                fill="clear"
+                type="button"
+                id="btn-hasta"
+                class="calendar-icon-btn">
+                <ion-icon
+                  slot="icon-only"
+                  name="calendar-outline">
+                </ion-icon>
+              </ion-button>
+            </div>
+            <ion-popover
+              trigger="btn-hasta"
+              triggerAction="click"
+              class="image-style-popover"
+              #popoverHasta>
+              <ng-template>
+                <ion-datetime
+                  presentation="date"
+                  size="cover"
+                  [showDefaultButtons]="false"
+                  [(ngModel)]="filtroFechaFin"
+                  (ionChange)="onPickerDateChange($event, 'hasta', popoverHasta)">
+                </ion-datetime>
+              </ng-template>
+            </ion-popover>
+          </div>
+
+        </div>
+      </div>
+
+      <app-tabla-general
+        [columns]="columnsMinisterios"
+        [data]="listaFiltrada"
+        [actions]="acciones"
+        (onEdit)="editarMinisterio($event)"
+        (onDelete)="eliminarMinisterio($event)"
+        (onImageClick)="verImagen($event)">
+      </app-tabla-general>
+
+    </div>
+
+  </div>
+
+  <div
+    class="lightbox-overlay"
+    *ngIf="fotoSeleccionada"
+    (click)="cerrarImagen()">
+
+    <button
+      type="button"
+      class="close-lightbox"
+      aria-label="Cerrar imagen"
+      (click)="cerrarImagen()">
+      <ion-icon name="close-outline"></ion-icon>
+    </button>
+
+    <div
+      class="lightbox-content"
+      (click)="$event.stopPropagation()">
+      <img
+        [src]="fotoSeleccionada"
+        alt="Logo ampliado en pantalla completa">
+      <div class="lightbox-caption">
+        Logo del ministerio
       </div>
     </div>
-    <div class="page-panel-body">
-      <p>En esta sección verás los ministerios activos y sus resultados.</p>
-    </div>
+
   </div>
+
 </ion-content>

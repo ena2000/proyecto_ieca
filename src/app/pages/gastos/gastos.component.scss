@@ -2,27 +2,10 @@
   --ieca-blue: #2e358f;
   --ieca-green: #10b981;
   --ieca-red: #ef4444;
-  
-  /* Variables Globales de UI de consistencia */
-  --ieca-border: #e2e8f0;
-  --input-height: 42px;
-  --radius-md: 8px;
-  --radius-lg: 10px;
-  --radius-xl: 14px;
-  --ieca-transition-fast: all 0.15s ease;
-  --ieca-transition-medium: all 0.25s ease;
-
-  /* Espaciados */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
 }
 
 /* ==========================================================================
-   CONTENEDOR PRINCIPAL
+   CONTENEDOR
    ========================================================================== */
 .container-wrapper {
   width: 100%;
@@ -34,7 +17,7 @@
 }
 
 /* ==========================================================================
-   ENCABEZADOS DE SECCIÓN
+   HEADER
    ========================================================================== */
 .page-header {
   margin: var(--space-2) 0 var(--space-4);
@@ -73,11 +56,6 @@
     font-size: 0.85rem;
   }
 
-  span {
-    font-size: 0.72rem;
-    font-weight: 600;
-  }
-
   strong {
     background: #fdba74;
     padding: 1px 5px;
@@ -86,22 +64,14 @@
 }
 
 /* ==========================================================================
-   FORM CARD (Matriz Simétrica)
+   FORM CARD
    ========================================================================== */
-.ieca-card {
-  background: #ffffff;
-  border: 1px solid var(--ieca-border);
-  border-radius: var(--radius-xl);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
-}
-
 .form-card {
   position: relative;
   overflow: hidden;
   padding: var(--space-5);
 }
 
-/* Línea decorativa superior en degradado de Azul a Rojo de Gastos */
 .form-card::before {
   content: '';
   position: absolute;
@@ -109,10 +79,16 @@
   left: 0;
   width: 100%;
   height: 4px;
-  background: linear-gradient(90deg, var(--ieca-blue), var(--ieca-red));
+  background: linear-gradient(
+    90deg,
+    var(--ieca-blue),
+    var(--ieca-red)
+  );
 }
 
-/* Red de Grilla para inputs */
+/* ==========================================================================
+   GRID FORM (FORMULARIO FIJO EN MATRIZ SIMÉTRICA DE COLUMNAS)
+   ========================================================================== */
 .ieca-grid-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -121,14 +97,24 @@
   .input-group {
     width: 100%;
 
-    &.full-width-group {
+    &.full-width {
+      grid-column: span 1 !important;
+    }
+
+    &:has(.upload-container),
+    &:has(.upload-zone),
+    &:has(.preview-container) {
       grid-column: span 2 !important;
     }
   }
 }
 
+.full-width {
+  grid-column: span 1;
+}
+
 /* ==========================================================================
-   LABELS, COMPONENTES E INPUTS DE IONIC
+   LABELS
    ========================================================================== */
 .ieca-label {
   display: block;
@@ -138,48 +124,28 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: #334155;
-  transition: var(--ieca-transition-fast);
 }
 
+/* ==========================================================================
+   INPUTS COMPONENTES
+   ========================================================================== */
 .ieca-input-item {
-  --background: #f8fafc;
-  --border-radius: var(--radius-md);
-  --border-width: 1.5px;
-  --border-style: solid;
-  --border-color: var(--ieca-border);
-  --inner-padding-end: var(--space-3);
-  --padding-start: var(--space-3);
-  height: var(--input-height);
-  font-weight: 700;
-  font-size: 0.88rem;
-  color: #1e293b;
-  box-shadow: none;
-  border: 1.5px solid var(--ieca-border);
-  border-radius: var(--radius-md);
-  transition: var(--ieca-transition-fast);
-
-  &.focused-input, &:focus-within {
-    border-color: var(--ieca-blue);
-    --background: #ffffff;
-    box-shadow: 0 0 0 3px rgba(46, 53, 143, 0.06);
-  }
+  overflow: hidden;
 
   ion-icon {
-    font-size: 16px;
+    font-size: 15px;
     margin-right: var(--space-2);
   }
 }
 
-/* Variaciones de colores específicas para inputs */
 .amount-input {
   font-size: 0.95rem;
   font-weight: 800;
-  --color: var(--ieca-red); /* Rojo para el dinero de egreso */
+  --color: var(--ieca-red);
 }
 
 .error-border {
   border-color: var(--ieca-red) !important;
-  --background: #fff8f8 !important;
 }
 
 .error-text {
@@ -191,16 +157,24 @@
   font-weight: 700;
 }
 
+/* ==========================================================================
+   REFUERZO VISUAL: SELECTOR (CATEGORÍA DE GASTO)
+   ========================================================================== */
 ion-select {
-  width: 100%;
-  font-size: 0.88rem !important;
+  font-size: 0.95rem !important;
   font-weight: 700 !important;
   --placeholder-font-weight: 700;
   --placeholder-color: #94a3b8;
 }
 
+::ng-deep .alert-radio-label {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 600 !important;
+  color: #0f172a !important;
+}
+
 /* ==========================================================================
-   FECHA HÍBRIDA (MANUAL + PICKER)
+   FECHA HÍBRIDA
    ========================================================================== */
 .hybrid-date-container {
   display: flex;
@@ -211,33 +185,29 @@ ion-select {
   border-radius: var(--radius-md);
   background: #f8fafc;
   transition: var(--ieca-transition-fast);
+}
 
-  &:focus-within {
-    border-color: var(--ieca-blue);
-    background: #ffffff;
-    box-shadow: 0 0 0 3px rgba(46, 53, 143, 0.06);
-  }
+.hybrid-date-container:focus-within {
+  border-color: var(--ieca-blue);
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(46, 53, 143, 0.06);
+}
 
-  .manual-input {
-    --padding-start: 0px;
-    --padding-top: 0px;
-    --padding-bottom: 0px;
-    font-weight: 700;
-    font-size: 0.88rem;
-    height: 100%;
-  }
+.manual-input {
+  font-weight: 700;
+}
 
-  .calendar-icon-btn {
-    --color: var(--ieca-blue);
-    --padding-end: var(--space-2);
-    margin: 0;
-    height: 100%;
-    font-size: 16px;
-  }
+.calendar-icon-btn {
+  --color: var(--ieca-blue);
+}
+
+.small-hybrid {
+  height: 32px;
+  border-radius: var(--radius-lg);
 }
 
 /* ==========================================================================
-   ZONA DE CARGA DE EVIDENCIA (UPLOAD ZONE)
+   UPLOAD (ZONA DE COMPROBANTE DE RESPALDO)
    ========================================================================== */
 .upload-container {
   width: 100%;
@@ -245,53 +215,47 @@ ion-select {
 
 .upload-zone {
   position: relative;
-  padding: var(--space-5) var(--space-4);
-  border: 2px dashed #fca5a5; /* Borde rojo suavizado para arrastre */
+  padding: var(--space-4);
+  border: 2px dashed var(--ieca-red);
   border-radius: var(--radius-xl);
-  background: rgba(239, 68, 68, 0.01);
+  background: rgba(239, 68, 68, 0.03);
   text-align: center;
   cursor: pointer;
   transition: var(--ieca-transition-medium);
+}
 
-  &:hover {
-    transform: translateY(-1px);
-    border-color: var(--ieca-red);
-    background: rgba(239, 68, 68, 0.04);
-  }
+.upload-zone:hover {
+  transform: translateY(-1px);
+  background: rgba(239, 68, 68, 0.07);
+}
 
-  ion-icon {
-    font-size: 32px;
-    color: var(--ieca-red);
-  }
+.upload-zone ion-icon {
+  font-size: 32px;
+  color: var(--ieca-red);
+}
 
-  p {
-    margin: var(--space-2) 0 0 0;
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: var(--ieca-red);
-  }
+.upload-zone p {
+  margin-top: var(--space-2);
+  font-weight: 700;
+  color: var(--ieca-red);
+}
 
-  span {
-    display: block;
-    margin-top: 2px;
-    font-size: 0.7rem;
-    color: #64748b;
-    font-weight: 500;
-  }
+.upload-zone span {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: 0.72rem;
+  color: var(--ieca-text-secondary);
 }
 
 .file-overlay {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
   opacity: 0;
   cursor: pointer;
-  z-index: 2;
 }
 
 /* ==========================================================================
-   VISTA PREVIA DE ARCHIVO SELECCIONADO
+   PREVIEW
    ========================================================================== */
 .preview-container {
   display: flex;
@@ -304,312 +268,354 @@ ion-select {
   width: 100%;
 }
 
-.image-wrapper-preview {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-lg);
+.preview-card {
+  position: relative;
+  width: 82px;
+  height: 82px;
   overflow: hidden;
-  border: 1px solid var(--ieca-border);
-  background: #ffffff;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+}
+
+.preview-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.preview-zoom-overlay {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
+  background: rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  transition: var(--ieca-transition-fast);
 }
 
-.preview-details {
-  flex: 1;
-
-  .filename-text {
-    font-size: 0.78rem;
-    font-weight: 700;
-    color: #1e293b;
-    margin: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+.preview-card:hover .preview-zoom-overlay {
+  opacity: 1;
 }
 
-.preview-actions {
-  display: flex;
-  gap: var(--space-4);
-  margin-top: 2px;
+.preview-zoom-overlay ion-icon {
+  font-size: 1.4rem;
+  color: white;
 }
 
-.btn-preview-action {
-  background: transparent;
-  border: none;
-  padding: 0;
-  font-size: 0.72rem;
+.preview-overlay {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+}
+
+.preview-info p {
+  margin: 0;
   font-weight: 700;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-  transition: opacity 0.15s ease;
+  color: var(--ieca-text-primary);
+}
 
-  &:hover {
-    opacity: 0.8;
-  }
-
-  ion-icon {
-    font-size: 13px;
-  }
+.preview-info small {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--ieca-text-secondary);
 }
 
 /* ==========================================================================
-   BOTONES DE ACCIÓN FORMULARIO
+   BOTONES INTEGRADOS VISUALMENTE CON LA BASE DEL FORMULARIO
    ========================================================================== */
 .form-footer-container {
-  margin-top: var(--space-2);
+  grid-column: span 2;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: var(--space-4);
 }
 
 .action-buttons-group {
   display: flex;
   gap: var(--space-3);
-  justify-content: flex-end;
-}
-
-.btn-main, .btn-cancel {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  height: 40px;
-  padding: 0 var(--space-5);
-  font-size: 0.82rem;
-  font-weight: 700;
-  border-radius: var(--radius-lg);
-  cursor: pointer;
-  border: none;
-  transition: var(--ieca-transition-fast);
+  width: 100%;
+  max-width: 250px;
 }
 
 .btn-main {
-  background: var(--ieca-blue);
-  color: #ffffff;
-  box-shadow: 0 4px 10px rgba(46, 53, 143, 0.15);
-
-  &:hover {
-    background: #232870;
-    transform: translateY(-1px);
-    box-shadow: 0 6px 12px rgba(46, 53, 143, 0.2);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
+  flex: 2;
+  --box-shadow: none;
 }
 
 .btn-cancel {
-  background: #f1f5f9;
-  color: #475569;
-
-  &:hover {
-    background: #e2e8f0;
-    color: #1e293b;
-  }
+  flex: 1.2;
 }
 
 /* ==========================================================================
-   SECCIÓN HISTORIAL & FILTROS AVANZADOS
+   LISTA
    ========================================================================== */
+.list-container {
+  margin-top: var(--space-6);
+}
+
 .list-section-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-top: var(--space-6);
-  margin-bottom: var(--space-3);
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.title-box {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
 
   h2 {
-    font-size: 1.05rem;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    color: var(--ieca-blue);
     margin: 0;
   }
 }
 
+.badge-count {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  background: #e2e8f0;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   BUSCADOR
+   ========================================================================== */
 .search-wrapper {
   width: 100%;
-  max-width: 340px;
+  max-width: 320px;
+}
 
-  .custom-searchbar {
-    --background: #ffffff;
-    --border-radius: var(--radius-lg);
-    --box-shadow: none;
-    padding: 0;
-    border: 1px solid var(--ieca-border);
-    height: 38px;
-    font-weight: 600;
-    font-size: 0.82rem;
+.professional-search {
+  --background: #ffffff;
+  --border-radius: var(--radius-md);
+  --box-shadow: none;
+  --placeholder-color: #94a3b8;
+  --font-size: 0.85rem !important;
+  
+  border: 1.5px solid var(--ieca-border);
+  padding: 0;
+  min-height: 40px;
+  transition: var(--ieca-transition-fast);
+  
+  &:focus-within {
+    border-color: var(--ieca-blue);
+    box-shadow: 0 0 0 3px rgba(46, 53, 143, 0.08);
+  }
+
+  input.searchbar-input {
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    font-family: 'Inter', sans-serif !important;
   }
 }
 
+/* ==========================================================================
+   FILTROS
+   ========================================================================== */
 .advanced-filters {
-  background: #ffffff;
-  border: 1px solid var(--ieca-border);
+  margin-bottom: var(--space-8);
+  padding: var(--space-5);
   border-radius: var(--radius-xl);
-  padding: var(--space-4);
-  margin-bottom: var(--space-5);
+  background: #ffffff;
+  box-shadow: var(--ieca-shadow-sm);
 }
 
 .filter-row {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-4);
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: var(--space-5);
+  margin-bottom: 0;
 }
 
 .filter-item {
   display: flex;
   flex-direction: column;
+  width: 100%;
+}
 
-  ion-label {
-    font-size: 0.65rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    color: #64748b;
-    margin-bottom: 6px;
-    letter-spacing: 0.03em;
+.filter-item ion-label {
+  display: block;
+  margin-bottom: var(--space-2);
+  padding-left: 2px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.filter-input-wrapper,
+.hybrid-date-container.small-hybrid {
+  width: 100% !important;
+  height: 42px !important;
+  box-sizing: border-box;
+}
+
+.hybrid-date-container.small-hybrid {
+  padding-left: var(--space-3);
+  padding-right: var(--space-2);
+  border-radius: var(--radius-lg);
+  
+  ion-input {
+    --padding-top: 0;
+    --padding-bottom: 0;
+    font-size: 0.85rem !important;
+    font-weight: 700;
+    height: 100%;
   }
 }
 
 .filter-input-wrapper {
+  position: relative;
   display: flex;
   align-items: center;
-  height: 36px;
-  border: 1px solid var(--ieca-border);
+  border: 1.5px solid var(--ieca-border);
   border-radius: var(--radius-lg);
   background: #f8fafc;
-  padding: 0 var(--space-3);
   transition: var(--ieca-transition-fast);
+}
 
-  &:focus-within {
-    border-color: var(--ieca-blue);
-    background: #ffffff;
-  }
+.filter-input-wrapper:focus-within,
+.hybrid-date-container.small-hybrid:focus-within {
+  border-color: var(--ieca-blue);
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(46, 53, 143, 0.08);
+}
 
-  .filter-icon {
-    font-size: 14px;
-    margin-right: var(--space-2);
-    flex-shrink: 0;
-  }
+.filter-icon {
+  position: absolute;
+  left: 14px;
+  font-size: 18px;
+}
 
-  input {
-    width: 100%;
-    border: none;
-    background: transparent;
-    font-size: 0.82rem;
-    font-weight: 700;
-    color: #1e293b;
-    outline: none;
-    padding: 0;
+.custom-amount-filter {
+  width: 100%;
+  height: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 0 14px 0 42px;
+  font-size: 0.85rem !important;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.custom-amount-filter::placeholder {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #94a3b8;
+}
+
+@media (max-width: 1024px) {
+  .filter-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
 
-.custom-select-filter {
-  width: 100%;
-  font-size: 0.82rem !important;
-  font-weight: 700 !important;
-  --padding-start: 0px;
+@media (max-width: 600px) {
+  .filter-row {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 /* ==========================================================================
-   VISOR MULTIMEDIA OVERLAY (LIGHTBOX)
+   LIGHTBOX
    ========================================================================== */
 .lightbox-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(15, 23, 42, 0.88);
-  backdrop-filter: blur(4px);
-  z-index: 9999;
+  inset: 0;
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: fadeIn 0.2s ease-out;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(8px);
 }
 
 .lightbox-content {
-  position: relative;
-  max-width: 90vw;
-  max-height: 80vh;
-  
-  img {
-    max-width: 100%;
-    max-height: 80vh;
-    border-radius: var(--radius-xl);
-    object-fit: contain;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  }
+  text-align: center;
+}
+
+.lightbox-content img {
+  max-width: 75vw;
+  max-height: 75vh;
+  border-radius: var(--radius-lg);
+}
+
+.lightbox-caption {
+  margin-top: var(--space-2);
+  color: white;
+  font-weight: 700;
 }
 
 .close-lightbox {
   position: absolute;
-  top: var(--space-5);
-  right: var(--space-5);
-  background: rgba(255, 255, 255, 0.08);
+  top: 85px;
+  right: 30px;
+  width: 34px;
+  height: 34px;
   border: none;
-  color: #ffffff;
-  width: 38px;
-  height: 38px;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
   cursor: pointer;
-  font-size: 22px;
-  transition: var(--ieca-transition-fast);
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: scale(1.05);
-  }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }
 
 /* ==========================================================================
-   DISEÑO RESPONSIVO & BREAKPOINTS (MOBILE Y TABLET)
+   TABLA
+   ========================================================================== */
+::ng-deep app-tabla-general {
+  display: block;
+  overflow-x: auto;
+}
+
+/* ==========================================================================
+   RESPONSIVE GENERAL
    ========================================================================== */
 @media (max-width: 768px) {
   .ieca-grid-form {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
 
-    .input-group.full-width-group {
+    .input-group:has(.upload-container),
+    &:has(.upload-zone),
+    &:has(.preview-container) {
       grid-column: span 1 !important;
     }
+  }
+
+  .full-width {
+    grid-column: span 1 !important;
   }
 
   .form-card {
     padding: var(--space-4);
   }
 
+  .form-footer-container {
+    grid-column: span 1;
+  }
+
   .action-buttons-group {
     flex-direction: column;
-    width: 100%;
+    max-width: 100%;
+  }
 
-    .btn-main, .btn-cancel {
-      width: 100%;
-    }
+  .btn-main,
+  .btn-cancel {
+    width: 100%;
   }
 
   .list-section-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: var(--space-3);
   }
 
   .search-wrapper {
@@ -619,38 +625,45 @@ ion-select {
   .filter-row {
     grid-template-columns: 1fr !important;
     gap: var(--space-3);
+    margin-bottom: var(--space-3);
+  }
+
+  .advanced-filters {
+    padding: var(--space-3);
+  }
+
+  .preview-container {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .upload-zone {
+    padding: var(--space-4);
+  }
+
+  .lightbox-content img {
+    max-width: 90vw;
+  }
+
+  .page-header h1 {
+    font-size: 1.35rem;
   }
 }
 
-.hybrid-date-container {
-  display: flex;
-  align-items: center;
-  height: var(--input-height);
-  padding: 0 var(--space-3);
-  border: 1.5px solid var(--ieca-border);
-  border-radius: var(--radius-md);
-  background: #f8fafc;
-  transition: var(--ieca-transition-fast);
+/* ==========================================================================
+   OPTIMIZACIÓN DE HOVER EN BOTONES DE CIERRE
+   ========================================================================== */
+.close-lightbox {
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease !important;
 
-  &:focus-within {
-    border-color: var(--ieca-blue);
-    background: #ffffff;
-    box-shadow: 0 0 0 3px rgba(46, 53, 143, 0.06);
+  &:hover {
+    background: var(--ieca-red, #e42021) !important;
+    color: white;
+    transform: scale(1.05);
   }
 
-  /* Alineación interna idéntica para íconos sueltos */
   ion-icon {
-    font-size: 18px;
-    flex-shrink: 0;
-  }
-  
-  .manual-input {
-    --padding-start: 0px;
-    --padding-top: 0px;
-    --padding-bottom: 0px;
-    font-weight: 700;
-    font-size: 0.88rem;
-    height: 100%;
-    width: 100%;
+    pointer-events: none;
+    transition: color 0.2s ease;
   }
 }

@@ -1,5 +1,7 @@
 <ion-header class="ion-no-border">
+
   <ion-toolbar class="ieca-toolbar">
+
     <ion-buttons slot="start">
       <ion-menu-button
         color="primary"
@@ -19,18 +21,24 @@
         <ion-icon name="notifications-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
+
   </ion-toolbar>
+
 </ion-header>
 
 <ion-content class="ion-padding gray-bg">
+
   <div class="container-wrapper">
 
     <div class="page-header">
+
       <h1 class="text-blue">
         {{ modoEdicion ? 'Editar Gasto' : 'Registrar Gasto' }}
       </h1>
 
-      <div class="edit-status-badge" *ngIf="modoEdicion">
+      <div
+        class="edit-status-badge"
+        *ngIf="modoEdicion">
         <ion-icon name="pencil-outline"></ion-icon>
         <span>
           Editando gasto <strong>#{{ idEditando }}</strong>
@@ -38,21 +46,25 @@
       </div>
 
       <p *ngIf="!modoEdicion">
-        Ingrese los egresos de caja, compras o pagos de servicios operacionales.
+        Registra los egresos de caja, compras o pagos de servicios operacionales.
       </p>
       <p *ngIf="modoEdicion">
-        Actualice la información y guarde los cambios del egreso contable.
+        Modifica la información y guarda los cambios del egreso contable.
       </p>
+
     </div>
 
     <div class="ieca-card form-card">
-      <form class="ieca-grid-form" autocomplete="off">
+
+      <form
+        class="ieca-grid-form"
+        autocomplete="off">
 
         <div class="input-group">
           <ion-label class="ieca-label">
             Fecha del gasto *
           </ion-label>
-          <div class="hybrid-date-container" [class.error-border]="intentoEnvio && fechaManualForm.length !== 10">
+          <div class="hybrid-date-container">
             <ion-input
               [(ngModel)]="fechaManualForm"
               name="fechaManualForm"
@@ -60,18 +72,23 @@
               maxlength="10"
               class="manual-input"
               inputmode="numeric"
+              autocomplete="off"
               (ionInput)="validarFechaManualForm($event)">
             </ion-input>
             <ion-button
               fill="clear"
               type="button"
-              id="btn-fecha-form-gasto"
-              class="calendar-icon-btn">
-              <ion-icon slot="icon-only" name="calendar-outline"></ion-icon>
+              id="btn-fecha-form"
+              class="calendar-icon-btn"
+              aria-label="Seleccionar fecha">
+              <ion-icon
+                slot="icon-only"
+                name="calendar-outline">
+              </ion-icon>
             </ion-button>
           </div>
           <ion-popover
-            trigger="btn-fecha-form-gasto"
+            trigger="btn-fecha-form"
             triggerAction="click"
             class="image-style-popover"
             #popoverFechaForm>
@@ -87,27 +104,35 @@
               </ion-datetime>
             </ng-template>
           </ion-popover>
-          <small class="error-text" *ngIf="intentoEnvio && fechaManualForm.length !== 10">
-            Ingrese una fecha válida.
-          </small>
         </div>
 
         <div class="input-group">
-          <ion-label class="ieca-label" [class.text-danger]="intentoEnvio && (!nuevoGasto.monto || nuevoGasto.monto <= 0)">
+          <ion-label
+            class="ieca-label"
+            [class.text-danger]="intentoEnvio && (!nuevoGasto.monto || nuevoGasto.monto <= 0)">
             Monto a egresar ($) *
           </ion-label>
-          <div class="hybrid-date-container" [class.error-border]="intentoEnvio && (!nuevoGasto.monto || nuevoGasto.monto <= 0)">
-            <ion-icon name="cash-outline" class="filter-icon text-red" style="margin-right: 8px; font-size: 18px;"></ion-icon>
+          <ion-item
+            lines="none"
+            class="ieca-input-item ieca-input"
+            [class.error-border]="intentoEnvio && (!nuevoGasto.monto || nuevoGasto.monto <= 0)">
+            <ion-icon
+              slot="start"
+              name="cash-outline"
+              class="text-red">
+            </ion-icon>
             <ion-input
               type="number"
               inputmode="decimal"
               [(ngModel)]="nuevoGasto.monto"
               name="monto"
               placeholder="0.00"
-              class="amount-input manual-input">
+              class="amount-input">
             </ion-input>
-          </div>
-          <small class="error-text" *ngIf="intentoEnvio && (!nuevoGasto.monto || nuevoGasto.monto <= 0)">
+          </ion-item>
+          <small
+            class="error-text"
+            *ngIf="intentoEnvio && (!nuevoGasto.monto || nuevoGasto.monto <= 0)">
             El monto debe ser mayor a cero.
           </small>
         </div>
@@ -116,184 +141,353 @@
           <ion-label class="ieca-label">
             Categoría de gasto *
           </ion-label>
-          <div class="hybrid-date-container">
-            <ion-icon name="options-outline" class="text-blue" style="margin-right: 8px; font-size: 18px;"></ion-icon>
-            <ion-select 
-              interface="popover" 
-              [(ngModel)]="nuevoGasto.categoria" 
-              name="categoria" 
-              class="custom-select-filter" 
-              placeholder="Seleccione una">
+          <ion-item
+            lines="none"
+            class="ieca-input-item ieca-input">
+            <ion-icon
+              slot="start"
+              name="options-outline"
+              class="text-blue">
+            </ion-icon>
+            <ion-select
+              interface="popover"
+              [(ngModel)]="nuevoGasto.categoria"
+              name="categoria"
+              class="ieca-select"
+              placeholder="Seleccione uno">
               <ion-select-option *ngFor="let cat of categoriasGastos" [value]="cat">{{ cat }}</ion-select-option>
             </ion-select>
-          </div>
+          </ion-item>
         </div>
 
         <div class="input-group">
-          <ion-label class="ieca-label" [class.text-danger]="intentoEnvio && nuevoGasto.proveedor.trim().length < 2">
+          <ion-label
+            class="ieca-label"
+            [class.text-danger]="intentoEnvio && nuevoGasto.proveedor.trim().length < 2">
             Proveedor / Beneficiario *
           </ion-label>
-          <div class="hybrid-date-container" [class.error-border]="intentoEnvio && nuevoGasto.proveedor.trim().length < 2">
-            <ion-icon name="business-outline" class="text-blue" style="margin-right: 8px; font-size: 18px;"></ion-icon>
+          <ion-item
+            lines="none"
+            class="ieca-input-item ieca-input"
+            [class.error-border]="intentoEnvio && nuevoGasto.proveedor.trim().length < 2">
+            <ion-icon
+              slot="start"
+              name="options-outline"
+              class="text-blue">
+            </ion-icon>
             <ion-input
               type="text"
               [(ngModel)]="nuevoGasto.proveedor"
               name="proveedor"
-              placeholder="Ej. Empresa Eléctrica, Juan Pérez..."
-              class="manual-input">
+              placeholder="Ej. Empresa Eléctrica, Juan Pérez...">
             </ion-input>
-          </div>
-          <small class="error-text" *ngIf="intentoEnvio && nuevoGasto.proveedor.trim().length < 2">
-            Ingrese el nombre de la entidad o beneficiario.
+          </ion-item>
+          <small
+            class="error-text"
+            *ngIf="intentoEnvio && nuevoGasto.proveedor.trim().length < 2">
+            Ingresa el nombre de la entidad o beneficiario.
           </small>
         </div>
 
         <div class="input-group full-width-group">
-          <ion-label class="ieca-label" [class.text-danger]="intentoEnvio && nuevoGasto.descripcion.trim().length < 3">
+          <ion-label
+            class="ieca-label"
+            [class.text-danger]="intentoEnvio && nuevoGasto.descripcion.trim().length < 3">
             Detalle del gasto *
           </ion-label>
-          <div class="hybrid-date-container" [class.error-border]="intentoEnvio && nuevoGasto.descripcion.trim().length < 3">
-            <ion-icon name="document-text-outline" class="text-blue" style="margin-right: 8px; font-size: 18px;"></ion-icon>
+          <ion-item
+            lines="none"
+            class="ieca-input-item ieca-input"
+            [class.error-border]="intentoEnvio && nuevoGasto.descripcion.trim().length < 3">
+            <ion-icon
+              slot="start"
+              name="document-text-outline"
+              class="text-blue">
+            </ion-icon>
             <ion-input
               type="text"
               [(ngModel)]="nuevoGasto.descripcion"
               name="descripcion"
-              placeholder="Ej. Pago de factura de luz correspondiente a..."
-              class="manual-input">
+              placeholder="Ej. Pago de factura de luz correspondiente a...">
             </ion-input>
-          </div>
-          <small class="error-text" *ngIf="intentoEnvio && nuevoGasto.descripcion.trim().length < 3">
+          </ion-item>
+          <small
+            class="error-text"
+            *ngIf="intentoEnvio && nuevoGasto.descripcion.trim().length < 3">
             Ingresa una descripción más detallada del registro.
           </small>
         </div>
 
         <div class="input-group full-width-group">
           <ion-label class="ieca-label">
-            Comprobante de respaldo (Opcional)
+            Comprobante de respaldo
           </ion-label>
           <div class="upload-container">
-            <div class="upload-zone" *ngIf="!nuevoGasto.foto">
+
+            <div
+              class="upload-zone"
+              *ngIf="!nuevoGasto.foto">
               <ion-icon name="cloud-upload-outline"></ion-icon>
-              <p>Subir imagen del comprobante</p>
-              <span>Formatos permitidos: JPG, PNG • Máx. 5MB</span>
+              <p>Haz clic para subir o arrastra una imagen</p>
+              <span>Formatos permitidos: JPG y PNG</span>
               <input
                 type="file"
-                accept="image/*"
                 class="file-overlay"
-                (change)="onArchivoSeleccionado($event)"
-                aria-label="Subir comprobante de respaldo">
+                accept="image/*"
+                (change)="onFileChange($event)">
             </div>
 
-            <div class="preview-container" *ngIf="nuevoGasto.foto">
-              <div class="image-wrapper-preview">
-                <img [src]="nuevoGasto.foto" alt="Vista previa del comprobante">
-              </div>
-              <div class="preview-details">
-                <p class="filename-text">comprobante_gasto.jpg</p>
-                <div class="preview-actions">
-                  <button type="button" class="btn-preview-action text-blue" (click)="verImagen(nuevoGasto.foto)">
-                    <ion-icon name="expand-outline"></ion-icon> Ver grande
-                  </button>
-                  <button type="button" class="btn-preview-action text-danger" (click)="eliminarFoto()">
-                    <ion-icon name="close-circle-outline"></ion-icon> Quitar
-                  </button>
+            <div
+              class="preview-container"
+              *ngIf="nuevoGasto.foto">
+              <div
+                class="preview-card"
+                (click)="verImagen(nuevoGasto.foto)">
+                <img
+                  [src]="nuevoGasto.foto"
+                  alt="Evidencia cargada">
+                <div class="preview-zoom-overlay">
+                  <ion-icon name="expand-outline"></ion-icon>
+                </div>
+                <div
+                  class="preview-overlay"
+                  (click)="$event.stopPropagation()">
+                  <ion-button
+                    fill="clear"
+                    color="danger"
+                    type="button"
+                    aria-label="Eliminar imagen"
+                    (click)="eliminarFoto()">
+                    <ion-icon
+                      slot="icon-only"
+                      name="close-circle-outline">
+                    </ion-icon>
+                  </ion-button>
                 </div>
               </div>
+              <div class="preview-info">
+                <p>Imagen cargada correctamente</p>
+                <small>Haz clic en la vista previa para expandir.</small>
+              </div>
             </div>
+
           </div>
         </div>
 
-        <div class="form-footer-container full-width-group">
+        <div class="form-footer-container">
           <div class="action-buttons-group">
-            <button *ngIf="modoEdicion" type="button" class="btn-cancel" (click)="cancelarEdicion()">
-              Cancelar
-            </button>
-            <button type="button" class="btn-main" (click)="guardarGasto()">
-              <ion-icon name="save-outline"></ion-icon>
-              {{ modoEdicion ? 'Guardar Cambios' : 'Registrar Gasto' }}
-            </button>
+            
+            <ion-button
+              expand="block"
+              type="button"
+              class="ieca-button-primary btn-main"
+              [class.button-disabled]="intentoEnvio && !esFormularioValido"
+              (click)="registrarGasto()">
+              <ion-icon [name]="modoEdicion ? 'save-outline' : 'add-circle-outline'"></ion-icon>
+              <span>
+                {{ modoEdicion ? 'Guardar Cambios' : 'Registrar Gasto' }}
+              </span>
+            </ion-button>
+
+            <ion-button
+              *ngIf="modoEdicion"
+              expand="block"
+              fill="outline"
+              color="medium"
+              type="button"
+              class="ieca-button-secondary btn-cancel"
+              (click)="resetFormulario()">
+              <ion-icon
+                slot="start"
+                name="close-outline">
+              </ion-icon>
+              <span>Cancelar edición</span>
+            </ion-button>
+
           </div>
         </div>
 
       </form>
     </div>
 
-    <div class="list-section-header">
-      <h2 class="text-blue">Historial Contable de Egresos</h2>
-      <span class="badge-count">
+    <div class="list-container">
+
+      <div class="list-section-header">
+        <div class="title-box">
+          <h2 class="text-blue">
+            Historial Contable de Gastos
+          </h2>
+          <span class="badge-count">
             {{ listaFiltrada.length }} registros encontrados
           </span>
-      <div class="search-wrapper">
-        <ion-searchbar
-          [(ngModel)]="searchTerm"
-          (ionInput)="filtrarGastos()"
-          placeholder="Buscar por descripción"
-          class="custom-searchbar">
-        </ion-searchbar>
-      </div>
-    </div>
-
-    <div class="advanced-filters">
-      <div class="filter-row">
-        <div class="filter-item">
-          <ion-label>Filtrar por Categoría</ion-label>
-          <div class="filter-input-wrapper">
-            <ion-select 
-              interface="popover" 
-              [(ngModel)]="filtroCategoria" 
-              (ionChange)="filtrarGastos()" 
-              class="custom-select-filter">
-              <ion-select-option value="Todos">Todas las categorías</ion-select-option>
-              <ion-select-option *ngFor="let cat of categoriasGastos" [value]="cat">{{ cat }}</ion-select-option>
-            </ion-select>
-          </div>
         </div>
-
-        <div class="filter-item">
-          <ion-label>Monto mínimo $</ion-label>
-          <div class="filter-input-wrapper">
-            <ion-icon name="cash-outline" class="filter-icon text-red"></ion-icon>
-            <input 
-              type="number" 
-              inputmode="decimal" 
-              [(ngModel)]="filtroMontoMin" 
-              (input)="filtrarGastos()" 
-              placeholder="Mínimo">
-          </div>
-        </div>
-
-        <div class="filter-item">
-          <ion-label>Monto máximo $</ion-label>
-          <div class="filter-input-wrapper">
-            <ion-icon name="cash-outline" class="filter-icon text-red"></ion-icon>
-            <input 
-              type="number" 
-              inputmode="decimal" 
-              [(ngModel)]="filtroMontoMax" 
-              (input)="filtrarGastos()" 
-              placeholder="Sin límite">
-          </div>
+        <div class="search-wrapper">
+          <ion-searchbar
+            mode="ios"
+            animated="true"
+            debounce="300"
+            class="professional-search"
+            placeholder="Buscar por descripción..."
+            [(ngModel)]="searchTerm">
+          </ion-searchbar>
         </div>
       </div>
-    </div>
 
-    <app-tabla-general
-      [columns]="columnsGastos"
-      [data]="listaFiltrada"
-      [actions]="acciones"
-      (onEdit)="editarGasto($event)"
-      (onDelete)="eliminarGasto($event)"
-      (onImageClick)="verImagen($event)">
-    </app-tabla-general>
+      <div class="advanced-filters">
+        <div class="filter-row">
+
+          <div class="filter-item">
+            <ion-label>Desde la fecha</ion-label>
+            <div class="hybrid-date-container table-hybrid-fix small-hybrid">
+              <ion-input
+                [(ngModel)]="fechaManualDesde"
+                placeholder="DD/MM/AAAA"
+                maxlength="10"
+                class="manual-input"
+                inputmode="numeric"
+                autocomplete="off"
+                (ionInput)="validarFechaManual($event, 'desde')">
+              </ion-input>
+              <ion-button
+                fill="clear"
+                type="button"
+                id="btn-desde"
+                class="calendar-icon-btn">
+                <ion-icon
+                  slot="icon-only"
+                  name="calendar-outline">
+                </ion-icon>
+              </ion-button>
+            </div>
+            <ion-popover
+              trigger="btn-desde"
+              triggerAction="click"
+              class="image-style-popover"
+              #popoverDesde>
+              <ng-template>
+                <ion-datetime
+                  presentation="date"
+                  size="cover"
+                  [showDefaultButtons]="false"
+                  [(ngModel)]="filtroFechaInicio"
+                  (ionChange)="onPickerDateChange($event, 'desde', popoverDesde)">
+                </ion-datetime>
+              </ng-template>
+            </ion-popover>
+          </div>
+
+          <div class="filter-item">
+            <ion-label>Hasta la fecha</ion-label>
+            <div class="hybrid-date-container table-hybrid-fix small-hybrid">
+              <ion-input
+                [(ngModel)]="fechaManualHasta"
+                placeholder="DD/MM/AAAA"
+                maxlength="10"
+                class="manual-input"
+                inputmode="numeric"
+                autocomplete="off"
+                (ionInput)="validarFechaManual($event, 'hasta')">
+              </ion-input>
+              <ion-button
+                fill="clear"
+                type="button"
+                id="btn-hasta"
+                class="calendar-icon-btn">
+                <ion-icon
+                  slot="icon-only"
+                  name="calendar-outline">
+                </ion-icon>
+              </ion-button>
+            </div>
+            <ion-popover
+              trigger="btn-hasta"
+              triggerAction="click"
+              class="image-style-popover"
+              #popoverHasta>
+              <ng-template>
+                <ion-datetime
+                  presentation="date"
+                  size="cover"
+                  [showDefaultButtons]="false"
+                  [(ngModel)]="filtroFechaFin"
+                  (ionChange)="onPickerDateChange($event, 'hasta', popoverHasta)">
+                </ion-datetime>
+              </ng-template>
+            </ion-popover>
+          </div>
+
+          <div class="filter-item">
+            <ion-label>Monto mínimo $</ion-label>
+            <div class="filter-input-wrapper">
+              <ion-icon
+                name="cash-outline"
+                class="filter-icon text-red">
+              </ion-icon>
+              <input
+                type="number"
+                inputmode="decimal"
+                class="custom-amount-filter"
+                [(ngModel)]="filtroMontoMin"
+                placeholder="0.00">
+            </div>
+          </div>
+
+          <div class="filter-item">
+            <ion-label>Monto máximo $</ion-label>
+            <div class="filter-input-wrapper">
+              <ion-icon
+                name="cash-outline"
+                class="filter-icon text-red">
+              </ion-icon>
+              <input
+                type="number"
+                inputmode="decimal"
+                class="custom-amount-filter"
+                [(ngModel)]="filtroMontoMax"
+                placeholder="Sin límite">
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <app-tabla-general
+        [columns]="columnsGastos"
+        [data]="listaFiltrada"
+        [actions]="acciones"
+        (onEdit)="editarGasto($event)"
+        (onDelete)="eliminarGasto($event)"
+        (onImageClick)="verImagen($event)">
+      </app-tabla-general>
+
+    </div>
 
   </div>
+
+  <div
+    class="lightbox-overlay"
+    *ngIf="fotoSeleccionada"
+    (click)="cerrarImagen()">
+
+    <button
+      type="button"
+      class="close-lightbox"
+      aria-label="Cerrar imagen"
+      (click)="cerrarImagen()">
+      <ion-icon name="close-outline"></ion-icon>
+    </button>
+
+    <div
+      class="lightbox-content"
+      (click)="$event.stopPropagation()">
+      <img
+        [src]="fotoSeleccionada"
+        alt="Evidencia ampliada en pantalla completa">
+      <div class="lightbox-caption">
+        Evidencia de respaldo del gasto contable
+      </div>
+    </div>
+
+  </div>
+
 </ion-content>
-
-<div class="lightbox-overlay" *ngIf="fotoSeleccionada" (click)="cerrarImagen()">
-  <button type="button" class="close-lightbox" aria-label="Cerrar imagen" (click)="cerrarImagen()">
-    <ion-icon name="close-outline"></ion-icon>
-  </button>
-  <div class="lightbox-content" (click)="$event.stopPropagation()">
-    <img [src]="fotoSeleccionada" alt="Evidencia en pantalla completa">
-  </div>
-</div>

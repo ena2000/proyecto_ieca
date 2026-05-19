@@ -1,19 +1,238 @@
 <ion-header class="ion-no-border">
-  <ion-toolbar>
-    <ion-title>Usuarios</ion-title>
+
+  <ion-toolbar class="ieca-toolbar">
+
+    <ion-buttons slot="start">
+      <ion-menu-button
+        color="primary"
+        aria-label="Abrir menú">
+      </ion-menu-button>
+    </ion-buttons>
+
+    <ion-title class="main-title">
+      Usuarios
+    </ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button
+        class="text-blue"
+        type="button"
+        aria-label="Notificaciones">
+        <ion-icon name="notifications-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+
   </ion-toolbar>
+
 </ion-header>
 
-<ion-content class="ion-padding">
-  <div class="page-panel">
-    <div class="page-panel-header">
-      <div>
-        <h2>Usuarios</h2>
-        <p>Administra el acceso, roles y datos del personal.</p>
+<ion-content class="ion-padding gray-bg">
+
+  <div class="container-wrapper">
+
+    <div class="page-header">
+
+      <h1 class="text-blue">
+        {{ modoEdicion ? 'Editar Usuario' : 'Registrar Usuario' }}
+      </h1>
+
+      <div
+        class="edit-status-badge"
+        *ngIf="modoEdicion">
+        <ion-icon name="pencil-outline"></ion-icon>
+        <span>
+          Editando usuario <strong>#{{ idEditando }}</strong>
+        </span>
       </div>
+
+      <p *ngIf="!modoEdicion">
+        Crea nuevos usuarios y administra el acceso a la plataforma.
+      </p>
+      <p *ngIf="modoEdicion">
+        Modifica la información y permisos del usuario.
+      </p>
+
     </div>
-    <div class="page-panel-body">
-      <p>En esta vista podrás controlar quién puede usar la plataforma y revisar permisos.</p>
+
+    <div class="ieca-card form-card">
+
+      <form
+        class="ieca-grid-form"
+        autocomplete="off">
+
+        <div class="input-group">
+          <ion-label
+            class="ieca-label"
+            [class.text-danger]="intentoEnvio && nuevoUsuario.nombre.trim().length < 3">
+            Nombre completo *
+          </ion-label>
+          <ion-item
+            lines="none"
+            class="ieca-input-item ieca-input"
+            [class.error-border]="intentoEnvio && nuevoUsuario.nombre.trim().length < 3">
+            <ion-icon
+              slot="start"
+              name="options-outline"
+              class="text-blue">
+            </ion-icon>
+            <ion-input
+              type="text"
+              [(ngModel)]="nuevoUsuario.nombre"
+              name="nombre"
+              placeholder="Ej. Juan Pérez...">
+            </ion-input>
+          </ion-item>
+          <small
+            class="error-text"
+            *ngIf="intentoEnvio && nuevoUsuario.nombre.trim().length < 3">
+            Ingresa un nombre válido.
+          </small>
+        </div>
+
+        <div class="input-group">
+          <ion-label
+            class="ieca-label"
+            [class.text-danger]="intentoEnvio && (!nuevoUsuario.email || !nuevoUsuario.email.includes('@'))">
+            Email *
+          </ion-label>
+          <ion-item
+            lines="none"
+            class="ieca-input-item ieca-input"
+            [class.error-border]="intentoEnvio && (!nuevoUsuario.email || !nuevoUsuario.email.includes('@'))">
+            <ion-icon
+              slot="start"
+              name="options-outline"
+              class="text-blue">
+            </ion-icon>
+            <ion-input
+              type="email"
+              [(ngModel)]="nuevoUsuario.email"
+              name="email"
+              placeholder="Ej. usuario@iglesia.com...">
+            </ion-input>
+          </ion-item>
+          <small
+            class="error-text"
+            *ngIf="intentoEnvio && (!nuevoUsuario.email || !nuevoUsuario.email.includes('@'))">
+            Ingresa un email válido.
+          </small>
+        </div>
+
+        <div class="input-group">
+          <ion-label class="ieca-label">
+            Rol *
+          </ion-label>
+          <ion-item
+            lines="none"
+            class="ieca-input-item ieca-input">
+            <ion-icon
+              slot="start"
+              name="options-outline"
+              class="text-blue">
+            </ion-icon>
+            <ion-select
+              interface="popover"
+              [(ngModel)]="nuevoUsuario.rol"
+              name="rol"
+              class="ieca-select"
+              placeholder="Seleccione uno">
+              <ion-select-option *ngFor="let rol of rolesUsuario" [value]="rol">{{ rol }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+        </div>
+
+        <div class="input-group">
+          <ion-label class="ieca-label">
+            Estado *
+          </ion-label>
+          <ion-item
+            lines="none"
+            class="ieca-input-item ieca-input">
+            <ion-icon
+              slot="start"
+              name="options-outline"
+              class="text-blue">
+            </ion-icon>
+            <ion-select
+              interface="popover"
+              [(ngModel)]="nuevoUsuario.estado"
+              name="estado"
+              class="ieca-select"
+              placeholder="Seleccione uno">
+              <ion-select-option *ngFor="let est of estadosUsuario" [value]="est">{{ est }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+        </div>
+
+        <div class="form-footer-container">
+          <div class="action-buttons-group">
+
+            <ion-button
+              expand="block"
+              type="button"
+              class="ieca-button-primary btn-main"
+              [class.button-disabled]="intentoEnvio && !esFormularioValido"
+              (click)="registrarUsuario()">
+              <ion-icon [name]="modoEdicion ? 'save-outline' : 'add-circle-outline'"></ion-icon>
+              <span>
+                {{ modoEdicion ? 'Guardar Cambios' : 'Registrar Usuario' }}
+              </span>
+            </ion-button>
+
+            <ion-button
+              *ngIf="modoEdicion"
+              expand="block"
+              fill="outline"
+              color="medium"
+              type="button"
+              class="ieca-button-secondary btn-cancel"
+              (click)="resetFormulario()">
+              <ion-icon
+                slot="start"
+                name="close-outline">
+              </ion-icon>
+              <span>Cancelar edición</span>
+            </ion-button>
+
+          </div>
+        </div>
+
+      </form>
     </div>
+
+    <div class="list-container">
+
+      <div class="list-section-header">
+        <div class="title-box">
+          <h2 class="text-blue">
+            Usuarios del Sistema
+          </h2>
+          <span class="badge-count">
+            {{ listaFiltrada.length }} usuarios encontrados
+          </span>
+        </div>
+        <div class="search-wrapper">
+          <ion-searchbar
+            mode="ios"
+            animated="true"
+            debounce="300"
+            class="professional-search"
+            placeholder="Buscar por nombre o email..."
+            [(ngModel)]="searchTerm">
+          </ion-searchbar>
+        </div>
+      </div>
+
+      <app-tabla-general
+        [columns]="columnsUsuarios"
+        [data]="listaFiltrada"
+        [actions]="acciones"
+        (onEdit)="editarUsuario($event)"
+        (onDelete)="eliminarUsuario($event)">
+      </app-tabla-general>
+
+    </div>
+
   </div>
+
 </ion-content>
