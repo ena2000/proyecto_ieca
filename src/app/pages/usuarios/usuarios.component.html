@@ -143,7 +143,7 @@
 
         <div class="input-group">
           <ion-label class="ieca-label">
-            Estado *
+            Ministerio
           </ion-label>
           <ion-item
             lines="none"
@@ -155,14 +155,15 @@
             </ion-icon>
             <ion-select
               interface="popover"
-              [(ngModel)]="nuevoUsuario.estado"
-              name="estado"
+              [(ngModel)]="nuevoUsuario.ministerioId"
+              name="ministerioId"
               class="ieca-select"
-              placeholder="Seleccione uno">
-              <ion-select-option *ngFor="let est of estadosUsuario" [value]="est">{{ est }}</ion-select-option>
+              placeholder="Seleccione un ministerio">
+              <ion-select-option *ngFor="let min of listaMinisterios" [value]="min.id">{{ min.nombre }}</ion-select-option>
             </ion-select>
           </ion-item>
         </div>
+       
 
         <div class="form-footer-container">
           <div class="action-buttons-group">

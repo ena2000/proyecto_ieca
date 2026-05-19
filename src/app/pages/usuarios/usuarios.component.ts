@@ -19,12 +19,18 @@ import { TablaGeneralComponent, TableColumn } from 'src/app/components/tabla-gen
 
 registerLocaleData(localeEs);
 
+interface Ministerio {
+  id: number;
+  nombre: string;
+}
+
 interface Usuario {
   id: number;
   nombre: string;
   email: string;
   rol: string;
   estado: string;
+  ministerioId?: number;
   fechaFormateada?: string;
 }
 
@@ -56,12 +62,15 @@ interface Usuario {
 })
 export class UsuariosComponent implements OnInit {
 
+  listaMinisterios: Ministerio[] = [];
+
   nuevoUsuario: Usuario = {
     id: 0,
     nombre: '',
     email: '',
     rol: 'Miembro',
-    estado: 'Activo'
+    estado: 'Activo',
+    ministerioId: undefined
   };
 
   intentoEnvio = false;
@@ -106,6 +115,7 @@ export class UsuariosComponent implements OnInit {
 
   ngOnInit() {
     this.cargarDatos();
+    this.cargarMinisterios();
   }
 
   @HostListener('document:keydown.escape', [])
@@ -204,11 +214,28 @@ export class UsuariosComponent implements OnInit {
       nombre: '',
       email: '',
       rol: 'Miembro',
-      estado: 'Activo'
+      estado: 'Activo',
+      ministerioId: undefined
     };
     this.modoEdicion = false;
     this.idEditando = null;
     this.intentoEnvio = false;
+  }
+
+  // Carga ministerios desde localStorage
+  cargarMinisterios() {
+    const datosMinisterios = localStorage.getItem('ministerios');
+    if (datosMinisterios) {
+      try {
+        const ministerios = JSON.parse(datosMinisterios);
+        this.listaMinisterios = ministerios.map((m: any, idx: number) => ({
+          id: m.id || idx,
+          nombre: m.nombre
+        }));
+      } catch (e) {
+        this.listaMinisterios = [];
+      }
+    }
   }
 
   guardarLocalStorage() {

@@ -138,6 +138,60 @@
         </div>
 
         <div class="input-group">
+          <ion-label
+            class="ieca-label"
+            [class.text-danger]="intentoEnvio && !nuevoIngreso.ministerioId">
+            Ministerio *
+          </ion-label>
+          <ion-item
+            lines="none"
+            class="ieca-input-item ieca-input"
+            [class.error-border]="intentoEnvio && !nuevoIngreso.ministerioId">
+            <ion-icon
+              slot="start"
+              name="options-outline"
+              class="text-blue">
+            </ion-icon>
+            <ion-select
+              interface="popover"
+              [(ngModel)]="nuevoIngreso.ministerioId"
+              name="ministerioId"
+              class="ieca-select"
+              placeholder="Seleccione un ministerio">
+              <ion-select-option *ngFor="let min of listaMinisterios" [value]="min.id">{{ min.nombre }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+          <small
+            class="error-text"
+            *ngIf="intentoEnvio && !nuevoIngreso.ministerioId">
+            Debes seleccionar un ministerio.
+          </small>
+        </div>
+
+        <div class="input-group">
+          <ion-label class="ieca-label">
+            Responsable del registro
+          </ion-label>
+          <ion-item
+            lines="none"
+            class="ieca-input-item ieca-input">
+            <ion-icon
+              slot="start"
+              name="options-outline"
+              class="text-blue">
+            </ion-icon>
+            <ion-select
+              interface="popover"
+              [(ngModel)]="nuevoIngreso.usuarioId"
+              name="usuarioId"
+              class="ieca-select"
+              placeholder="Seleccione usuario">
+              <ion-select-option *ngFor="let user of listaUsuarios" [value]="user.id">{{ user.nombre }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+        </div>
+
+        <div class="input-group">
           <ion-label class="ieca-label">
             Tipo de ingreso *
           </ion-label>
@@ -155,10 +209,7 @@
               name="tipo"
               class="ieca-select"
               placeholder="Seleccione uno">
-              <ion-select-option value="Ofrenda">Ofrenda</ion-select-option>
-              <ion-select-option value="Donación">Donación</ion-select-option>
-              <ion-select-option value="Talento">Talento</ion-select-option>
-              <ion-select-option value="Otro">Otro</ion-select-option>
+              <ion-select-option *ngFor="let tipoIng of tiposIngreso" [value]="tipoIng">{{ tipoIng }}</ion-select-option>
             </ion-select>
           </ion-item>
         </div>

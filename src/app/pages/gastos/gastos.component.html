@@ -138,6 +138,60 @@
         </div>
 
         <div class="input-group">
+          <ion-label
+            class="ieca-label"
+            [class.text-danger]="intentoEnvio && !nuevoGasto.ministerioId">
+            Ministerio *
+          </ion-label>
+          <ion-item
+            lines="none"
+            class="ieca-input-item ieca-input"
+            [class.error-border]="intentoEnvio && !nuevoGasto.ministerioId">
+            <ion-icon
+              slot="start"
+              name="options-outline"
+              class="text-blue">
+            </ion-icon>
+            <ion-select
+              interface="popover"
+              [(ngModel)]="nuevoGasto.ministerioId"
+              name="ministerioId"
+              class="ieca-select"
+              placeholder="Seleccione un ministerio">
+              <ion-select-option *ngFor="let min of listaMinisterios" [value]="min.id">{{ min.nombre }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+          <small
+            class="error-text"
+            *ngIf="intentoEnvio && !nuevoGasto.ministerioId">
+            Debes seleccionar un ministerio.
+          </small>
+        </div>
+
+        <div class="input-group">
+          <ion-label class="ieca-label">
+            Responsable del registro
+          </ion-label>
+          <ion-item
+            lines="none"
+            class="ieca-input-item ieca-input">
+            <ion-icon
+              slot="start"
+              name="options-outline"
+              class="text-blue">
+            </ion-icon>
+            <ion-select
+              interface="popover"
+              [(ngModel)]="nuevoGasto.usuarioId"
+              name="usuarioId"
+              class="ieca-select"
+              placeholder="Seleccione usuario">
+              <ion-select-option *ngFor="let user of listaUsuarios" [value]="user.id">{{ user.nombre }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+        </div>
+
+        <div class="input-group">
           <ion-label class="ieca-label">
             Categoría de gasto *
           </ion-label>
@@ -155,7 +209,7 @@
               name="categoria"
               class="ieca-select"
               placeholder="Seleccione uno">
-              <ion-select-option *ngFor="let cat of categoriasGastos" [value]="cat">{{ cat }}</ion-select-option>
+              <ion-select-option *ngFor="let cat of categoriasGasto" [value]="cat">{{ cat }}</ion-select-option>
             </ion-select>
           </ion-item>
         </div>

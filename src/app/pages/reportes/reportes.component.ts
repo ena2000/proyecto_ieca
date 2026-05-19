@@ -5,7 +5,7 @@ import localeEs from '@angular/common/locales/es';
 
 import {
   IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent,
-  IonIcon, IonButton, IonSearchbar, ToastController, IonLabel
+  IonIcon, IonButton, IonSearchbar, ToastController, IonLabel, IonItem, IonSelect, IonSelectOption, IonInput
 } from '@ionic/angular/standalone';
 
 import { addIcons } from 'ionicons';
@@ -17,6 +17,18 @@ import { TablaGeneralComponent, TableColumn } from 'src/app/components/tabla-gen
 
 registerLocaleData(localeEs);
 
+interface Ministerio {
+  id: number;
+  nombre: string;
+}
+
+interface Desglose {
+  categoria: string;
+  ingresos: number;
+  gastos: number;
+  saldo: number;
+}
+
 interface Reporte {
   id: number;
   fecha: string;
@@ -26,6 +38,9 @@ interface Reporte {
   gastos: number;
   saldo: number;
   archivo: string;
+  ministerioId?: number;
+  mes?: string;
+  desglose?: Desglose[];
   fechaFormateada?: string;
 }
 
@@ -47,6 +62,10 @@ interface Reporte {
     IonButton,
     IonSearchbar,
     IonLabel,
+    IonItem,
+    IonSelect,
+    IonSelectOption,
+    IonInput,
     TablaGeneralComponent
   ],
   providers: [ToastController]
@@ -54,8 +73,12 @@ interface Reporte {
 export class ReportesComponent implements OnInit {
 
   listaReportes: Reporte[] = [];
+  listaMinisterios: Ministerio[] = [];
   searchTerm: string = '';
+  filtroMes: string = '';
+  filtroMinisterioId: number | null = null;
   fotoSeleccionada: string | null = null;
+  desgloseVisible: Desglose[] = [];
 
   columnsReportes: TableColumn[] = [
     { field: 'fechaFormateada', header: 'Fecha' },
@@ -82,6 +105,7 @@ export class ReportesComponent implements OnInit {
 
   ngOnInit() {
     this.cargarDatos();
+    this.cargarMinisterios();
   }
 
   @HostListener('document:keydown.escape', [])
@@ -123,11 +147,70 @@ export class ReportesComponent implements OnInit {
       );
     }
 
+    if (this.filtroMes) {
+      filtrados = filtrados.filter(r => r.mes?.startsWith(this.filtroMes));
+    }
+
+    if (this.filtroMinisterioId !== null) {
+      filtrados = filtrados.filter(r => r.ministerioId === this.filtroMinisterioId);
+    }
+
     return filtrados;
+  }
+
+  get totalIngresosFiltrado(): number {
+    return this.listaFiltrada.reduce((sum, r) => sum + (r.ingresos || 0), 0);
+  }
+
+  get totalGastosFiltrado(): number {
+    return this.listaFiltrada.reduce((sum, r) => sum + (r.gastos || 0), 0);
+  }
+
+  get totalSaldoFiltrado(): number {
+    return this.totalIngresosFiltrado - this.totalGastosFiltrado;
+  }
+
+  // Calcula desglose por categoría de todos los reportes filtrados
+  get desgloseAgregado(): Desglose[] {
+    const desgloseMap = new Map<string, Desglose>();
+
+    this.listaFiltrada.forEach(reporte => {
+      if (reporte.desglose) {
+        reporte.desglose.forEach(item => {
+          const existing = desgloseMap.get(item.categoria) || {
+            categoria: item.categoria,
+            ingresos: 0,
+            gastos: 0,
+            saldo: 0
+          };
+          existing.ingresos += item.ingresos;
+          existing.gastos += item.gastos;
+          existing.saldo = existing.ingresos - existing.gastos;
+          desgloseMap.set(item.categoria, existing);
+        });
+      }
+    });
+
+    return Array.from(desgloseMap.values());
   }
 
   descargarReporte(item: Reporte) {
     this.mostrarToast(`Descargando reporte: ${item.titulo}`, 'success');
+  }
+
+  cargarMinisterios() {
+    const datosMinisterios = localStorage.getItem('ministerios');
+    if (datosMinisterios) {
+      try {
+        const ministerios = JSON.parse(datosMinisterios);
+        this.listaMinisterios = ministerios.map((m: any, idx: number) => ({
+          id: m.id || idx,
+          nombre: m.nombre
+        }));
+      } catch (e) {
+        this.listaMinisterios = [];
+      }
+    }
   }
 
   cargarDatos() {
@@ -137,7 +220,8 @@ export class ReportesComponent implements OnInit {
         this.listaReportes = JSON.parse(data);
         this.listaReportes = this.listaReportes.map(r => ({
           ...r,
-          fechaFormateada: this.formatearISOaDDMMYYYY(r.fecha)
+          fechaFormateada: this.formatearISOaDDMMYYYY(r.fecha),
+          mes: new Date(r.fecha).toISOString().substring(0, 7)
         }));
       } catch (e) {
         this.listaReportes = [];

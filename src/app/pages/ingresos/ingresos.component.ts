@@ -22,15 +22,32 @@ import { TablaGeneralComponent, TableColumn } from 'src/app/components/tabla-gen
 
 registerLocaleData(localeEs);
 
-// Interfaz para definir la estructura de un Ingreso
+// Interfaz Ministerio para relación
+interface Ministerio {
+  id: number;
+  nombre: string;
+}
+
+// Interfaz Usuario para relación
+interface Usuario {
+  id: number;
+  nombre: string;
+  email: string;
+}
+
+// Interfaz para definir la estructura de un Ingreso (TransaccionBase)
 interface Ingreso {
   id: number;
   fecha: string;
   descripcion: string;
   monto: number | null;
   foto: string;
+  urlEvidencia?: string;
   tipo: string;
   ministerio: string;
+  ministerioId?: number;
+  usuarioId?: number;
+  registradoPor?: string;
   fechaFormateada?: string;
 }
 
@@ -71,6 +88,10 @@ export class IngresosComponent implements OnInit {
   // Control de fecha manual en formato DD/MM/AAAA para el formulario principal
   fechaManualForm: string = '';
   
+  // Listas de datos relacionales
+  listaMinisterios: Ministerio[] = [];
+  listaUsuarios: Usuario[] = [];
+  
   // Objeto enlazado al formulario de registro/edición
   nuevoIngreso: Ingreso = {
     id: 0,
@@ -79,7 +100,10 @@ export class IngresosComponent implements OnInit {
     monto: null,
     foto: '',
     tipo: 'Ofrenda',
-    ministerio: 'General'
+    ministerio: 'General',
+    ministerioId: undefined,
+    usuarioId: undefined,
+    registradoPor: 'Sistema'
   };
 
   // Estados de control de flujo
@@ -100,6 +124,9 @@ export class IngresosComponent implements OnInit {
 
   // Estado para la previsualización a pantalla completa (Lightbox)
   fotoSeleccionada: string | null = null;
+
+  // Tipos de ingreso disponibles
+  tiposIngreso: string[] = ['Ofrenda', 'Diezmo', 'Talento', 'Donación', 'Otro'];
 
   // Configuración de las columnas para la tabla general reutilizable
   columnsIngresos: TableColumn[] = [
@@ -143,6 +170,7 @@ export class IngresosComponent implements OnInit {
     // Sincroniza la fecha inicial del datepicker con la máscara de texto manual
     this.fechaManualForm = this.formatearISOaDDMMYYYY(this.nuevoIngreso.fecha);
     this.cargarDatos();
+    this.cargarRelaciones();
   }
   
   // Escucha global del teclado para cerrar el visor de imágenes con la tecla Escape
@@ -398,6 +426,38 @@ verImagen(foto: any) { // Cambiado de string | null | undefined a any
   // Elimina la referencia en base64 de la foto cargada en el formulario
   eliminarFoto() {
     this.nuevoIngreso.foto = '';
+  }
+
+  // Carga datos relacionales (ministerios y usuarios) desde localStorage
+  cargarRelaciones() {
+    // Cargar ministerios
+    const datosMinisterios = localStorage.getItem('ministerios');
+    if (datosMinisterios) {
+      try {
+        const ministerios = JSON.parse(datosMinisterios);
+        this.listaMinisterios = ministerios.map((m: any, idx: number) => ({
+          id: m.id || idx,
+          nombre: m.nombre
+        }));
+      } catch (e) {
+        this.listaMinisterios = [];
+      }
+    }
+
+    // Cargar usuarios
+    const datosUsuarios = localStorage.getItem('usuarios');
+    if (datosUsuarios) {
+      try {
+        const usuarios = JSON.parse(datosUsuarios);
+        this.listaUsuarios = usuarios.map((u: any, idx: number) => ({
+          id: u.id || idx,
+          nombre: u.nombre,
+          email: u.email
+        }));
+      } catch (e) {
+        this.listaUsuarios = [];
+      }
+    }
   }
 
   // Persistencia de los datos del array actual en el LocalStorage

@@ -65,6 +65,69 @@
         </div>
       </div>
 
+      <div class="filters-grid">
+        <div class="filter-input">
+          <ion-label class="filter-label">Mes</ion-label>
+          <ion-item lines="none" class="filter-item">
+            <ion-input
+              type="month"
+              [(ngModel)]="filtroMes"
+              name="filtroMes"
+              placeholder="YYYY-MM">
+            </ion-input>
+          </ion-item>
+        </div>
+
+        <div class="filter-input">
+          <ion-label class="filter-label">Ministerio</ion-label>
+          <ion-item lines="none" class="filter-item">
+            <ion-select
+              [(ngModel)]="filtroMinisterioId"
+              name="filtroMinisterioId"
+              class="ieca-select"
+              placeholder="Todos">
+              <ion-select-option [value]="null">Todos los ministerios</ion-select-option>
+              <ion-select-option *ngFor="let min of listaMinisterios" [value]="min.id">{{ min.nombre }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+        </div>
+      </div>
+
+      <div class="totales-card">
+        <div class="total-item ingresos">
+          <span class="total-label">Ingresos Totales</span>
+          <span class="total-value">{{ totalIngresosFiltrado | currency:'':'.':'1.2-2' }}</span>
+        </div>
+        <div class="total-item gastos">
+          <span class="total-label">Gastos Totales</span>
+          <span class="total-value">{{ totalGastosFiltrado | currency:'':'.':'1.2-2' }}</span>
+        </div>
+        <div class="total-item saldo">
+          <span class="total-label">Saldo Neto</span>
+          <span class="total-value" [class.negative]="totalSaldoFiltrado < 0">
+            {{ totalSaldoFiltrado | currency:'':'.':'1.2-2' }}
+          </span>
+        </div>
+      </div>
+
+      <div class="desglose-card" *ngIf="desgloseAgregado.length > 0">
+        <h3 class="desglose-title">Desglose por Categoría</h3>
+        <div class="desglose-table">
+          <div class="desglose-header">
+            <div class="col-categoria">Categoría</div>
+            <div class="col-cantidad">Ingresos</div>
+            <div class="col-cantidad">Gastos</div>
+            <div class="col-cantidad">Saldo</div>
+          </div>
+          <div class="desglose-row" *ngFor="let item of desgloseAgregado">
+            <div class="col-categoria">{{ item.categoria }}</div>
+            <div class="col-cantidad ingresos">{{ item.ingresos | currency:'':'.':'1.2-2' }}</div>
+            <div class="col-cantidad gastos">{{ item.gastos | currency:'':'.':'1.2-2' }}</div>
+            <div class="col-cantidad" [class.negative]="item.saldo < 0">{{ item.saldo | currency:'':'.':'1.2-2' }}</div>
+          </div>
+        </div>
+      </div>
+
       <app-tabla-general
         [columns]="columnsReportes"
         [data]="listaFiltrada"
