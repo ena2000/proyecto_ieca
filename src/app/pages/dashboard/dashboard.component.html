@@ -4,119 +4,187 @@
       <ion-menu-button color="primary"></ion-menu-button>
     </ion-buttons>
     <ion-title class="main-title">Panel de Control</ion-title>
+    <div slot="end" class="month-badge">📅 {{ mesActual }}</div>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding gray-bg">
-  <div class="container-wrapper">
-    
-    <!-- Sección de Bienvenida -->
+<ion-content class="gray-bg">
+  <div class="dash-wrapper">
+
+    <!-- Welcome -->
     <div class="welcome-header">
-      <h1 class="text-blue">Resumen General</h1>
-      <p>Bienvenido al sistema contable de la Iglesia La Alborada</p>
+      <p class="welcome-sup">Bienvenido al sistema contable</p>
+      <h1>Iglesia Evangélica La Alborada</h1>
     </div>
 
-    <!-- Rejilla de Tarjetas de Estado -->
-    <ion-grid class="ion-no-padding">
-      <ion-row>
-        <!-- Balance General -->
-        <ion-col size="12" size-md="4">
-          <ion-card class="stat-card balance-card">
-            <ion-card-content>
-              <div class="stat-icon-wrapper">
-                <ion-icon name="wallet-outline"></ion-icon>
-              </div>
-              <div class="stat-text">
-                <p>Balance Disponible</p>
-                <h3>$ 3,840.50</h3>
-              </div>
-            </ion-card-content>
-          </ion-card>
-        </ion-col>
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
 
-        <!-- Ingresos Mes -->
-        <ion-col size="6" size-md="4">
-          <ion-card class="stat-card income-card">
-            <ion-card-content>
-              <div class="stat-icon-wrapper">
-                <ion-icon name="cash-outline"></ion-icon>
-              </div>
-              <div class="stat-text">
-                <p>Ingresos Mayo</p>
-                <h3 class="text-success">+ $ 1,250</h3>
-              </div>
-            </ion-card-content>
-          </ion-card>
-        </ion-col>
+      <div class="kpi-card kpi-balance">
+        <div class="kpi-icon">💼</div>
+        <div class="kpi-info">
+          <span class="kpi-label">Balance General</span>
+          <span class="kpi-value">$ {{ kpis.balance | number:'1.2-2' }}</span>
+          <span class="kpi-trend neutral">↑ Disponible</span>
+        </div>
+      </div>
 
-        <!-- Gastos Mes -->
-        <ion-col size="6" size-md="4">
-          <ion-card class="stat-card expense-card">
-            <ion-card-content>
-              <div class="stat-icon-wrapper">
-                <ion-icon name="trending-down-outline"></ion-icon>
-              </div>
-              <div class="stat-text">
-                <p>Gastos Mayo</p>
-                <h3 class="text-red">- $ 420.15</h3>
-              </div>
-            </ion-card-content>
-          </ion-card>
-        </ion-col>
-      </ion-row>
-    </ion-grid>
+      <div class="kpi-card kpi-income">
+        <div class="kpi-icon">💵</div>
+        <div class="kpi-info">
+          <span class="kpi-label">Ingresos del Mes</span>
+          <span class="kpi-value">$ {{ kpis.ingresos | number:'1.2-2' }}</span>
+          <span class="kpi-trend pos">↑ {{ kpis.tendenciaIngresos }} vs mes anterior</span>
+        </div>
+      </div>
 
-    <ion-row class="ion-margin-top">
-      <!-- Columna Izquierda: Actividad Reciente -->
-      <ion-col size="12" size-lg="8">
-        <div class="list-header">
-          <h2 class="text-blue">Últimos Movimientos</h2>
+      <div class="kpi-card kpi-expense">
+        <div class="kpi-icon">🧾</div>
+        <div class="kpi-info">
+          <span class="kpi-label">Gastos del Mes</span>
+          <span class="kpi-value">$ {{ kpis.gastosMes | number:'1.2-2' }}</span>
+          <span class="kpi-trend neg">↓ {{ kpis.tendenciaGastos }} vs mes anterior</span>
+        </div>
+      </div>
+
+      <div class="kpi-card kpi-ministry">
+        <div class="kpi-icon">🏛️</div>
+        <div class="kpi-info">
+          <span class="kpi-label">Ministerios Activos</span>
+          <span class="kpi-value">{{ kpis.ministeriosActivos }}</span>
+          <span class="kpi-trend neutral">👥 Con actividad</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Main Grid -->
+    <div class="main-grid">
+
+      <!-- Bar Chart -->
+      <div class="card chart-card">
+        <div class="card-head">
+          <div>
+            <h3 class="card-title">Ingresos vs Gastos</h3>
+            <p class="card-sub">Comparativo últimos 6 meses</p>
+          </div>
+          <div class="legend">
+            <span class="ldot ldot-i"></span><span>Ingresos</span>
+            <span class="ldot ldot-g"></span><span>Gastos</span>
+          </div>
+        </div>
+        <div class="bar-chart">
+          @for (d of chartData; track d.mes) {
+            <div class="bgroup">
+              <div class="bars">
+                <div class="bar bar-i" [style.height]="barHeight(d.ingresos)" [title]="'Ingreso: $' + d.ingresos"></div>
+                <div class="bar bar-g" [style.height]="barHeight(d.gastos)"   [title]="'Gasto: $'   + d.gastos"></div>
+              </div>
+              <span class="blabel">{{ d.mes }}</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Ministry distribution -->
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h3 class="card-title">Por Ministerio</h3>
+            <p class="card-sub">Distribución de ingresos</p>
+          </div>
+        </div>
+        <div class="min-list">
+          @for (m of ministerios; track m.nombre) {
+            <div class="min-item">
+              <div class="min-info">
+                <span class="min-dot" [style.background]="m.color"></span>
+                <span class="min-name">{{ m.nombre }}</span>
+              </div>
+              <div class="min-bar-w">
+                <div class="min-bar" [style.width.%]="m.porcentaje" [style.background]="m.color"></div>
+              </div>
+              <span class="min-pct">{{ m.porcentaje }}%</span>
+            </div>
+          }
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom Grid -->
+    <div class="bottom-grid">
+
+      <!-- Recent movements -->
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h3 class="card-title">Últimos Movimientos</h3>
+            <p class="card-sub">Actividad reciente</p>
+          </div>
           <ion-button fill="clear" size="small" routerLink="/reportes">
             Ver Todo <ion-icon slot="end" name="arrow-forward-outline"></ion-icon>
           </ion-button>
         </div>
-        
-        <ion-card class="white-card">
-          <ion-list lines="full">
-            @for (item of recientes; track item.titulo) {
-              <ion-item detail="false">
-                <div slot="start" [class]="'icon-circle ' + item.tipo">
-                  <ion-icon [name]="item.icon"></ion-icon>
-                </div>
-                <ion-label>
-                  <h3>{{ item.titulo }}</h3>
-                  <p>{{ item.fecha }}</p>
-                </ion-label>
-                <div slot="end" class="ion-text-right">
-                  <h3 [class]="item.tipo === 'ingreso' ? 'text-success' : 'text-red'">
-                    {{ item.tipo === 'ingreso' ? '+' : '-' }} ${{ item.monto.toFixed(2) }}
-                  </h3>
-                </div>
-              </ion-item>
-            }
-          </ion-list>
-        </ion-card>
-      </ion-col>
+        <div class="mov-list">
+          @for (mov of movimientos; track mov.titulo) {
+            <div class="mov-row">
+              <div class="mov-icon" [class.ingreso]="mov.tipo === 'ingreso'" [class.gasto]="mov.tipo === 'gasto'">
+                {{ mov.tipo === 'ingreso' ? '💵' : '🧾' }}
+              </div>
+              <div class="mov-detail">
+                <span class="mov-title">{{ mov.titulo }}</span>
+                <span class="mov-meta">{{ mov.ministerio }} · {{ mov.fecha }}</span>
+              </div>
+              <span class="mov-monto" [class.ingreso]="mov.tipo === 'ingreso'" [class.gasto]="mov.tipo === 'gasto'">
+                {{ mov.tipo === 'ingreso' ? '+' : '-' }} $ {{ mov.monto | number:'1.2-2' }}
+              </span>
+            </div>
+          }
+        </div>
+      </div>
 
-      <!-- Columna Derecha: Accesos Directos -->
-      <ion-col size="12" size-lg="4">
-        <h2 class="text-blue section-subtitle">Acciones Rápidas</h2>
-        
-        <ion-card class="action-card bg-purple" routerLink="/ingresos">
-          <ion-card-content>
-            <ion-icon name="add-outline"></ion-icon>
-            <p>Registrar Nuevo Ingreso</p>
-          </ion-card-content>
-        </ion-card>
+      <!-- Quick actions -->
+      <div class="card">
+        <div class="card-head">
+          <h3 class="card-title">Acciones Rápidas</h3>
+        </div>
+        <div class="act-grid">
+          <div class="act-btn act-i" routerLink="/ingresos">
+            <span class="act-emoji">➕</span>
+            <span>Nuevo Ingreso</span>
+          </div>
+          <div class="act-btn act-g" routerLink="/gastos">
+            <span class="act-emoji">➖</span>
+            <span>Nuevo Gasto</span>
+          </div>
+          <div class="act-btn act-r" routerLink="/reportes">
+            <span class="act-emoji">📊</span>
+            <span>Ver Reportes</span>
+          </div>
+          <div class="act-btn act-m" routerLink="/ministerios">
+            <span class="act-emoji">🏛️</span>
+            <span>Ministerios</span>
+          </div>
+        </div>
+        <div class="quick-stats">
+          <div class="qs-row">
+            <span class="qs-label">Superávit del mes</span>
+            <span class="qs-val pos">$ {{ kpis.superavit | number:'1.2-2' }}</span>
+          </div>
+          <div class="qs-div"></div>
+          <div class="qs-row">
+            <span class="qs-label">Transacciones registradas</span>
+            <span class="qs-val">{{ kpis.transacciones }}</span>
+          </div>
+          <div class="qs-div"></div>
+          <div class="qs-row">
+            <span class="qs-label">Último registro</span>
+            <span class="qs-val">Hoy</span>
+          </div>
+        </div>
+      </div>
 
-        <ion-card class="action-card bg-blue" routerLink="/reportes">
-          <ion-card-content>
-            <ion-icon name="stats-chart-outline"></ion-icon>
-            <p>Generar Reporte Mensual</p>
-          </ion-card-content>
-        </ion-card>
-      </ion-col>
-    </ion-row>
-
+    </div>
   </div>
 </ion-content>
