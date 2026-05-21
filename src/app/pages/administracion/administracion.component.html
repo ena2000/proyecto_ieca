@@ -1,19 +1,148 @@
 <ion-header class="ion-no-border">
-  <ion-toolbar>
-    <ion-title>Administración</ion-title>
+  <ion-toolbar class="ieca-toolbar">
+    <ion-buttons slot="start">
+      <ion-menu-button color="primary"></ion-menu-button>
+    </ion-buttons>
+    <ion-title class="main-title">Administración</ion-title>
+    <ion-buttons slot="end">
+      <ion-button class="notif-btn" type="button">
+        <ion-icon name="notifications-outline"></ion-icon>
+        <span class="notif-dot"></span>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding">
-  <div class="page-panel">
-    <div class="page-panel-header">
-      <div>
-        <h2>Administración</h2>
-        <p>Configura roles, permisos y ajustes generales del sistema.</p>
+<ion-content class="gray-bg">
+  <div class="container-wrapper">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="page-header__left">
+        <p class="page-header__sup">Sistema Contable · IECA</p>
+        <h1 class="text-blue">Panel de Administración</h1>
+        <p class="page-header__sub">Gestiona módulos, usuarios y configuración del sistema.</p>
+      </div>
+      <div class="page-header__badge">
+        <ion-icon name="shield-checkmark-outline"></ion-icon>
+        <span>Admin</span>
       </div>
     </div>
-    <div class="page-panel-body">
-      <p>Esta pantalla te permitirá gestionar los parámetros administrativos de la aplicación.</p>
+
+    <!-- Resumen Ejecutivo -->
+    <section class="section-block">
+      <div class="resumen-grid">
+        @for (r of resumen; track r.label) {
+          <div class="resumen-card resumen-card--{{ r.color }}">
+            <div class="resumen-card__icon">
+              <ion-icon [name]="r.icono"></ion-icon>
+            </div>
+            <div class="resumen-card__info">
+              <span class="resumen-card__label">{{ r.label }}</span>
+              <span class="resumen-card__valor">{{ r.valor }}</span>
+              <span class="resumen-card__sub">{{ r.sub }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- Módulos del Sistema -->
+    <section class="section-block">
+      <h2 class="section-title text-blue">Módulos del Sistema</h2>
+      <div class="quick-access-grid">
+        @for (item of accesosRapidos; track item.ruta) {
+          <div (click)="navegar(item.ruta)" class="access-card access-card--{{ item.color }}">
+            <div class="access-card__icon">
+              <ion-icon [name]="item.icono"></ion-icon>
+            </div>
+            <div class="access-card__content">
+              <h3>{{ item.titulo }}</h3>
+              <p>{{ item.descripcion }}</p>
+            </div>
+            <div class="access-card__arrow">
+              <ion-icon name="arrow-forward-outline"></ion-icon>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- Grid inferior: Config + Actividad -->
+    <div class="bottom-grid">
+
+      <section class="section-block">
+        <h2 class="section-title text-blue">Configuración del Sistema</h2>
+        <div class="config-card">
+          <div class="config-row">
+            <div class="config-item">
+              <span class="config-label">Iglesia</span>
+              <span class="config-value">{{ configIglesia.nombre }}</span>
+            </div>
+            <div class="config-item">
+              <span class="config-label">Moneda operativa</span>
+              <span class="config-value">{{ configIglesia.moneda }}</span>
+            </div>
+            <div class="config-item">
+              <span class="config-label">Periodo activo</span>
+              <span class="config-value">{{ configIglesia.periodoActual }}</span>
+            </div>
+            <div class="config-item">
+              <span class="config-label">Responsable</span>
+              <span class="config-value">{{ configIglesia.responsable }}</span>
+            </div>
+            <div class="config-item">
+              <span class="config-label">Versión del sistema</span>
+              <span class="config-value version-badge">{{ configIglesia.version }}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-block">
+        <h2 class="section-title text-blue">Actividad Reciente</h2>
+        <div class="activity-card">
+          @for (a of actividad; track a.accion) {
+            <div class="activity-row">
+              <div class="activity-icon activity-icon--{{ a.color }}">
+                <ion-icon [name]="a.icono"></ion-icon>
+              </div>
+              <div class="activity-detail">
+                <span class="activity-accion">{{ a.accion }}</span>
+                <span class="activity-meta">{{ a.modulo }} · {{ a.tiempo }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+
     </div>
+
+    <!-- Cierre Contable -->
+    <section class="section-block">
+      <div class="critical-card">
+        <div class="critical-header">
+          <ion-icon name="alert-circle-outline" class="text-red"></ion-icon>
+          <div>
+            <h2 class="text-red">Cierre Contable Mensual</h2>
+            <p class="critical-subtitle">Zona de acción irreversible</p>
+          </div>
+        </div>
+        <p class="critical-text">
+          Congela el registro de transacciones del periodo
+          <strong>{{ configIglesia.periodoActual }}</strong> e inyecta el balance
+          final en los reportes históricos. Una vez ejecutado, no se podrán
+          registrar ni modificar movimientos del periodo.
+          <strong>Esta acción es irreversible.</strong>
+        </p>
+        <div class="critical-footer">
+          <button type="button" class="btn-cierre" (click)="ejecutarCierreMes()">
+            <ion-icon name="lock-closed-outline"></ion-icon>
+            <span>Ejecutar Cierre Maestro de Caja</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
   </div>
 </ion-content>
