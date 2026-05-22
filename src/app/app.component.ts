@@ -14,7 +14,9 @@ import {
   documentTextOutline,
   cloudUploadOutline,
   saveOutline,
-  notificationsOutline
+  notificationsOutline,
+  eyeOutline,
+  eyeOffOutline
 } from 'ionicons/icons';
 
 @Component({
@@ -49,7 +51,9 @@ export class AppComponent {
       'document-text-outline': documentTextOutline,
       'cloud-upload-outline': cloudUploadOutline,
       'save-outline': saveOutline,
-      'notifications-outline': notificationsOutline
+      'notifications-outline': notificationsOutline,
+      'eye-outline': eyeOutline,
+      'eye-off-outline': eyeOffOutline
     });
 
  // 2. Lógica mejorada para detectar la ruta inicial y cambios
