@@ -102,15 +102,21 @@
       <section class="section-block">
         <h2 class="section-title text-blue">Actividad Reciente</h2>
         <div class="activity-card">
-          @for (a of actividad; track a.accion) {
-            <div class="activity-row">
-              <div class="activity-icon activity-icon--{{ a.color }}">
-                <ion-icon [name]="a.icono"></ion-icon>
+          @if (actividad.length > 0) {
+            @for (a of actividad; track a.accion) {
+              <div class="activity-row">
+                <div class="activity-icon activity-icon--{{ a.color }}">
+                  <ion-icon [name]="a.icono"></ion-icon>
+                </div>
+                <div class="activity-detail">
+                  <span class="activity-accion">{{ a.accion }}</span>
+                  <span class="activity-meta">{{ a.modulo }} · {{ a.tiempo }}</span>
+                </div>
               </div>
-              <div class="activity-detail">
-                <span class="activity-accion">{{ a.accion }}</span>
-                <span class="activity-meta">{{ a.modulo }} · {{ a.tiempo }}</span>
-              </div>
+            }
+          } @else {
+            <div style="text-align: center; padding: 20px; color: #999;">
+              <p>Sin actividad registrada aún</p>
             </div>
           }
         </div>

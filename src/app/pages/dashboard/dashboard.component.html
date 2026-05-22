@@ -95,17 +95,23 @@
           </div>
         </div>
         <div class="min-list">
-          @for (m of ministerios; track m.nombre) {
-            <div class="min-item">
-              <div class="min-info">
-                <span class="min-dot" [style.background]="m.color"></span>
-                <span class="min-name">{{ m.nombre }}</span>
+          @if (ministerios.length > 0) {
+            @for (m of ministerios; track m.nombre) {
+              <div class="min-item">
+                <div class="min-info">
+                  <span class="min-dot" [style.background]="m.color"></span>
+                  <span class="min-name">{{ m.nombre }}</span>
+                </div>
+                <div class="min-bar-w">
+                  <div class="min-bar" [style.width.%]="m.porcentaje" [style.background]="m.color"></div>
+                </div>
+                <span class="min-pct">{{ m.porcentaje }}%</span>
               </div>
-              <div class="min-bar-w">
-                <div class="min-bar" [style.width.%]="m.porcentaje" [style.background]="m.color"></div>
-              </div>
-              <span class="min-pct">{{ m.porcentaje }}%</span>
-            </div>
+            }
+          } @else {
+            <p style="text-align: center; color: #999; padding: 20px;">
+              Sin datos aún. Ingresa datos en otras secciones.
+            </p>
           }
         </div>
       </div>
@@ -127,19 +133,25 @@
           </ion-button>
         </div>
         <div class="mov-list">
-          @for (mov of movimientos; track mov.titulo) {
-            <div class="mov-row">
-              <div class="mov-icon" [class.ingreso]="mov.tipo === 'ingreso'" [class.gasto]="mov.tipo === 'gasto'">
-                {{ mov.tipo === 'ingreso' ? '💵' : '🧾' }}
+          @if (movimientos.length > 0) {
+            @for (mov of movimientos; track mov.titulo) {
+              <div class="mov-row">
+                <div class="mov-icon" [class.ingreso]="mov.tipo === 'ingreso'" [class.gasto]="mov.tipo === 'gasto'">
+                  {{ mov.tipo === 'ingreso' ? '💵' : '🧾' }}
+                </div>
+                <div class="mov-detail">
+                  <span class="mov-title">{{ mov.titulo }}</span>
+                  <span class="mov-meta">{{ mov.ministerio }} · {{ mov.fecha }}</span>
+                </div>
+                <span class="mov-monto" [class.ingreso]="mov.tipo === 'ingreso'" [class.gasto]="mov.tipo === 'gasto'">
+                  {{ mov.tipo === 'ingreso' ? '+' : '-' }} $ {{ mov.monto | number:'1.2-2' }}
+                </span>
               </div>
-              <div class="mov-detail">
-                <span class="mov-title">{{ mov.titulo }}</span>
-                <span class="mov-meta">{{ mov.ministerio }} · {{ mov.fecha }}</span>
-              </div>
-              <span class="mov-monto" [class.ingreso]="mov.tipo === 'ingreso'" [class.gasto]="mov.tipo === 'gasto'">
-                {{ mov.tipo === 'ingreso' ? '+' : '-' }} $ {{ mov.monto | number:'1.2-2' }}
-              </span>
-            </div>
+            }
+          } @else {
+            <p style="text-align: center; color: #999; padding: 20px;">
+              No hay movimientos aún. Inicia registrando un ingreso o gasto.
+            </p>
           }
         </div>
       </div>

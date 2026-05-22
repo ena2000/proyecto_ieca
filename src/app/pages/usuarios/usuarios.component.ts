@@ -5,34 +5,22 @@ import localeEs from '@angular/common/locales/es';
 
 import {
   IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent,
-  IonIcon, IonItem, IonLabel, IonInput, IonButton, IonSearchbar, 
+  IonIcon, IonItem, IonLabel, IonInput, IonButton, IonSearchbar,
   ToastController, AlertController, IonSelect, IonSelectOption
 } from '@ionic/angular/standalone';
 
 import { addIcons } from 'ionicons';
 import {
-  notificationsOutline, expandOutline, closeOutline, pencilOutline, 
+  notificationsOutline, expandOutline, closeOutline, pencilOutline,
   trashOutline, addCircleOutline, optionsOutline, saveOutline
 } from 'ionicons/icons';
 
 import { TablaGeneralComponent, TableColumn } from 'src/app/components/tabla-general/tabla-general.component';
 
+// ✅ Interfaces importadas desde DataService — ya no se definen localmente
+import { DataService, Usuario, Ministerio } from '../../services/data.service';
+
 registerLocaleData(localeEs);
-
-interface Ministerio {
-  id: number;
-  nombre: string;
-}
-
-interface Usuario {
-  id: number;
-  nombre: string;
-  email: string;
-  rol: string;
-  estado: string;
-  ministerioId?: number;
-  fechaFormateada?: string;
-}
 
 @Component({
   selector: 'app-usuarios',
@@ -62,54 +50,53 @@ interface Usuario {
 })
 export class UsuariosComponent implements OnInit {
 
+  // ✅ Tipado con interfaces del DataService
   listaMinisterios: Ministerio[] = [];
 
   nuevoUsuario: Usuario = {
-    id: 0,
-    nombre: '',
-    email: '',
-    rol: 'Miembro',
-    estado: 'Activo',
+    id:           0,
+    nombre:       '',
+    email:        '',
+    rol:          'Miembro',
+    estado:       'Activo',
     ministerioId: undefined
   };
 
   intentoEnvio = false;
-  modoEdicion = false;
+  modoEdicion  = false;
   idEditando: number | null = null;
-  contadorId = 0;
+  contadorId  = 0;
   listaUsuarios: Usuario[] = [];
 
-  searchTerm: string = '';
+  searchTerm:       string = '';
   fotoSeleccionada: string | null = null;
 
   columnsUsuarios: TableColumn[] = [
-    { field: 'nombre', header: 'Nombre' },
-    { field: 'email', header: 'Email' },
-    { field: 'rol', header: 'Rol', type: 'badge' },
-    { field: 'estado', header: 'Estado', type: 'badge' }
+    { field: 'nombre', header: 'Nombre'                    },
+    { field: 'email',  header: 'Email'                     },
+    { field: 'rol',    header: 'Rol',    type: 'badge'     },
+    { field: 'estado', header: 'Estado', type: 'badge'     }
   ];
 
-  acciones = {
-    edit: true,
-    delete: true
-  };
+  acciones = { edit: true, delete: true };
 
-  rolesUsuario: string[] = ['Administrador', 'Coordinador', 'Miembro'];
+  rolesUsuario:   string[] = ['Administrador', 'Coordinador', 'Miembro'];
   estadosUsuario: string[] = ['Activo', 'Inactivo', 'Suspendido'];
 
   constructor(
     private toastController: ToastController,
-    private alertController: AlertController
+    private alertController: AlertController,
+    private dataService:     DataService
   ) {
     addIcons({
       'notifications-outline': notificationsOutline,
-      'expand-outline': expandOutline,
-      'close-outline': closeOutline,
-      'pencil-outline': pencilOutline,
-      'trash-outline': trashOutline,
-      'add-circle-outline': addCircleOutline,
-      'options-outline': optionsOutline,
-      'save-outline': saveOutline
+      'expand-outline':        expandOutline,
+      'close-outline':         closeOutline,
+      'pencil-outline':        pencilOutline,
+      'trash-outline':         trashOutline,
+      'add-circle-outline':    addCircleOutline,
+      'options-outline':       optionsOutline,
+      'save-outline':          saveOutline
     });
   }
 
@@ -137,7 +124,7 @@ export class UsuariosComponent implements OnInit {
     document.body.style.overflow = 'auto';
   }
 
-  get listaFiltrada() {
+  get listaFiltrada(): Usuario[] {
     let filtrados = [...this.listaUsuarios];
 
     if (this.searchTerm) {
@@ -166,7 +153,7 @@ export class UsuariosComponent implements OnInit {
       }
     } else {
       this.contadorId++;
-      const nuevoRegistro = { ...this.nuevoUsuario, id: this.contadorId };
+      const nuevoRegistro: Usuario = { ...this.nuevoUsuario, id: this.contadorId };
       this.listaUsuarios = [nuevoRegistro, ...this.listaUsuarios];
       this.mostrarToast('Usuario creado exitosamente', 'success');
     }
@@ -178,8 +165,8 @@ export class UsuariosComponent implements OnInit {
   editarUsuario(item: Usuario) {
     setTimeout(() => {
       this.nuevoUsuario = { ...item };
-      this.modoEdicion = true;
-      this.idEditando = item.id;
+      this.modoEdicion  = true;
+      this.idEditando   = item.id;
       this.intentoEnvio = false;
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }, 50);
@@ -187,16 +174,13 @@ export class UsuariosComponent implements OnInit {
 
   async eliminarUsuario(item: Usuario) {
     const alert = await this.alertController.create({
-      header: 'Confirmar eliminación',
+      header:  'Confirmar eliminación',
       message: `¿Estás seguro de eliminar el usuario #${item.id}?`,
       buttons: [
+        { text: 'Cancelar', role: 'cancel' },
         {
-          text: 'Cancelar',
-          role: 'cancel'
-        },
-        {
-          text: 'Eliminar',
-          role: 'destructive',
+          text:    'Eliminar',
+          role:    'destructive',
           handler: () => {
             this.listaUsuarios = this.listaUsuarios.filter(u => u.id !== item.id);
             this.guardarLocalStorage();
@@ -210,27 +194,27 @@ export class UsuariosComponent implements OnInit {
 
   resetFormulario() {
     this.nuevoUsuario = {
-      id: 0,
-      nombre: '',
-      email: '',
-      rol: 'Miembro',
-      estado: 'Activo',
+      id:           0,
+      nombre:       '',
+      email:        '',
+      rol:          'Miembro',
+      estado:       'Activo',
       ministerioId: undefined
     };
-    this.modoEdicion = false;
-    this.idEditando = null;
+    this.modoEdicion  = false;
+    this.idEditando   = null;
     this.intentoEnvio = false;
   }
 
-  // Carga ministerios desde localStorage
   cargarMinisterios() {
     const datosMinisterios = localStorage.getItem('ministerios');
     if (datosMinisterios) {
       try {
-        const ministerios = JSON.parse(datosMinisterios);
+        const ministerios     = JSON.parse(datosMinisterios);
         this.listaMinisterios = ministerios.map((m: any, idx: number) => ({
-          id: m.id || idx,
-          nombre: m.nombre
+          id:     m.id || idx,
+          nombre: m.nombre,
+          estado: m.estado ?? 'Activo'
         }));
       } catch (e) {
         this.listaMinisterios = [];
@@ -240,6 +224,8 @@ export class UsuariosComponent implements OnInit {
 
   guardarLocalStorage() {
     localStorage.setItem('usuarios', JSON.stringify(this.listaUsuarios));
+    // ✅ Notificar al DataService para mantener el estado global sincronizado
+    this.dataService.refreshAllData();
   }
 
   cargarDatos() {
@@ -248,7 +234,7 @@ export class UsuariosComponent implements OnInit {
       try {
         this.listaUsuarios = JSON.parse(data);
         if (this.listaUsuarios.length > 0) {
-          const ids = this.listaUsuarios.map(u => u.id || 0);
+          const ids       = this.listaUsuarios.map(u => u.id || 0);
           this.contadorId = Math.max(...ids);
         }
       } catch (e) {
@@ -259,9 +245,9 @@ export class UsuariosComponent implements OnInit {
 
   async mostrarToast(mensaje: string, color: string) {
     const toast = await this.toastController.create({
-      message: mensaje,
+      message:  mensaje,
       duration: 2000,
-      color: color,
+      color,
       position: 'top'
     });
     await toast.present();
@@ -270,7 +256,7 @@ export class UsuariosComponent implements OnInit {
   get esFormularioValido(): boolean {
     return (
       this.nuevoUsuario.nombre?.trim().length >= 3 &&
-      this.nuevoUsuario.email?.trim().length >= 5 &&
+      this.nuevoUsuario.email?.trim().length  >= 5 &&
       this.nuevoUsuario.email?.includes('@')
     );
   }

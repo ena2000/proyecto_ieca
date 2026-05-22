@@ -1,29 +1,15 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import {
   IonHeader, IonToolbar, IonButtons, IonMenuButton,
   IonTitle, IonContent, IonIcon, IonButton
 } from '@ionic/angular/standalone';
+import { Subject, interval } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
-interface Movimiento {
-  tipo: 'ingreso' | 'gasto';
-  titulo: string;
-  ministerio: string;
-  monto: number;
-  fecha: string;
-}
-
-interface Ministerio {
-  nombre: string;
-  color: string;
-  porcentaje: number;
-}
-
-interface MesData {
-  mes: string;
-  ingresos: number;
-  gastos: number;
-}
+// ✅ Interfaces importadas desde DataService — ya no se definen localmente
+import { DataService, KPIs, MesData, Movimiento } from '../../services/data.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -31,54 +17,80 @@ interface MesData {
   styleUrls: ['./dashboard.component.scss'],
   standalone: true,
   imports: [
-    CommonModule, IonHeader, IonToolbar, IonButtons, IonMenuButton,
+    CommonModule, RouterModule,
+    IonHeader, IonToolbar, IonButtons, IonMenuButton,
     IonTitle, IonContent, IonIcon, IonButton
   ]
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnInit, OnDestroy {
 
-  mesActual = 'Mayo 2026';
+  mesActual = this.getMesActual();
 
-  kpis = {
-    balance: 3840.50,
-    ingresos: 1250.00,
-    gastosMes: 420.15,
-    ministeriosActivos: 4,
-    tendenciaIngresos: '+12%',
-    tendenciaGastos: '-5%',
-    superavit: 829.85,
-    transacciones: 18
+  // ✅ Tipado con interfaces del DataService
+  kpis: KPIs = {
+    balance:            0,
+    ingresos:           0,
+    gastosMes:          0,
+    ministeriosActivos: 0,
+    tendenciaIngresos:  '0%',
+    tendenciaGastos:    '0%',
+    superavit:          0,
+    transacciones:      0
   };
 
-  chartData: MesData[] = [
-    { mes: 'Dic', ingresos: 980,  gastos: 310 },
-    { mes: 'Ene', ingresos: 1100, gastos: 450 },
-    { mes: 'Feb', ingresos: 870,  gastos: 280 },
-    { mes: 'Mar', ingresos: 1320, gastos: 390 },
-    { mes: 'Abr', ingresos: 1050, gastos: 360 },
-    { mes: 'May', ingresos: 1250, gastos: 420 },
-  ];
+  chartData:    MesData[]   = [];
+  movimientos:  Movimiento[] = [];
 
-  ministerios: Ministerio[] = [
-    { nombre: 'General',    color: '#1e3a8a', porcentaje: 42 },
-    { nombre: 'Juvenil',    color: '#7c3aed', porcentaje: 28 },
-    { nombre: 'Pro-Templo', color: '#0891b2', porcentaje: 18 },
-    { nombre: 'Diaconado',  color: '#059669', porcentaje: 12 },
-  ];
+  ministerios: Array<{ nombre: string; color: string; porcentaje: number }> = [];
 
-  movimientos: Movimiento[] = [
-    { tipo: 'ingreso', titulo: 'Diezmos Dominicales',   ministerio: 'General',    monto: 520.00, fecha: 'Hoy'    },
-    { tipo: 'gasto',   titulo: 'Mantenimiento Equipos', ministerio: 'General',    monto: 45.00,  fecha: 'Ayer'   },
-    { tipo: 'ingreso', titulo: 'Ofrendas Pro-Templo',   ministerio: 'Pro-Templo', monto: 150.00, fecha: '17 May' },
-    { tipo: 'ingreso', titulo: 'Ofrenda Juvenil',       ministerio: 'Juvenil',    monto: 80.00,  fecha: '16 May' },
-    { tipo: 'gasto',   titulo: 'Servicios Básicos',     ministerio: 'General',    monto: 95.15,  fecha: '15 May' },
-  ];
+  private destroy$ = new Subject<void>();
+
+  constructor(private dataService: DataService) {}
+
+  ngOnInit() {
+    this.cargarDatos();
+
+    interval(3000)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.cargarDatos());
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  private cargarDatos() {
+    this.kpis       = this.dataService.calcularKPIs();
+    this.chartData  = this.dataService.getChartData();
+    this.movimientos = this.dataService.getUltimosMovimientos(5);
+    this.mesActual  = this.getMesActual();
+
+    // Distribución de ministerios mapeada al tipo local del template
+    this.ministerios = this.dataService.getDistribucionMinisterios().map(d => ({
+      nombre:     d.nombre,
+      color:      d.color,
+      porcentaje: d.porcentaje
+    }));
+  }
+
+  private getMesActual(): string {
+    const meses = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+    const ahora = new Date();
+    return `${meses[ahora.getMonth()]} ${ahora.getFullYear()}`;
+  }
 
   get chartMax(): number {
+    if (this.chartData.length === 0) return 100;
     return Math.max(...this.chartData.map(d => Math.max(d.ingresos, d.gastos))) * 1.15;
   }
 
   barHeight(value: number): string {
-    return Math.round((value / this.chartMax) * 128) + 'px';
+    const max = this.chartMax;
+    if (max === 0) return '4px';
+    return Math.round((value / max) * 128) + 'px';
   }
 }

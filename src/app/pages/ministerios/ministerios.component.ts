@@ -18,23 +18,10 @@ import {
 
 import { TablaGeneralComponent, TableColumn } from 'src/app/components/tabla-general/tabla-general.component';
 
+// ✅ Interfaces importadas desde DataService — ya no se definen localmente
+import { DataService, Ministerio, Usuario } from '../../services/data.service';
+
 registerLocaleData(localeEs);
-
-interface Usuario {
-  id: number;
-  nombre: string;
-  email: string;
-}
-
-interface Ministerio {
-  id: number;
-  fecha: string;
-  nombre: string;
-  estado: string;
-  hldrId?: number;
-  coLiderId?: number;
-  fechaFormateada?: string;
-}
 
 @Component({
   selector: 'app-ministerios',
@@ -53,30 +40,31 @@ interface Ministerio {
 })
 export class MinisteriosComponent implements OnInit {
 
+  // ✅ Tipado con interfaces del DataService
   listaUsuarios: Usuario[] = [];
 
   nuevoMinisterio: Ministerio = {
-    id: 0,
-    fecha: '',
-    nombre: '',
-    estado: 'Activo',
-    hldrId: undefined,
-    coLiderId: undefined
+    id:         0,
+    nombre:     '',
+    estado:     'Activo',
+    fecha:      '',
+    hldrId:     undefined,
+    coLiderId:  undefined
   };
 
   intentoEnvio = false;
-  modoEdicion = false;
+  modoEdicion  = false;
   idEditando: number | null = null;
-  contadorId = 0;
+  contadorId  = 0;
   listaMinisterios: Ministerio[] = [];
 
-  searchTerm: string = '';
+  searchTerm:    string = '';
   filtroLiderId: number | null = null;
 
   columnsMinisterios: TableColumn[] = [
-    { field: 'nombre', header: 'Nombre' },
-    { field: 'fechaFormateada', header: 'Creado' },
-    { field: 'estado', header: 'Estado', type: 'badge' }
+    { field: 'nombre',          header: 'Nombre'                   },
+    { field: 'fechaFormateada', header: 'Creado'                   },
+    { field: 'estado',          header: 'Estado', type: 'badge'    }
   ];
 
   acciones = { edit: true, delete: true };
@@ -85,17 +73,18 @@ export class MinisteriosComponent implements OnInit {
 
   constructor(
     private alertController: AlertController,
-    private toastController: ToastController
+    private toastController: ToastController,
+    private dataService:     DataService
   ) {
     addIcons({
       'document-text-outline': documentTextOutline,
-      'save-outline': saveOutline,
+      'save-outline':          saveOutline,
       'notifications-outline': notificationsOutline,
-      'pencil-outline': pencilOutline,
-      'trash-outline': trashOutline,
-      'close-outline': closeOutline,
-      'add-circle-outline': addCircleOutline,
-      'options-outline': optionsOutline
+      'pencil-outline':        pencilOutline,
+      'trash-outline':         trashOutline,
+      'close-outline':         closeOutline,
+      'add-circle-outline':    addCircleOutline,
+      'options-outline':       optionsOutline
     });
   }
 
@@ -107,13 +96,13 @@ export class MinisteriosComponent implements OnInit {
   private formatearISOaDDMMYYYY(iso: string): string {
     if (!iso) return '';
     const date = new Date(iso);
-    const dd = String(date.getDate()).padStart(2, '0');
-    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd   = String(date.getDate()).padStart(2, '0');
+    const mm   = String(date.getMonth() + 1).padStart(2, '0');
     const yyyy = date.getFullYear();
     return `${dd}/${mm}/${yyyy}`;
   }
 
-  get listaFiltrada() {
+  get listaFiltrada(): Ministerio[] {
     let filtrados = [...this.listaMinisterios];
 
     if (this.searchTerm) {
@@ -135,7 +124,7 @@ export class MinisteriosComponent implements OnInit {
       return;
     }
 
-    const ahora = new Date().toISOString();
+    const ahora          = new Date().toISOString();
     const fechaFormateada = this.formatearISOaDDMMYYYY(ahora);
 
     if (this.modoEdicion) {
@@ -153,8 +142,8 @@ export class MinisteriosComponent implements OnInit {
       this.contadorId++;
       const nuevoRegistro: Ministerio = {
         ...this.nuevoMinisterio,
-        id: this.contadorId,
-        fecha: ahora,
+        id:               this.contadorId,
+        fecha:            ahora,
         fechaFormateada
       };
       this.listaMinisterios = [nuevoRegistro, ...this.listaMinisterios];
@@ -168,22 +157,22 @@ export class MinisteriosComponent implements OnInit {
   editarMinisterio(item: Ministerio) {
     setTimeout(() => {
       this.nuevoMinisterio = { ...item };
-      this.modoEdicion = true;
-      this.idEditando = item.id;
-      this.intentoEnvio = false;
+      this.modoEdicion     = true;
+      this.idEditando      = item.id;
+      this.intentoEnvio    = false;
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }, 50);
   }
 
   async eliminarMinisterio(item: Ministerio) {
     const alert = await this.alertController.create({
-      header: 'Confirmar eliminación',
+      header:  'Confirmar eliminación',
       message: `¿Estás seguro de eliminar el ministerio #${item.id}?`,
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
         {
-          text: 'Eliminar',
-          role: 'destructive',
+          text:    'Eliminar',
+          role:    'destructive',
           handler: () => {
             this.listaMinisterios = this.listaMinisterios.filter(m => m.id !== item.id);
             this.guardarLocalStorage();
@@ -197,20 +186,22 @@ export class MinisteriosComponent implements OnInit {
 
   resetFormulario() {
     this.nuevoMinisterio = {
-      id: 0,
-      fecha: '',
-      nombre: '',
-      estado: 'Activo',
-      hldrId: undefined,
+      id:        0,
+      nombre:    '',
+      estado:    'Activo',
+      fecha:     '',
+      hldrId:    undefined,
       coLiderId: undefined
     };
-    this.modoEdicion = false;
-    this.idEditando = null;
+    this.modoEdicion  = false;
+    this.idEditando   = null;
     this.intentoEnvio = false;
   }
 
   guardarLocalStorage() {
     localStorage.setItem('ministerios', JSON.stringify(this.listaMinisterios));
+    // ✅ Notificar al DataService igual que los otros módulos
+    this.dataService.refreshAllData();
   }
 
   cargarDatos() {
@@ -219,7 +210,7 @@ export class MinisteriosComponent implements OnInit {
       try {
         this.listaMinisterios = JSON.parse(data);
         if (this.listaMinisterios.length > 0) {
-          const ids = this.listaMinisterios.map(m => m.id || 0);
+          const ids       = this.listaMinisterios.map(m => m.id || 0);
           this.contadorId = Math.max(...ids);
         }
       } catch (e) {
@@ -230,7 +221,7 @@ export class MinisteriosComponent implements OnInit {
 
   async mostrarToast(mensaje: string, color: string) {
     const toast = await this.toastController.create({
-      message: mensaje,
+      message:  mensaje,
       duration: 2000,
       color,
       position: 'top'
@@ -242,11 +233,11 @@ export class MinisteriosComponent implements OnInit {
     const datosUsuarios = localStorage.getItem('usuarios');
     if (datosUsuarios) {
       try {
-        const usuarios = JSON.parse(datosUsuarios);
+        const usuarios     = JSON.parse(datosUsuarios);
         this.listaUsuarios = usuarios.map((u: any, idx: number) => ({
-          id: u.id || idx,
+          id:     u.id || idx,
           nombre: u.nombre,
-          email: u.email
+          email:  u.email
         }));
       } catch (e) {
         this.listaUsuarios = [];
