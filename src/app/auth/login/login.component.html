@@ -1,34 +1,69 @@
 <ion-content [fullscreen]="true">
-  <div class="login-container">
-    <div class="login-card">
-      
-      <div class="header-section">
-        <div class="logo-container">
-          <img src="assets/icon/logo_ieca2.png" alt="Logo IECA">
+  <div class="login-wrapper">
+    <div class="bg-circle blue"></div>
+    <div class="bg-circle purple"></div>
+
+    <div class="login-container">
+      <div class="login-card">
+        
+        <div class="header-section">
+          <div class="logo-box">
+            <img src="assets/icon/logo_ieca2.png" alt="Logo IECA">
+          </div>
+          <h1 class="main-title">
+            Iglesia del Evangelio<br>
+            <span class="highlight">Cuadrangular</span><br>
+            <span class="sub-name">“La Alborada”</span>
+          </h1>
         </div>
-        <h1>Iglesia del Evangelio<br>Cuadrangular<br>“La Alborada”</h1>
-      </div>
 
-      <div class="form-section">
-        <ion-item lines="none" class="custom-input">
-          <ion-icon slot="start" name="person-outline"></ion-icon>
-          <ion-input type="text" placeholder="Usuario"></ion-input>
-        </ion-item>
+        <form [formGroup]="loginForm" (ngSubmit)="onLogin()" class="form-content">
+          
+          <label class="input-label">Usuario</label>
+          <ion-item lines="none" class="modern-input">
+            <ion-input 
+              formControlName="usuario" 
+              type="text" 
+              placeholder="Ingresa tu usuario">
+            </ion-input>
+          </ion-item>
 
-        <ion-item lines="none" class="custom-input">
-          <ion-icon slot="start" name="lock-closed-outline"></ion-icon>
-          <ion-input type="password" placeholder="Contraseña"></ion-input>
-        </ion-item>
+          <label class="input-label">Contraseña</label>
+          <ion-item lines="none" class="modern-input password-item">
+            <ion-input 
+              formControlName="password" 
+              [type]="showPassword ? 'text' : 'password'" 
+              placeholder="••••••••">
+            </ion-input>
+            
+            <ion-button
+              fill="clear"
+              slot="end"
+              type="button"
+              class="custom-eye-btn"
+              (click)="togglePassword()">
 
-        <ion-button expand="block" class="login-button" routerLink="/dashboard">
-          Iniciar sesión
-        </ion-button>
+              <ion-icon
+                slot="icon-only"
+                [name]="showPassword ? 'eye-off-outline' : 'eye-outline'">
+              </ion-icon>
+            </ion-button>
+          </ion-item>
 
-        <div class="footer-links">
-          <p>¿Olvidaste tu contraseña?</p>
+          <div class="forgot-container">
+            <p class="forgot-text">¿Olvidaste tu contraseña?</p>
+          </div>
+
+          <ion-button expand="block" type="submit" class="submit-btn" [disabled]="loginForm.invalid">
+            Iniciar Sesión
+            <ion-icon slot="end" name="arrow-forward-circle"></ion-icon>
+          </ion-button>
+        </form>
+
+        <div class="footer-info">
+          <span class="badge">@2025 IECA</span>
         </div>
       </div>
-
     </div>
   </div>
 </ion-content>
