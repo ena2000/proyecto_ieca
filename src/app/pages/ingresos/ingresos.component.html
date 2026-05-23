@@ -54,7 +54,7 @@
 
     </div>
 
-    <div class="ieca-card form-card">
+    <div class="ieca-card form-card form-card--income">
 
       <form
         class="ieca-grid-form"
@@ -127,7 +127,7 @@
               [(ngModel)]="nuevoIngreso.monto"
               name="monto"
               placeholder="0.00"
-              class="amount-input">
+              class="amount-input amount-input--income">
             </ion-input>
           </ion-item>
           <small
@@ -250,7 +250,7 @@
           <div class="upload-container">
 
             <div
-              class="upload-zone"
+              class="upload-zone upload-zone--income"
               *ngIf="!nuevoIngreso.foto">
               <ion-icon name="cloud-upload-outline"></ion-icon>
               <p>Haz clic para subir o arrastra una imagen</p>
@@ -359,7 +359,7 @@
       </div>
 
       <div class="advanced-filters">
-        <div class="filter-row">
+        <div class="filter-row filter-row--cols-4">
 
           <div class="filter-item">
             <ion-label>Desde la fecha</ion-label>

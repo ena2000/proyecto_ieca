@@ -1,25 +1,22 @@
 <ion-header class="ion-no-border">
   <ion-toolbar class="ieca-toolbar">
     <ion-buttons slot="start">
-      <ion-menu-button color="primary"></ion-menu-button>
+      <ion-menu-button color="primary" aria-label="Abrir menú"></ion-menu-button>
     </ion-buttons>
     <ion-title class="main-title">Administración</ion-title>
     <ion-buttons slot="end">
-      <ion-button class="notif-btn" type="button">
+      <ion-button class="text-blue" type="button" aria-label="Notificaciones">
         <ion-icon name="notifications-outline"></ion-icon>
-        <span class="notif-dot"></span>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="gray-bg">
+<ion-content class="ion-padding gray-bg">
   <div class="container-wrapper">
 
-    <!-- Page Header -->
-    <div class="page-header">
-      <div class="page-header__left">
-        <p class="page-header__sup">Sistema Contable · IECA</p>
+    <div class="page-header page-header--rich">
+      <div>
         <h1 class="text-blue">Panel de Administración</h1>
         <p class="page-header__sub">Gestiona módulos, usuarios y configuración del sistema.</p>
       </div>
@@ -102,21 +99,15 @@
       <section class="section-block">
         <h2 class="section-title text-blue">Actividad Reciente</h2>
         <div class="activity-card">
-          @if (actividad.length > 0) {
-            @for (a of actividad; track a.accion) {
-              <div class="activity-row">
-                <div class="activity-icon activity-icon--{{ a.color }}">
-                  <ion-icon [name]="a.icono"></ion-icon>
-                </div>
-                <div class="activity-detail">
-                  <span class="activity-accion">{{ a.accion }}</span>
-                  <span class="activity-meta">{{ a.modulo }} · {{ a.tiempo }}</span>
-                </div>
+          @for (a of actividad; track a.accion) {
+            <div class="activity-row">
+              <div class="activity-icon activity-icon--{{ a.color }}">
+                <ion-icon [name]="a.icono"></ion-icon>
               </div>
-            }
-          } @else {
-            <div style="text-align: center; padding: 20px; color: #999;">
-              <p>Sin actividad registrada aún</p>
+              <div class="activity-detail">
+                <span class="activity-accion">{{ a.accion }}</span>
+                <span class="activity-meta">{{ a.modulo }} · {{ a.tiempo }}</span>
+              </div>
             </div>
           }
         </div>
