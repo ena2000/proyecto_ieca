@@ -212,15 +212,24 @@
             {{ listaFiltrada.length }} usuarios encontrados
           </span>
         </div>
-        <div class="search-wrapper">
-          <ion-searchbar
-            mode="ios"
-            animated="true"
-            debounce="300"
-            class="professional-search"
-            placeholder="Buscar por nombre o email..."
-            [(ngModel)]="searchTerm">
-          </ion-searchbar>
+        <div class="list-header-actions">
+          <button
+            type="button"
+            class="btn-limpiar-filtros"
+            *ngIf="hayFiltrosActivos"
+            (click)="limpiarFiltros()">
+            Limpiar filtros
+          </button>
+          <div class="search-wrapper">
+            <ion-searchbar
+              mode="ios"
+              animated="true"
+              debounce="300"
+              class="professional-search"
+              placeholder="Buscar por nombre o email..."
+              [(ngModel)]="searchTerm">
+            </ion-searchbar>
+          </div>
         </div>
       </div>
 

@@ -226,6 +226,26 @@ export class GastosComponent implements OnInit {
     }
   }
 
+  get hayFiltrosActivos(): boolean {
+    return !!this.searchTerm ||
+      !!this.filtroFechaInicio ||
+      !!this.filtroFechaFin ||
+      !!this.fechaManualDesde ||
+      !!this.fechaManualHasta ||
+      this.filtroMontoMin !== null ||
+      this.filtroMontoMax !== null;
+  }
+
+  limpiarFiltros(): void {
+    this.searchTerm = '';
+    this.filtroFechaInicio = '';
+    this.filtroFechaFin = '';
+    this.fechaManualDesde = '';
+    this.fechaManualHasta = '';
+    this.filtroMontoMin = null;
+    this.filtroMontoMax = null;
+  }
+
   get listaFiltrada(): Gasto[] {
     let filtrados = [...this.listaGastos];
 

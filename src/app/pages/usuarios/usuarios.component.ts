@@ -124,6 +124,14 @@ export class UsuariosComponent implements OnInit {
     document.body.style.overflow = 'auto';
   }
 
+  get hayFiltrosActivos(): boolean {
+    return !!this.searchTerm;
+  }
+
+  limpiarFiltros(): void {
+    this.searchTerm = '';
+  }
+
   get listaFiltrada(): Usuario[] {
     let filtrados = [...this.listaUsuarios];
 

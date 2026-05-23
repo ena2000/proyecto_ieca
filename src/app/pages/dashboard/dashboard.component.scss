@@ -37,11 +37,13 @@
   }
 
   h1 {
-    font-size: 1.25rem;
+    font-size: clamp(1rem, 2.2vw, 1.25rem);
     font-weight: 900;
     color: var(--ieca-blue);
     letter-spacing: -0.04em;
     margin: 3px 0 0;
+    line-height: 1.15;
+    word-break: break-word;
   }
 }
 
@@ -50,11 +52,12 @@
    ========================================================================== */
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-3);
   margin-bottom: var(--space-4);
+  min-width: 0;
 
-  @media (max-width: 768px) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 1200px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   @media (max-width: 480px) { grid-template-columns: 1fr; }
 }
 
@@ -67,6 +70,7 @@
   gap: var(--space-3);
   align-items: flex-start;
   transition: var(--ieca-transition-fast);
+  min-width: 0;
 
   &:hover {
     transform: translateY(-2px);
@@ -112,8 +116,10 @@
 }
 
 .kpi-trend {
-  font-size: 0.72rem;
+  font-size: 0.65rem;
   font-weight: 700;
+  line-height: 1.25;
+  word-break: break-word;
   &.pos     { color: var(--ieca-green); }
   &.neg     { color: var(--ieca-red); }
   &.neutral { color: #64748b; }
@@ -131,9 +137,12 @@
 
 .card-head {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: flex-start;
+  gap: var(--space-2);
   margin-bottom: var(--space-4);
+  min-width: 0;
 }
 
 .card-title {
@@ -156,11 +165,12 @@
    ========================================================================== */
 .main-grid {
   display: grid;
-  grid-template-columns: 1fr 300px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 260px);
   gap: var(--space-4);
   margin-bottom: var(--space-4);
+  min-width: 0;
 
-  @media (max-width: 768px) { grid-template-columns: 1fr; }
+  @media (max-width: 1100px) { grid-template-columns: 1fr; }
 }
 
 /* ==========================================================================
@@ -168,8 +178,9 @@
    ========================================================================== */
 .legend {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-2);
   font-size: 0.72rem;
   font-weight: 600;
   color: #64748b;
@@ -281,10 +292,11 @@
    ========================================================================== */
 .bottom-grid {
   display: grid;
-  grid-template-columns: 1fr 300px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 260px);
   gap: var(--space-4);
+  min-width: 0;
 
-  @media (max-width: 768px) { grid-template-columns: 1fr; }
+  @media (max-width: 1100px) { grid-template-columns: 1fr; }
 }
 
 /* ==========================================================================

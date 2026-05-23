@@ -102,6 +102,15 @@ export class MinisteriosComponent implements OnInit {
     return `${dd}/${mm}/${yyyy}`;
   }
 
+  get hayFiltrosActivos(): boolean {
+    return !!this.searchTerm || this.filtroLiderId !== null;
+  }
+
+  limpiarFiltros(): void {
+    this.searchTerm = '';
+    this.filtroLiderId = null;
+  }
+
   get listaFiltrada(): Ministerio[] {
     let filtrados = [...this.listaMinisterios];
 

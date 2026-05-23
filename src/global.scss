@@ -101,11 +101,18 @@
 /* ==========================================================================
    BODY
    ========================================================================== */
+html,
+body,
+ion-app {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
 body {
   font-family: 'Inter', sans-serif !important;
   background: var(--ieca-bg);
   color: var(--ieca-text-primary);
-  font-size: 0.82rem; /* Reducción ejecutiva estricta */
+  font-size: 0.82rem;
 }
 
 /* ==========================================================================
@@ -113,6 +120,13 @@ body {
    ========================================================================== */
 ion-content {
   --background: var(--ieca-bg);
+}
+
+ion-content.ion-padding {
+  --padding-start: var(--space-4);
+  --padding-end: var(--space-4);
+  --padding-top: var(--space-4);
+  --padding-bottom: var(--space-4);
 }
 
 /* ==========================================================================
@@ -137,7 +151,7 @@ ion-toolbar {
    ========================================================================== */
 @media (min-width: 992px) {
   .split-pane-side {
-    min-width: 220px !important; /* Más angosto para balancear el contenido */
+    min-width: 220px !important;
     max-width: 220px !important;
     border-right: 1px solid rgba(0, 0, 0, 0.05);
   }
@@ -145,6 +159,15 @@ ion-toolbar {
   ion-split-pane {
     --side-width: 220px;
   }
+
+  .split-pane-main {
+    min-width: 0;
+    overflow-x: hidden;
+  }
+}
+
+ion-split-pane {
+  max-width: 100%;
 }
 
 /* ==========================================================================
@@ -199,9 +222,10 @@ p {
    ========================================================================== */
 .page-container {
   width: 100%;
-  max-width: 1100px; /* Reducido para que no estire de más horizontalmente */
+  max-width: min(1100px, 100%);
   margin: 0 auto;
-  padding-inline: var(--space-5);
+  padding-inline: var(--space-3);
+  box-sizing: border-box;
 }
 
 /* ==========================================================================
@@ -300,11 +324,11 @@ ion-icon {
 }
 
 /* ==========================================================================
-   MENU
+   MENU (fondo oscuro — detalle en slidebar.component.scss)
    ========================================================================== */
-ion-menu::part(container) {
-  background: #ffffff;
-  border-right: 1px solid rgba(0, 0, 0, 0.04);
+ion-menu#main-menu::part(container) {
+  background: #1e2458;
+  border-right: 1px solid rgba(0, 0, 0, 0.12);
 }
 
 /* ==========================================================================

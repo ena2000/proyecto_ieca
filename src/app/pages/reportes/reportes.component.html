@@ -53,44 +53,123 @@
             {{ listaFiltrada.length }} reportes encontrados
           </span>
         </div>
-        <div class="search-wrapper">
-          <ion-searchbar
-            mode="ios"
-            animated="true"
-            debounce="300"
-            class="professional-search"
-            placeholder="Buscar por título..."
-            [(ngModel)]="searchTerm">
-          </ion-searchbar>
+        <div class="list-header-actions">
+          <button
+            type="button"
+            class="btn-limpiar-filtros"
+            *ngIf="hayFiltrosActivos"
+            (click)="limpiarFiltros()">
+            Limpiar filtros
+          </button>
+          <div class="search-wrapper">
+            <ion-searchbar
+              mode="ios"
+              animated="true"
+              debounce="300"
+              class="professional-search"
+              placeholder="Buscar por título..."
+              [(ngModel)]="searchTerm">
+            </ion-searchbar>
+          </div>
         </div>
       </div>
 
-      <div class="filters-grid">
-        <div class="filter-input">
-          <ion-label class="filter-label">Mes</ion-label>
-          <ion-item lines="none" class="filter-item">
-            <ion-input
-              type="month"
-              [(ngModel)]="filtroMes"
-              name="filtroMes"
-              placeholder="YYYY-MM">
-            </ion-input>
-          </ion-item>
+      <div class="reportes-filters ieca-card">
+
+        <div class="periodo-block">
+          <span class="filter-label">Período</span>
+
+          <div class="periodo-chips">
+            <button
+              type="button"
+              class="periodo-chip"
+              [class.periodo-chip--active]="periodoPreset === 'este_mes'"
+              (click)="setPeriodo('este_mes')">
+              Este mes
+            </button>
+            <button
+              type="button"
+              class="periodo-chip"
+              [class.periodo-chip--active]="periodoPreset === 'anterior'"
+              (click)="setPeriodo('anterior')">
+              Mes anterior
+            </button>
+            <button
+              type="button"
+              class="periodo-chip"
+              [class.periodo-chip--active]="periodoPreset === 'todos'"
+              (click)="setPeriodo('todos')">
+              Todo el historial
+            </button>
+          </div>
+
+          <div class="periodo-nav">
+            <ion-button
+              fill="clear"
+              type="button"
+              class="periodo-nav__btn"
+              [disabled]="!filtroMes"
+              (click)="mesAnterior()"
+              aria-label="Mes anterior">
+              <ion-icon slot="icon-only" name="chevron-back-outline"></ion-icon>
+            </ion-button>
+
+            <div class="periodo-nav__center">
+              <ion-icon name="calendar-outline"></ion-icon>
+              <span class="periodo-nav__label">{{ etiquetaMesActivo }}</span>
+            </div>
+
+            <ion-button
+              fill="clear"
+              type="button"
+              class="periodo-nav__btn"
+              [disabled]="!puedeAvanzarMes"
+              (click)="mesSiguiente()"
+              aria-label="Mes siguiente">
+              <ion-icon slot="icon-only" name="chevron-forward-outline"></ion-icon>
+            </ion-button>
+          </div>
+
+          <div class="periodo-select-row">
+            <ion-label class="filter-label">O elegir mes</ion-label>
+            <ion-item lines="none" class="periodo-select-item">
+              <ion-icon slot="start" name="calendar-outline" class="text-blue"></ion-icon>
+              <ion-select
+                interface="popover"
+                [(ngModel)]="filtroMes"
+                name="filtroMesSelect"
+                placeholder="Seleccionar mes..."
+                (ionChange)="onMesSelectChange()">
+                <ion-select-option value="">Todo el historial</ion-select-option>
+                <ion-select-option
+                  *ngFor="let m of mesesDisponibles"
+                  [value]="m.value">
+                  {{ m.label }}
+                </ion-select-option>
+              </ion-select>
+            </ion-item>
+          </div>
         </div>
 
-        <div class="filter-input">
+        <div class="ministerio-block">
           <ion-label class="filter-label">Ministerio</ion-label>
-          <ion-item lines="none" class="filter-item">
+          <ion-item lines="none" class="periodo-select-item">
+            <ion-icon slot="start" name="business-outline" class="text-blue"></ion-icon>
             <ion-select
+              interface="popover"
               [(ngModel)]="filtroMinisterioId"
               name="filtroMinisterioId"
-              class="ieca-select"
-              placeholder="Todos">
+              placeholder="Todos los ministerios">
               <ion-select-option [value]="null">Todos los ministerios</ion-select-option>
-              <ion-select-option *ngFor="let min of listaMinisterios" [value]="min.id">{{ min.nombre }}</ion-select-option>
+              <ion-select-option
+                *ngFor="let min of listaMinisterios"
+                [value]="min.id">
+                {{ min.nombre }}
+              </ion-select-option>
             </ion-select>
           </ion-item>
         </div>
+
       </div>
 
       <div class="totales-card">

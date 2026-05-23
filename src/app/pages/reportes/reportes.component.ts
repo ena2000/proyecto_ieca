@@ -6,12 +6,14 @@ import localeEs from '@angular/common/locales/es';
 import {
   IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent,
   IonIcon, IonButton, IonSearchbar, ToastController, IonLabel, IonItem,
-  IonSelect, IonSelectOption, IonInput
+  IonSelect, IonSelectOption
 } from '@ionic/angular/standalone';
 
 import { addIcons } from 'ionicons';
 import {
-  notificationsOutline, expandOutline, closeOutline, downloadOutline
+  notificationsOutline, expandOutline, closeOutline, downloadOutline,
+  calendarOutline, chevronBackOutline, chevronForwardOutline, funnelOutline,
+  businessOutline
 } from 'ionicons/icons';
 
 import { Subject, interval } from 'rxjs';
@@ -71,7 +73,6 @@ interface Reporte {
     IonItem,
     IonSelect,
     IonSelectOption,
-    IonInput,
     TablaGeneralComponent
   ],
   providers: [ToastController]
@@ -84,6 +85,12 @@ export class ReportesComponent implements OnInit, OnDestroy {
   filtroMes: string = '';
   filtroMinisterioId: number | null = null;
   fotoSeleccionada: string | null = null;
+  periodoPreset: 'todos' | 'este_mes' | 'anterior' | 'custom' = 'este_mes';
+
+  private readonly MESES_ES = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ];
 
   columnsReportes: TableColumn[] = [
     { field: 'fechaFormateada', header: 'Fecha' },
@@ -105,13 +112,19 @@ export class ReportesComponent implements OnInit, OnDestroy {
       'notifications-outline': notificationsOutline,
       'expand-outline':        expandOutline,
       'close-outline':         closeOutline,
-      'download-outline':      downloadOutline
+      'download-outline':      downloadOutline,
+      'calendar-outline':      calendarOutline,
+      'chevron-back-outline':  chevronBackOutline,
+      'chevron-forward-outline': chevronForwardOutline,
+      'funnel-outline':        funnelOutline,
+      'business-outline':      businessOutline
     });
   }
 
   ngOnInit() {
     this.cargarMinisterios();
     this.generarReportes();
+    this.setPeriodo('este_mes');
 
     // Refrescar cada 3 segundos para reflejar nuevos ingresos/gastos
     interval(3000)
@@ -193,6 +206,85 @@ export class ReportesComponent implements OnInit, OnDestroy {
     this.listaReportes = reportes.sort(
       (a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
     );
+  }
+
+  get etiquetaMesActivo(): string {
+    if (!this.filtroMes) return 'Todo el historial';
+    return this.etiquetaParaMes(this.filtroMes);
+  }
+
+  get mesesDisponibles(): { value: string; label: string }[] {
+    const meses = new Set<string>();
+    this.listaReportes.forEach(r => {
+      if (r.mes) meses.add(r.mes);
+    });
+    meses.add(this.padMes(new Date()));
+    return Array.from(meses)
+      .sort((a, b) => b.localeCompare(a))
+      .map(value => ({ value, label: this.etiquetaParaMes(value) }));
+  }
+
+  get puedeAvanzarMes(): boolean {
+    if (!this.filtroMes) return false;
+    return this.filtroMes < this.padMes(new Date());
+  }
+
+  get hayFiltrosActivos(): boolean {
+    return !!this.filtroMes || this.filtroMinisterioId !== null || !!this.searchTerm;
+  }
+
+  setPeriodo(preset: 'todos' | 'este_mes' | 'anterior' | 'custom'): void {
+    this.periodoPreset = preset;
+    const hoy = new Date();
+
+    if (preset === 'todos') {
+      this.filtroMes = '';
+      return;
+    }
+    if (preset === 'este_mes') {
+      this.filtroMes = this.padMes(hoy);
+      return;
+    }
+    if (preset === 'anterior') {
+      this.filtroMes = this.padMes(new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1));
+    }
+  }
+
+  onMesSelectChange(): void {
+    this.periodoPreset = this.filtroMes ? 'custom' : 'todos';
+  }
+
+  mesAnterior(): void {
+    const base = this.filtroMes || this.padMes(new Date());
+    const [anio, mes] = base.split('-').map(Number);
+    this.filtroMes = this.padMes(new Date(anio, mes - 2, 1));
+    this.periodoPreset = 'custom';
+  }
+
+  mesSiguiente(): void {
+    if (!this.puedeAvanzarMes) return;
+    const [anio, mes] = this.filtroMes.split('-').map(Number);
+    this.filtroMes = this.padMes(new Date(anio, mes, 1));
+    this.periodoPreset = 'custom';
+  }
+
+  limpiarFiltros(): void {
+    this.searchTerm = '';
+    this.filtroMinisterioId = null;
+    this.setPeriodo('todos');
+  }
+
+  private padMes(fecha: Date): string {
+    const y = fecha.getFullYear();
+    const m = String(fecha.getMonth() + 1).padStart(2, '0');
+    return `${y}-${m}`;
+  }
+
+  private etiquetaParaMes(valor: string): string {
+    const [anio, mes] = valor.split('-');
+    const indice = parseInt(mes, 10) - 1;
+    if (indice < 0 || indice > 11) return valor;
+    return `${this.MESES_ES[indice]} ${anio}`;
   }
 
   // --- Filtros ---
