@@ -336,6 +336,10 @@
   grid-template-columns: 1fr 1fr;
   gap: var(--space-2);
   margin-bottom: var(--space-4);
+
+  ion-menu-toggle {
+    display: contents;
+  }
 }
 
 .act-btn {

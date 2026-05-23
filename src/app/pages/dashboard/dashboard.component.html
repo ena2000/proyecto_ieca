@@ -128,7 +128,7 @@
             <h3 class="card-title">Últimos Movimientos</h3>
             <p class="card-sub">Actividad reciente</p>
           </div>
-          <ion-button fill="clear" size="small" routerLink="/reportes">
+          <ion-button fill="clear" size="small" routerLink="/reportes" routerDirection="root">
             Ver Todo <ion-icon slot="end" name="arrow-forward-outline"></ion-icon>
           </ion-button>
         </div>
@@ -162,22 +162,30 @@
           <h3 class="card-title">Acciones Rápidas</h3>
         </div>
         <div class="act-grid">
-          <div class="act-btn act-i" routerLink="/ingresos">
-            <span class="act-emoji">➕</span>
-            <span>Nuevo Ingreso</span>
-          </div>
-          <div class="act-btn act-g" routerLink="/gastos">
-            <span class="act-emoji">➖</span>
-            <span>Nuevo Gasto</span>
-          </div>
-          <div class="act-btn act-r" routerLink="/reportes">
-            <span class="act-emoji">📊</span>
-            <span>Ver Reportes</span>
-          </div>
-          <div class="act-btn act-m" routerLink="/ministerios">
-            <span class="act-emoji">🏛️</span>
-            <span>Ministerios</span>
-          </div>
+          <ion-menu-toggle auto-hide="true">
+            <div class="act-btn act-i" routerLink="/ingresos" routerDirection="root">
+              <span class="act-emoji">➕</span>
+              <span>Nuevo Ingreso</span>
+            </div>
+          </ion-menu-toggle>
+          <ion-menu-toggle auto-hide="true">
+            <div class="act-btn act-g" routerLink="/gastos" routerDirection="root">
+              <span class="act-emoji">➖</span>
+              <span>Nuevo Gasto</span>
+            </div>
+          </ion-menu-toggle>
+          <ion-menu-toggle auto-hide="true">
+            <div class="act-btn act-r" routerLink="/reportes" routerDirection="root">
+              <span class="act-emoji">📊</span>
+              <span>Ver Reportes</span>
+            </div>
+          </ion-menu-toggle>
+          <ion-menu-toggle auto-hide="true">
+            <div class="act-btn act-m" routerLink="/ministerios" routerDirection="root">
+              <span class="act-emoji">🏛️</span>
+              <span>Ministerios</span>
+            </div>
+          </ion-menu-toggle>
         </div>
         <div class="quick-stats">
           <div class="qs-row">

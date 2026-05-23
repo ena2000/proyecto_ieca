@@ -1,11 +1,12 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
 import {
   IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle,
-  IonContent, IonButton, IonIcon, ToastController
+  IonContent, IonButton, IonIcon, IonMenuToggle, IonRouterLink,
+  ToastController
 } from '@ionic/angular/standalone';
+import { RouterLink } from '@angular/router';
 import { AlertController } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import {
@@ -45,9 +46,9 @@ interface Actividad {
   styleUrls: ['./administracion.component.scss'],
   standalone: true,
   imports: [
-    CommonModule, FormsModule,
+    CommonModule, FormsModule, RouterLink,
     IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle,
-    IonContent, IonButton, IonIcon
+    IonContent, IonButton, IonIcon, IonMenuToggle, IonRouterLink
   ],
   providers: [AlertController, ToastController]
 })
@@ -81,7 +82,6 @@ export class AdministracionComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   constructor(
-    private router:          Router,
     private dataService:     DataService,
     private alertController: AlertController,
     private toastController: ToastController
@@ -250,10 +250,6 @@ export class AdministracionComponent implements OnInit, OnDestroy {
     const ahora = new Date();
     const mes   = String(ahora.getMonth() + 1).padStart(2, '0');
     return `${ahora.getFullYear()}-${mes}`;
-  }
-
-  navegar(ruta: string) {
-    this.router.navigate([ruta]);
   }
 
   async ejecutarCierreMes() {

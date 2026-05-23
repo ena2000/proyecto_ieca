@@ -65,6 +65,10 @@
   grid-template-columns: repeat(2, 1fr);
   gap: 0.875rem;
 
+  ion-menu-toggle {
+    display: contents;
+  }
+
   @media (min-width: 640px) { grid-template-columns: repeat(3, 1fr); }
   @media (max-width: 480px) { grid-template-columns: 1fr; }
 }
@@ -81,6 +85,8 @@
   transition: var(--ieca-transition-fast);
   position: relative;
   overflow: hidden;
+  text-decoration: none;
+  color: inherit;
 
   &:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
   &:active { transform: translateY(0); }

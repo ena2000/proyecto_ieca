@@ -1,9 +1,10 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import {
   IonHeader, IonToolbar, IonButtons, IonMenuButton,
-  IonTitle, IonContent, IonIcon, IonButton
+  IonTitle, IonContent, IonIcon, IonButton,
+  IonMenuToggle, IonRouterLink
 } from '@ionic/angular/standalone';
 import { Subject, interval } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -17,9 +18,10 @@ import { DataService, KPIs, MesData, Movimiento } from '../../services/data.serv
   styleUrls: ['./dashboard.component.scss'],
   standalone: true,
   imports: [
-    CommonModule, RouterModule,
+    CommonModule, RouterLink,
     IonHeader, IonToolbar, IonButtons, IonMenuButton,
-    IonTitle, IonContent, IonIcon, IonButton
+    IonTitle, IonContent, IonIcon, IonButton,
+    IonMenuToggle, IonRouterLink
   ]
 })
 export class DashboardComponent implements OnInit, OnDestroy {

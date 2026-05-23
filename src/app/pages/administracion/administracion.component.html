@@ -49,18 +49,23 @@
       <h2 class="section-title text-blue">Módulos del Sistema</h2>
       <div class="quick-access-grid">
         @for (item of accesosRapidos; track item.ruta) {
-          <div (click)="navegar(item.ruta)" class="access-card access-card--{{ item.color }}">
-            <div class="access-card__icon">
-              <ion-icon [name]="item.icono"></ion-icon>
+          <ion-menu-toggle auto-hide="true">
+            <div
+              [routerLink]="item.ruta"
+              routerDirection="root"
+              class="access-card access-card--{{ item.color }}">
+              <div class="access-card__icon">
+                <ion-icon [name]="item.icono"></ion-icon>
+              </div>
+              <div class="access-card__content">
+                <h3>{{ item.titulo }}</h3>
+                <p>{{ item.descripcion }}</p>
+              </div>
+              <div class="access-card__arrow">
+                <ion-icon name="arrow-forward-outline"></ion-icon>
+              </div>
             </div>
-            <div class="access-card__content">
-              <h3>{{ item.titulo }}</h3>
-              <p>{{ item.descripcion }}</p>
-            </div>
-            <div class="access-card__arrow">
-              <ion-icon name="arrow-forward-outline"></ion-icon>
-            </div>
-          </div>
+          </ion-menu-toggle>
         }
       </div>
     </section>
