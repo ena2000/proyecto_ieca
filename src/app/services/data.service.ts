@@ -153,13 +153,19 @@ export class DataService {
 
   }
 
+  private filterPorMinisterio<T extends { ministerioId?: number }>(
+    items: T[],
+    ministerioId?: number
+  ): T[] {
+    if (ministerioId == null) return items;
+    return items.filter(i => Number(i.ministerioId) === ministerioId);
+  }
 
+  calcularKPIs(ministerioId?: number): KPIs {
 
-  calcularKPIs(): KPIs {
+    const ingresos = this.filterPorMinisterio(this.getIngresosActuales(), ministerioId);
 
-    const ingresos = this.getIngresosActuales();
-
-    const gastos = this.getGastosActuales();
+    const gastos = this.filterPorMinisterio(this.getGastosActuales(), ministerioId);
 
     const ministerios = this.getMinisteriosActuales();
 
@@ -201,7 +207,9 @@ export class DataService {
 
 
 
-    const ministeriosActivos = ministerios.filter(m => m.estado === 'Activo').length;
+    const ministeriosActivos = ministerioId != null
+      ? (ministerios.some(m => m.id === ministerioId && m.estado === 'Activo') ? 1 : 0)
+      : ministerios.filter(m => m.estado === 'Activo').length;
 
 
 
@@ -273,11 +281,11 @@ export class DataService {
 
 
 
-  getUltimosMovimientos(cantidad: number = 5): Movimiento[] {
+  getUltimosMovimientos(cantidad: number = 5, ministerioId?: number): Movimiento[] {
 
-    const ingresos = this.getIngresosActuales();
+    const ingresos = this.filterPorMinisterio(this.getIngresosActuales(), ministerioId);
 
-    const gastos = this.getGastosActuales();
+    const gastos = this.filterPorMinisterio(this.getGastosActuales(), ministerioId);
 
 
 
@@ -311,11 +319,11 @@ export class DataService {
 
 
 
-  getChartData(): MesData[] {
+  getChartData(ministerioId?: number): MesData[] {
 
-    const ingresos = this.getIngresosActuales();
+    const ingresos = this.filterPorMinisterio(this.getIngresosActuales(), ministerioId);
 
-    const gastos = this.getGastosActuales();
+    const gastos = this.filterPorMinisterio(this.getGastosActuales(), ministerioId);
 
 
 
@@ -377,11 +385,13 @@ export class DataService {
 
 
 
-  getDistribucionMinisterios(): Array<{ nombre: string; color: string; porcentaje: number }> {
+  getDistribucionMinisterios(ministerioId?: number): Array<{ nombre: string; color: string; porcentaje: number }> {
 
-    const ingresos = this.getIngresosActuales();
+    const ingresos = this.filterPorMinisterio(this.getIngresosActuales(), ministerioId);
 
-    const ministerios = this.getMinisteriosActuales();
+    const ministerios = ministerioId != null
+      ? this.getMinisteriosActuales().filter(m => m.id === ministerioId)
+      : this.getMinisteriosActuales();
 
 
 
