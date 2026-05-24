@@ -1,9 +1,11 @@
-<div class="sidebar" [class.expanded]="false">
+<div
+  class="sidebar"
+  [class.expanded]="sidebarOpen"
+  (mouseenter)="onSidebarEnter()"
+  (mouseleave)="onSidebarLeave()">
 
-  <!-- FRANJA SUPERIOR AMARILLA -->
   <div class="top-stripe"></div>
 
-  <!-- HEADER / LOGO -->
   <div class="menu-header">
     <div class="logo-box">
       <img src="assets/icon/logo_ieca.png" alt="IECA Logo" />
@@ -12,58 +14,70 @@
       <p>Sistema Contable</p>
       <h3>La Alborada</h3>
     </div>
+    <button
+      type="button"
+      class="pin-btn"
+      [class.pinned]="isPinned"
+      (click)="togglePin(); $event.stopPropagation()"
+      [attr.aria-label]="isPinned ? 'Contraer menú' : 'Fijar menú expandido'"
+      [attr.title]="isPinned ? 'Contraer menú' : 'Fijar menú'">
+      <ion-icon [name]="isPinned ? 'chevron-back-outline' : 'chevron-forward-outline'"></ion-icon>
+    </button>
   </div>
 
-  <!-- MENÚ PRINCIPAL -->
-  <div class="nav-section">
-    @for (item of menuPrincipal; track item.route) {
-      <a
-        [routerLink]="item.route"
-        routerLinkActive="item-active"
-        class="nav-item">
-        <div class="nav-icon">
-          <ion-icon [name]="item.icon"></ion-icon>
-        </div>
-        <span class="nav-label">{{ item.label }}</span>
-        @if (item.badge) {
-          <span class="nav-badge">{{ item.badge }}</span>
-        }
-      </a>
-    }
-  </div>
+  <nav class="nav-scroll" aria-label="Menú principal">
+    <div class="nav-section">
+      @for (item of menuPrincipal; track item.route) {
+        <a
+          href="#"
+          class="nav-item"
+          [class.item-active]="isRouteActive(item.route)"
+          [attr.title]="!sidebarOpen ? item.label : null"
+          (click)="navigateTo($event, item.route)">
+          <div class="nav-icon">
+            <ion-icon [name]="item.icon"></ion-icon>
+            @if (item.badge && !sidebarOpen) {
+              <span class="nav-badge-dot" aria-hidden="true"></span>
+            }
+          </div>
+          <span class="nav-label">{{ item.label }}</span>
+          @if (item.badge && sidebarOpen) {
+            <span class="nav-badge">{{ item.badge }}</span>
+          }
+        </a>
+      }
+    </div>
 
-  <!-- DIVISOR -->
-  <div class="menu-divider"></div>
+    <div class="menu-divider"></div>
 
-  <!-- MENÚ SISTEMA -->
-  <div class="nav-section">
-    <div class="section-label">Sistema</div>
-    @for (item of menuSistema; track item.route) {
-      <a
-        [routerLink]="item.route"
-        routerLinkActive="item-active"
-        class="nav-item">
-        <div class="nav-icon">
-          <ion-icon [name]="item.icon"></ion-icon>
-        </div>
-        <span class="nav-label">{{ item.label }}</span>
-      </a>
-    }
-  </div>
+    <div class="nav-section">
+      <div class="section-label">Sistema</div>
+      @for (item of menuSistema; track item.route) {
+        <a
+          href="#"
+          class="nav-item"
+          [class.item-active]="isRouteActive(item.route)"
+          [attr.title]="!sidebarOpen ? item.label : null"
+          (click)="navigateTo($event, item.route)">
+          <div class="nav-icon">
+            <ion-icon [name]="item.icon"></ion-icon>
+          </div>
+          <span class="nav-label">{{ item.label }}</span>
+        </a>
+      }
+    </div>
+  </nav>
 
-  <!-- ESPACIADOR -->
-  <div class="menu-spacer"></div>
-
-  <!-- FOOTER -->
   <div class="menu-footer">
-
-    <!-- CERRAR SESIÓN -->
-    <a routerLink="/login" class="logout-item">
+    <a
+      href="#"
+      class="logout-item"
+      title="Cerrar sesión"
+      (click)="logout($event)">
       <div class="nav-icon">
         <ion-icon name="log-out-outline"></ion-icon>
       </div>
       <span class="nav-label">Cerrar sesión</span>
     </a>
-
   </div>
 </div>

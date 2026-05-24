@@ -1,318 +1,357 @@
 ﻿/* ==========================================================================
    IECA SIDEBAR
    ========================================================================== */
-   :host {
+:host {
+  display: block;
+}
+
+$ieca-blue:   #2e358f;
+$ieca-purple: #66318d;
+$ieca-yellow: #f4e530;
+
+$sidebar-collapsed: var(--ieca-sidebar-collapsed, 72px);
+$sidebar-expanded:  var(--ieca-sidebar-expanded, 260px);
+$ease-sidebar:      cubic-bezier(0.4, 0, 0.2, 1);
+
+/* ==========================================================================
+   CONTENEDOR
+   ========================================================================== */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  height: 100dvh;
+  width: $sidebar-collapsed;
+  background: $ieca-blue;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 999;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
+  transition: width 0.28s $ease-sidebar;
+
+  &.expanded {
+    width: $sidebar-expanded;
+  }
+}
+
+.top-stripe {
+  height: 4px;
+  background: $ieca-yellow;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   HEADER
+   ========================================================================== */
+.menu-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 10px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba($ieca-yellow, 0.18);
+  min-height: 68px;
+
+  .sidebar:not(.expanded) & {
+    justify-content: center;
+    align-items: center;
+    padding-inline: 0;
+    gap: 0;
+
+    .brand-text,
+    .pin-btn {
+      display: none;
+    }
+
+    .logo-box {
+      margin-inline: auto;
+    }
+  }
+}
+
+.logo-box {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  background: $ieca-yellow;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
     display: block;
   }
-  
-  $ieca-blue:    #2e358f;
-  $ieca-purple:  #66318d;
-  $ieca-yellow:  #f4e530;
-  
-  /* ==========================================================================
-     SIDEBAR CONTENEDOR
-     ========================================================================== */
+}
+
+.brand-text {
+  flex: 1;
+  min-width: 0;
+  opacity: 0;
+  max-width: 0;
+  overflow: hidden;
+  transition: opacity 0.2s ease, max-width 0.28s $ease-sidebar;
+
+  .sidebar.expanded & {
+    opacity: 1;
+    max-width: 160px;
+  }
+
+  p {
+    font-size: 0.58rem;
+    color: $ieca-yellow;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin: 0 0 2px;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  h3 {
+    font-size: 0.92rem;
+    color: #ffffff;
+    font-weight: 800;
+    margin: 0;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+}
+
+.pin-btn {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  width: 0;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transition: background 0.18s ease, color 0.18s ease, opacity 0.18s ease, width 0.28s $ease-sidebar;
+
+  .sidebar.expanded & {
+    opacity: 1;
+    width: 28px;
+    min-width: 28px;
+    pointer-events: auto;
+  }
+
+  &:hover {
+    background: rgba($ieca-yellow, 0.2);
+    color: $ieca-yellow;
+  }
+
+  &.pinned {
+    background: rgba($ieca-yellow, 0.25);
+    color: $ieca-yellow;
+  }
+
+  ion-icon {
+    font-size: 1rem;
+  }
+}
+
+/* ==========================================================================
+   NAVEGACIÓN (scroll)
+   ========================================================================== */
+.nav-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba($ieca-yellow, 0.35) transparent;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba($ieca-yellow, 0.35);
+    border-radius: 999px;
+  }
+}
+
+.nav-section {
+  padding: 8px 8px 4px;
+}
+
+.section-label {
+  font-size: 0.55rem;
+  font-weight: 800;
+  color: rgba($ieca-yellow, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  padding: 6px 10px 4px;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: opacity 0.2s ease, max-height 0.28s $ease-sidebar, padding 0.28s $ease-sidebar;
+
+  .sidebar.expanded & {
+    max-height: 24px;
+    opacity: 1;
+    padding: 6px 10px 4px;
+  }
+}
+
+.nav-item,
+.logout-item {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 10px;
+  color: rgba(255, 255, 255, 0.65);
+  text-decoration: none;
+  border-radius: 9px;
+  transition: background 0.18s ease, color 0.18s ease;
+  cursor: pointer;
+  position: relative;
+
+  .sidebar:not(.expanded) & {
+    justify-content: center;
+    padding: 0;
+    width: 48px;
+    margin-inline: auto;
+    gap: 0;
+  }
+
+  &:hover {
+    background: rgba($ieca-yellow, 0.12);
+    color: #ffffff;
+  }
+}
+
+.nav-item.item-active {
+  background: $ieca-purple;
+  color: #ffffff;
+  box-shadow: inset 3px 0 0 $ieca-yellow;
+
+  .nav-icon {
+    color: $ieca-yellow;
+  }
+}
+
+.nav-icon {
+  width: 28px;
+  min-width: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+
+  ion-icon {
+    font-size: 1.22rem;
+  }
+}
+
+.nav-label {
+  font-size: 0.86rem;
+  font-weight: 700;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+  opacity: 0;
+  max-width: 0;
+  overflow: hidden;
+  transition: opacity 0.2s ease, max-width 0.28s $ease-sidebar;
+
+  .sidebar.expanded & {
+    opacity: 1;
+    max-width: 180px;
+  }
+}
+
+.nav-badge {
+  background: $ieca-purple;
+  color: $ieca-yellow;
+  font-size: 0.6rem;
+  font-weight: 800;
+  border-radius: 999px;
+  min-width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  flex-shrink: 0;
+
+  .item-active & {
+    background: $ieca-yellow;
+    color: $ieca-blue;
+  }
+}
+
+.nav-badge-dot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: $ieca-yellow;
+  border: 2px solid $ieca-blue;
+  box-sizing: content-box;
+}
+
+.menu-divider {
+  height: 1px;
+  background: rgba($ieca-yellow, 0.15);
+  margin: 6px 14px;
+  flex-shrink: 0;
+}
+
+.menu-footer {
+  padding: 8px;
+  flex-shrink: 0;
+  border-top: 1px solid rgba($ieca-yellow, 0.12);
+}
+
+.logout-item {
+  color: rgba(255, 255, 255, 0.45);
+
+  &:hover {
+    background: rgba($ieca-purple, 0.45);
+    color: $ieca-yellow;
+  }
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+@media (max-width: 768px) {
   .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100vh;
-    width: 72px;
-    background: $ieca-blue;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    z-index: 999;
-    transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-  
-    &:hover {
-      width: 256px;
+    width: $sidebar-collapsed;
+
+    &.expanded {
+      width: min($sidebar-expanded, 85vw);
     }
   }
 
-    // Añade esto nuevo:
-  .sidebar:not(:hover) .nav-label,
-  .sidebar:not(:hover) .nav-badge,
-  .sidebar:not(:hover) .brand-text,
-  .sidebar:not(:hover) .section-label {
-    pointer-events: none;
-    user-select: none;
-  }
-  
-  /* ==========================================================================
-     FRANJA AMARILLA SUPERIOR
-     ========================================================================== */
-  .top-stripe {
-    height: 4px;
-    background: $ieca-yellow;
-    flex-shrink: 0;
-  }
-  
-  /* ==========================================================================
-     HEADER / LOGO
-     ========================================================================== */
-  .menu-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 14px;
-    min-width: 256px;
-    flex-shrink: 0;
-    border-bottom: 1px solid rgba($ieca-yellow, 0.18);
-  }
-  
-  .logo-box {
-    width: 44px;
-    height: 44px;
-    min-width: 44px;           /* evita que se comprima */
-    background: $ieca-yellow;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    padding: 4px;
-  
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      display: block;
-    }
-  }
-  
-  .brand-text {
-    opacity: 0;
-    transition: opacity 0.18s ease;
-    white-space: nowrap;
-    overflow: hidden;          /* no desborda durante animación */
-  
-    .sidebar:hover & {
+  .pin-btn {
+    .sidebar.expanded & {
       opacity: 1;
-    }
-  
-    p {
-      font-size: 0.58rem;
-      color: $ieca-yellow;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      margin: 0 0 2px;
-      line-height: 1;
-    }
-  
-    h3 {
-      font-size: 0.92rem;
-      color: #ffffff;
-      font-weight: 800;
-      margin: 0;
-      line-height: 1.2;
+      pointer-events: auto;
     }
   }
-  
-  /* ==========================================================================
-     SECCIONES DE NAVEGACIÓN
-     ========================================================================== */
-  .nav-section {
-    padding: 8px 8px 4px;
-    flex-shrink: 0;
-  }
-  
-  .section-label {
-    font-size: 0.55rem;
-    font-weight: 800;
-    color: rgba($ieca-yellow, 0.55);
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-    padding: 6px 8px 4px;
-    min-width: 256px;
-    opacity: 0;
-    transition: opacity 0.18s ease;
-  
-    .sidebar:hover & {
-      opacity: 1;
-    }
-  }
-  
-  /* ==========================================================================
-     ÍTEM DE NAVEGACIÓN
-     ========================================================================== */
-  .nav-item {
-    height: 46px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 0 14px;
-    color: rgba(255, 255, 255, 0.6);
-    text-decoration: none;
-    border-radius: 9px;
-    transition: all 0.18s ease;
-    width: 100%;          /* 256 - 2*8 padding de sección */
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;      
-    pointer-events: auto;    /* recorta el badge que pudiera salirse */
-  
-    &:hover {
-      background: rgba($ieca-yellow, 0.12);
-      color: #ffffff;
-    }
-  
-    &.item-active {
-      background: $ieca-purple;
-      color: #ffffff;
-  
-      .nav-icon {
-        color: $ieca-yellow;
-      }
-    }
-  }
-  
-  .nav-icon {
-    width: 26px;
-    min-width: 26px;           /* no se encoge nunca */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  
-    ion-icon {
-      font-size: 1.25rem;
-    }
-  }
-  
-  .nav-label {
-    font-size: 0.87rem;
-    font-weight: 700;
-    white-space: nowrap;
-    opacity: 0;
-    transition: opacity 0.15s ease;
-    flex: 1;                   /* empuja el badge hacia la derecha */
-  
-    .sidebar:hover & {
-      opacity: 1;
-    }
-  }
-  
-  /* ==========================================================================
-     BADGE — centrado y con margen interior
-     ========================================================================== */
-  .nav-badge {
-    background: $ieca-purple;
-    color: $ieca-yellow;
-    font-size: 0.6rem;
-    font-weight: 800;
-    border-radius: 999px;
-    /* tamaño mínimo para que el número no quede apretado */
-    min-width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 6px;
-    margin-right: 4px;         /* separación del borde derecho del ítem */
-    flex-shrink: 0;
-    opacity: 0;
-    transition: opacity 0.15s ease;
-  
-    .sidebar:hover & {
-      opacity: 1;
-    }
-  
-    .item-active & {
-      background: $ieca-yellow;
-      color: $ieca-blue;
-    }
-  }
-  
-  /* ==========================================================================
-     DIVISOR
-     ========================================================================== */
-  .menu-divider {
-    height: 1px;
-    background: rgba($ieca-yellow, 0.15);
-    margin: 6px 12px;
-    flex-shrink: 0;
-  }
-  
-  /* ==========================================================================
-     ESPACIADOR
-     ========================================================================== */
-  .menu-spacer {
-    flex: 1;
-  }
-  
-  /* ==========================================================================
-     FOOTER
-     ========================================================================== */
-  .menu-footer {
-    padding: 8px;
-    flex-shrink: 0;
-  }
-  
-  
-  /* --- Cerrar sesión --- */
-  .logout-item {
-    height: 40px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 0 14px;
-    color: rgba(255, 255, 255, 0.4);
-    border-radius: 9px;
-    cursor: pointer;
-    min-width: 234px;
-    transition: all 0.18s ease;
-    text-decoration: none;
-  
-    &:hover {
-      background: rgba($ieca-purple, 0.4);
-      color: $ieca-yellow;
-    }
-  }
-  
-  /* ==========================================================================
-     TOOLBAR — título de página no recortado
-     ========================================================================== */
-  ion-toolbar {
-    --padding-start: 16px;
-    --padding-end: 16px;
-  }
-  
-  ion-title {
-    /* evita que el título quede cortado por el sidebar */
-    padding-inline: 0;
-    overflow: visible;
-    white-space: nowrap;
-  }
-  
-  /* ==========================================================================
-     CONTENIDO PRINCIPAL
-     ========================================================================== */
-  ion-router-outlet,
-  .main-content {
-    margin-left: 72px;
-    transition: margin-left 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  
-  .sidebar:hover ~ ion-router-outlet,
-  .sidebar:hover ~ .main-content {
-    margin-left: 256px;
-  }
-  
-  /* ==========================================================================
-     RESPONSIVE — móvil
-     ========================================================================== */
-  @media (max-width: 768px) {
-    .sidebar {
-      width: 0;
-      &:hover {
-        width: 256px;
-      }
-    }
-  
-    ion-router-outlet,
-    .main-content {
-      margin-left: 0;
-    }
-  }
+}
