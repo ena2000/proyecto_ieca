@@ -7,10 +7,11 @@ import {
   barChartOutline, peopleOutline, settingsOutline, logOutOutline,
   chevronForwardOutline, chevronBackOutline, businessOutline
 } from 'ionicons/icons';
-import { Subject } from 'rxjs';
+import { Subject, combineLatest } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { AuthService } from '../../core/services/auth.service';
 import { IngresosService } from '../../services/ingresos.service';
+import { GastosService } from '../../services/gastos.service';
 
 export interface MenuItem {
   label: string;
@@ -37,7 +38,7 @@ export class SlidebarComponent implements OnInit, OnDestroy {
     return this.isOpen || this.isPinned;
   }
 
-  menuPrincipal: MenuItem[] = [
+  private readonly menuPrincipalBase: MenuItem[] = [
     { label: 'Dashboard',   route: '/dashboard',   icon: 'grid-outline',          color: 'dashboard'   },
     { label: 'Ministerios', route: '/ministerios', icon: 'business-outline',      color: 'ministerios' },
     { label: 'Ingresos',    route: '/ingresos',    icon: 'cash-outline',          color: 'ingresos'    },
@@ -45,18 +46,24 @@ export class SlidebarComponent implements OnInit, OnDestroy {
     { label: 'Reportes',    route: '/reportes',    icon: 'bar-chart-outline',     color: 'reportes'    },
   ];
 
-  readonly menuSistema: MenuItem[] = [
+  private readonly menuSistemaBase: MenuItem[] = [
     { label: 'Usuarios',       route: '/usuarios',       icon: 'people-outline',   color: 'usuarios' },
     { label: 'Administración', route: '/administracion', icon: 'settings-outline', color: 'admin'    },
   ];
 
+  menuPrincipal: MenuItem[] = [];
+  menuSistema: MenuItem[] = [];
+
+  private ingresosCount = 0;
+  private gastosCount   = 0;
   private destroy$ = new Subject<void>();
 
   constructor(
     private readonly navCtrl: NavController,
     private readonly router: Router,
     private readonly authService: AuthService,
-    private readonly ingresosService: IngresosService
+    private readonly ingresosService: IngresosService,
+    private readonly gastosService: GastosService
   ) {
     addIcons({
       'grid-outline': gridOutline,
@@ -73,16 +80,47 @@ export class SlidebarComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.ingresosService.ingresos$
+    this.actualizarMenusPorRol();
+
+    combineLatest([
+      this.ingresosService.ingresos$,
+      this.gastosService.gastos$,
+      this.authService.session$
+    ])
       .pipe(takeUntil(this.destroy$))
-      .subscribe(list => {
-        const count = list.length;
-        this.menuPrincipal = this.menuPrincipal.map(item =>
-          item.route === '/ingresos'
-            ? { ...item, badge: count > 0 ? count : undefined }
-            : item
-        );
+      .subscribe(([ingresos, gastos]) => {
+        this.ingresosCount = ingresos.length;
+        this.gastosCount   = gastos.length;
+        this.actualizarMenusPorRol();
       });
+  }
+
+  private actualizarMenusPorRol(): void {
+    const puede = (ruta: string) => this.authService.puedeAccederRuta(ruta);
+    this.menuPrincipal = this.menuPrincipalBase.filter(item => puede(item.route));
+    this.menuSistema   = this.menuSistemaBase.filter(item => puede(item.route));
+    this.actualizarBadgesFinanzas();
+  }
+
+  /** Contador en menú solo para administrador y contable (no líder/co-líder). */
+  private debeMostrarBadgesFinanzas(): boolean {
+    return this.authService.isAdministrador() || this.authService.isContable();
+  }
+
+  private actualizarBadgesFinanzas(): void {
+    const mostrar = this.debeMostrarBadgesFinanzas();
+
+    this.menuPrincipal = this.menuPrincipal.map(item => {
+      if (item.route === '/ingresos') {
+        const badge = mostrar && this.ingresosCount > 0 ? this.ingresosCount : undefined;
+        return { ...item, badge };
+      }
+      if (item.route === '/gastos') {
+        const badge = mostrar && this.gastosCount > 0 ? this.gastosCount : undefined;
+        return { ...item, badge };
+      }
+      return { ...item, badge: undefined };
+    });
   }
 
   ngOnDestroy() {
