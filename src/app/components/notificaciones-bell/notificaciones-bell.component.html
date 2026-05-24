@@ -1,0 +1,71 @@
+@if (visible) {
+  <ion-buttons class="notif-toolbar-buttons">
+    <ion-button
+      id="ieca-notif-trigger"
+      class="text-blue notif-bell-btn"
+      type="button"
+      aria-label="Notificaciones">
+      <ion-icon name="notifications-outline"></ion-icon>
+      @if (noLeidas > 0) {
+        <span class="notif-bell-badge" aria-hidden="true">
+          {{ noLeidas > 9 ? '9+' : noLeidas }}
+        </span>
+      }
+    </ion-button>
+  </ion-buttons>
+
+  <ion-popover
+    #notifPopover
+    trigger="ieca-notif-trigger"
+    triggerAction="click"
+    side="bottom"
+    alignment="end"
+    class="notif-popover"
+    (didDismiss)="popoverAbierto = false"
+    (didPresent)="popoverAbierto = true">
+    <ng-template>
+      <ion-content class="notif-popover__content">
+        <div class="notif-popover__header">
+          <h3>Notificaciones</h3>
+          @if (noLeidas > 0) {
+            <button
+              type="button"
+              class="notif-mark-all"
+              (click)="marcarTodasLeidas()">
+              <ion-icon name="checkmark-done-outline"></ion-icon>
+              Marcar leídas
+            </button>
+          }
+        </div>
+
+        @if (lista.length === 0) {
+          <p class="notif-empty">No hay notificaciones por ahora.</p>
+        } @else {
+          <ion-list lines="none" class="notif-list">
+            @for (n of lista; track n.id) {
+              <ion-item
+                button
+                detail="false"
+                [class.notif-item--unread]="esNoLeida(n)"
+                (click)="abrirNotificacion(n, notifPopover)">
+                <div
+                  class="notif-item__icon"
+                  [class.notif-item__icon--ingreso]="n.tipo === 'ingreso'"
+                  [class.notif-item__icon--gasto]="n.tipo === 'gasto'"
+                  [class.notif-item__icon--cierre]="n.tipo === 'cierre'"
+                  slot="start">
+                  <ion-icon [name]="iconoPara(n)"></ion-icon>
+                </div>
+                <ion-label>
+                  <strong>{{ n.titulo }}</strong>
+                  <p>{{ n.mensaje }}</p>
+                  <span class="notif-time">{{ tiempo(n.fecha) }}</span>
+                </ion-label>
+              </ion-item>
+            }
+          </ion-list>
+        }
+      </ion-content>
+    </ng-template>
+  </ion-popover>
+}

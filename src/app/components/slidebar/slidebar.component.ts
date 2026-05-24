@@ -79,6 +79,26 @@ export class SlidebarComponent implements OnInit, OnDestroy {
     });
   }
 
+  get nombreUsuario(): string {
+    return this.authService.getSession()?.usuario?.trim() || '';
+  }
+
+  get rolUsuario(): string {
+    return this.authService.getSession()?.rol?.trim() || '';
+  }
+
+  get inicialesUsuario(): string {
+    const base = this.nombreUsuario || '?';
+    return base.charAt(0).toUpperCase();
+  }
+
+  get tituloUsuarioColapsado(): string {
+    if (!this.nombreUsuario) return 'Sesión';
+    return this.rolUsuario
+      ? `${this.nombreUsuario} · ${this.rolUsuario}`
+      : this.nombreUsuario;
+  }
+
   ngOnInit() {
     this.actualizarMenusPorRol();
 

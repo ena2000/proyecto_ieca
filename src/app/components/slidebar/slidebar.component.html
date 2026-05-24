@@ -11,7 +11,7 @@
       <img src="assets/icon/logo_ieca.png" alt="IECA Logo" />
     </div>
     <div class="brand-text">
-      <p>Sistema Contable</p>
+      <p>Gestión Financiera</p>
       <h3>La Alborada</h3>
     </div>
     <button
@@ -71,6 +71,23 @@
   </nav>
 
   <div class="menu-footer">
+    @if (nombreUsuario) {
+      <div
+        class="user-session"
+        [attr.title]="!sidebarOpen ? tituloUsuarioColapsado : null"
+        aria-label="Usuario en sesión">
+        <div class="user-avatar" aria-hidden="true">
+          {{ inicialesUsuario }}
+        </div>
+        <div class="user-info">
+          <span class="user-name">{{ nombreUsuario }}</span>
+          @if (rolUsuario) {
+            <span class="user-role">{{ rolUsuario }}</span>
+          }
+        </div>
+      </div>
+    }
+
     <a
       href="#"
       class="logout-item"
