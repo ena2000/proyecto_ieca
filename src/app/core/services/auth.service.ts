@@ -105,6 +105,7 @@ export class AuthService {
   }
 
   getRutaPorDefecto(): string {
+    if (this.getSession()?.mustChangePassword) return '/cambiar-password';
     return rutaPorDefecto(this.getRol());
   }
 
@@ -131,6 +132,18 @@ export class AuthService {
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
     this.sessionSubject.next(null);
+  }
+
+  changePassword(oldPassword: string, newPassword: string): Promise<void> {
+    return firstValueFrom(
+      this.api.post<void>(API.auth.changePassword, { oldPassword, newPassword })
+    ).then(() => {
+      const current = this.getSession();
+      if (!current) return;
+      const updated: SessionUser = { ...current, mustChangePassword: false };
+      const token = localStorage.getItem(this.TOKEN_KEY) || '';
+      this.persistSession(token, updated);
+    });
   }
 
   private loginLocal(usuario: string, password: string): Promise<LoginResult> {

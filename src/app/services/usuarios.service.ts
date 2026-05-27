@@ -6,6 +6,9 @@ import { ApiService } from '../core/services/api.service';
 import { API } from '../core/constants/api.constants';
 import { environment } from '../../environments/environment';
 
+export type UsuarioPayload = Omit<Usuario, 'id'> & { password?: string };
+export type UsuarioCreateResponse = Usuario & { tempPassword?: string };
+
 @Injectable({ providedIn: 'root' })
 export class UsuariosService {
 
@@ -21,16 +24,19 @@ export class UsuariosService {
     return this.usuariosSubject.getValue();
   }
 
-  create(usuario: Omit<Usuario, 'id'>): Observable<Usuario> {
+  create(usuario: UsuarioPayload): Observable<UsuarioCreateResponse> {
     if (environment.useLocalFallback) {
       return of(this.createLocal(usuario));
     }
-    return this.api.post<Usuario>(API.usuarios, usuario).pipe(
-      tap(nuevo => this.persist([nuevo, ...this.getAll()]))
+    return this.api.post<UsuarioCreateResponse>(API.usuarios, usuario).pipe(
+      tap(res => {
+        const { tempPassword: _ignored, ...nuevo } = res;
+        this.persist([nuevo as Usuario, ...this.getAll()]);
+      })
     );
   }
 
-  update(id: number, usuario: Omit<Usuario, 'id'>): Observable<Usuario> {
+  update(id: number, usuario: UsuarioPayload): Observable<Usuario> {
     if (environment.useLocalFallback) {
       return of(this.updateLocal(id, usuario));
     }
@@ -62,14 +68,17 @@ export class UsuariosService {
     });
   }
 
-  private createLocal(usuario: Omit<Usuario, 'id'>): Usuario {
-    const nuevo: Usuario = { ...usuario, id: this.nextId() };
+  private createLocal(usuario: UsuarioPayload): Usuario {
+    // En modo local no se gestiona contraseña (solo backend).
+    const { password: _ignored, ...data } = usuario;
+    const nuevo: Usuario = { ...data, id: this.nextId() };
     this.persist([nuevo, ...this.getAll()]);
     return nuevo;
   }
 
-  private updateLocal(id: number, usuario: Omit<Usuario, 'id'>): Usuario {
-    const actualizado: Usuario = { ...usuario, id };
+  private updateLocal(id: number, usuario: UsuarioPayload): Usuario {
+    const { password: _ignored, ...data } = usuario;
+    const actualizado: Usuario = { ...data, id };
     this.persist(this.getAll().map(u => (u.id === id ? actualizado : u)));
     return actualizado;
   }

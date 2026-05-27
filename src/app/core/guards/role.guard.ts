@@ -14,6 +14,17 @@ export const roleGuard: CanActivateFn = async (_route, state) => {
   }
 
   const path = state.url.split('?')[0];
+
+  // Forzar cambio de contraseña antes de entrar a cualquier sección
+  if (auth.getSession()?.mustChangePassword && path !== '/cambiar-password') {
+    return router.createUrlTree(['/cambiar-password']);
+  }
+
+  // Siempre permitir acceder a la pantalla de cambio de contraseña
+  if (path === '/cambiar-password') {
+    return true;
+  }
+
   if (auth.puedeAccederRuta(path)) {
     return true;
   }

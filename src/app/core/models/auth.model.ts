@@ -4,4 +4,5 @@ export interface SessionUser {
   email?: string;
   rol?: string;
   ministerioId?: number;
+  mustChangePassword?: boolean;
 }
