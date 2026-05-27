@@ -131,7 +131,7 @@ export class ReportesService {
     marcar(r, 0, estiloTituloPrincipal(), COLS);
     r++;
 
-    filas[r] = ['Sistema Contable · Reportes Financieros'];
+    filas[r] = ['Gestión Financiera · Reportes Financieros'];
     marcar(r, 0, estiloSubtitulo(), COLS);
     r++;
 

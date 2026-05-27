@@ -1,6 +1,10 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { tap } from 'rxjs/operators';
 import { Usuario } from '../core/models';
+import { ApiService } from '../core/services/api.service';
+import { API } from '../core/constants/api.constants';
+import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class UsuariosService {
@@ -9,31 +13,69 @@ export class UsuariosService {
   private usuariosSubject = new BehaviorSubject<Usuario[]>([]);
   readonly usuarios$: Observable<Usuario[]> = this.usuariosSubject.asObservable();
 
-  constructor() {
-    this.loadFromStorage();
+  constructor(private api: ApiService) {
+    this.reload();
   }
 
   getAll(): Usuario[] {
     return this.usuariosSubject.getValue();
   }
 
-  create(usuario: Omit<Usuario, 'id'>): Usuario {
+  create(usuario: Omit<Usuario, 'id'>): Observable<Usuario> {
+    if (environment.useLocalFallback) {
+      return of(this.createLocal(usuario));
+    }
+    return this.api.post<Usuario>(API.usuarios, usuario).pipe(
+      tap(nuevo => this.persist([nuevo, ...this.getAll()]))
+    );
+  }
+
+  update(id: number, usuario: Omit<Usuario, 'id'>): Observable<Usuario> {
+    if (environment.useLocalFallback) {
+      return of(this.updateLocal(id, usuario));
+    }
+    return this.api.put<Usuario>(`${API.usuarios}/${id}`, usuario).pipe(
+      tap(actualizado => {
+        this.persist(this.getAll().map(u => (u.id === id ? actualizado : u)));
+      })
+    );
+  }
+
+  delete(id: number): Observable<void> {
+    if (environment.useLocalFallback) {
+      this.deleteLocal(id);
+      return of(undefined);
+    }
+    return this.api.delete(`${API.usuarios}/${id}`).pipe(
+      tap(() => this.persist(this.getAll().filter(u => u.id !== id)))
+    );
+  }
+
+  reload(): void {
+    if (environment.useLocalFallback) {
+      this.loadFromStorage();
+      return;
+    }
+    this.api.get<Usuario[]>(API.usuarios).subscribe({
+      next: lista => this.usuariosSubject.next(lista),
+      error: err => console.error('[UsuariosService] reload:', err)
+    });
+  }
+
+  private createLocal(usuario: Omit<Usuario, 'id'>): Usuario {
     const nuevo: Usuario = { ...usuario, id: this.nextId() };
     this.persist([nuevo, ...this.getAll()]);
     return nuevo;
   }
 
-  update(id: number, usuario: Omit<Usuario, 'id'>): void {
-    const lista = this.getAll().map(u => (u.id === id ? { ...usuario, id } : u));
-    this.persist(lista);
+  private updateLocal(id: number, usuario: Omit<Usuario, 'id'>): Usuario {
+    const actualizado: Usuario = { ...usuario, id };
+    this.persist(this.getAll().map(u => (u.id === id ? actualizado : u)));
+    return actualizado;
   }
 
-  delete(id: number): void {
+  private deleteLocal(id: number): void {
     this.persist(this.getAll().filter(u => u.id !== id));
-  }
-
-  reload(): void {
-    this.loadFromStorage();
   }
 
   private nextId(): number {
@@ -42,7 +84,9 @@ export class UsuariosService {
   }
 
   private persist(lista: Usuario[]): void {
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(lista));
+    if (environment.useLocalFallback) {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(lista));
+    }
     this.usuariosSubject.next(lista);
   }
 

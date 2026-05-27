@@ -137,7 +137,7 @@ export class AdministracionService {
 
     this.notificacionesService.registrar({
       tipo: 'cierre',
-      titulo: 'Cierre contable mensual',
+      titulo: 'Cierre financiero mensual',
       mensaje: `Se cerró el periodo ${fechaCierre}. Los movimientos del mes quedan congelados.`,
       ruta: '/administracion'
     });
