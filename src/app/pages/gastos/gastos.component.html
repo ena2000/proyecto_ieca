@@ -46,6 +46,7 @@
 
       <p *ngIf="!modoEdicion">
         Registra los egresos de caja, compras o pagos de servicios operacionales.
+        <span *ngIf="authService.isLider()"> Los gastos del líder quedan <strong>pendientes de aprobación</strong> por contable o administrador.</span>
       </p>
       <p *ngIf="modoEdicion">
         Modifica la información y guarda los cambios del egreso financiero.
@@ -282,12 +283,12 @@
               class="upload-zone upload-zone--expense"
               *ngIf="!nuevoGasto.foto">
               <ion-icon name="cloud-upload-outline"></ion-icon>
-              <p>Haz clic para subir o arrastra una imagen</p>
-              <span>Formatos permitidos: JPG y PNG</span>
+              <p>Haz clic para subir imagen o PDF</p>
+              <span>JPG, PNG, WebP o PDF (máx. 5 MB)</span>
               <input
                 type="file"
                 class="file-overlay"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp,application/pdf,.pdf"
                 (change)="onFileChange($event)">
             </div>
 
@@ -296,10 +297,16 @@
               *ngIf="nuevoGasto.foto">
               <div
                 class="preview-card"
-                (click)="verImagen(nuevoGasto.foto)">
+                [class.preview-card--pdf]="esPdfFormulario"
+                (click)="verComprobante(nuevoGasto.foto)">
                 <img
+                  *ngIf="!esPdfFormulario"
                   [src]="nuevoGasto.foto"
-                  alt="Evidencia cargada">
+                  alt="Comprobante cargado">
+                <div class="preview-pdf" *ngIf="esPdfFormulario">
+                  <ion-icon name="document-text-outline"></ion-icon>
+                  <span>PDF adjunto</span>
+                </div>
                 <div class="preview-zoom-overlay">
                   <ion-icon name="expand-outline"></ion-icon>
                 </div>
@@ -310,7 +317,7 @@
                     fill="clear"
                     color="danger"
                     type="button"
-                    aria-label="Eliminar imagen"
+                    aria-label="Eliminar comprobante"
                     (click)="eliminarFoto()">
                     <ion-icon
                       slot="icon-only"
@@ -320,8 +327,8 @@
                 </div>
               </div>
               <div class="preview-info">
-                <p>Imagen cargada correctamente</p>
-                <small>Haz clic en la vista previa para expandir.</small>
+                <p>{{ esPdfFormulario ? 'PDF cargado correctamente' : 'Imagen cargada correctamente' }}</p>
+                <small>Haz clic en la vista previa para ver el comprobante.</small>
               </div>
             </div>
 
@@ -374,6 +381,9 @@
           </h2>
           <span class="badge-count">
             {{ listaFiltrada.length }} registros encontrados
+          </span>
+          <span class="badge-count badge-count--warn" *ngIf="puedeAprobar && pendientesCount > 0">
+            {{ pendientesCount }} pendiente(s)
           </span>
         </div>
         <div class="list-header-actions">
@@ -480,6 +490,21 @@
             </ion-popover>
           </div>
 
+          <div class="filter-item" *ngIf="puedeAprobar">
+            <ion-label>Estado</ion-label>
+            <ion-item lines="none" class="ieca-input-item ieca-input filter-select-item">
+              <ion-select
+                interface="popover"
+                [(ngModel)]="filtroEstado"
+                placeholder="Todos">
+                <ion-select-option value="todos">Todos</ion-select-option>
+                <ion-select-option value="pendiente">Pendiente</ion-select-option>
+                <ion-select-option value="aprobado">Aprobado</ion-select-option>
+                <ion-select-option value="rechazado">Rechazado</ion-select-option>
+              </ion-select>
+            </ion-item>
+          </div>
+
           <div class="filter-item">
             <ion-label>Monto mínimo $</ion-label>
             <div class="filter-input-wrapper">
@@ -519,9 +544,13 @@
         [columns]="columnsGastos"
         [data]="listaFiltrada"
         [actions]="acciones"
+        [allowEditApproved]="authService.isAdministrador()"
+        [allowDeleteApproved]="authService.isAdministrador()"
         (onEdit)="editarGasto($event)"
         (onDelete)="eliminarGasto($event)"
-        (onImageClick)="verImagen($event)">
+        (onApprove)="aprobarGasto($event)"
+        (onReject)="rechazarGasto($event)"
+        (onEvidenceClick)="verComprobante($event)">
       </app-tabla-general>
 
     </div>
@@ -530,25 +559,33 @@
 
   <div
     class="lightbox-overlay"
-    *ngIf="fotoSeleccionada"
-    (click)="cerrarImagen()">
+    *ngIf="comprobanteSeleccionado"
+    (click)="cerrarComprobante()">
 
     <button
       type="button"
       class="close-lightbox"
-      aria-label="Cerrar imagen"
-      (click)="cerrarImagen()">
+      aria-label="Cerrar visor"
+      (click)="cerrarComprobante()">
       <ion-icon name="close-outline"></ion-icon>
     </button>
 
     <div
       class="lightbox-content"
+      [class.lightbox-content--pdf]="comprobanteEsPdf"
       (click)="$event.stopPropagation()">
       <img
-        [src]="fotoSeleccionada"
-        alt="Evidencia ampliada en pantalla completa">
+        *ngIf="!comprobanteEsPdf"
+        [src]="comprobanteSeleccionado"
+        alt="Comprobante ampliado">
+      <iframe
+        *ngIf="comprobanteEsPdf"
+        [src]="comprobanteSeleccionado"
+        title="Comprobante PDF"
+        class="lightbox-pdf">
+      </iframe>
       <div class="lightbox-caption">
-        Evidencia de respaldo del gasto financiero
+        Comprobante de respaldo del gasto
       </div>
     </div>
 

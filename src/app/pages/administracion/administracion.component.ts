@@ -90,7 +90,7 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
   }
 
   ngOnInit() {
-    this.cargarDatos();
+    void this.cargarDatos();
 
     combineLatest([
       this.dataService.ingresos$,
@@ -99,7 +99,7 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
       this.dataService.ministerios$
     ])
       .pipe(takeUntil(this.destroy$))
-      .subscribe(() => this.cargarDatos());
+      .subscribe(() => void this.cargarDatos());
   }
 
   ngOnDestroy() {
@@ -109,7 +109,7 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
 
   ionViewWillEnter() {
     this.dataService.refreshAllData();
-    this.cargarDatos();
+    void this.cargarDatos();
   }
 
   get usuarioSesion(): string {
@@ -117,7 +117,8 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
     return sesion?.usuario?.trim() || '—';
   }
 
-  private cargarDatos() {
+  private async cargarDatos() {
+    await this.administracionService.cargarConfigRemota();
     this.resumen       = this.administracionService.getResumen();
     this.actividad     = this.administracionService.getActividadReciente();
     this.configIglesia = this.administracionService.getConfigIglesia();
@@ -134,9 +135,14 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
           text:    'Sí, cerrar periodo',
           role:    'destructive',
           handler: () => {
-            this.administracionService.ejecutarCierreMes();
-            this.cargarDatos();
-            this.mostrarToast(`Periodo ${this.configIglesia.periodoActual} cerrado exitosamente`, 'success');
+            void this.administracionService.ejecutarCierreMes()
+              .then(() => {
+                void this.cargarDatos();
+                this.mostrarToast(`Periodo ${this.configIglesia.periodoActual} cerrado exitosamente`, 'success');
+              })
+              .catch(() => {
+                this.mostrarToast('No se pudo ejecutar el cierre', 'danger');
+              });
           }
         }
       ]
@@ -144,10 +150,14 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
     await alert.present();
   }
 
-  exportarBackup() {
-    const backup = this.administracionService.crearBackup();
-    this.administracionService.descargarBackup(backup);
-    this.mostrarToast('Backup exportado exitosamente', 'success');
+  async exportarBackup() {
+    try {
+      const backup = await this.administracionService.crearBackup();
+      this.administracionService.descargarBackup(backup);
+      this.mostrarToast('Respaldo exportado exitosamente', 'success');
+    } catch {
+      this.mostrarToast('No se pudo generar el respaldo', 'danger');
+    }
   }
 
   async importarBackup(event: Event) {
@@ -165,14 +175,14 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
           role:    'destructive',
           handler: () => {
             const reader = new FileReader();
-            reader.onload = (e: ProgressEvent<FileReader>) => {
+            reader.onload = async (e: ProgressEvent<FileReader>) => {
               try {
                 const backup = JSON.parse(e.target?.result as string) as BackupIeca;
-                this.administracionService.restaurarBackup(backup);
-                this.cargarDatos();
-                this.mostrarToast('Backup restaurado exitosamente', 'success');
+                await this.administracionService.restaurarBackup(backup);
+                await this.cargarDatos();
+                this.mostrarToast('Respaldo restaurado exitosamente', 'success');
               } catch {
-                this.mostrarToast('Error: archivo de backup inválido', 'danger');
+                this.mostrarToast('Error: archivo de respaldo inválido o fallo en el servidor', 'danger');
               }
             };
             reader.readAsText(file);
@@ -205,9 +215,12 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
                   role:    'destructive',
                   handler: (data) => {
                     if (data.confirmacion === 'ELIMINAR') {
-                      this.administracionService.limpiarTodosLosDatos();
-                      this.cargarDatos();
-                      this.mostrarToast('Todos los datos han sido eliminados', 'warning');
+                      void this.administracionService.limpiarTodosLosDatos().then(() => {
+                        void this.cargarDatos();
+                        this.mostrarToast('Todos los datos han sido eliminados', 'warning');
+                      }).catch(() => {
+                        this.mostrarToast('No se pudieron eliminar los datos', 'danger');
+                      });
                     } else {
                       this.mostrarToast('Texto incorrecto, operación cancelada', 'medium');
                     }

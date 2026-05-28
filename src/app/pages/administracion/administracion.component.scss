@@ -199,6 +199,98 @@
 .activity-meta   { font-size: 0.68rem; font-weight: 500; color: #94a3b8; }
 
 /* ==========================================================================
+   RESPALDO
+   ========================================================================== */
+.backup-card {
+  background: #f0f4ff;
+  border: 1.5px solid #c7d2fe;
+  border-left: 4px solid var(--ieca-blue);
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+}
+
+.backup-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  margin-bottom: 0.875rem;
+
+  ion-icon {
+    font-size: 2rem;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  h2 {
+    font-size: 1.05rem;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    margin: 0 0 0.15rem;
+  }
+}
+
+.backup-subtitle {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #4338ca;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.backup-text {
+  font-size: 0.84rem;
+  line-height: 1.65;
+  color: #3730a3;
+  font-weight: 500;
+  margin-bottom: 1.25rem;
+
+  strong { font-weight: 800; }
+}
+
+.backup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.btn-backup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.15rem;
+  border: none;
+  border-radius: 9px;
+  font-size: 0.84rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: var(--ieca-transition-fast);
+  letter-spacing: -0.01em;
+
+  ion-icon { font-size: 1.1rem; }
+
+  &--primary {
+    background: var(--ieca-blue);
+    color: #fff;
+    &:hover { opacity: 0.92; transform: translateY(-1px); }
+  }
+
+  &--secondary {
+    background: #fff;
+    color: var(--ieca-blue);
+    border: 1.5px solid #c7d2fe;
+    &:hover { background: #eef2ff; }
+  }
+
+  &--danger {
+    background: #fff;
+    color: var(--ieca-red);
+    border: 1.5px solid #fca5a5;
+    &:hover { background: #fff5f5; }
+  }
+}
+
+/* ==========================================================================
    CIERRE CONTABLE — bloque unificado (era duplicado)
    ========================================================================== */
 .critical-card {

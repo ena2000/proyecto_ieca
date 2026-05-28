@@ -112,6 +112,43 @@
 
     </div>
 
+    <!-- Respaldo de datos -->
+    <section class="section-block">
+      <div class="backup-card">
+        <div class="backup-header">
+          <ion-icon name="cloud-download-outline" class="text-blue"></ion-icon>
+          <div>
+            <h2 class="text-blue">Respaldo y restauración</h2>
+            <p class="backup-subtitle">Copia de seguridad del sistema</p>
+          </div>
+        </div>
+        <p class="backup-text">
+          Exporta un archivo <strong>.json</strong> con ingresos, gastos, ministerios, usuarios y
+          notificaciones. Guárdalo en un lugar seguro. Restaurar reemplaza todos los datos actuales
+          en el servidor.
+        </p>
+        <div class="backup-actions">
+          <button type="button" class="btn-backup btn-backup--primary" (click)="exportarBackup()">
+            <ion-icon name="cloud-download-outline"></ion-icon>
+            <span>Exportar respaldo</span>
+          </button>
+          <label class="btn-backup btn-backup--secondary">
+            <ion-icon name="cloud-upload-outline"></ion-icon>
+            <span>Restaurar respaldo</span>
+            <input
+              type="file"
+              accept="application/json,.json"
+              hidden
+              (change)="importarBackup($event)" />
+          </label>
+          <button type="button" class="btn-backup btn-backup--danger" (click)="limpiarTodosLosDatos()">
+            <ion-icon name="trash-outline"></ion-icon>
+            <span>Vaciar todos los datos</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
     <!-- Cierre Financiero -->
     <section class="section-block">
       <div class="critical-card">

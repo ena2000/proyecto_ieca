@@ -1,11 +1,12 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { Gasto, Ministerio, Usuario } from '../core/models';
+import { Gasto, GastoEstado, Ministerio, Usuario } from '../core/models';
 import { NotificacionesService } from '../core/services/notificaciones.service';
 import { ApiService } from '../core/services/api.service';
 import { API } from '../core/constants/api.constants';
 import { environment } from '../../environments/environment';
+import { estadoGasto } from '../shared/utils/gasto.util';
 
 @Injectable({ providedIn: 'root' })
 export class GastosService {
@@ -29,10 +30,10 @@ export class GastosService {
     if (environment.useLocalFallback) {
       return of(this.createLocal(gasto, fechaFormateada));
     }
-    return this.api.post<Gasto>(API.gastos, { ...gasto, fechaFormateada }).pipe(
+    return this.api.post<Gasto>(API.gastos.base, { ...gasto, fechaFormateada }).pipe(
       tap(nuevo => {
         this.persist([nuevo, ...this.getAll()]);
-        this.notifyCreate(nuevo);
+        this.notificacionesService.recargar();
       })
     );
   }
@@ -41,7 +42,7 @@ export class GastosService {
     if (environment.useLocalFallback) {
       return of(this.updateLocal(id, gasto, fechaFormateada));
     }
-    return this.api.put<Gasto>(`${API.gastos}/${id}`, { ...gasto, fechaFormateada }).pipe(
+    return this.api.put<Gasto>(`${API.gastos.base}/${id}`, { ...gasto, fechaFormateada }).pipe(
       tap(actualizado => {
         const lista = this.getAll().map(g => (g.id === id ? actualizado : g));
         this.persist(lista);
@@ -54,8 +55,31 @@ export class GastosService {
       this.deleteLocal(id);
       return of(undefined);
     }
-    return this.api.delete(`${API.gastos}/${id}`).pipe(
+    return this.api.delete(`${API.gastos.base}/${id}`).pipe(
       tap(() => this.persist(this.getAll().filter(g => g.id !== id)))
+    );
+  }
+
+  aprobar(id: number): Observable<Gasto> {
+    if (environment.useLocalFallback) {
+      return of(this.aprobarLocal(id));
+    }
+    return this.api.patch<Gasto>(API.gastos.aprobar(id), {}).pipe(
+      tap(actualizado => {
+        this.persist(this.getAll().map(g => (g.id === id ? actualizado : g)));
+        this.notificacionesService.recargar();
+      })
+    );
+  }
+
+  rechazar(id: number, motivo?: string): Observable<Gasto> {
+    if (environment.useLocalFallback) {
+      return of(this.rechazarLocal(id, motivo));
+    }
+    return this.api.patch<Gasto>(API.gastos.rechazar(id), { motivo }).pipe(
+      tap(actualizado => {
+        this.persist(this.getAll().map(g => (g.id === id ? actualizado : g)));
+      })
     );
   }
 
@@ -82,7 +106,7 @@ export class GastosService {
       this.loadFromStorage();
       return;
     }
-    this.api.get<Gasto[]>(API.gastos).subscribe({
+    this.api.get<Gasto[]>(API.gastos.base).subscribe({
       next: lista => this.gastosSubject.next(lista),
       error: err => console.error('[GastosService] reload:', err)
     });
@@ -96,9 +120,47 @@ export class GastosService {
   }
 
   private updateLocal(id: number, gasto: Omit<Gasto, 'id'>, fechaFormateada: string): Gasto {
-    const actualizado: Gasto = { ...gasto, id, fechaFormateada };
+    const current = this.getAll().find(g => g.id === id);
+    const estado: GastoEstado =
+      current && estadoGasto(current) !== 'aprobado' ? 'pendiente' : (gasto.estado ?? 'pendiente');
+    const actualizado: Gasto = {
+      ...gasto,
+      id,
+      fechaFormateada,
+      estado: gasto.estado ?? estado,
+      motivoRechazo: estado === 'pendiente' ? undefined : gasto.motivoRechazo
+    };
     this.persist(this.getAll().map(g => (g.id === id ? actualizado : g)));
     return actualizado;
+  }
+
+  private aprobarLocal(id: number): Gasto {
+    const lista = this.getAll().map(g => {
+      if (g.id !== id) return g;
+      return { ...g, estado: 'aprobado' as GastoEstado, motivoRechazo: undefined };
+    });
+    this.persist(lista);
+    const updated = lista.find(g => g.id === id)!;
+    this.notificacionesService.registrar({
+      tipo: 'gasto',
+      titulo: 'Gasto aprobado',
+      mensaje: `${updated.ministerio || 'General'} · ${updated.descripcion} fue aprobado.`,
+      ruta: '/gastos'
+    });
+    return updated;
+  }
+
+  private rechazarLocal(id: number, motivo?: string): Gasto {
+    const lista = this.getAll().map(g => {
+      if (g.id !== id) return g;
+      return {
+        ...g,
+        estado: 'rechazado' as GastoEstado,
+        motivoRechazo: motivo?.trim() || 'Sin motivo indicado'
+      };
+    });
+    this.persist(lista);
+    return lista.find(g => g.id === id)!;
   }
 
   private deleteLocal(id: number): void {
@@ -106,9 +168,10 @@ export class GastosService {
   }
 
   private notifyCreate(nuevo: Gasto): void {
+    const pendiente = estadoGasto(nuevo) === 'pendiente';
     this.notificacionesService.registrar({
       tipo: 'gasto',
-      titulo: 'Nuevo gasto',
+      titulo: pendiente ? 'Gasto pendiente de aprobación' : 'Nuevo gasto',
       mensaje: `${nuevo.ministerio || 'General'} · ${nuevo.descripcion} · $ ${(nuevo.monto || 0).toFixed(2)}`,
       ruta: '/gastos'
     });

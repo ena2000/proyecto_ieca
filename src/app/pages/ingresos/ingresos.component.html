@@ -46,6 +46,7 @@
 
       <p *ngIf="!modoEdicion">
         Registra los nuevos movimientos financieros del ministerio.
+        <span *ngIf="authService.isLider()"> Los ingresos del líder quedan <strong>pendientes de aprobación</strong> por contable o administrador.</span>
       </p>
       <p *ngIf="modoEdicion">
         Modifica la información y guarda los cambios del registro financiero.
@@ -253,12 +254,12 @@
               class="upload-zone upload-zone--income"
               *ngIf="!nuevoIngreso.foto">
               <ion-icon name="cloud-upload-outline"></ion-icon>
-              <p>Haz clic para subir o arrastra una imagen</p>
-              <span>Formatos permitidos: JPG y PNG</span>
+              <p>Haz clic para subir imagen o PDF</p>
+              <span>JPG, PNG, WebP o PDF (máx. 5 MB)</span>
               <input
                 type="file"
                 class="file-overlay"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp,application/pdf,.pdf"
                 (change)="onFileChange($event)">
             </div>
 
@@ -267,10 +268,16 @@
               *ngIf="nuevoIngreso.foto">
               <div
                 class="preview-card"
-                (click)="verImagen(nuevoIngreso.foto)">
+                [class.preview-card--pdf]="esPdfFormulario"
+                (click)="verComprobante(nuevoIngreso.foto)">
                 <img
+                  *ngIf="!esPdfFormulario"
                   [src]="nuevoIngreso.foto"
-                  alt="Evidencia cargada">
+                  alt="Comprobante cargado">
+                <div class="preview-pdf" *ngIf="esPdfFormulario">
+                  <ion-icon name="document-text-outline"></ion-icon>
+                  <span>PDF adjunto</span>
+                </div>
                 <div class="preview-zoom-overlay">
                   <ion-icon name="expand-outline"></ion-icon>
                 </div>
@@ -281,7 +288,7 @@
                     fill="clear"
                     color="danger"
                     type="button"
-                    aria-label="Eliminar imagen"
+                    aria-label="Eliminar comprobante"
                     (click)="eliminarFoto()">
                     <ion-icon
                       slot="icon-only"
@@ -291,8 +298,8 @@
                 </div>
               </div>
               <div class="preview-info">
-                <p>Imagen cargada correctamente</p>
-                <small>Haz clic en la vista previa para expandir.</small>
+                <p>{{ esPdfFormulario ? 'PDF cargado correctamente' : 'Imagen cargada correctamente' }}</p>
+                <small>Haz clic en la vista previa para ver el comprobante.</small>
               </div>
             </div>
 
@@ -345,6 +352,9 @@
           </h2>
           <span class="badge-count">
             {{ listaFiltrada.length }} registros encontrados
+          </span>
+          <span class="badge-count badge-count--warn" *ngIf="puedeAprobar && pendientesCount > 0">
+            {{ pendientesCount }} pendiente(s)
           </span>
         </div>
         <div class="list-header-actions">
@@ -451,6 +461,21 @@
             </ion-popover>
           </div>
 
+          <div class="filter-item" *ngIf="puedeAprobar">
+            <ion-label>Estado</ion-label>
+            <ion-item lines="none" class="ieca-input-item ieca-input filter-select-item">
+              <ion-select
+                interface="popover"
+                [(ngModel)]="filtroEstado"
+                placeholder="Todos">
+                <ion-select-option value="todos">Todos</ion-select-option>
+                <ion-select-option value="pendiente">Pendiente</ion-select-option>
+                <ion-select-option value="aprobado">Aprobado</ion-select-option>
+                <ion-select-option value="rechazado">Rechazado</ion-select-option>
+              </ion-select>
+            </ion-item>
+          </div>
+
           <div class="filter-item">
             <ion-label>Monto mínimo $</ion-label>
             <div class="filter-input-wrapper">
@@ -490,9 +515,13 @@
         [columns]="columnsIngresos"
         [data]="listaFiltrada"
         [actions]="acciones"
+        [allowEditApproved]="authService.isAdministrador()"
+        [allowDeleteApproved]="authService.isAdministrador()"
         (onEdit)="editarIngreso($event)"
         (onDelete)="eliminarIngreso($event)"
-        (onImageClick)="verImagen($event)">
+        (onApprove)="aprobarIngreso($event)"
+        (onReject)="rechazarIngreso($event)"
+        (onEvidenceClick)="verComprobante($event)">
       </app-tabla-general>
 
     </div>

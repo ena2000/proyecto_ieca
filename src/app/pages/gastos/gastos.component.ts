@@ -15,7 +15,8 @@ import { addIcons } from 'ionicons';
 import {
   calendarOutline, cashOutline, documentTextOutline, cloudUploadOutline,
   saveOutline, notificationsOutline, pencilOutline, trashOutline,
-  closeCircleOutline, expandOutline, closeOutline, addCircleOutline, optionsOutline
+  closeCircleOutline, expandOutline, closeOutline, addCircleOutline, optionsOutline,
+  checkmarkCircleOutline
 } from 'ionicons/icons';
 
 import { Subject, firstValueFrom } from 'rxjs';
@@ -24,9 +25,18 @@ import { takeUntil } from 'rxjs/operators';
 import { TablaGeneralComponent, TableColumn } from 'src/app/components/tabla-general/tabla-general.component';
 import { NotificacionesBellComponent } from 'src/app/components/notificaciones-bell/notificaciones-bell.component';
 import { formatearISOaDDMMYYYY } from '../../shared/utils/date.util';
-import { validarArchivoImagen, comprimirImagen } from '../../shared/utils/image-upload.util';
+import {
+  procesarComprobante,
+  esComprobantePdf
+} from '../../shared/utils/comprobante-upload.util';
 import { withLoading } from '../../shared/utils/loading.util';
-import { Gasto, Ministerio, Usuario } from '../../core/models';
+import {
+  estadoGasto,
+  etiquetaEstadoGasto,
+  gastoPendiente
+} from '../../shared/utils/gasto.util';
+import { Gasto, GastoEstado, Ministerio, Usuario } from '../../core/models';
+import { TableActions } from 'src/app/components/tabla-general/tabla-general.component';
 import { DataService } from '../../services/data.service';
 import { GastosService } from '../../services/gastos.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -103,21 +113,25 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
   filtroMontoMin: number | null = null;
   filtroMontoMax: number | null = null;
 
-  fotoSeleccionada: string | null = null;
+  comprobanteSeleccionado: string | null = null;
+  comprobanteEsPdf = false;
 
   categoriasGasto: string[] = ['Servicios', 'Suministros', 'Mantenimiento', 'Personal', 'Impuestos', 'Otros'];
+  filtroEstado: 'todos' | GastoEstado = 'todos';
 
   columnsGastos: TableColumn[] = [
-    { field: 'foto',            header: 'Evidencia', type: 'image'    },
-    { field: 'fechaFormateada', header: 'Fecha'                       },
-    { field: 'categoria',       header: 'Categoría'                   },
-    { field: 'proveedor',       header: 'Proveedor/Beneficiario'      },
-    { field: 'descripcion',     header: 'Descripción'                 },
-    { field: 'monto',           header: 'Monto',     type: 'currency' }
+    { field: 'foto',            header: 'Comprobante', type: 'evidence' },
+    { field: 'fechaFormateada', header: 'Fecha'                        },
+    { field: 'estadoEtiqueta',  header: 'Estado',      type: 'badge'    },
+    { field: 'categoria',       header: 'Categoría'                    },
+    { field: 'proveedor',       header: 'Proveedor/Beneficiario'       },
+    { field: 'descripcion',     header: 'Descripción'                  },
+    { field: 'monto',           header: 'Monto',       type: 'currency' }
   ];
 
-  acciones = { edit: true, delete: true };
+  acciones: TableActions = { edit: true, delete: true };
   soloLectura = false;
+  puedeAprobar = false;
   ministerioScopeId: number | null = null;
 
   constructor(
@@ -126,7 +140,7 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
     private loadingController: LoadingController,
     private dataService: DataService,
     private gastosService: GastosService,
-    private authService: AuthService
+    readonly authService: AuthService
   ) {
     addIcons({
       'calendar-outline':      calendarOutline,
@@ -141,16 +155,16 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
       'expand-outline':        expandOutline,
       'close-outline':         closeOutline,
       'add-circle-outline':    addCircleOutline,
-      'options-outline':       optionsOutline
+      'options-outline':        optionsOutline,
+      'checkmark-circle-outline': checkmarkCircleOutline
     });
   }
 
   ngOnInit() {
     this.soloLectura = this.authService.isSoloLecturaFinanzas();
+    this.puedeAprobar = this.authService.isAdministrador() || this.authService.isContable();
     this.ministerioScopeId = this.authService.getMinisterioScopeId();
-    if (this.soloLectura) {
-      this.acciones = { edit: false, delete: false };
-    }
+    this.configurarAccionesTabla();
 
     this.fechaManualForm = formatearISOaDDMMYYYY(this.nuevoGasto.fecha);
     this.gastosService.gastos$
@@ -168,23 +182,48 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
     this.cargarRelaciones();
   }
 
+  private configurarAccionesTabla(): void {
+    if (this.puedeAprobar && this.soloLectura) {
+      this.acciones = { edit: false, delete: false, approve: true, reject: true };
+      return;
+    }
+    if (this.authService.isAdministrador()) {
+      this.acciones = { edit: true, delete: true, approve: true, reject: true };
+      return;
+    }
+    if (this.authService.isLider()) {
+      this.acciones = { edit: true, delete: true };
+      return;
+    }
+    this.acciones = { edit: !this.soloLectura, delete: !this.soloLectura };
+  }
+
+  get pendientesCount(): number {
+    return this.listaGastos.filter(g => gastoPendiente(g)).length;
+  }
+
   @HostListener('document:keydown.escape', [])
   handleEscapeKey() {
-    if (this.fotoSeleccionada) {
-      this.cerrarImagen();
+    if (this.comprobanteSeleccionado) {
+      this.cerrarComprobante();
     }
   }
 
-  verImagen(foto: any) {
-    if (foto && typeof foto === 'string') {
-      this.fotoSeleccionada = foto;
-      document.body.style.overflow = 'hidden';
-    }
+  verComprobante(url: string) {
+    if (!url) return;
+    this.comprobanteSeleccionado = url;
+    this.comprobanteEsPdf = esComprobantePdf(url);
+    document.body.style.overflow = 'hidden';
   }
 
-  cerrarImagen() {
-    this.fotoSeleccionada = null;
+  cerrarComprobante() {
+    this.comprobanteSeleccionado = null;
+    this.comprobanteEsPdf = false;
     document.body.style.overflow = 'auto';
+  }
+
+  get esPdfFormulario(): boolean {
+    return esComprobantePdf(this.nuevoGasto.foto);
   }
 
   validarFechaManualForm(event: CustomEvent | Event) {
@@ -284,7 +323,8 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
       !!this.fechaManualDesde ||
       !!this.fechaManualHasta ||
       this.filtroMontoMin !== null ||
-      this.filtroMontoMax !== null;
+      this.filtroMontoMax !== null ||
+      this.filtroEstado !== 'todos';
   }
 
   limpiarFiltros(): void {
@@ -295,6 +335,7 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
     this.fechaManualHasta = '';
     this.filtroMontoMin = null;
     this.filtroMontoMax = null;
+    this.filtroEstado = 'todos';
   }
 
   get listaFiltrada(): Gasto[] {
@@ -329,7 +370,15 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
       filtrados = filtrados.filter(g => (g.monto || 0) <= this.filtroMontoMax!);
     }
 
-    return filtrados;
+    if (this.filtroEstado !== 'todos') {
+      filtrados = filtrados.filter(g => estadoGasto(g) === this.filtroEstado);
+    }
+
+    return filtrados.map(g => ({
+      ...g,
+      estado: estadoGasto(g),
+      estadoEtiqueta: etiquetaEstadoGasto(estadoGasto(g))
+    }));
   }
 
   async registrarGasto() {
@@ -356,10 +405,16 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
       await withLoading(this.loadingController, guardando, async () => {
         if (this.modoEdicion && this.idEditando !== null) {
           await firstValueFrom(this.gastosService.update(this.idEditando, preparado, fechaFormateada));
-          await this.mostrarToast('Registro actualizado exitosamente', 'success');
+          const msg = this.authService.isLider()
+            ? 'Gasto actualizado y enviado a aprobación'
+            : 'Registro actualizado exitosamente';
+          await this.mostrarToast(msg, 'success');
         } else {
           await firstValueFrom(this.gastosService.create(preparado, fechaFormateada));
-          await this.mostrarToast('Registro creado exitosamente', 'success');
+          const msg = this.authService.isLider()
+            ? 'Gasto registrado. Queda pendiente de aprobación.'
+            : 'Registro creado exitosamente';
+          await this.mostrarToast(msg, 'success');
         }
       });
 
@@ -368,15 +423,27 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
     } catch (error) {
       const msg = error instanceof Error
         ? (error.message === 'STORAGE_QUOTA'
-          ? 'No se pudo guardar. La imagen es muy grande; intenta sin foto o con otra más pequeña.'
+          ? 'No se pudo guardar. El comprobante es muy grande; intenta uno más pequeño.'
           : error.message)
-        : 'No se pudo guardar. Si adjuntaste una imagen muy grande, intenta sin foto.';
+        : 'No se pudo guardar. Si adjuntaste un archivo muy grande, intenta sin comprobante.';
       this.mostrarToast(msg, 'danger');
     }
   }
 
   private normalizarGasto(): Gasto {
     const monto = Number(this.nuevoGasto.monto);
+    let estado: GastoEstado = 'aprobado';
+    if (this.authService.isLider()) {
+      estado = 'pendiente';
+    } else if (this.modoEdicion && this.idEditando !== null) {
+      const actual = this.listaGastos.find(g => g.id === this.idEditando);
+      if (actual && estadoGasto(actual) !== 'aprobado') {
+        estado = 'pendiente';
+      } else if (actual) {
+        estado = estadoGasto(actual);
+      }
+    }
+
     return {
       ...this.nuevoGasto,
       monto: Number.isFinite(monto) ? monto : null,
@@ -385,13 +452,19 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
         : undefined,
       usuarioId: this.nuevoGasto.usuarioId != null
         ? Number(this.nuevoGasto.usuarioId)
-        : undefined
+        : undefined,
+      estado,
+      motivoRechazo: estado === 'pendiente' ? undefined : this.nuevoGasto.motivoRechazo
     };
   }
 
   editarGasto(item: Gasto) {
     if (!this.perteneceAlcance(item)) {
       this.mostrarToast('No puedes editar registros de otro ministerio.', 'warning');
+      return;
+    }
+    if (this.authService.isLider() && estadoGasto(item) === 'aprobado') {
+      this.mostrarToast('No puedes editar un gasto ya aprobado.', 'warning');
       return;
     }
     this.nuevoGasto.foto = '';
@@ -405,9 +478,59 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
     }, 50);
   }
 
+  async aprobarGasto(item: Gasto) {
+    if (!this.puedeAprobar || estadoGasto(item) !== 'pendiente') return;
+    try {
+      await withLoading(this.loadingController, 'Aprobando gasto...', async () => {
+        await firstValueFrom(this.gastosService.aprobar(item.id));
+      });
+      this.dataService.notifyChanges();
+      this.mostrarToast('Gasto aprobado', 'success');
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'No se pudo aprobar';
+      this.mostrarToast(msg, 'danger');
+    }
+  }
+
+  async rechazarGasto(item: Gasto) {
+    if (!this.puedeAprobar || estadoGasto(item) !== 'pendiente') return;
+
+    const alert = await this.alertController.create({
+      header:  'Rechazar gasto',
+      message: 'Indica el motivo del rechazo (opcional).',
+      inputs:  [{ name: 'motivo', type: 'textarea', placeholder: 'Motivo...' }],
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        {
+          text:    'Rechazar',
+          role:    'destructive',
+          handler: async (data) => {
+            try {
+              await withLoading(this.loadingController, 'Rechazando...', async () => {
+                await firstValueFrom(
+                  this.gastosService.rechazar(item.id, data?.motivo)
+                );
+              });
+              this.dataService.notifyChanges();
+              this.mostrarToast('Gasto rechazado', 'warning');
+            } catch (error) {
+              const msg = error instanceof Error ? error.message : 'No se pudo rechazar';
+              this.mostrarToast(msg, 'danger');
+            }
+          }
+        }
+      ]
+    });
+    await alert.present();
+  }
+
   async eliminarGasto(item: Gasto) {
     if (!this.perteneceAlcance(item)) {
       this.mostrarToast('No puedes eliminar registros de otro ministerio.', 'warning');
+      return;
+    }
+    if (this.authService.isLider() && estadoGasto(item) === 'aprobado') {
+      this.mostrarToast('No puedes eliminar un gasto ya aprobado.', 'warning');
       return;
     }
     const alert = await this.alertController.create({
@@ -462,17 +585,12 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
     const file  = input.files?.[0];
     if (!file) return;
 
-    const validacion = validarArchivoImagen(file);
-    if (!validacion.valid) {
-      this.mostrarToast(validacion.error ?? 'Archivo no válido.', 'danger');
-      input.value = '';
-      return;
-    }
-
     try {
-      this.nuevoGasto.foto = await comprimirImagen(file);
+      const { dataUrl, tipo } = await procesarComprobante(file);
+      this.nuevoGasto.foto = dataUrl;
+      this.nuevoGasto.comprobanteTipo = tipo;
     } catch (error) {
-      const msg = error instanceof Error ? error.message : 'No se pudo procesar la imagen.';
+      const msg = error instanceof Error ? error.message : 'No se pudo procesar el archivo.';
       this.mostrarToast(msg, 'danger');
       input.value = '';
     }

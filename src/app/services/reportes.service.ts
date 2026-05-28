@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import * as XLSX from 'xlsx-js-style';
 import { DesgloseReporte, Ministerio, Reporte } from '../core/models';
 import { DataService } from './data.service';
+import { gastoAprobado } from '../shared/utils/gasto.util';
+import { ingresoAprobado } from '../shared/utils/ingreso.util';
 import { formatearISOaDDMMYYYY } from '../shared/utils/date.util';
 import {
   estiloEncabezadoTabla,
@@ -32,8 +34,8 @@ export class ReportesService {
   constructor(private dataService: DataService) {}
 
   generarReportes(): Reporte[] {
-    const ingresos    = this.dataService.getIngresosActuales();
-    const gastos      = this.dataService.getGastosActuales();
+    const ingresos    = this.dataService.getIngresosActuales().filter(ingresoAprobado);
+    const gastos      = this.dataService.getGastosActuales().filter(gastoAprobado);
     const ministerios = this.dataService.getMinisteriosActuales();
 
     const reportes: Reporte[] = [];

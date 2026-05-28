@@ -1,11 +1,12 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { Ingreso, Ministerio, Usuario } from '../core/models';
+import { Ingreso, IngresoEstado, Ministerio, Usuario } from '../core/models';
 import { NotificacionesService } from '../core/services/notificaciones.service';
 import { ApiService } from '../core/services/api.service';
 import { API } from '../core/constants/api.constants';
 import { environment } from '../../environments/environment';
+import { estadoIngreso } from '../shared/utils/ingreso.util';
 
 @Injectable({ providedIn: 'root' })
 export class IngresosService {
@@ -29,10 +30,10 @@ export class IngresosService {
     if (environment.useLocalFallback) {
       return of(this.createLocal(ingreso, fechaFormateada));
     }
-    return this.api.post<Ingreso>(API.ingresos, { ...ingreso, fechaFormateada }).pipe(
+    return this.api.post<Ingreso>(API.ingresos.base, { ...ingreso, fechaFormateada }).pipe(
       tap(nuevo => {
         this.persist([nuevo, ...this.getAll()]);
-        this.notifyCreate(nuevo);
+        this.notificacionesService.recargar();
       })
     );
   }
@@ -41,7 +42,7 @@ export class IngresosService {
     if (environment.useLocalFallback) {
       return of(this.updateLocal(id, ingreso, fechaFormateada));
     }
-    return this.api.put<Ingreso>(`${API.ingresos}/${id}`, { ...ingreso, fechaFormateada }).pipe(
+    return this.api.put<Ingreso>(`${API.ingresos.base}/${id}`, { ...ingreso, fechaFormateada }).pipe(
       tap(actualizado => {
         const lista = this.getAll().map(i => (i.id === id ? actualizado : i));
         this.persist(lista);
@@ -54,8 +55,31 @@ export class IngresosService {
       this.deleteLocal(id);
       return of(undefined);
     }
-    return this.api.delete(`${API.ingresos}/${id}`).pipe(
+    return this.api.delete(`${API.ingresos.base}/${id}`).pipe(
       tap(() => this.persist(this.getAll().filter(i => i.id !== id)))
+    );
+  }
+
+  aprobar(id: number): Observable<Ingreso> {
+    if (environment.useLocalFallback) {
+      return of(this.aprobarLocal(id));
+    }
+    return this.api.patch<Ingreso>(API.ingresos.aprobar(id), {}).pipe(
+      tap(actualizado => {
+        this.persist(this.getAll().map(i => (i.id === id ? actualizado : i)));
+        this.notificacionesService.recargar();
+      })
+    );
+  }
+
+  rechazar(id: number, motivo?: string): Observable<Ingreso> {
+    if (environment.useLocalFallback) {
+      return of(this.rechazarLocal(id, motivo));
+    }
+    return this.api.patch<Ingreso>(API.ingresos.rechazar(id), { motivo }).pipe(
+      tap(actualizado => {
+        this.persist(this.getAll().map(i => (i.id === id ? actualizado : i)));
+      })
     );
   }
 
@@ -78,7 +102,7 @@ export class IngresosService {
       this.loadFromStorage();
       return;
     }
-    this.api.get<Ingreso[]>(API.ingresos).subscribe({
+    this.api.get<Ingreso[]>(API.ingresos.base).subscribe({
       next: lista => this.ingresosSubject.next(lista),
       error: err => console.error('[IngresosService] reload:', err)
     });
@@ -92,9 +116,47 @@ export class IngresosService {
   }
 
   private updateLocal(id: number, ingreso: Omit<Ingreso, 'id'>, fechaFormateada: string): Ingreso {
-    const actualizado: Ingreso = { ...ingreso, id, fechaFormateada };
+    const current = this.getAll().find(i => i.id === id);
+    const estado: IngresoEstado =
+      current && estadoIngreso(current) !== 'aprobado' ? 'pendiente' : (ingreso.estado ?? 'pendiente');
+    const actualizado: Ingreso = {
+      ...ingreso,
+      id,
+      fechaFormateada,
+      estado: ingreso.estado ?? estado,
+      motivoRechazo: estado === 'pendiente' ? undefined : ingreso.motivoRechazo
+    };
     this.persist(this.getAll().map(i => (i.id === id ? actualizado : i)));
     return actualizado;
+  }
+
+  private aprobarLocal(id: number): Ingreso {
+    const lista = this.getAll().map(i => {
+      if (i.id !== id) return i;
+      return { ...i, estado: 'aprobado' as IngresoEstado, motivoRechazo: undefined };
+    });
+    this.persist(lista);
+    const updated = lista.find(i => i.id === id)!;
+    this.notificacionesService.registrar({
+      tipo: 'ingreso',
+      titulo: 'Ingreso aprobado',
+      mensaje: `${updated.ministerio || 'General'} · ${updated.descripcion} fue aprobado.`,
+      ruta: '/ingresos'
+    });
+    return updated;
+  }
+
+  private rechazarLocal(id: number, motivo?: string): Ingreso {
+    const lista = this.getAll().map(i => {
+      if (i.id !== id) return i;
+      return {
+        ...i,
+        estado: 'rechazado' as IngresoEstado,
+        motivoRechazo: motivo?.trim() || 'Sin motivo indicado'
+      };
+    });
+    this.persist(lista);
+    return lista.find(i => i.id === id)!;
   }
 
   private deleteLocal(id: number): void {
@@ -102,9 +164,10 @@ export class IngresosService {
   }
 
   private notifyCreate(nuevo: Ingreso): void {
+    const pendiente = estadoIngreso(nuevo) === 'pendiente';
     this.notificacionesService.registrar({
       tipo: 'ingreso',
-      titulo: 'Nuevo ingreso',
+      titulo: pendiente ? 'Ingreso pendiente de aprobación' : 'Nuevo ingreso',
       mensaje: `${nuevo.ministerio || 'General'} · ${nuevo.descripcion} · $ ${(nuevo.monto || 0).toFixed(2)}`,
       ruta: '/ingresos'
     });

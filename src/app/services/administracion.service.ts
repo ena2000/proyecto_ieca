@@ -1,9 +1,13 @@
 import { Injectable } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 import {
   ActividadAdmin, BackupIeca, ConfigIglesia, ResumenAdmin
 } from '../core/models';
 import { DataService } from './data.service';
 import { NotificacionesService } from '../core/services/notificaciones.service';
+import { ApiService } from '../core/services/api.service';
+import { API } from '../core/constants/api.constants';
+import { environment } from '../../environments/environment';
 import { getMesActualLabel } from '../shared/utils/month.util';
 
 const ULTIMO_CIERRE_KEY = 'ultimoCierre';
@@ -11,18 +15,36 @@ const ULTIMO_CIERRE_KEY = 'ultimoCierre';
 const CONFIG_DEFAULT: ConfigIglesia = {
   nombre:        'Iglesia Evangélica La Alborada',
   periodoActual: '',
-  version:       'v0.0.1'
+  version:       'v1.0.0'
 };
 
 @Injectable({ providedIn: 'root' })
 export class AdministracionService {
 
+  private ultimoCierreApi: string | null = null;
+
   constructor(
     private dataService: DataService,
-    private notificacionesService: NotificacionesService
+    private notificacionesService: NotificacionesService,
+    private api: ApiService
   ) {}
 
+  async cargarConfigRemota(): Promise<void> {
+    if (environment.useLocalFallback) return;
+    try {
+      const cfg = await firstValueFrom(
+        this.api.get<{ ultimoCierre: string | null }>(API.admin.config)
+      );
+      this.ultimoCierreApi = cfg.ultimoCierre;
+    } catch (err) {
+      console.error('[AdministracionService] cargarConfigRemota:', err);
+    }
+  }
+
   getUltimoCierre(): string {
+    if (!environment.useLocalFallback) {
+      return this.ultimoCierreApi ?? 'N/A';
+    }
     return localStorage.getItem(ULTIMO_CIERRE_KEY) || 'N/A';
   }
 
@@ -131,9 +153,8 @@ export class AdministracionService {
     return actividades.slice(0, 4);
   }
 
-  ejecutarCierreMes(): void {
+  async ejecutarCierreMes(): Promise<void> {
     const fechaCierre = getMesActualLabel();
-    localStorage.setItem(ULTIMO_CIERRE_KEY, fechaCierre);
 
     this.notificacionesService.registrar({
       tipo: 'cierre',
@@ -142,24 +163,30 @@ export class AdministracionService {
       ruta: '/administracion'
     });
 
-    const ingresos = this.dataService.getIngresosActuales().map(i => ({ ...i, cerrado: true }));
-    const gastos   = this.dataService.getGastosActuales().map(g => ({ ...g, cerrado: true }));
-    localStorage.setItem('ingresos', JSON.stringify(ingresos));
-    localStorage.setItem('gastos', JSON.stringify(gastos));
+    if (environment.useLocalFallback) {
+      localStorage.setItem(ULTIMO_CIERRE_KEY, fechaCierre);
+      const ingresos = this.dataService.getIngresosActuales().map(i => ({ ...i, cerrado: true }));
+      const gastos   = this.dataService.getGastosActuales().map(g => ({ ...g, cerrado: true }));
+      localStorage.setItem('ingresos', JSON.stringify(ingresos));
+      localStorage.setItem('gastos', JSON.stringify(gastos));
+      this.dataService.refreshAllData();
+      this.dataService.notifyChanges();
+      return;
+    }
+
+    await firstValueFrom(
+      this.api.post<{ ultimoCierre: string }>(API.admin.cierre, { periodo: fechaCierre })
+    );
+    this.ultimoCierreApi = fechaCierre;
     this.dataService.refreshAllData();
     this.dataService.notifyChanges();
   }
 
-  crearBackup(): BackupIeca {
-    return {
-      fecha:        new Date().toISOString(),
-      version:      CONFIG_DEFAULT.version,
-      ingresos:     this.dataService.getIngresosActuales(),
-      gastos:       this.dataService.getGastosActuales(),
-      ministerios:  this.dataService.getMinisteriosActuales(),
-      usuarios:     this.dataService.getUsuariosActuales(),
-      ultimoCierre: localStorage.getItem(ULTIMO_CIERRE_KEY)
-    };
+  async crearBackup(): Promise<BackupIeca> {
+    if (environment.useLocalFallback) {
+      return this.crearBackupLocal();
+    }
+    return firstValueFrom(this.api.get<BackupIeca>(API.admin.backup));
   }
 
   descargarBackup(backup: BackupIeca): void {
@@ -172,7 +199,41 @@ export class AdministracionService {
     URL.revokeObjectURL(url);
   }
 
-  restaurarBackup(backup: BackupIeca): void {
+  async restaurarBackup(backup: BackupIeca): Promise<void> {
+    if (environment.useLocalFallback) {
+      this.restaurarBackupLocal(backup);
+      return;
+    }
+    await firstValueFrom(this.api.post(API.admin.restore, backup));
+    await this.cargarConfigRemota();
+    this.dataService.refreshAllData();
+    this.notificacionesService.recargar();
+  }
+
+  async limpiarTodosLosDatos(): Promise<void> {
+    if (environment.useLocalFallback) {
+      this.limpiarTodosLosDatosLocal();
+      return;
+    }
+    await firstValueFrom(this.api.delete(API.admin.datos));
+    this.ultimoCierreApi = null;
+    this.dataService.refreshAllData();
+    this.notificacionesService.recargar();
+  }
+
+  private crearBackupLocal(): BackupIeca {
+    return {
+      fecha:        new Date().toISOString(),
+      version:      CONFIG_DEFAULT.version,
+      ingresos:     this.dataService.getIngresosActuales(),
+      gastos:       this.dataService.getGastosActuales(),
+      ministerios:  this.dataService.getMinisteriosActuales(),
+      usuarios:     this.dataService.getUsuariosActuales(),
+      ultimoCierre: localStorage.getItem(ULTIMO_CIERRE_KEY)
+    };
+  }
+
+  private restaurarBackupLocal(backup: BackupIeca): void {
     if (backup.ingresos)    localStorage.setItem('ingresos', JSON.stringify(backup.ingresos));
     if (backup.gastos)      localStorage.setItem('gastos', JSON.stringify(backup.gastos));
     if (backup.ministerios) localStorage.setItem('ministerios', JSON.stringify(backup.ministerios));
@@ -181,7 +242,7 @@ export class AdministracionService {
     this.dataService.refreshAllData();
   }
 
-  limpiarTodosLosDatos(): void {
+  private limpiarTodosLosDatosLocal(): void {
     localStorage.removeItem('ingresos');
     localStorage.removeItem('gastos');
     localStorage.removeItem('ministerios');

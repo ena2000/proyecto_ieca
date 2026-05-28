@@ -12,8 +12,8 @@ import { IngresosService } from './ingresos.service';
 import { GastosService } from './gastos.service';
 import { MinisteriosService } from './ministerios.service';
 import { UsuariosService } from './usuarios.service';
-
-
+import { gastoAprobado } from '../shared/utils/gasto.util';
+import { ingresoAprobado } from '../shared/utils/ingreso.util';
 
 export type {
 
@@ -153,6 +153,15 @@ export class DataService {
 
   }
 
+  /** Solo movimientos aprobados cuentan en balance, gráficos y reportes consolidados. */
+  private gastosAprobadosParaBalance(gastos: Gasto[]): Gasto[] {
+    return gastos.filter(gastoAprobado);
+  }
+
+  private ingresosAprobadosParaBalance(ingresos: Ingreso[]): Ingreso[] {
+    return ingresos.filter(ingresoAprobado);
+  }
+
   private filterPorMinisterio<T extends { ministerioId?: number }>(
     items: T[],
     ministerioId?: number
@@ -163,9 +172,13 @@ export class DataService {
 
   calcularKPIs(ministerioId?: number): KPIs {
 
-    const ingresos = this.filterPorMinisterio(this.getIngresosActuales(), ministerioId);
+    const ingresos = this.ingresosAprobadosParaBalance(
+      this.filterPorMinisterio(this.getIngresosActuales(), ministerioId)
+    );
 
-    const gastos = this.filterPorMinisterio(this.getGastosActuales(), ministerioId);
+    const gastos = this.gastosAprobadosParaBalance(
+      this.filterPorMinisterio(this.getGastosActuales(), ministerioId)
+    );
 
     const ministerios = this.getMinisteriosActuales();
 
@@ -283,11 +296,13 @@ export class DataService {
 
   getUltimosMovimientos(cantidad: number = 5, ministerioId?: number): Movimiento[] {
 
-    const ingresos = this.filterPorMinisterio(this.getIngresosActuales(), ministerioId);
+    const ingresos = this.ingresosAprobadosParaBalance(
+      this.filterPorMinisterio(this.getIngresosActuales(), ministerioId)
+    );
 
-    const gastos = this.filterPorMinisterio(this.getGastosActuales(), ministerioId);
-
-
+    const gastos = this.gastosAprobadosParaBalance(
+      this.filterPorMinisterio(this.getGastosActuales(), ministerioId)
+    );
 
     const ministerios = this.getMinisteriosActuales();
 
@@ -321,11 +336,13 @@ export class DataService {
 
   getChartData(ministerioId?: number): MesData[] {
 
-    const ingresos = this.filterPorMinisterio(this.getIngresosActuales(), ministerioId);
+    const ingresos = this.ingresosAprobadosParaBalance(
+      this.filterPorMinisterio(this.getIngresosActuales(), ministerioId)
+    );
 
-    const gastos = this.filterPorMinisterio(this.getGastosActuales(), ministerioId);
-
-
+    const gastos = this.gastosAprobadosParaBalance(
+      this.filterPorMinisterio(this.getGastosActuales(), ministerioId)
+    );
 
     const meses = ['Dic', 'Ene', 'Feb', 'Mar', 'Abr', 'May'];
 
