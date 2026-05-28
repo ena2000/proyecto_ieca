@@ -13,44 +13,23 @@ import { addIcons } from 'ionicons';
 import {
   notificationsOutline, expandOutline, closeOutline, downloadOutline,
   calendarOutline, chevronBackOutline, chevronForwardOutline, funnelOutline,
-  businessOutline
+  businessOutline, cashOutline, trendingDownOutline
 } from 'ionicons/icons';
 
-import { Subject, interval } from 'rxjs';
+export type FiltroMovimientoReporte = 'todos' | 'ingresos' | 'gastos';
+
+import { Subject, combineLatest } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 import { TablaGeneralComponent, TableColumn } from 'src/app/components/tabla-general/tabla-general.component';
+import { NotificacionesBellComponent } from 'src/app/components/notificaciones-bell/notificaciones-bell.component';
+import { DesgloseReporte, Ministerio, Reporte } from '../../core/models';
 import { DataService } from '../../services/data.service';
+import { ReportesService } from '../../services/reportes.service';
+import { AuthService } from '../../core/services/auth.service';
+import { etiquetaParaMes, padMes } from '../../shared/utils/month.util';
 
 registerLocaleData(localeEs);
-
-interface Ministerio {
-  id: number;
-  nombre: string;
-}
-
-interface Desglose {
-  categoria: string;
-  ingresos: number;
-  gastos: number;
-  saldo: number;
-}
-
-interface Reporte {
-  id: number;
-  fecha: string;
-  titulo: string;
-  tipo: string;
-  ingresos: number;
-  gastos: number;
-  saldo: number;
-  archivo: string;
-  ministerio?: string;
-  ministerioId?: number;
-  mes?: string;
-  desglose?: Desglose[];
-  fechaFormateada?: string;
-}
 
 @Component({
   selector: 'app-reportes',
@@ -73,24 +52,23 @@ interface Reporte {
     IonItem,
     IonSelect,
     IonSelectOption,
-    TablaGeneralComponent
+    TablaGeneralComponent,
+    NotificacionesBellComponent
   ],
   providers: [ToastController]
 })
 export class ReportesComponent implements OnInit, OnDestroy {
 
   listaReportes: Reporte[] = [];
-  listaMinisterios: Ministerio[] = [];
-  searchTerm: string = '';
-  filtroMes: string = '';
+  listaMinisterios: Pick<Ministerio, 'id' | 'nombre'>[] = [];
+  searchTerm = '';
+  filtroMes = '';
   filtroMinisterioId: number | null = null;
+  filtroMovimiento: FiltroMovimientoReporte = 'todos';
   fotoSeleccionada: string | null = null;
   periodoPreset: 'todos' | 'este_mes' | 'anterior' | 'custom' = 'este_mes';
-
-  private readonly MESES_ES = [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-  ];
+  ministerioScopeId: number | null = null;
+  filtroMinisterioBloqueado = false;
 
   columnsReportes: TableColumn[] = [
     { field: 'fechaFormateada', header: 'Fecha' },
@@ -106,7 +84,9 @@ export class ReportesComponent implements OnInit, OnDestroy {
 
   constructor(
     private toastController: ToastController,
-    private dataService: DataService
+    private dataService: DataService,
+    private reportesService: ReportesService,
+    private authService: AuthService
   ) {
     addIcons({
       'notifications-outline': notificationsOutline,
@@ -117,22 +97,37 @@ export class ReportesComponent implements OnInit, OnDestroy {
       'chevron-back-outline':  chevronBackOutline,
       'chevron-forward-outline': chevronForwardOutline,
       'funnel-outline':        funnelOutline,
-      'business-outline':      businessOutline
+      'business-outline':        businessOutline,
+      'cash-outline':            cashOutline,
+      'trending-down-outline':   trendingDownOutline
     });
   }
 
+  esRegistroIngreso(r: Reporte): boolean {
+    return (r.ingresos || 0) > 0 && (r.gastos || 0) === 0;
+  }
+
+  esRegistroGasto(r: Reporte): boolean {
+    return (r.gastos || 0) > 0 && (r.ingresos || 0) === 0;
+  }
+
+  setFiltroMovimiento(tipo: FiltroMovimientoReporte): void {
+    this.filtroMovimiento = tipo;
+  }
+
   ngOnInit() {
-    this.cargarMinisterios();
-    this.generarReportes();
+    this.ministerioScopeId = this.authService.getMinisterioScopeId();
+    if (this.ministerioScopeId != null) {
+      this.filtroMinisterioId = this.ministerioScopeId;
+      this.filtroMinisterioBloqueado = true;
+    }
+
+    this.actualizarDatos();
     this.setPeriodo('este_mes');
 
-    // Refrescar cada 3 segundos para reflejar nuevos ingresos/gastos
-    interval(3000)
+    combineLatest([this.dataService.ingresos$, this.dataService.gastos$])
       .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
-        this.dataService.refreshAllData();
-        this.generarReportes();
-      });
+      .subscribe(() => this.actualizarDatos());
   }
 
   ngOnDestroy() {
@@ -140,12 +135,20 @@ export class ReportesComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  private actualizarDatos() {
+    this.listaMinisterios = this.dataService.getMinisteriosActuales().map(m => ({
+      id: m.id,
+      nombre: m.nombre
+    }));
+    this.listaReportes = this.reportesService.generarReportes();
+  }
+
   @HostListener('document:keydown.escape', [])
   handleEscapeKey() {
     if (this.fotoSeleccionada) this.cerrarImagen();
   }
 
-  verImagen(foto: any) {
+  verImagen(foto: unknown) {
     if (foto && typeof foto === 'string') {
       this.fotoSeleccionada = foto;
       document.body.style.overflow = 'hidden';
@@ -157,60 +160,9 @@ export class ReportesComponent implements OnInit, OnDestroy {
     document.body.style.overflow = 'auto';
   }
 
-  // ✅ Genera reportes dinámicamente desde ingresos y gastos reales
-  // Ya no lee de 'reportes' en localStorage — esa clave nunca se llenaba
-  private generarReportes() {
-    const ingresos = this.dataService.getIngresosActuales();
-    const gastos   = this.dataService.getGastosActuales();
-
-    const reportes: Reporte[] = [];
-    let idCounter = 1;
-
-    // --- Agregar cada ingreso como fila de reporte ---
-    ingresos.forEach(i => {
-      reportes.push({
-        id:              idCounter++,
-        fecha:           i.fecha,
-        fechaFormateada: this.formatearISOaDDMMYYYY(i.fecha),
-        titulo:          i.descripcion,
-        tipo:            i.tipo || 'Ingreso',
-        ministerio:      i.ministerio || 'General',
-        ministerioId:    i.ministerioId,
-        ingresos:        i.monto || 0,
-        gastos:          0,
-        saldo:           i.monto || 0,
-        archivo:         i.foto || '',
-        mes:             new Date(i.fecha).toISOString().substring(0, 7)
-      });
-    });
-
-    // --- Agregar cada gasto como fila de reporte ---
-    gastos.forEach(g => {
-      reportes.push({
-        id:              idCounter++,
-        fecha:           g.fecha,
-        fechaFormateada: this.formatearISOaDDMMYYYY(g.fecha),
-        titulo:          g.descripcion,
-        tipo:            g.categoria || 'Gasto',
-        ministerio:      g.proveedor || 'General',
-        ministerioId:    g.ministerioId,
-        ingresos:        0,
-        gastos:          g.monto || 0,
-        saldo:           -(g.monto || 0),
-        archivo:         g.foto || '',
-        mes:             new Date(g.fecha).toISOString().substring(0, 7)
-      });
-    });
-
-    // Ordenar por fecha descendente
-    this.listaReportes = reportes.sort(
-      (a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
-    );
-  }
-
   get etiquetaMesActivo(): string {
     if (!this.filtroMes) return 'Todo el historial';
-    return this.etiquetaParaMes(this.filtroMes);
+    return etiquetaParaMes(this.filtroMes);
   }
 
   get mesesDisponibles(): { value: string; label: string }[] {
@@ -218,19 +170,28 @@ export class ReportesComponent implements OnInit, OnDestroy {
     this.listaReportes.forEach(r => {
       if (r.mes) meses.add(r.mes);
     });
-    meses.add(this.padMes(new Date()));
+    meses.add(padMes(new Date()));
     return Array.from(meses)
       .sort((a, b) => b.localeCompare(a))
-      .map(value => ({ value, label: this.etiquetaParaMes(value) }));
+      .map(value => ({ value, label: etiquetaParaMes(value) }));
   }
 
   get puedeAvanzarMes(): boolean {
     if (!this.filtroMes) return false;
-    return this.filtroMes < this.padMes(new Date());
+    return this.filtroMes < padMes(new Date());
   }
 
   get hayFiltrosActivos(): boolean {
-    return !!this.filtroMes || this.filtroMinisterioId !== null || !!this.searchTerm;
+    return this.hayFiltrosActivosExportacion;
+  }
+
+  /** Filtros que el usuario aplicó (no cuenta el ministerio fijo del líder). */
+  get hayFiltrosActivosExportacion(): boolean {
+    if (this.searchTerm.trim()) return true;
+    if (this.filtroMes) return true;
+    if (this.filtroMovimiento !== 'todos') return true;
+    if (this.ministerioScopeId == null && this.filtroMinisterioId !== null) return true;
+    return false;
   }
 
   setPeriodo(preset: 'todos' | 'este_mes' | 'anterior' | 'custom'): void {
@@ -242,54 +203,47 @@ export class ReportesComponent implements OnInit, OnDestroy {
       return;
     }
     if (preset === 'este_mes') {
-      this.filtroMes = this.padMes(hoy);
+      this.filtroMes = padMes(hoy);
       return;
     }
     if (preset === 'anterior') {
-      this.filtroMes = this.padMes(new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1));
+      this.filtroMes = padMes(new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1));
     }
   }
 
-  onMesSelectChange(): void {
-    this.periodoPreset = this.filtroMes ? 'custom' : 'todos';
+  onMesCambio(): void {
+    this.periodoPreset = 'custom';
   }
 
   mesAnterior(): void {
-    const base = this.filtroMes || this.padMes(new Date());
+    const base = this.filtroMes || padMes(new Date());
     const [anio, mes] = base.split('-').map(Number);
-    this.filtroMes = this.padMes(new Date(anio, mes - 2, 1));
+    this.filtroMes = padMes(new Date(anio, mes - 2, 1));
     this.periodoPreset = 'custom';
   }
 
   mesSiguiente(): void {
     if (!this.puedeAvanzarMes) return;
     const [anio, mes] = this.filtroMes.split('-').map(Number);
-    this.filtroMes = this.padMes(new Date(anio, mes, 1));
+    this.filtroMes = padMes(new Date(anio, mes, 1));
     this.periodoPreset = 'custom';
   }
 
   limpiarFiltros(): void {
     this.searchTerm = '';
-    this.filtroMinisterioId = null;
+    this.filtroMovimiento = 'todos';
+    if (!this.filtroMinisterioBloqueado) {
+      this.filtroMinisterioId = null;
+    }
     this.setPeriodo('todos');
   }
 
-  private padMes(fecha: Date): string {
-    const y = fecha.getFullYear();
-    const m = String(fecha.getMonth() + 1).padStart(2, '0');
-    return `${y}-${m}`;
-  }
-
-  private etiquetaParaMes(valor: string): string {
-    const [anio, mes] = valor.split('-');
-    const indice = parseInt(mes, 10) - 1;
-    if (indice < 0 || indice > 11) return valor;
-    return `${this.MESES_ES[indice]} ${anio}`;
-  }
-
-  // --- Filtros ---
   get listaFiltrada(): Reporte[] {
     let filtrados = [...this.listaReportes];
+
+    if (this.ministerioScopeId != null) {
+      filtrados = filtrados.filter(r => Number(r.ministerioId) === this.ministerioScopeId);
+    }
 
     if (this.searchTerm) {
       const search = this.searchTerm.toLowerCase();
@@ -308,10 +262,21 @@ export class ReportesComponent implements OnInit, OnDestroy {
       filtrados = filtrados.filter(r => r.ministerioId === this.filtroMinisterioId);
     }
 
+    if (this.filtroMovimiento === 'ingresos') {
+      filtrados = filtrados.filter(r => this.esRegistroIngreso(r));
+    } else if (this.filtroMovimiento === 'gastos') {
+      filtrados = filtrados.filter(r => this.esRegistroGasto(r));
+    }
+
     return filtrados;
   }
 
-  // --- Totales calculados sobre la lista filtrada ---
+  get etiquetaFiltroMovimiento(): string {
+    if (this.filtroMovimiento === 'ingresos') return 'Solo ingresos';
+    if (this.filtroMovimiento === 'gastos') return 'Solo gastos';
+    return 'Ingresos y gastos';
+  }
+
   get totalIngresosFiltrado(): number {
     return this.listaFiltrada.reduce((sum, r) => sum + (r.ingresos || 0), 0);
   }
@@ -324,73 +289,76 @@ export class ReportesComponent implements OnInit, OnDestroy {
     return this.totalIngresosFiltrado - this.totalGastosFiltrado;
   }
 
-  // --- Desglose agrupado por tipo/categoría ---
-  get desgloseAgregado(): Desglose[] {
-    const desgloseMap = new Map<string, Desglose>();
-
-    this.listaFiltrada.forEach(r => {
-      const categoria = r.tipo || 'Sin categoría';
-      const existing = desgloseMap.get(categoria) || {
-        categoria,
-        ingresos: 0,
-        gastos:   0,
-        saldo:    0
-      };
-      existing.ingresos += r.ingresos || 0;
-      existing.gastos   += r.gastos   || 0;
-      existing.saldo     = existing.ingresos - existing.gastos;
-      desgloseMap.set(categoria, existing);
-    });
-
-    return Array.from(desgloseMap.values())
-      .sort((a, b) => b.ingresos - a.ingresos);
+  get desgloseAgregado(): DesgloseReporte[] {
+    return this.reportesService.calcularDesglose(this.listaFiltrada);
   }
 
-  // --- Exportar PDF real usando la API de impresión del navegador ---
   descargarReporte(item: Reporte) {
     this.mostrarToast(`Preparando reporte: ${item.titulo}`, 'success');
     setTimeout(() => window.print(), 500);
   }
 
-  // --- Exportar todo el resumen como CSV ---
-  exportarCSV() {
-    const encabezado = 'Fecha,Descripción,Tipo,Ministerio,Ingresos,Gastos,Saldo\n';
-    const filas = this.listaFiltrada.map(r =>
-      `${r.fechaFormateada},"${r.titulo}",${r.tipo},${r.ministerio || ''},${r.ingresos},${r.gastos},${r.saldo}`
-    ).join('\n');
+  exportarExcel(): void {
+    const conFiltros = this.hayFiltrosActivosExportacion;
+    const reportes   = conFiltros ? this.listaFiltrada : this.listaParaExportarTodo;
 
-    const blob = new Blob([encabezado + filas], { type: 'text/csv;charset=utf-8;' });
-    const url  = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href     = url;
-    link.download = `reporte_${this.filtroMes || 'completo'}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-    this.mostrarToast('Reporte CSV descargado exitosamente', 'success');
-  }
-
-  cargarMinisterios() {
-    const data = localStorage.getItem('ministerios');
-    if (data) {
-      try {
-        const ministerios = JSON.parse(data);
-        this.listaMinisterios = ministerios.map((m: any, idx: number) => ({
-          id:     m.id || idx,
-          nombre: m.nombre
-        }));
-      } catch (e) {
-        this.listaMinisterios = [];
-      }
+    if (reportes.length === 0) {
+      this.mostrarToast('No hay registros para exportar.', 'warning');
+      return;
     }
+
+    const desglose = this.reportesService.calcularDesglose(reportes);
+    const totales  = this.reportesService.calcularTotales(reportes);
+    const fecha    = new Date().toISOString().slice(0, 10);
+    const sufijo   =
+      this.filtroMovimiento === 'ingresos' ? '_ingresos' :
+      this.filtroMovimiento === 'gastos' ? '_gastos' : '';
+
+    this.reportesService.descargarExcel({
+      reportes,
+      desglose,
+      totales,
+      etiquetaFiltro: conFiltros
+        ? this.construirEtiquetaFiltro()
+        : 'Tabla completa (sin filtros aplicados)',
+      nombreArchivo: `reportes_ieca${sufijo}_${fecha}.xlsx`
+    });
+
+    this.mostrarToast(
+      `Excel descargado (${reportes.length} registro${reportes.length === 1 ? '' : 's'}).`,
+      'success'
+    );
   }
 
-  private formatearISOaDDMMYYYY(iso: string): string {
-    if (!iso) return '';
-    const date = new Date(iso);
-    const dd   = String(date.getDate()).padStart(2, '0');
-    const mm   = String(date.getMonth() + 1).padStart(2, '0');
-    const yyyy = date.getFullYear();
-    return `${dd}/${mm}/${yyyy}`;
+  private get listaParaExportarTodo(): Reporte[] {
+    if (this.ministerioScopeId != null) {
+      return this.listaReportes.filter(
+        r => Number(r.ministerioId) === this.ministerioScopeId
+      );
+    }
+    return [...this.listaReportes];
+  }
+
+  private construirEtiquetaFiltro(): string {
+    const partes: string[] = [];
+    partes.push(this.filtroMes ? `Período: ${this.etiquetaMesActivo}` : 'Período: todo el historial');
+
+    if (this.filtroMinisterioId !== null) {
+      const min = this.listaMinisterios.find(m => m.id === this.filtroMinisterioId);
+      partes.push(`Ministerio: ${min?.nombre || this.filtroMinisterioId}`);
+    } else if (this.ministerioScopeId == null) {
+      partes.push('Ministerio: todos');
+    }
+
+    if (this.searchTerm.trim()) {
+      partes.push(`Búsqueda: "${this.searchTerm.trim()}"`);
+    }
+
+    if (this.filtroMovimiento !== 'todos') {
+      partes.push(`Movimiento: ${this.etiquetaFiltroMovimiento}`);
+    }
+
+    return partes.join(' · ');
   }
 
   async mostrarToast(mensaje: string, color: string) {

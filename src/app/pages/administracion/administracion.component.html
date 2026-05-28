@@ -4,11 +4,7 @@
       <ion-menu-button color="primary" aria-label="Abrir menú"></ion-menu-button>
     </ion-buttons>
     <ion-title class="main-title">Administración</ion-title>
-    <ion-buttons slot="end">
-      <ion-button class="text-blue" type="button" aria-label="Notificaciones">
-        <ion-icon name="notifications-outline"></ion-icon>
-      </ion-button>
-    </ion-buttons>
+    <app-notificaciones-bell slot="end"></app-notificaciones-bell>
   </ion-toolbar>
 </ion-header>
 
@@ -82,16 +78,12 @@
               <span class="config-value">{{ configIglesia.nombre }}</span>
             </div>
             <div class="config-item">
-              <span class="config-label">Moneda operativa</span>
-              <span class="config-value">{{ configIglesia.moneda }}</span>
-            </div>
-            <div class="config-item">
               <span class="config-label">Periodo activo</span>
               <span class="config-value">{{ configIglesia.periodoActual }}</span>
             </div>
             <div class="config-item">
-              <span class="config-label">Responsable</span>
-              <span class="config-value">{{ configIglesia.responsable }}</span>
+              <span class="config-label">Usuario</span>
+              <span class="config-value">{{ usuarioSesion }}</span>
             </div>
             <div class="config-item">
               <span class="config-label">Versión del sistema</span>
@@ -120,13 +112,13 @@
 
     </div>
 
-    <!-- Cierre Contable -->
+    <!-- Cierre Financiero -->
     <section class="section-block">
       <div class="critical-card">
         <div class="critical-header">
           <ion-icon name="alert-circle-outline" class="text-red"></ion-icon>
           <div>
-            <h2 class="text-red">Cierre Contable Mensual</h2>
+            <h2 class="text-red">Cierre Financiero Mensual</h2>
             <p class="critical-subtitle">Zona de acción irreversible</p>
           </div>
         </div>

@@ -13,14 +13,7 @@
       Gastos
     </ion-title>
 
-    <ion-buttons slot="end">
-      <ion-button
-        class="text-blue"
-        type="button"
-        aria-label="Notificaciones">
-        <ion-icon name="notifications-outline"></ion-icon>
-      </ion-button>
-    </ion-buttons>
+    <app-notificaciones-bell slot="end"></app-notificaciones-bell>
 
   </ion-toolbar>
 
@@ -30,6 +23,12 @@
 
   <div class="container-wrapper">
 
+    <div class="page-header" *ngIf="soloLectura">
+      <h1 class="text-blue">Consulta de Gastos</h1>
+      <p>Vista de solo lectura. Los registros no pueden modificarse desde este rol.</p>
+    </div>
+
+    <ng-container *ngIf="!soloLectura">
     <div class="page-header">
 
       <h1 class="text-blue">
@@ -49,7 +48,7 @@
         Registra los egresos de caja, compras o pagos de servicios operacionales.
       </p>
       <p *ngIf="modoEdicion">
-        Modifica la información y guarda los cambios del egreso contable.
+        Modifica la información y guarda los cambios del egreso financiero.
       </p>
 
     </div>
@@ -157,8 +156,9 @@
               [(ngModel)]="nuevoGasto.ministerioId"
               name="ministerioId"
               class="ieca-select"
+              [disabled]="ministerioBloqueado"
               placeholder="Seleccione un ministerio">
-              <ion-select-option *ngFor="let min of listaMinisterios" [value]="min.id">{{ min.nombre }}</ion-select-option>
+              <ion-select-option *ngFor="let min of ministeriosFormulario" [value]="min.id">{{ min.nombre }}</ion-select-option>
             </ion-select>
           </ion-item>
           <small
@@ -363,13 +363,14 @@
 
       </form>
     </div>
+    </ng-container>
 
     <div class="list-container">
 
       <div class="list-section-header">
         <div class="title-box">
           <h2 class="text-blue">
-            Historial Contable de Gastos
+            Historial Financiero de Gastos
           </h2>
           <span class="badge-count">
             {{ listaFiltrada.length }} registros encontrados
@@ -547,7 +548,7 @@
         [src]="fotoSeleccionada"
         alt="Evidencia ampliada en pantalla completa">
       <div class="lightbox-caption">
-        Evidencia de respaldo del gasto contable
+        Evidencia de respaldo del gasto financiero
       </div>
     </div>
 

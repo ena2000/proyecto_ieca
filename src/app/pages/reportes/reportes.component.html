@@ -13,14 +13,7 @@
       Reportes
     </ion-title>
 
-    <ion-buttons slot="end">
-      <ion-button
-        class="text-blue"
-        type="button"
-        aria-label="Notificaciones">
-        <ion-icon name="notifications-outline"></ion-icon>
-      </ion-button>
-    </ion-buttons>
+    <app-notificaciones-bell slot="end"></app-notificaciones-bell>
 
   </ion-toolbar>
 
@@ -30,15 +23,25 @@
 
   <div class="container-wrapper">
 
-    <div class="page-header">
+    <div class="page-header page-header--reportes">
 
-      <h1 class="text-blue">
-        Reportes Financieros
-      </h1>
+      <div class="page-header__text">
+        <h1 class="text-blue">
+          Reportes Financieros
+        </h1>
+        <p>
+          Visualiza los informes financieros y el rendimiento por período.
+        </p>
+      </div>
 
-      <p>
-        Visualiza los informes financieros y el rendimiento por período.
-      </p>
+      <button
+        type="button"
+        class="btn-exportar-excel"
+        (click)="exportarExcel()"
+        aria-label="Exportar a Excel">
+        <ion-icon name="download-outline"></ion-icon>
+        <span>Exportar a Excel</span>
+      </button>
 
     </div>
 
@@ -75,112 +78,147 @@
       </div>
 
       <div class="reportes-filters ieca-card">
+        <div class="filters-layout">
 
-        <div class="periodo-block">
-          <span class="filter-label">Período</span>
+          <section class="filters-section filters-section--periodo">
+            <span class="filter-label">Período</span>
 
-          <div class="periodo-chips">
-            <button
-              type="button"
-              class="periodo-chip"
-              [class.periodo-chip--active]="periodoPreset === 'este_mes'"
-              (click)="setPeriodo('este_mes')">
-              Este mes
-            </button>
-            <button
-              type="button"
-              class="periodo-chip"
-              [class.periodo-chip--active]="periodoPreset === 'anterior'"
-              (click)="setPeriodo('anterior')">
-              Mes anterior
-            </button>
-            <button
-              type="button"
-              class="periodo-chip"
-              [class.periodo-chip--active]="periodoPreset === 'todos'"
-              (click)="setPeriodo('todos')">
-              Todo el historial
-            </button>
-          </div>
-
-          <div class="periodo-nav">
-            <ion-button
-              fill="clear"
-              type="button"
-              class="periodo-nav__btn"
-              [disabled]="!filtroMes"
-              (click)="mesAnterior()"
-              aria-label="Mes anterior">
-              <ion-icon slot="icon-only" name="chevron-back-outline"></ion-icon>
-            </ion-button>
-
-            <div class="periodo-nav__center">
-              <ion-icon name="calendar-outline"></ion-icon>
-              <span class="periodo-nav__label">{{ etiquetaMesActivo }}</span>
+            <div class="periodo-chips">
+              <button
+                type="button"
+                class="periodo-chip"
+                [class.periodo-chip--active]="periodoPreset === 'este_mes'"
+                (click)="setPeriodo('este_mes')">
+                Este mes
+              </button>
+              <button
+                type="button"
+                class="periodo-chip"
+                [class.periodo-chip--active]="periodoPreset === 'anterior'"
+                (click)="setPeriodo('anterior')">
+                Mes anterior
+              </button>
+              <button
+                type="button"
+                class="periodo-chip"
+                [class.periodo-chip--active]="periodoPreset === 'todos'"
+                (click)="setPeriodo('todos')">
+                Todo el historial
+              </button>
             </div>
 
-            <ion-button
-              fill="clear"
-              type="button"
-              class="periodo-nav__btn"
-              [disabled]="!puedeAvanzarMes"
-              (click)="mesSiguiente()"
-              aria-label="Mes siguiente">
-              <ion-icon slot="icon-only" name="chevron-forward-outline"></ion-icon>
-            </ion-button>
-          </div>
+            @if (filtroMes) {
+              <div class="periodo-mes-control">
+                <ion-button
+                  fill="clear"
+                  type="button"
+                  class="periodo-mes-control__btn"
+                  (click)="mesAnterior()"
+                  aria-label="Mes anterior">
+                  <ion-icon slot="icon-only" name="chevron-back-outline"></ion-icon>
+                </ion-button>
 
-          <div class="periodo-select-row">
-            <ion-label class="filter-label">O elegir mes</ion-label>
-            <ion-item lines="none" class="periodo-select-item">
-              <ion-icon slot="start" name="calendar-outline" class="text-blue"></ion-icon>
+                <ion-item lines="none" class="periodo-select-item periodo-mes-select">
+                  <ion-icon slot="start" name="calendar-outline" class="text-blue"></ion-icon>
+                  <ion-select
+                    interface="popover"
+                    [(ngModel)]="filtroMes"
+                    name="filtroMesSelect"
+                    (ionChange)="onMesCambio()">
+                    <ion-select-option
+                      *ngFor="let m of mesesDisponibles"
+                      [value]="m.value">
+                      {{ m.label }}
+                    </ion-select-option>
+                  </ion-select>
+                </ion-item>
+
+                <ion-button
+                  fill="clear"
+                  type="button"
+                  class="periodo-mes-control__btn"
+                  [disabled]="!puedeAvanzarMes"
+                  (click)="mesSiguiente()"
+                  aria-label="Mes siguiente">
+                  <ion-icon slot="icon-only" name="chevron-forward-outline"></ion-icon>
+                </ion-button>
+              </div>
+            } @else {
+              <p class="periodo-historial-hint">
+                <ion-icon name="calendar-outline"></ion-icon>
+                Mostrando todo el historial
+              </p>
+            }
+          </section>
+
+          <section class="filters-section filters-section--ministerio">
+            <ion-label class="filter-label">Ministerio</ion-label>
+            <ion-item lines="none" class="periodo-select-item ministerio-select-item">
+              <ion-icon slot="start" name="business-outline" class="text-blue"></ion-icon>
               <ion-select
                 interface="popover"
-                [(ngModel)]="filtroMes"
-                name="filtroMesSelect"
-                placeholder="Seleccionar mes..."
-                (ionChange)="onMesSelectChange()">
-                <ion-select-option value="">Todo el historial</ion-select-option>
+                [(ngModel)]="filtroMinisterioId"
+                name="filtroMinisterioId"
+                [disabled]="filtroMinisterioBloqueado"
+                placeholder="Todos los ministerios">
+                <ion-select-option [value]="null">Todos los ministerios</ion-select-option>
                 <ion-select-option
-                  *ngFor="let m of mesesDisponibles"
-                  [value]="m.value">
-                  {{ m.label }}
+                  *ngFor="let min of listaMinisterios"
+                  [value]="min.id">
+                  {{ min.nombre }}
                 </ion-select-option>
               </ion-select>
             </ion-item>
-          </div>
-        </div>
+          </section>
 
-        <div class="ministerio-block">
-          <ion-label class="filter-label">Ministerio</ion-label>
-          <ion-item lines="none" class="periodo-select-item">
-            <ion-icon slot="start" name="business-outline" class="text-blue"></ion-icon>
-            <ion-select
-              interface="popover"
-              [(ngModel)]="filtroMinisterioId"
-              name="filtroMinisterioId"
-              placeholder="Todos los ministerios">
-              <ion-select-option [value]="null">Todos los ministerios</ion-select-option>
-              <ion-select-option
-                *ngFor="let min of listaMinisterios"
-                [value]="min.id">
-                {{ min.nombre }}
-              </ion-select-option>
-            </ion-select>
-          </ion-item>
-        </div>
+          <section class="filters-section filters-section--movimiento">
+            <span class="filter-label">Tipo de movimiento</span>
+            <div class="periodo-chips movimiento-chips">
+              <button
+                type="button"
+                class="periodo-chip"
+                [class.periodo-chip--active]="filtroMovimiento === 'todos'"
+                (click)="setFiltroMovimiento('todos')">
+                Todos
+              </button>
+              <button
+                type="button"
+                class="periodo-chip periodo-chip--ingreso"
+                [class.periodo-chip--active]="filtroMovimiento === 'ingresos'"
+                (click)="setFiltroMovimiento('ingresos')">
+                <ion-icon name="cash-outline"></ion-icon>
+                Ingresos
+              </button>
+              <button
+                type="button"
+                class="periodo-chip periodo-chip--gasto"
+                [class.periodo-chip--active]="filtroMovimiento === 'gastos'"
+                (click)="setFiltroMovimiento('gastos')">
+                <ion-icon name="trending-down-outline"></ion-icon>
+                Gastos
+              </button>
+            </div>
+          </section>
 
+        </div>
       </div>
 
-      <div class="totales-card">
-        <div class="total-item ingresos">
-          <span class="total-label">Ingresos Totales</span>
-          <span class="total-value">{{ totalIngresosFiltrado | currency:'':'.':'1.2-2' }}</span>
-        </div>
-        <div class="total-item gastos">
-          <span class="total-label">Gastos Totales</span>
-          <span class="total-value">{{ totalGastosFiltrado | currency:'':'.':'1.2-2' }}</span>
-        </div>
+      <div
+        class="totales-card"
+        [class.totales-card--solo-ingresos]="filtroMovimiento === 'ingresos'"
+        [class.totales-card--solo-gastos]="filtroMovimiento === 'gastos'">
+        @if (filtroMovimiento !== 'gastos') {
+          <div class="total-item ingresos">
+            <span class="total-label">Ingresos Totales</span>
+            <span class="total-value">{{ totalIngresosFiltrado | currency:'':'.':'1.2-2' }}</span>
+          </div>
+        }
+        @if (filtroMovimiento !== 'ingresos') {
+          <div class="total-item gastos">
+            <span class="total-label">Gastos Totales</span>
+            <span class="total-value">{{ totalGastosFiltrado | currency:'':'.':'1.2-2' }}</span>
+          </div>
+        }
         <div class="total-item saldo">
           <span class="total-label">Saldo Neto</span>
           <span class="total-value" [class.negative]="totalSaldoFiltrado < 0">

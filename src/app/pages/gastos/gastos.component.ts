@@ -1,4 +1,5 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
+import { ViewWillEnter } from '@ionic/angular';
 import { CommonModule, registerLocaleData } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import localeEs from '@angular/common/locales/es';
@@ -9,7 +10,7 @@ import {
   IonSearchbar, ToastController, IonPopover, IonBadge, IonGrid, IonRow, IonCol, IonSelect, IonSelectOption
 } from '@ionic/angular/standalone';
 
-import { AlertController } from '@ionic/angular';
+import { AlertController, LoadingController } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import {
   calendarOutline, cashOutline, documentTextOutline, cloudUploadOutline,
@@ -17,10 +18,18 @@ import {
   closeCircleOutline, expandOutline, closeOutline, addCircleOutline, optionsOutline
 } from 'ionicons/icons';
 
-import { TablaGeneralComponent, TableColumn } from 'src/app/components/tabla-general/tabla-general.component';
+import { Subject, firstValueFrom } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
-// ✅ Interfaces importadas desde DataService — ya no se definen localmente
-import { DataService, Gasto, Ministerio, Usuario } from '../../services/data.service';
+import { TablaGeneralComponent, TableColumn } from 'src/app/components/tabla-general/tabla-general.component';
+import { NotificacionesBellComponent } from 'src/app/components/notificaciones-bell/notificaciones-bell.component';
+import { formatearISOaDDMMYYYY } from '../../shared/utils/date.util';
+import { validarArchivoImagen, comprimirImagen } from '../../shared/utils/image-upload.util';
+import { withLoading } from '../../shared/utils/loading.util';
+import { Gasto, Ministerio, Usuario } from '../../core/models';
+import { DataService } from '../../services/data.service';
+import { GastosService } from '../../services/gastos.service';
+import { AuthService } from '../../core/services/auth.service';
 
 registerLocaleData(localeEs);
 
@@ -52,11 +61,12 @@ registerLocaleData(localeEs);
     IonCol,
     IonSelectOption,
     IonSelect,
-    TablaGeneralComponent
+    TablaGeneralComponent,
+    NotificacionesBellComponent
   ],
-  providers: [AlertController, ToastController]
+  providers: [AlertController, ToastController, LoadingController]
 })
-export class GastosComponent implements OnInit {
+export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
   fechaManualForm: string = '';
 
@@ -72,6 +82,7 @@ export class GastosComponent implements OnInit {
     foto:          '',
     categoria:     'Servicios',
     proveedor:     '',
+    ministerio:    'General',
     ministerioId:  undefined,
     usuarioId:     undefined,
     registradoPor: 'Sistema'
@@ -80,8 +91,9 @@ export class GastosComponent implements OnInit {
   intentoEnvio = false;
   modoEdicion  = false;
   idEditando: number | null = null;
-  contadorId  = 0;
   listaGastos: Gasto[] = [];
+
+  private destroy$ = new Subject<void>();
 
   searchTerm:        string = '';
   fechaManualDesde:  string = '';
@@ -105,11 +117,16 @@ export class GastosComponent implements OnInit {
   ];
 
   acciones = { edit: true, delete: true };
+  soloLectura = false;
+  ministerioScopeId: number | null = null;
 
   constructor(
     private alertController: AlertController,
     private toastController: ToastController,
-    private dataService:     DataService
+    private loadingController: LoadingController,
+    private dataService: DataService,
+    private gastosService: GastosService,
+    private authService: AuthService
   ) {
     addIcons({
       'calendar-outline':      calendarOutline,
@@ -129,8 +146,25 @@ export class GastosComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.fechaManualForm = this.formatearISOaDDMMYYYY(this.nuevoGasto.fecha);
-    this.cargarDatos();
+    this.soloLectura = this.authService.isSoloLecturaFinanzas();
+    this.ministerioScopeId = this.authService.getMinisterioScopeId();
+    if (this.soloLectura) {
+      this.acciones = { edit: false, delete: false };
+    }
+
+    this.fechaManualForm = formatearISOaDDMMYYYY(this.nuevoGasto.fecha);
+    this.gastosService.gastos$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(list => { this.listaGastos = list; });
+    this.cargarRelaciones();
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  ionViewWillEnter() {
     this.cargarRelaciones();
   }
 
@@ -153,17 +187,9 @@ export class GastosComponent implements OnInit {
     document.body.style.overflow = 'auto';
   }
 
-  private formatearISOaDDMMYYYY(iso: string): string {
-    if (!iso) return '';
-    const date = new Date(iso);
-    const dd   = String(date.getDate()).padStart(2, '0');
-    const mm   = String(date.getMonth() + 1).padStart(2, '0');
-    const yyyy = date.getFullYear();
-    return `${dd}/${mm}/${yyyy}`;
-  }
-
-  validarFechaManualForm(event: any) {
-    let val = event.target.value.replace(/\D/g, '');
+  validarFechaManualForm(event: CustomEvent | Event) {
+    const raw = (event as CustomEvent).detail?.value ?? (event.target as HTMLInputElement)?.value ?? this.fechaManualForm ?? '';
+    let val = String(raw).replace(/\D/g, '');
     if (val.length > 2) val = val.substring(0, 2) + '/' + val.substring(2);
     if (val.length > 5) val = val.substring(0, 5) + '/' + val.substring(5, 9);
     this.fechaManualForm = val;
@@ -181,7 +207,7 @@ export class GastosComponent implements OnInit {
     const fechaIso = event.detail.value;
     if (fechaIso) {
       this.nuevoGasto.fecha = fechaIso;
-      this.fechaManualForm  = this.formatearISOaDDMMYYYY(fechaIso);
+      this.fechaManualForm  = formatearISOaDDMMYYYY(fechaIso);
       popover.dismiss();
     }
   }
@@ -214,7 +240,7 @@ export class GastosComponent implements OnInit {
   onPickerDateChange(event: any, tipo: 'desde' | 'hasta', popover: IonPopover) {
     const fechaIso = event.detail.value;
     if (fechaIso) {
-      const formateada = this.formatearISOaDDMMYYYY(fechaIso);
+      const formateada = formatearISOaDDMMYYYY(fechaIso);
       if (tipo === 'desde') {
         this.filtroFechaInicio = fechaIso;
         this.fechaManualDesde  = formateada;
@@ -224,6 +250,31 @@ export class GastosComponent implements OnInit {
       }
       popover.dismiss();
     }
+  }
+
+  get ministerioBloqueado(): boolean {
+    return this.ministerioScopeId != null;
+  }
+
+  get ministeriosFormulario(): Ministerio[] {
+    if (this.ministerioScopeId == null) {
+      return this.listaMinisterios;
+    }
+    return this.listaMinisterios.filter(m => Number(m.id) === this.ministerioScopeId);
+  }
+
+  private aplicarAlcanceMinisterioAlFormulario(): void {
+    if (this.ministerioScopeId == null) return;
+    const min = this.listaMinisterios.find(m => Number(m.id) === this.ministerioScopeId);
+    this.nuevoGasto.ministerioId = this.ministerioScopeId;
+    if (min?.nombre) {
+      this.nuevoGasto.ministerio = min.nombre;
+    }
+  }
+
+  private perteneceAlcance(item: { ministerioId?: number }): boolean {
+    if (this.ministerioScopeId == null) return true;
+    return Number(item.ministerioId) === this.ministerioScopeId;
   }
 
   get hayFiltrosActivos(): boolean {
@@ -248,6 +299,10 @@ export class GastosComponent implements OnInit {
 
   get listaFiltrada(): Gasto[] {
     let filtrados = [...this.listaGastos];
+
+    if (this.ministerioScopeId != null) {
+      filtrados = filtrados.filter(g => Number(g.ministerioId) === this.ministerioScopeId);
+    }
 
     if (this.searchTerm) {
       const search = this.searchTerm.toLowerCase();
@@ -277,37 +332,72 @@ export class GastosComponent implements OnInit {
     return filtrados;
   }
 
-  registrarGasto() {
+  async registrarGasto() {
     this.intentoEnvio = true;
+    this.aplicarAlcanceMinisterioAlFormulario();
+
     if (!this.esFormularioValido) {
-      this.mostrarToast('Por favor, completa los campos obligatorios correctamente.', 'danger');
+      this.mostrarToast(this.mensajeValidacion, 'danger');
       return;
     }
 
+    this.cargarRelaciones();
+
     const fechaFormateada = this.fechaManualForm;
+    const preparado = this.gastosService.resolveRelations(
+      this.normalizarGasto(),
+      this.listaMinisterios,
+      this.listaUsuarios
+    );
 
-    if (this.modoEdicion) {
-      const index = this.listaGastos.findIndex(g => g.id === this.idEditando);
-      if (index !== -1) {
-        this.listaGastos[index] = { ...this.nuevoGasto, fechaFormateada };
-        this.mostrarToast('Registro actualizado exitosamente', 'success');
-      }
-    } else {
-      this.contadorId++;
-      const nuevoRegistro: Gasto = { ...this.nuevoGasto, id: this.contadorId, fechaFormateada };
-      this.listaGastos = [nuevoRegistro, ...this.listaGastos];
-      this.mostrarToast('Registro creado exitosamente', 'success');
+    const guardando = this.modoEdicion ? 'Actualizando registro...' : 'Guardando gasto...';
+
+    try {
+      await withLoading(this.loadingController, guardando, async () => {
+        if (this.modoEdicion && this.idEditando !== null) {
+          await firstValueFrom(this.gastosService.update(this.idEditando, preparado, fechaFormateada));
+          await this.mostrarToast('Registro actualizado exitosamente', 'success');
+        } else {
+          await firstValueFrom(this.gastosService.create(preparado, fechaFormateada));
+          await this.mostrarToast('Registro creado exitosamente', 'success');
+        }
+      });
+
+      this.dataService.notifyChanges();
+      this.resetFormulario();
+    } catch (error) {
+      const msg = error instanceof Error
+        ? (error.message === 'STORAGE_QUOTA'
+          ? 'No se pudo guardar. La imagen es muy grande; intenta sin foto o con otra más pequeña.'
+          : error.message)
+        : 'No se pudo guardar. Si adjuntaste una imagen muy grande, intenta sin foto.';
+      this.mostrarToast(msg, 'danger');
     }
+  }
 
-    this.guardarLocalStorage();
-    this.resetFormulario();
+  private normalizarGasto(): Gasto {
+    const monto = Number(this.nuevoGasto.monto);
+    return {
+      ...this.nuevoGasto,
+      monto: Number.isFinite(monto) ? monto : null,
+      ministerioId: this.nuevoGasto.ministerioId != null
+        ? Number(this.nuevoGasto.ministerioId)
+        : undefined,
+      usuarioId: this.nuevoGasto.usuarioId != null
+        ? Number(this.nuevoGasto.usuarioId)
+        : undefined
+    };
   }
 
   editarGasto(item: Gasto) {
+    if (!this.perteneceAlcance(item)) {
+      this.mostrarToast('No puedes editar registros de otro ministerio.', 'warning');
+      return;
+    }
     this.nuevoGasto.foto = '';
     setTimeout(() => {
       this.nuevoGasto      = { ...item };
-      this.fechaManualForm = this.formatearISOaDDMMYYYY(this.nuevoGasto.fecha);
+      this.fechaManualForm = formatearISOaDDMMYYYY(this.nuevoGasto.fecha);
       this.modoEdicion     = true;
       this.idEditando      = item.id;
       this.intentoEnvio    = false;
@@ -316,6 +406,10 @@ export class GastosComponent implements OnInit {
   }
 
   async eliminarGasto(item: Gasto) {
+    if (!this.perteneceAlcance(item)) {
+      this.mostrarToast('No puedes eliminar registros de otro ministerio.', 'warning');
+      return;
+    }
     const alert = await this.alertController.create({
       header:  'Confirmar eliminación',
       message: `¿Estás seguro de eliminar el registro #${item.id}?`,
@@ -324,10 +418,17 @@ export class GastosComponent implements OnInit {
         {
           text:    'Eliminar',
           role:    'destructive',
-          handler: () => {
-            this.listaGastos = this.listaGastos.filter(g => g.id !== item.id);
-            this.guardarLocalStorage();
-            this.mostrarToast('Registro eliminado', 'warning');
+          handler: async () => {
+            try {
+              await withLoading(this.loadingController, 'Eliminando registro...', async () => {
+                await firstValueFrom(this.gastosService.delete(item.id));
+              });
+              this.dataService.notifyChanges();
+              this.mostrarToast('Registro eliminado', 'warning');
+            } catch (error) {
+              const msg = error instanceof Error ? error.message : 'Error al eliminar';
+              this.mostrarToast(msg, 'danger');
+            }
           }
         }
       ]
@@ -344,44 +445,37 @@ export class GastosComponent implements OnInit {
       foto:          '',
       categoria:     'Servicios',
       proveedor:     '',
+      ministerio:    'General',
       ministerioId:  undefined,
       usuarioId:     undefined,
       registradoPor: 'Sistema'
     };
-    this.fechaManualForm = this.formatearISOaDDMMYYYY(this.nuevoGasto.fecha);
+    this.fechaManualForm = formatearISOaDDMMYYYY(this.nuevoGasto.fecha);
     this.modoEdicion     = false;
     this.idEditando      = null;
     this.intentoEnvio    = false;
+    this.aplicarAlcanceMinisterioAlFormulario();
   }
 
-  onFileChange(event: any) {
-    const file = event.target.files[0];
+  async onFileChange(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file  = input.files?.[0];
     if (!file) return;
 
-    const reader   = new FileReader();
-    reader.onload  = (e: any) => {
-      const img  = new Image();
-      img.src    = e.target.result;
-      img.onload = () => {
-        const canvas    = document.createElement('canvas');
-        const MAX_WIDTH = 800;
-        let width       = img.width;
-        let height      = img.height;
+    const validacion = validarArchivoImagen(file);
+    if (!validacion.valid) {
+      this.mostrarToast(validacion.error ?? 'Archivo no válido.', 'danger');
+      input.value = '';
+      return;
+    }
 
-        if (width > MAX_WIDTH) {
-          height *= MAX_WIDTH / width;
-          width   = MAX_WIDTH;
-        }
-
-        canvas.width  = width;
-        canvas.height = height;
-
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
-        this.nuevoGasto.foto = canvas.toDataURL('image/jpeg', 0.7);
-      };
-    };
-    reader.readAsDataURL(file);
+    try {
+      this.nuevoGasto.foto = await comprimirImagen(file);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'No se pudo procesar la imagen.';
+      this.mostrarToast(msg, 'danger');
+      input.value = '';
+    }
   }
 
   eliminarFoto() {
@@ -389,53 +483,9 @@ export class GastosComponent implements OnInit {
   }
 
   cargarRelaciones() {
-    const datosMinisterios = localStorage.getItem('ministerios');
-    if (datosMinisterios) {
-      try {
-        const ministerios     = JSON.parse(datosMinisterios);
-        this.listaMinisterios = ministerios.map((m: any, idx: number) => ({
-          id:     m.id || idx,
-          nombre: m.nombre,
-          estado: m.estado ?? 'Activo'
-        }));
-      } catch (e) {
-        this.listaMinisterios = [];
-      }
-    }
-
-    const datosUsuarios = localStorage.getItem('usuarios');
-    if (datosUsuarios) {
-      try {
-        const usuarios     = JSON.parse(datosUsuarios);
-        this.listaUsuarios = usuarios.map((u: any, idx: number) => ({
-          id:     u.id || idx,
-          nombre: u.nombre,
-          email:  u.email
-        }));
-      } catch (e) {
-        this.listaUsuarios = [];
-      }
-    }
-  }
-
-  guardarLocalStorage() {
-    localStorage.setItem('gastos', JSON.stringify(this.listaGastos));
-    this.dataService.refreshAllData();
-  }
-
-  cargarDatos() {
-    const data = localStorage.getItem('gastos');
-    if (data) {
-      try {
-        this.listaGastos = JSON.parse(data);
-        if (this.listaGastos.length > 0) {
-          const ids       = this.listaGastos.map(g => g.id || 0);
-          this.contadorId = Math.max(...ids);
-        }
-      } catch (e) {
-        this.listaGastos = [];
-      }
-    }
+    this.listaMinisterios = this.dataService.getMinisteriosActuales();
+    this.listaUsuarios    = this.dataService.getUsuariosActuales();
+    this.aplicarAlcanceMinisterioAlFormulario();
   }
 
   async mostrarToast(mensaje: string, color: string) {
@@ -449,12 +499,31 @@ export class GastosComponent implements OnInit {
   }
 
   get esFormularioValido(): boolean {
+    const monto = Number(this.nuevoGasto.monto);
+    const ministerioRequerido =
+      this.listaMinisterios.length > 0 && this.ministerioScopeId == null;
     return (
-      this.nuevoGasto.descripcion?.trim().length >= 3 &&
-      this.nuevoGasto.monto !== null &&
-      this.nuevoGasto.monto > 0 &&
-      this.nuevoGasto.proveedor?.trim().length >= 2 &&
-      this.fechaManualForm.length === 10
+      (this.nuevoGasto.descripcion?.trim().length ?? 0) >= 3 &&
+      Number.isFinite(monto) && monto > 0 &&
+      (this.nuevoGasto.proveedor?.trim().length ?? 0) >= 2 &&
+      this.fechaManualForm.length === 10 &&
+      (!ministerioRequerido || this.nuevoGasto.ministerioId != null)
     );
+  }
+
+  get mensajeValidacion(): string {
+    const monto = Number(this.nuevoGasto.monto);
+    if (!Number.isFinite(monto) || monto <= 0) return 'Ingresa un monto válido mayor a cero.';
+    if (this.listaMinisterios.length > 0 && this.nuevoGasto.ministerioId == null) {
+      return 'Selecciona un ministerio.';
+    }
+    if ((this.nuevoGasto.proveedor?.trim().length ?? 0) < 2) {
+      return 'Ingresa el proveedor o beneficiario.';
+    }
+    if ((this.nuevoGasto.descripcion?.trim().length ?? 0) < 3) {
+      return 'La descripción debe tener al menos 3 caracteres.';
+    }
+    if (this.fechaManualForm.length !== 10) return 'Ingresa una fecha válida (DD/MM/AAAA).';
+    return 'Por favor, completa los campos obligatorios correctamente.';
   }
 }

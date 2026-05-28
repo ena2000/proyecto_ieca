@@ -1,4 +1,4 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule, registerLocaleData } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import localeEs from '@angular/common/locales/es';
@@ -10,7 +10,7 @@ import {
   IonSearchbar, ToastController, IonPopover, IonBadge, IonGrid, IonRow, IonCol, IonSelect, IonSelectOption
 } from '@ionic/angular/standalone';
 
-import { AlertController } from '@ionic/angular';
+import { AlertController, LoadingController } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import {
   calendarOutline, cashOutline, documentTextOutline, cloudUploadOutline,
@@ -18,10 +18,18 @@ import {
   closeCircleOutline, expandOutline, closeOutline, addCircleOutline, optionsOutline
 } from 'ionicons/icons';
 
-import { TablaGeneralComponent, TableColumn } from 'src/app/components/tabla-general/tabla-general.component';
+import { Subject, firstValueFrom } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
-// ✅ Interfaces importadas desde DataService — ya no se definen localmente
-import { DataService, Ingreso, Ministerio, Usuario } from '../../services/data.service';
+import { TablaGeneralComponent, TableColumn } from 'src/app/components/tabla-general/tabla-general.component';
+import { NotificacionesBellComponent } from 'src/app/components/notificaciones-bell/notificaciones-bell.component';
+import { formatearISOaDDMMYYYY } from '../../shared/utils/date.util';
+import { validarArchivoImagen, comprimirImagen } from '../../shared/utils/image-upload.util';
+import { withLoading } from '../../shared/utils/loading.util';
+import { Ingreso, Ministerio, Usuario } from '../../core/models';
+import { DataService } from '../../services/data.service';
+import { IngresosService } from '../../services/ingresos.service';
+import { AuthService } from '../../core/services/auth.service';
 
 registerLocaleData(localeEs);
 
@@ -53,11 +61,12 @@ registerLocaleData(localeEs);
     IonCol,
     IonSelectOption,
     IonSelect,
-    TablaGeneralComponent
+    TablaGeneralComponent,
+    NotificacionesBellComponent
   ],
-  providers: [AlertController, ToastController]
+  providers: [AlertController, ToastController, LoadingController]
 })
-export class IngresosComponent implements OnInit, ViewWillEnter {
+export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
   fechaManualForm: string = '';
 
@@ -81,8 +90,9 @@ export class IngresosComponent implements OnInit, ViewWillEnter {
   intentoEnvio = false;
   modoEdicion = false;
   idEditando: number | null = null;
-  contadorId = 0;
   listaIngresos: Ingreso[] = [];
+
+  private destroy$ = new Subject<void>();
 
   searchTerm: string = '';
   fechaManualDesde: string = '';
@@ -106,11 +116,16 @@ export class IngresosComponent implements OnInit, ViewWillEnter {
   ];
 
   acciones = { edit: true, delete: true };
+  soloLectura = false;
+  ministerioScopeId: number | null = null;
 
   constructor(
     private alertController: AlertController,
     private toastController: ToastController,
-    private dataService: DataService
+    private loadingController: LoadingController,
+    private dataService: DataService,
+    private ingresosService: IngresosService,
+    private authService: AuthService
   ) {
     addIcons({
       'calendar-outline':       calendarOutline,
@@ -130,13 +145,26 @@ export class IngresosComponent implements OnInit, ViewWillEnter {
   }
 
   ngOnInit() {
-    this.fechaManualForm = this.formatearISOaDDMMYYYY(this.nuevoIngreso.fecha);
-    this.cargarDatos();
+    this.soloLectura = this.authService.isSoloLecturaFinanzas();
+    this.ministerioScopeId = this.authService.getMinisterioScopeId();
+    if (this.soloLectura) {
+      this.acciones = { edit: false, delete: false };
+    }
+
+    this.fechaManualForm = formatearISOaDDMMYYYY(this.nuevoIngreso.fecha);
+    this.ingresosService.ingresos$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(list => { this.listaIngresos = list; });
     this.cargarRelaciones();
   }
 
-  // ✅ Se ejecuta cada vez que el usuario navega a esta página
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   ionViewWillEnter() {
+    this.dataService.refreshAllData();
     this.cargarRelaciones();
   }
 
@@ -159,15 +187,6 @@ export class IngresosComponent implements OnInit, ViewWillEnter {
     document.body.style.overflow = 'auto';
   }
 
-  private formatearISOaDDMMYYYY(iso: string): string {
-    if (!iso) return '';
-    const date = new Date(iso);
-    const dd   = String(date.getDate()).padStart(2, '0');
-    const mm   = String(date.getMonth() + 1).padStart(2, '0');
-    const yyyy = date.getFullYear();
-    return `${dd}/${mm}/${yyyy}`;
-  }
-
   validarFechaManualForm(event: any) {
     let val = event.target.value.replace(/\D/g, '');
     if (val.length > 2) val = val.substring(0, 2) + '/' + val.substring(2);
@@ -187,7 +206,7 @@ export class IngresosComponent implements OnInit, ViewWillEnter {
     const fechaIso = event.detail.value;
     if (fechaIso) {
       this.nuevoIngreso.fecha = fechaIso;
-      this.fechaManualForm    = this.formatearISOaDDMMYYYY(fechaIso);
+      this.fechaManualForm    = formatearISOaDDMMYYYY(fechaIso);
       popover.dismiss();
     }
   }
@@ -220,7 +239,7 @@ export class IngresosComponent implements OnInit, ViewWillEnter {
   onPickerDateChange(event: any, tipo: 'desde' | 'hasta', popover: IonPopover) {
     const fechaIso = event.detail.value;
     if (fechaIso) {
-      const formateada = this.formatearISOaDDMMYYYY(fechaIso);
+      const formateada = formatearISOaDDMMYYYY(fechaIso);
       if (tipo === 'desde') {
         this.filtroFechaInicio = fechaIso;
         this.fechaManualDesde  = formateada;
@@ -230,6 +249,31 @@ export class IngresosComponent implements OnInit, ViewWillEnter {
       }
       popover.dismiss();
     }
+  }
+
+  get ministerioBloqueado(): boolean {
+    return this.ministerioScopeId != null;
+  }
+
+  get ministeriosFormulario(): Ministerio[] {
+    if (this.ministerioScopeId == null) {
+      return this.listaMinisterios;
+    }
+    return this.listaMinisterios.filter(m => Number(m.id) === this.ministerioScopeId);
+  }
+
+  private aplicarAlcanceMinisterioAlFormulario(): void {
+    if (this.ministerioScopeId == null) return;
+    const min = this.listaMinisterios.find(m => Number(m.id) === this.ministerioScopeId);
+    this.nuevoIngreso.ministerioId = this.ministerioScopeId;
+    if (min?.nombre) {
+      this.nuevoIngreso.ministerio = min.nombre;
+    }
+  }
+
+  private perteneceAlcance(item: { ministerioId?: number }): boolean {
+    if (this.ministerioScopeId == null) return true;
+    return Number(item.ministerioId) === this.ministerioScopeId;
   }
 
   get hayFiltrosActivos(): boolean {
@@ -254,6 +298,10 @@ export class IngresosComponent implements OnInit, ViewWillEnter {
 
   get listaFiltrada(): Ingreso[] {
     let filtrados = [...this.listaIngresos];
+
+    if (this.ministerioScopeId != null) {
+      filtrados = filtrados.filter(i => Number(i.ministerioId) === this.ministerioScopeId);
+    }
 
     if (this.searchTerm) {
       const search = this.searchTerm.toLowerCase();
@@ -283,48 +331,57 @@ export class IngresosComponent implements OnInit, ViewWillEnter {
     return filtrados;
   }
 
-  registrarIngreso() {
+  async registrarIngreso() {
     this.intentoEnvio = true;
+    this.aplicarAlcanceMinisterioAlFormulario();
     if (!this.esFormularioValido) {
-      this.mostrarToast('Por favor, completa los campos obligatorios correctamente.', 'danger');
+      this.mostrarToast(this.mensajeValidacion, 'danger');
       return;
     }
 
-    // Recargar relaciones frescas antes de resolver nombres
     this.cargarRelaciones();
 
     const fechaFormateada = this.fechaManualForm;
+    const preparado = this.ingresosService.resolveRelations(
+      this.nuevoIngreso,
+      this.listaMinisterios,
+      this.listaUsuarios
+    );
 
-    // Resolver nombre del ministerio desde el ID seleccionado
-    const ministerioSeleccionado = this.listaMinisterios.find(m => m.id === this.nuevoIngreso.ministerioId);
-    this.nuevoIngreso.ministerio = ministerioSeleccionado?.nombre ?? 'General';
+    const guardando = this.modoEdicion ? 'Actualizando registro...' : 'Guardando ingreso...';
 
-    // Resolver nombre del usuario responsable desde el ID seleccionado
-    const usuarioSeleccionado = this.listaUsuarios.find(u => u.id === this.nuevoIngreso.usuarioId);
-    this.nuevoIngreso.registradoPor = usuarioSeleccionado?.nombre ?? 'Sistema';
+    try {
+      await withLoading(this.loadingController, guardando, async () => {
+        if (this.modoEdicion && this.idEditando !== null) {
+          await firstValueFrom(this.ingresosService.update(this.idEditando, preparado, fechaFormateada));
+          await this.mostrarToast('Registro actualizado exitosamente', 'success');
+        } else {
+          await firstValueFrom(this.ingresosService.create(preparado, fechaFormateada));
+          await this.mostrarToast('Registro creado exitosamente', 'success');
+        }
+      });
 
-    if (this.modoEdicion) {
-      const index = this.listaIngresos.findIndex(i => i.id === this.idEditando);
-      if (index !== -1) {
-        this.listaIngresos[index] = { ...this.nuevoIngreso, fechaFormateada };
-        this.mostrarToast('Registro actualizado exitosamente', 'success');
-      }
-    } else {
-      this.contadorId++;
-      const nuevoRegistro: Ingreso = { ...this.nuevoIngreso, id: this.contadorId, fechaFormateada };
-      this.listaIngresos = [nuevoRegistro, ...this.listaIngresos];
-      this.mostrarToast('Registro creado exitosamente', 'success');
+      this.dataService.notifyChanges();
+      this.resetFormulario();
+    } catch (error) {
+      const msg = error instanceof Error
+        ? (error.message === 'STORAGE_QUOTA'
+          ? 'No se pudo guardar. La imagen es muy grande; intenta sin foto o con otra más pequeña.'
+          : error.message)
+        : 'Error al guardar el registro';
+      this.mostrarToast(msg, 'danger');
     }
-
-    this.guardarLocalStorage();
-    this.resetFormulario();
   }
 
   editarIngreso(item: Ingreso) {
+    if (!this.perteneceAlcance(item)) {
+      this.mostrarToast('No puedes editar registros de otro ministerio.', 'warning');
+      return;
+    }
     this.nuevoIngreso.foto = '';
     setTimeout(() => {
       this.nuevoIngreso    = { ...item };
-      this.fechaManualForm = this.formatearISOaDDMMYYYY(this.nuevoIngreso.fecha);
+      this.fechaManualForm = formatearISOaDDMMYYYY(this.nuevoIngreso.fecha);
       this.modoEdicion     = true;
       this.idEditando      = item.id;
       this.intentoEnvio    = false;
@@ -333,6 +390,10 @@ export class IngresosComponent implements OnInit, ViewWillEnter {
   }
 
   async eliminarIngreso(item: Ingreso) {
+    if (!this.perteneceAlcance(item)) {
+      this.mostrarToast('No puedes eliminar registros de otro ministerio.', 'warning');
+      return;
+    }
     const alert = await this.alertController.create({
       header:  'Confirmar eliminación',
       message: `¿Estás seguro de eliminar el registro #${item.id}?`,
@@ -341,10 +402,17 @@ export class IngresosComponent implements OnInit, ViewWillEnter {
         {
           text:    'Eliminar',
           role:    'destructive',
-          handler: () => {
-            this.listaIngresos = this.listaIngresos.filter(i => i.id !== item.id);
-            this.guardarLocalStorage();
-            this.mostrarToast('Registro eliminado', 'warning');
+          handler: async () => {
+            try {
+              await withLoading(this.loadingController, 'Eliminando registro...', async () => {
+                await firstValueFrom(this.ingresosService.delete(item.id));
+              });
+              this.dataService.notifyChanges();
+              this.mostrarToast('Registro eliminado', 'warning');
+            } catch (error) {
+              const msg = error instanceof Error ? error.message : 'Error al eliminar';
+              this.mostrarToast(msg, 'danger');
+            }
           }
         }
       ]
@@ -365,40 +433,32 @@ export class IngresosComponent implements OnInit, ViewWillEnter {
       usuarioId:     undefined,
       registradoPor: 'Sistema'
     };
-    this.fechaManualForm = this.formatearISOaDDMMYYYY(this.nuevoIngreso.fecha);
+    this.fechaManualForm = formatearISOaDDMMYYYY(this.nuevoIngreso.fecha);
     this.modoEdicion     = false;
     this.idEditando      = null;
     this.intentoEnvio    = false;
+    this.aplicarAlcanceMinisterioAlFormulario();
   }
 
-  onFileChange(event: any) {
-    const file = event.target.files[0];
+  async onFileChange(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file  = input.files?.[0];
     if (!file) return;
 
-    const reader    = new FileReader();
-    reader.onload   = (e: any) => {
-      const img   = new Image();
-      img.src     = e.target.result;
-      img.onload  = () => {
-        const canvas   = document.createElement('canvas');
-        const MAX_WIDTH = 800;
-        let width      = img.width;
-        let height     = img.height;
+    const validacion = validarArchivoImagen(file);
+    if (!validacion.valid) {
+      this.mostrarToast(validacion.error ?? 'Archivo no válido.', 'danger');
+      input.value = '';
+      return;
+    }
 
-        if (width > MAX_WIDTH) {
-          height *= MAX_WIDTH / width;
-          width   = MAX_WIDTH;
-        }
-
-        canvas.width  = width;
-        canvas.height = height;
-
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
-        this.nuevoIngreso.foto = canvas.toDataURL('image/jpeg', 0.7);
-      };
-    };
-    reader.readAsDataURL(file);
+    try {
+      this.nuevoIngreso.foto = await comprimirImagen(file);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'No se pudo procesar la imagen.';
+      this.mostrarToast(msg, 'danger');
+      input.value = '';
+    }
   }
 
   eliminarFoto() {
@@ -406,53 +466,9 @@ export class IngresosComponent implements OnInit, ViewWillEnter {
   }
 
   cargarRelaciones() {
-    const datosMinisterios = localStorage.getItem('ministerios');
-    if (datosMinisterios) {
-      try {
-        const ministerios      = JSON.parse(datosMinisterios);
-        this.listaMinisterios  = ministerios.map((m: any, idx: number) => ({
-          id:     m.id || idx,
-          nombre: m.nombre,
-          estado: m.estado ?? 'Activo'
-        }));
-      } catch (e) {
-        this.listaMinisterios = [];
-      }
-    }
-
-    const datosUsuarios = localStorage.getItem('usuarios');
-    if (datosUsuarios) {
-      try {
-        const usuarios      = JSON.parse(datosUsuarios);
-        this.listaUsuarios  = usuarios.map((u: any, idx: number) => ({
-          id:     u.id || idx,
-          nombre: u.nombre,
-          email:  u.email
-        }));
-      } catch (e) {
-        this.listaUsuarios = [];
-      }
-    }
-  }
-
-  guardarLocalStorage() {
-    localStorage.setItem('ingresos', JSON.stringify(this.listaIngresos));
-    this.dataService.refreshAllData();
-  }
-
-  cargarDatos() {
-    const data = localStorage.getItem('ingresos');
-    if (data) {
-      try {
-        this.listaIngresos = JSON.parse(data);
-        if (this.listaIngresos.length > 0) {
-          const ids        = this.listaIngresos.map(i => i.id || 0);
-          this.contadorId  = Math.max(...ids);
-        }
-      } catch (e) {
-        this.listaIngresos = [];
-      }
-    }
+    this.listaMinisterios = this.dataService.getMinisteriosActuales();
+    this.listaUsuarios    = this.dataService.getUsuariosActuales();
+    this.aplicarAlcanceMinisterioAlFormulario();
   }
 
   async mostrarToast(mensaje: string, color: string) {
@@ -466,11 +482,29 @@ export class IngresosComponent implements OnInit, ViewWillEnter {
   }
 
   get esFormularioValido(): boolean {
+    const ministerioOk =
+      this.ministerioScopeId != null ||
+      this.listaMinisterios.length === 0 ||
+      this.nuevoIngreso.ministerioId != null;
     return (
       this.nuevoIngreso.descripcion?.trim().length >= 3 &&
       this.nuevoIngreso.monto !== null &&
       this.nuevoIngreso.monto > 0 &&
-      this.fechaManualForm.length === 10
+      this.fechaManualForm.length === 10 &&
+      ministerioOk
     );
+  }
+
+  get mensajeValidacion(): string {
+    const monto = Number(this.nuevoIngreso.monto);
+    if (!Number.isFinite(monto) || monto <= 0) return 'Ingresa un monto válido mayor a cero.';
+    if (this.listaMinisterios.length > 0 && this.ministerioScopeId == null && !this.nuevoIngreso.ministerioId) {
+      return 'Selecciona un ministerio.';
+    }
+    if ((this.nuevoIngreso.descripcion?.trim().length ?? 0) < 3) {
+      return 'La descripción debe tener al menos 3 caracteres.';
+    }
+    if (this.fechaManualForm.length !== 10) return 'Ingresa una fecha válida (DD/MM/AAAA).';
+    return 'Por favor, completa los campos obligatorios correctamente.';
   }
 }

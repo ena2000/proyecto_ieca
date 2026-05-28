@@ -1,13 +1,16 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule, registerLocaleData } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import localeEs from '@angular/common/locales/es';
+import { Subject, firstValueFrom } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 import {
   IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent,
   IonIcon, IonItem, IonLabel, IonInput, IonButton, IonSearchbar,
   ToastController, AlertController, IonSelect, IonSelectOption
 } from '@ionic/angular/standalone';
+import { LoadingController } from '@ionic/angular';
 
 import { addIcons } from 'ionicons';
 import {
@@ -16,9 +19,11 @@ import {
 } from 'ionicons/icons';
 
 import { TablaGeneralComponent, TableColumn } from 'src/app/components/tabla-general/tabla-general.component';
-
-// ✅ Interfaces importadas desde DataService — ya no se definen localmente
-import { DataService, Usuario, Ministerio } from '../../services/data.service';
+import { NotificacionesBellComponent } from 'src/app/components/notificaciones-bell/notificaciones-bell.component';
+import { Usuario, Ministerio } from '../../core/models';
+import { DataService } from '../../services/data.service';
+import { UsuariosService, UsuarioPayload, UsuarioCreateResponse } from '../../services/usuarios.service';
+import { withLoading } from '../../shared/utils/loading.util';
 
 registerLocaleData(localeEs);
 
@@ -44,13 +49,13 @@ registerLocaleData(localeEs);
     IonSearchbar,
     IonSelect,
     IonSelectOption,
-    TablaGeneralComponent
+    TablaGeneralComponent,
+    NotificacionesBellComponent
   ],
-  providers: [ToastController, AlertController]
+  providers: [ToastController, AlertController, LoadingController]
 })
-export class UsuariosComponent implements OnInit {
+export class UsuariosComponent implements OnInit, OnDestroy {
 
-  // ✅ Tipado con interfaces del DataService
   listaMinisterios: Ministerio[] = [];
 
   nuevoUsuario: Usuario = {
@@ -65,11 +70,15 @@ export class UsuariosComponent implements OnInit {
   intentoEnvio = false;
   modoEdicion  = false;
   idEditando: number | null = null;
-  contadorId  = 0;
   listaUsuarios: Usuario[] = [];
+
+  // Contraseña solo para backend (se hashea). Vacía = no cambiar.
+  password = '';
 
   searchTerm:       string = '';
   fotoSeleccionada: string | null = null;
+
+  private destroy$ = new Subject<void>();
 
   columnsUsuarios: TableColumn[] = [
     { field: 'nombre', header: 'Nombre'                    },
@@ -79,14 +88,16 @@ export class UsuariosComponent implements OnInit {
   ];
 
   acciones = { edit: true, delete: true };
-
-  rolesUsuario:   string[] = ['Administrador', 'Coordinador', 'Miembro'];
+  rolesUsuario:   string[] = ['Administrador', 'Contable', 'Lider/CoLider'];
   estadosUsuario: string[] = ['Activo', 'Inactivo', 'Suspendido'];
+  readonly ROL_LIDER = 'Lider/CoLider';
 
   constructor(
     private toastController: ToastController,
     private alertController: AlertController,
-    private dataService:     DataService
+    private loadingController: LoadingController,
+    private dataService: DataService,
+    private usuariosService: UsuariosService
   ) {
     addIcons({
       'notifications-outline': notificationsOutline,
@@ -101,8 +112,15 @@ export class UsuariosComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.cargarDatos();
+    this.usuariosService.usuarios$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(list => { this.listaUsuarios = list; });
     this.cargarMinisterios();
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   @HostListener('document:keydown.escape', [])
@@ -146,28 +164,54 @@ export class UsuariosComponent implements OnInit {
     return filtrados;
   }
 
-  registrarUsuario() {
+  onRolChange(): void {
+    if (this.nuevoUsuario.rol !== this.ROL_LIDER) {
+      this.nuevoUsuario.ministerioId = undefined;
+    }
+  }
+
+  async registrarUsuario() {
     this.intentoEnvio = true;
     if (!this.esFormularioValido) {
       this.mostrarToast('Por favor, completa los campos obligatorios correctamente.', 'danger');
       return;
     }
 
-    if (this.modoEdicion) {
-      const index = this.listaUsuarios.findIndex(u => u.id === this.idEditando);
-      if (index !== -1) {
-        this.listaUsuarios[index] = { ...this.nuevoUsuario };
-        this.mostrarToast('Usuario actualizado exitosamente', 'success');
-      }
-    } else {
-      this.contadorId++;
-      const nuevoRegistro: Usuario = { ...this.nuevoUsuario, id: this.contadorId };
-      this.listaUsuarios = [nuevoRegistro, ...this.listaUsuarios];
-      this.mostrarToast('Usuario creado exitosamente', 'success');
-    }
+    const { id, ...datos } = this.nuevoUsuario;
+    const payload: UsuarioPayload = {
+      ...(datos as UsuarioPayload),
+      ...(this.password.trim() ? { password: this.password } : {})
+    };
 
-    this.guardarLocalStorage();
-    this.resetFormulario();
+    const guardando = this.modoEdicion ? 'Actualizando usuario...' : 'Guardando usuario...';
+
+    try {
+      await withLoading(this.loadingController, guardando, async () => {
+        if (this.modoEdicion && this.idEditando !== null) {
+          await firstValueFrom(this.usuariosService.update(this.idEditando, payload));
+          await this.mostrarToast('Usuario actualizado exitosamente', 'success');
+        } else {
+          const res = await firstValueFrom(this.usuariosService.create(payload)) as UsuarioCreateResponse;
+          await this.mostrarToast('Usuario creado exitosamente', 'success');
+          if (!this.password.trim() && res?.tempPassword) {
+            const alert = await this.alertController.create({
+              header: 'Contraseña temporal',
+              message:
+                `Usuario: ${res.usuario}\n` +
+                `Contraseña temporal: ${res.tempPassword}\n\n` +
+                `Compártela una sola vez. Al iniciar sesión puede cambiarla.`,
+              buttons: ['OK']
+            });
+            await alert.present();
+          }
+        }
+      });
+
+      this.resetFormulario();
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Error al guardar';
+      this.mostrarToast(msg, 'danger');
+    }
   }
 
   editarUsuario(item: Usuario) {
@@ -176,6 +220,7 @@ export class UsuariosComponent implements OnInit {
       this.modoEdicion  = true;
       this.idEditando   = item.id;
       this.intentoEnvio = false;
+      this.password = '';
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }, 50);
   }
@@ -189,10 +234,16 @@ export class UsuariosComponent implements OnInit {
         {
           text:    'Eliminar',
           role:    'destructive',
-          handler: () => {
-            this.listaUsuarios = this.listaUsuarios.filter(u => u.id !== item.id);
-            this.guardarLocalStorage();
-            this.mostrarToast('Usuario eliminado', 'warning');
+          handler: async () => {
+            try {
+              await withLoading(this.loadingController, 'Eliminando usuario...', async () => {
+                await firstValueFrom(this.usuariosService.delete(item.id));
+              });
+              this.mostrarToast('Usuario eliminado', 'warning');
+            } catch (error) {
+              const msg = error instanceof Error ? error.message : 'Error al eliminar';
+              this.mostrarToast(msg, 'danger');
+            }
           }
         }
       ]
@@ -212,43 +263,11 @@ export class UsuariosComponent implements OnInit {
     this.modoEdicion  = false;
     this.idEditando   = null;
     this.intentoEnvio = false;
+    this.password = '';
   }
 
   cargarMinisterios() {
-    const datosMinisterios = localStorage.getItem('ministerios');
-    if (datosMinisterios) {
-      try {
-        const ministerios     = JSON.parse(datosMinisterios);
-        this.listaMinisterios = ministerios.map((m: any, idx: number) => ({
-          id:     m.id || idx,
-          nombre: m.nombre,
-          estado: m.estado ?? 'Activo'
-        }));
-      } catch (e) {
-        this.listaMinisterios = [];
-      }
-    }
-  }
-
-  guardarLocalStorage() {
-    localStorage.setItem('usuarios', JSON.stringify(this.listaUsuarios));
-    // ✅ Notificar al DataService para mantener el estado global sincronizado
-    this.dataService.refreshAllData();
-  }
-
-  cargarDatos() {
-    const data = localStorage.getItem('usuarios');
-    if (data) {
-      try {
-        this.listaUsuarios = JSON.parse(data);
-        if (this.listaUsuarios.length > 0) {
-          const ids       = this.listaUsuarios.map(u => u.id || 0);
-          this.contadorId = Math.max(...ids);
-        }
-      } catch (e) {
-        this.listaUsuarios = [];
-      }
-    }
+    this.listaMinisterios = this.dataService.getMinisteriosActuales();
   }
 
   async mostrarToast(mensaje: string, color: string) {
@@ -265,7 +284,9 @@ export class UsuariosComponent implements OnInit {
     return (
       this.nuevoUsuario.nombre?.trim().length >= 3 &&
       this.nuevoUsuario.email?.trim().length  >= 5 &&
-      this.nuevoUsuario.email?.includes('@')
+      this.nuevoUsuario.email?.includes('@') &&
+      // Password opcional: si se omite al crear, el backend genera una temporal.
+      (this.password.trim() ? this.password.trim().length >= 6 : true)
     );
   }
 }

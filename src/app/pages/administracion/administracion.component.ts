@@ -1,4 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
+import { ViewWillEnter } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -17,28 +18,14 @@ import {
   shieldCheckmarkOutline, timeOutline, cloudDownloadOutline,
   cloudUploadOutline, trashOutline
 } from 'ionicons/icons';
-import { Subject, interval } from 'rxjs';
+import { Subject, combineLatest } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
-// ✅ Interfaces importadas desde DataService — ya no se definen localmente
+import { ActividadAdmin, BackupIeca, ConfigIglesia, ResumenAdmin } from '../../core/models';
+import { AuthService } from '../../core/services/auth.service';
 import { DataService } from '../../services/data.service';
-
-// ✅ Interfaces propias de este componente (no existen en DataService)
-interface ResumenItem {
-  label: string;
-  valor: string;
-  icono: string;
-  color: string;
-  sub:   string;
-}
-
-interface Actividad {
-  accion: string;
-  modulo: string;
-  tiempo: string;
-  icono:  string;
-  color:  string;
-}
+import { AdministracionService } from '../../services/administracion.service';
+import { NotificacionesBellComponent } from '../../components/notificaciones-bell/notificaciones-bell.component';
 
 @Component({
   selector: 'app-administracion',
@@ -48,18 +35,20 @@ interface Actividad {
   imports: [
     CommonModule, FormsModule, RouterLink,
     IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle,
-    IonContent, IonButton, IonIcon, IonMenuToggle, IonRouterLink
+    IonContent, IonButton, IonIcon, IonMenuToggle, IonRouterLink,
+    NotificacionesBellComponent
   ],
   providers: [AlertController, ToastController]
 })
-export class AdministracionComponent implements OnInit, OnDestroy {
+export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter {
 
-  resumen: ResumenItem[] = [
-    { label: 'Balance actual',   valor: '$0',  icono: 'wallet-outline',          color: 'blue',   sub: 'Fondos disponibles'      },
-    { label: 'Periodo activo',   valor: '',    icono: 'calendar-outline',         color: 'purple', sub: 'Contabilidad abierta'    },
-    { label: 'Usuarios activos', valor: '0',   icono: 'checkmark-circle-outline', color: 'green',  sub: 'Usuarios registrados'    },
-    { label: 'Último cierre',    valor: 'N/A', icono: 'time-outline',             color: 'orange', sub: 'Sin cierres registrados' },
-  ];
+  resumen: ResumenAdmin[] = [];
+  actividad: ActividadAdmin[] = [];
+  configIglesia: ConfigIglesia = {
+    nombre:        '',
+    periodoActual: '',
+    version:       ''
+  };
 
   accesosRapidos = [
     { titulo: 'Usuarios',    descripcion: 'Cuentas y permisos de acceso',  icono: 'people-outline',        ruta: '/usuarios',    color: 'blue'   },
@@ -69,20 +58,12 @@ export class AdministracionComponent implements OnInit, OnDestroy {
     { titulo: 'Reportes',    descripcion: 'Balances y estados financieros',icono: 'stats-chart-outline',   ruta: '/reportes',    color: 'orange' },
   ];
 
-  configIglesia = {
-    nombre:        'Iglesia Evangélica La Alborada',
-    moneda:        'USD – Dólar americano',
-    periodoActual: '',
-    responsable:   'Administrador Principal',
-    version:       'v2.1.0'
-  };
-
-  actividad: Actividad[] = [];
-
   private destroy$ = new Subject<void>();
 
   constructor(
-    private dataService:     DataService,
+    private dataService: DataService,
+    private administracionService: AdministracionService,
+    private authService: AuthService,
     private alertController: AlertController,
     private toastController: ToastController
   ) {
@@ -111,7 +92,12 @@ export class AdministracionComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.cargarDatos();
 
-    interval(3000)
+    combineLatest([
+      this.dataService.ingresos$,
+      this.dataService.gastos$,
+      this.dataService.usuarios$,
+      this.dataService.ministerios$
+    ])
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => this.cargarDatos());
   }
@@ -121,140 +107,25 @@ export class AdministracionComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  ionViewWillEnter() {
+    this.dataService.refreshAllData();
+    this.cargarDatos();
+  }
+
+  get usuarioSesion(): string {
+    const sesion = this.authService.getSession();
+    return sesion?.usuario?.trim() || '—';
+  }
+
   private cargarDatos() {
-    const kpis        = this.dataService.calcularKPIs();
-    const usuarios    = this.dataService.getUsuariosActuales();
-    const mesActual   = this.getMesActual();
-    const ultimoCierre = localStorage.getItem('ultimoCierre') || 'N/A';
-
-    this.resumen = [
-      {
-        label: 'Balance actual',
-        valor: '$ ' + kpis.balance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-        icono: 'wallet-outline',
-        color: 'blue',
-        sub:   'Fondos disponibles'
-      },
-      {
-        label: 'Periodo activo',
-        valor: mesActual,
-        icono: 'calendar-outline',
-        color: 'purple',
-        sub:   'Contabilidad abierta'
-      },
-      {
-        label: 'Usuarios activos',
-        valor: usuarios.length.toString(),
-        icono: 'checkmark-circle-outline',
-        color: 'green',
-        sub:   'Usuarios registrados'
-      },
-      {
-        label: 'Último cierre',
-        valor: ultimoCierre,
-        icono: 'time-outline',
-        color: 'orange',
-        sub:   ultimoCierre === 'N/A' ? 'Sin cierres registrados' : 'Periodo cerrado'
-      },
-    ];
-
-    this.actividad                   = this.generarActividadReciente();
-    this.configIglesia.periodoActual = this.getPeriodoActual();
-  }
-
-  private generarActividadReciente(): Actividad[] {
-    const ingresos    = this.dataService.getIngresosActuales();
-    const gastos      = this.dataService.getGastosActuales();
-    const usuarios    = this.dataService.getUsuariosActuales();
-    const ministerios = this.dataService.getMinisteriosActuales();
-    const actividades: Actividad[] = [];
-
-    ingresos.slice(0, 2).forEach(i => {
-      actividades.push({
-        accion: `Nuevo ingreso: ${i.descripcion}`,
-        modulo: 'Ingresos',
-        tiempo: this.calcularTiempoRelativo(i.fecha),
-        icono:  'trending-up-outline',
-        color:  'green'
-      });
-    });
-
-    gastos.slice(0, 2).forEach(g => {
-      actividades.push({
-        accion: `Gasto registrado: ${g.descripcion}`,
-        modulo: 'Gastos',
-        tiempo: this.calcularTiempoRelativo(g.fecha),
-        icono:  'trending-down-outline',
-        color:  'red'
-      });
-    });
-
-    if (ministerios.length > 0 && actividades.length < 3) {
-      actividades.push({
-        accion: `Ministerios activos: ${ministerios.filter(m => m.estado === 'Activo').length}`,
-        modulo: 'Ministerios',
-        tiempo: 'Hoy',
-        icono:  'business-outline',
-        color:  'purple'
-      });
-    }
-
-    if (usuarios.length > 0 && actividades.length < 4) {
-      actividades.push({
-        accion: `Total de usuarios: ${usuarios.length}`,
-        modulo: 'Usuarios',
-        tiempo: 'Hoy',
-        icono:  'people-outline',
-        color:  'blue'
-      });
-    }
-
-    if (actividades.length === 0) {
-      actividades.push({
-        accion: 'Sin actividad reciente',
-        modulo: 'Sistema',
-        tiempo: 'N/A',
-        icono:  'stats-chart-outline',
-        color:  'orange'
-      });
-    }
-
-    return actividades.slice(0, 4);
-  }
-
-  private calcularTiempoRelativo(fecha: string): string {
-    const ahora      = new Date();
-    const fechaObj   = new Date(fecha);
-    const diferencia = ahora.getTime() - fechaObj.getTime();
-    const minutos    = Math.floor(diferencia / 60000);
-    const horas      = Math.floor(diferencia / 3600000);
-    const dias       = Math.floor(diferencia / 86400000);
-
-    if (minutos < 60)  return `Hace ${minutos} min`;
-    if (horas   < 24)  return `Hace ${horas} h`;
-    if (dias    === 1) return 'Ayer';
-    if (dias    < 7)   return `Hace ${dias} días`;
-    return 'Hace más de una semana';
-  }
-
-  private getMesActual(): string {
-    const meses = [
-      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-    ];
-    const ahora = new Date();
-    return `${meses[ahora.getMonth()]} ${ahora.getFullYear()}`;
-  }
-
-  private getPeriodoActual(): string {
-    const ahora = new Date();
-    const mes   = String(ahora.getMonth() + 1).padStart(2, '0');
-    return `${ahora.getFullYear()}-${mes}`;
+    this.resumen       = this.administracionService.getResumen();
+    this.actividad     = this.administracionService.getActividadReciente();
+    this.configIglesia = this.administracionService.getConfigIglesia();
   }
 
   async ejecutarCierreMes() {
     const alert = await this.alertController.create({
-      header:    '⚠️ Cierre Contable',
+      header:    '⚠️ Cierre Financiero',
       subHeader: `Periodo: ${this.configIglesia.periodoActual}`,
       message:   'Esta acción congela todos los movimientos del periodo actual. <strong>Es irreversible.</strong> ¿Confirmas el cierre?',
       buttons: [
@@ -263,17 +134,9 @@ export class AdministracionComponent implements OnInit, OnDestroy {
           text:    'Sí, cerrar periodo',
           role:    'destructive',
           handler: () => {
-            const fechaCierre = this.getMesActual();
-            localStorage.setItem('ultimoCierre', fechaCierre);
-
-            const ingresos = this.dataService.getIngresosActuales().map(i => ({ ...i, cerrado: true }));
-            const gastos   = this.dataService.getGastosActuales().map(g => ({ ...g, cerrado: true }));
-            localStorage.setItem('ingresos', JSON.stringify(ingresos));
-            localStorage.setItem('gastos',   JSON.stringify(gastos));
-            this.dataService.refreshAllData();
-
-            this.mostrarToast(`Periodo ${this.configIglesia.periodoActual} cerrado exitosamente`, 'success');
+            this.administracionService.ejecutarCierreMes();
             this.cargarDatos();
+            this.mostrarToast(`Periodo ${this.configIglesia.periodoActual} cerrado exitosamente`, 'success');
           }
         }
       ]
@@ -282,29 +145,14 @@ export class AdministracionComponent implements OnInit, OnDestroy {
   }
 
   exportarBackup() {
-    const backup = {
-      fecha:        new Date().toISOString(),
-      version:      this.configIglesia.version,
-      ingresos:     this.dataService.getIngresosActuales(),
-      gastos:       this.dataService.getGastosActuales(),
-      ministerios:  this.dataService.getMinisteriosActuales(),
-      usuarios:     this.dataService.getUsuariosActuales(),
-      ultimoCierre: localStorage.getItem('ultimoCierre') || null
-    };
-
-    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-    const url  = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href     = url;
-    link.download = `backup_ieca_${new Date().toISOString().substring(0, 10)}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-
+    const backup = this.administracionService.crearBackup();
+    this.administracionService.descargarBackup(backup);
     this.mostrarToast('Backup exportado exitosamente', 'success');
   }
 
-  async importarBackup(event: any) {
-    const file = event.target.files[0];
+  async importarBackup(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file  = input.files?.[0];
     if (!file) return;
 
     const alert = await this.alertController.create({
@@ -316,19 +164,14 @@ export class AdministracionComponent implements OnInit, OnDestroy {
           text:    'Sí, restaurar',
           role:    'destructive',
           handler: () => {
-            const reader    = new FileReader();
-            reader.onload   = (e: any) => {
+            const reader = new FileReader();
+            reader.onload = (e: ProgressEvent<FileReader>) => {
               try {
-                const backup = JSON.parse(e.target.result);
-                if (backup.ingresos)     localStorage.setItem('ingresos',     JSON.stringify(backup.ingresos));
-                if (backup.gastos)       localStorage.setItem('gastos',       JSON.stringify(backup.gastos));
-                if (backup.ministerios)  localStorage.setItem('ministerios',  JSON.stringify(backup.ministerios));
-                if (backup.usuarios)     localStorage.setItem('usuarios',     JSON.stringify(backup.usuarios));
-                if (backup.ultimoCierre) localStorage.setItem('ultimoCierre', backup.ultimoCierre);
-                this.dataService.refreshAllData();
+                const backup = JSON.parse(e.target?.result as string) as BackupIeca;
+                this.administracionService.restaurarBackup(backup);
                 this.cargarDatos();
                 this.mostrarToast('Backup restaurado exitosamente', 'success');
-              } catch (err) {
+              } catch {
                 this.mostrarToast('Error: archivo de backup inválido', 'danger');
               }
             };
@@ -338,6 +181,7 @@ export class AdministracionComponent implements OnInit, OnDestroy {
       ]
     });
     await alert.present();
+    input.value = '';
   }
 
   async limpiarTodosLosDatos() {
@@ -361,12 +205,7 @@ export class AdministracionComponent implements OnInit, OnDestroy {
                   role:    'destructive',
                   handler: (data) => {
                     if (data.confirmacion === 'ELIMINAR') {
-                      localStorage.removeItem('ingresos');
-                      localStorage.removeItem('gastos');
-                      localStorage.removeItem('ministerios');
-                      localStorage.removeItem('usuarios');
-                      localStorage.removeItem('ultimoCierre');
-                      this.dataService.refreshAllData();
+                      this.administracionService.limpiarTodosLosDatos();
                       this.cargarDatos();
                       this.mostrarToast('Todos los datos han sido eliminados', 'warning');
                     } else {

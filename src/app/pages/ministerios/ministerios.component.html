@@ -4,11 +4,7 @@
       <ion-menu-button color="primary" aria-label="Abrir menú"></ion-menu-button>
     </ion-buttons>
     <ion-title class="main-title">Ministerios</ion-title>
-    <ion-buttons slot="end">
-      <ion-button class="text-blue" type="button" aria-label="Notificaciones">
-        <ion-icon name="notifications-outline"></ion-icon>
-      </ion-button>
-    </ion-buttons>
+    <app-notificaciones-bell slot="end"></app-notificaciones-bell>
   </ion-toolbar>
 </ion-header>
 
@@ -27,7 +23,7 @@
       <p *ngIf="modoEdicion">Modifica la información y guarda los cambios del ministerio.</p>
     </div>
 
-    <div class="ieca-card form-card form-card--income">
+    <div class="ieca-card form-card form-card--ministries">
       <form class="ieca-grid-form" autocomplete="off">
 
         <!-- Nombre -->

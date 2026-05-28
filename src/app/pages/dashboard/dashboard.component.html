@@ -4,7 +4,7 @@
       <ion-menu-button color="primary"></ion-menu-button>
     </ion-buttons>
     <ion-title class="main-title">Panel de Control</ion-title>
-    <div slot="end" class="month-badge">📅 {{ mesActual }}</div>
+    <app-notificaciones-bell slot="end"></app-notificaciones-bell>
   </ion-toolbar>
 </ion-header>
 
@@ -13,8 +13,8 @@
 
     <!-- Welcome -->
     <div class="welcome-header">
-      <p class="welcome-sup">Bienvenido al sistema contable</p>
-      <h1>Iglesia Evangélica La Alborada</h1>
+      <p class="welcome-sup">BIENVENIDO/A</p>
+      <h1>{{ tituloAlcance }}</h1>
     </div>
 
     <!-- KPI Cards -->
@@ -69,21 +69,83 @@
             <p class="card-sub">Comparativo últimos 6 meses</p>
           </div>
           <div class="legend">
-            <span class="ldot ldot-i"></span><span>Ingresos</span>
-            <span class="ldot ldot-g"></span><span>Gastos</span>
+            <span class="legend-pill legend-i"><span class="ldot ldot-i"></span>Ingresos</span>
+            <span class="legend-pill legend-g"><span class="ldot ldot-g"></span>Gastos</span>
           </div>
         </div>
-        <div class="bar-chart">
-          @for (d of chartData; track d.mes) {
-            <div class="bgroup">
-              <div class="bars">
-                <div class="bar bar-i" [style.height]="barHeight(d.ingresos)" [title]="'Ingreso: $' + d.ingresos"></div>
-                <div class="bar bar-g" [style.height]="barHeight(d.gastos)"   [title]="'Gasto: $'   + d.gastos"></div>
-              </div>
-              <span class="blabel">{{ d.mes }}</span>
+
+        @if (chartTieneDatos) {
+          <div class="chart-summary">
+            <div class="chart-stat">
+              <span class="chart-stat-label">Total ingresos</span>
+              <span class="chart-stat-val ingreso">$ {{ chartTotales.ingresos | number:'1.2-2' }}</span>
             </div>
-          }
-        </div>
+            <div class="chart-stat-divider"></div>
+            <div class="chart-stat">
+              <span class="chart-stat-label">Total gastos</span>
+              <span class="chart-stat-val gasto">$ {{ chartTotales.gastos | number:'1.2-2' }}</span>
+            </div>
+          </div>
+
+          <div class="chart-wrap">
+            <div class="y-axis">
+              @for (tick of yAxisTicks; track tick) {
+                <span class="y-tick">{{ formatAxis(tick) }}</span>
+              }
+            </div>
+
+            <div class="chart-plot">
+              <div class="plot-area">
+                <div class="grid-lines" aria-hidden="true">
+                  @for (tick of yAxisTicks; track tick) {
+                    <div class="grid-line"></div>
+                  }
+                </div>
+
+                <div class="bar-chart">
+                @for (d of chartData; track d.mes; let i = $index) {
+                  <div class="bgroup" [style.--i]="i">
+                    <div class="bars">
+                      <div class="bar-shell bar-shell-i"
+                           [style.height.%]="barHeightPercent(d.ingresos)"
+                           [style.--delay]="(i * 70) + 'ms'">
+                        <div class="bar bar-i">
+                          <div class="bar-tooltip">
+                            <span class="tooltip-label">Ingresos</span>
+                            <span class="tooltip-val">{{ formatTooltip(d.ingresos) }}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="bar-shell bar-shell-g"
+                           [style.height.%]="barHeightPercent(d.gastos)"
+                           [style.--delay]="(i * 70 + 35) + 'ms'">
+                        <div class="bar bar-g">
+                          <div class="bar-tooltip">
+                            <span class="tooltip-label">Gastos</span>
+                            <span class="tooltip-val">{{ formatTooltip(d.gastos) }}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                }
+                </div>
+              </div>
+
+              <div class="x-axis">
+                @for (d of chartData; track d.mes) {
+                  <span class="blabel">{{ d.mes }}</span>
+                }
+              </div>
+            </div>
+          </div>
+        } @else {
+          <div class="chart-empty">
+            <div class="chart-empty-icon">📊</div>
+            <p class="chart-empty-title">Sin datos para mostrar</p>
+            <p class="chart-empty-sub">Registra ingresos y gastos para ver el comparativo mensual.</p>
+          </div>
+        }
       </div>
 
       <!-- Ministry distribution -->

@@ -13,14 +13,7 @@
       Usuarios
     </ion-title>
 
-    <ion-buttons slot="end">
-      <ion-button
-        class="text-blue"
-        type="button"
-        aria-label="Notificaciones">
-        <ion-icon name="notifications-outline"></ion-icon>
-      </ion-button>
-    </ion-buttons>
+    <app-notificaciones-bell slot="end"></app-notificaciones-bell>
 
   </ion-toolbar>
 
@@ -134,6 +127,7 @@
               interface="popover"
               [(ngModel)]="nuevoUsuario.rol"
               name="rol"
+              (ionChange)="onRolChange()"
               class="ieca-select"
               placeholder="Seleccione uno">
               <ion-select-option *ngFor="let rol of rolesUsuario" [value]="rol">{{ rol }}</ion-select-option>
@@ -147,7 +141,8 @@
           </ion-label>
           <ion-item
             lines="none"
-            class="ieca-input-item ieca-input">
+            class="ieca-input-item ieca-input"
+            [disabled]="nuevoUsuario.rol !== ROL_LIDER">
             <ion-icon
               slot="start"
               name="options-outline"
@@ -162,6 +157,33 @@
               <ion-select-option *ngFor="let min of listaMinisterios" [value]="min.id">{{ min.nombre }}</ion-select-option>
             </ion-select>
           </ion-item>
+          <small class="error-text" *ngIf="nuevoUsuario.rol !== ROL_LIDER">
+            Solo aplica para el rol Líder/CoLider.
+          </small>
+        </div>
+
+        <div class="input-group">
+          <ion-label class="ieca-label">
+            Contraseña(Opcional) {{ modoEdicion ? '(dejar vacío para mantener)' : '*' }}
+          </ion-label>
+          <ion-item
+            lines="none"
+            class="ieca-input-item ieca-input">
+            <ion-icon
+              slot="start"
+              name="options-outline"
+              class="text-blue">
+            </ion-icon>
+            <ion-input
+              type="password"
+              [(ngModel)]="password"
+              name="password"
+              [placeholder]="modoEdicion ? 'Nueva contraseña (opcional)' : 'Contraseña (mínimo 6)'">
+            </ion-input>
+          </ion-item>
+          <small class="error-text" *ngIf="intentoEnvio && !modoEdicion && password.trim().length < 6">
+            La contraseña debe tener al menos 6 caracteres.
+          </small>
         </div>
        
 

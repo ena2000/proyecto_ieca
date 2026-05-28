@@ -1,15 +1,18 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule, registerLocaleData } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import localeEs from '@angular/common/locales/es';
+import { Subject, firstValueFrom } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 import {
   IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent,
   IonIcon, IonItem, IonLabel, IonInput, IonButton,
-  IonSearchbar, ToastController, IonPopover, IonSelect, IonSelectOption
+  IonSearchbar, IonPopover, IonSelect, IonSelectOption,
+  ToastController
 } from '@ionic/angular/standalone';
 
-import { AlertController } from '@ionic/angular';
+import { AlertController, LoadingController } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import {
   documentTextOutline, saveOutline, notificationsOutline,
@@ -17,9 +20,11 @@ import {
 } from 'ionicons/icons';
 
 import { TablaGeneralComponent, TableColumn } from 'src/app/components/tabla-general/tabla-general.component';
-
-// ✅ Interfaces importadas desde DataService — ya no se definen localmente
-import { DataService, Ministerio, Usuario } from '../../services/data.service';
+import { NotificacionesBellComponent } from 'src/app/components/notificaciones-bell/notificaciones-bell.component';
+import { Ministerio, Usuario } from '../../core/models';
+import { DataService } from '../../services/data.service';
+import { MinisteriosService } from '../../services/ministerios.service';
+import { withLoading } from '../../shared/utils/loading.util';
 
 registerLocaleData(localeEs);
 
@@ -34,13 +39,13 @@ registerLocaleData(localeEs);
     IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent,
     IonIcon, IonItem, IonLabel, IonInput, IonButton,
     IonSearchbar, IonPopover, IonSelect, IonSelectOption,
-    TablaGeneralComponent
+    TablaGeneralComponent,
+    NotificacionesBellComponent
   ],
-  providers: [AlertController, ToastController]
+  providers: [AlertController, ToastController, LoadingController]
 })
-export class MinisteriosComponent implements OnInit {
+export class MinisteriosComponent implements OnInit, OnDestroy {
 
-  // ✅ Tipado con interfaces del DataService
   listaUsuarios: Usuario[] = [];
 
   nuevoMinisterio: Ministerio = {
@@ -55,11 +60,12 @@ export class MinisteriosComponent implements OnInit {
   intentoEnvio = false;
   modoEdicion  = false;
   idEditando: number | null = null;
-  contadorId  = 0;
   listaMinisterios: Ministerio[] = [];
 
   searchTerm:    string = '';
   filtroLiderId: number | null = null;
+
+  private destroy$ = new Subject<void>();
 
   columnsMinisterios: TableColumn[] = [
     { field: 'nombre',          header: 'Nombre'                   },
@@ -68,13 +74,14 @@ export class MinisteriosComponent implements OnInit {
   ];
 
   acciones = { edit: true, delete: true };
-
   estadosMinisterio: string[] = ['Activo', 'Pausado', 'Inactivo'];
 
   constructor(
     private alertController: AlertController,
     private toastController: ToastController,
-    private dataService:     DataService
+    private loadingController: LoadingController,
+    private dataService: DataService,
+    private ministeriosService: MinisteriosService
   ) {
     addIcons({
       'document-text-outline': documentTextOutline,
@@ -89,17 +96,15 @@ export class MinisteriosComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.cargarDatos();
+    this.ministeriosService.ministerios$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(list => { this.listaMinisterios = list; });
     this.cargarUsuarios();
   }
 
-  private formatearISOaDDMMYYYY(iso: string): string {
-    if (!iso) return '';
-    const date = new Date(iso);
-    const dd   = String(date.getDate()).padStart(2, '0');
-    const mm   = String(date.getMonth() + 1).padStart(2, '0');
-    const yyyy = date.getFullYear();
-    return `${dd}/${mm}/${yyyy}`;
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   get hayFiltrosActivos(): boolean {
@@ -126,41 +131,37 @@ export class MinisteriosComponent implements OnInit {
     return filtrados;
   }
 
-  registrarMinisterio() {
+  async registrarMinisterio() {
     this.intentoEnvio = true;
     if (!this.esFormularioValido) {
       this.mostrarToast('Por favor, completa los campos obligatorios correctamente.', 'danger');
       return;
     }
 
-    const ahora          = new Date().toISOString();
-    const fechaFormateada = this.formatearISOaDDMMYYYY(ahora);
+    const guardando = this.modoEdicion ? 'Actualizando ministerio...' : 'Guardando ministerio...';
 
-    if (this.modoEdicion) {
-      const index = this.listaMinisterios.findIndex(m => m.id === this.idEditando);
-      if (index !== -1) {
-        // Conservar la fecha original al editar
-        const fechaOriginal = this.listaMinisterios[index].fechaFormateada;
-        this.listaMinisterios[index] = {
-          ...this.nuevoMinisterio,
-          fechaFormateada: fechaOriginal
-        };
-        this.mostrarToast('Registro actualizado exitosamente', 'success');
-      }
-    } else {
-      this.contadorId++;
-      const nuevoRegistro: Ministerio = {
-        ...this.nuevoMinisterio,
-        id:               this.contadorId,
-        fecha:            ahora,
-        fechaFormateada
-      };
-      this.listaMinisterios = [nuevoRegistro, ...this.listaMinisterios];
-      this.mostrarToast('Registro creado exitosamente', 'success');
+    try {
+      await withLoading(this.loadingController, guardando, async () => {
+        if (this.modoEdicion && this.idEditando !== null) {
+          const existente = this.listaMinisterios.find(m => m.id === this.idEditando);
+          await firstValueFrom(this.ministeriosService.update(this.idEditando, {
+            ...this.nuevoMinisterio,
+            id: this.idEditando,
+            fechaFormateada: existente?.fechaFormateada
+          }));
+          await this.mostrarToast('Registro actualizado exitosamente', 'success');
+        } else {
+          const { id, fecha, fechaFormateada, ...datos } = this.nuevoMinisterio;
+          await firstValueFrom(this.ministeriosService.create(datos));
+          await this.mostrarToast('Registro creado exitosamente', 'success');
+        }
+      });
+
+      this.resetFormulario();
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Error al guardar';
+      this.mostrarToast(msg, 'danger');
     }
-
-    this.guardarLocalStorage();
-    this.resetFormulario();
   }
 
   editarMinisterio(item: Ministerio) {
@@ -182,10 +183,16 @@ export class MinisteriosComponent implements OnInit {
         {
           text:    'Eliminar',
           role:    'destructive',
-          handler: () => {
-            this.listaMinisterios = this.listaMinisterios.filter(m => m.id !== item.id);
-            this.guardarLocalStorage();
-            this.mostrarToast('Registro eliminado', 'warning');
+          handler: async () => {
+            try {
+              await withLoading(this.loadingController, 'Eliminando ministerio...', async () => {
+                await firstValueFrom(this.ministeriosService.delete(item.id));
+              });
+              this.mostrarToast('Registro eliminado', 'warning');
+            } catch (error) {
+              const msg = error instanceof Error ? error.message : 'Error al eliminar';
+              this.mostrarToast(msg, 'danger');
+            }
           }
         }
       ]
@@ -207,25 +214,8 @@ export class MinisteriosComponent implements OnInit {
     this.intentoEnvio = false;
   }
 
-  guardarLocalStorage() {
-    localStorage.setItem('ministerios', JSON.stringify(this.listaMinisterios));
-    // ✅ Notificar al DataService igual que los otros módulos
-    this.dataService.refreshAllData();
-  }
-
-  cargarDatos() {
-    const data = localStorage.getItem('ministerios');
-    if (data) {
-      try {
-        this.listaMinisterios = JSON.parse(data);
-        if (this.listaMinisterios.length > 0) {
-          const ids       = this.listaMinisterios.map(m => m.id || 0);
-          this.contadorId = Math.max(...ids);
-        }
-      } catch (e) {
-        this.listaMinisterios = [];
-      }
-    }
+  cargarUsuarios() {
+    this.listaUsuarios = this.dataService.getUsuariosActuales();
   }
 
   async mostrarToast(mensaje: string, color: string) {
@@ -236,22 +226,6 @@ export class MinisteriosComponent implements OnInit {
       position: 'top'
     });
     await toast.present();
-  }
-
-  cargarUsuarios() {
-    const datosUsuarios = localStorage.getItem('usuarios');
-    if (datosUsuarios) {
-      try {
-        const usuarios     = JSON.parse(datosUsuarios);
-        this.listaUsuarios = usuarios.map((u: any, idx: number) => ({
-          id:     u.id || idx,
-          nombre: u.nombre,
-          email:  u.email
-        }));
-      } catch (e) {
-        this.listaUsuarios = [];
-      }
-    }
   }
 
   get esFormularioValido(): boolean {
