@@ -1,10 +1,10 @@
 @if (visible) {
   <ion-buttons class="notif-toolbar-buttons">
     <ion-button
-      id="ieca-notif-trigger"
       class="text-blue notif-bell-btn"
       type="button"
-      aria-label="Notificaciones">
+      aria-label="Notificaciones"
+      (click)="togglePopover($event)">
       <ion-icon name="notifications-outline"></ion-icon>
       @if (noLeidas > 0) {
         <span class="notif-bell-badge" aria-hidden="true">
@@ -16,13 +16,12 @@
 
   <ion-popover
     #notifPopover
-    trigger="ieca-notif-trigger"
-    triggerAction="click"
     side="bottom"
     alignment="end"
     class="notif-popover"
-    (didDismiss)="popoverAbierto = false"
-    (didPresent)="popoverAbierto = true">
+    [keepContentsMounted]="true"
+    (didDismiss)="onPopoverDismiss()"
+    (didPresent)="onPopoverPresent()">
     <ng-template>
       <ion-content class="notif-popover__content">
         <div class="notif-popover__header">
@@ -31,7 +30,7 @@
             <button
               type="button"
               class="notif-mark-all"
-              (click)="marcarTodasLeidas()">
+              (click)="marcarTodasLeidas($event)">
               <ion-icon name="checkmark-done-outline"></ion-icon>
               Marcar leídas
             </button>
@@ -47,7 +46,7 @@
                 button
                 detail="false"
                 [class.notif-item--unread]="esNoLeida(n)"
-                (click)="abrirNotificacion(n, notifPopover)">
+                (click)="abrirNotificacion(n, $event)">
                 <div
                   class="notif-item__icon"
                   [class.notif-item__icon--ingreso]="n.tipo === 'ingreso'"

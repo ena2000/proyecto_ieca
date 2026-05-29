@@ -20,14 +20,17 @@ import {
   chevronBackOutline,
   chevronForwardOutline,
   searchOutline,
-  closeOutline
+  closeOutline,
+  checkmarkCircleOutline,
+  closeCircleOutline,
+  documentTextOutline
 } from 'ionicons/icons';
 
 
 // =========================================================
 // TIPADO FUERTE (MUY IMPORTANTE)
 // =========================================================
-export type ColumnType = 'text' | 'image' | 'badge' | 'currency' | 'date';
+export type ColumnType = 'text' | 'image' | 'evidence' | 'badge' | 'currency' | 'date';
 
 export interface TableColumn {
   field: string;
@@ -38,6 +41,8 @@ export interface TableColumn {
 export interface TableActions {
   edit?: boolean;
   delete?: boolean;
+  approve?: boolean;
+  reject?: boolean;
 }
 
 
@@ -61,12 +66,18 @@ export class TablaGeneralComponent implements OnInit, OnChanges {
   @Input() actions: TableActions = {};
   @Input() itemsPerPage: number = 5;
   @Input() loading: boolean = false;
+  /** Permite editar filas aunque estén aprobadas (p. ej. administrador). */
+  @Input() allowEditApproved = false;
+  @Input() allowDeleteApproved = false;
 
   // =========================================================
   // OUTPUTS
   // =========================================================
   @Output() onEdit = new EventEmitter<any>();
   @Output() onDelete = new EventEmitter<any>();
+  @Output() onApprove = new EventEmitter<any>();
+  @Output() onReject = new EventEmitter<any>();
+  @Output() onEvidenceClick = new EventEmitter<string>();
 
   // =========================================================
   // ESTADO PAGINACIÓN
@@ -77,6 +88,7 @@ export class TablaGeneralComponent implements OnInit, OnChanges {
   // LIGHTBOX
   // =========================================================
   selectedImage: string | null = null;
+  selectedPdf: string | null = null;
 
   // =========================================================
   // UX STATES (PRO LEVEL)
@@ -92,7 +104,10 @@ export class TablaGeneralComponent implements OnInit, OnChanges {
       chevronBackOutline,
       chevronForwardOutline,
       searchOutline,
-      closeOutline
+      closeOutline,
+      checkmarkCircleOutline,
+      closeCircleOutline,
+      documentTextOutline
     });
   }
 
@@ -121,16 +136,56 @@ export class TablaGeneralComponent implements OnInit, OnChanges {
   // =========================================================
   // LIGHTBOX
   // =========================================================
-  openLightbox(imageUrl: string) {
-    if (!imageUrl) return;
+  esPdf(url: string | null | undefined): boolean {
+    return !!url && url.startsWith('data:application/pdf');
+  }
 
-    this.selectedImage = imageUrl;
+  openEvidence(url: string) {
+    if (!url) return;
+    this.onEvidenceClick.emit(url);
+    if (this.esPdf(url)) {
+      this.selectedPdf = url;
+      document.body.style.overflow = 'hidden';
+      return;
+    }
+    this.selectedImage = url;
     document.body.style.overflow = 'hidden';
   }
 
   closeLightbox() {
     this.selectedImage = null;
+    this.selectedPdf = null;
     document.body.style.overflow = 'auto';
+  }
+
+  approve(row: any) {
+    this.onApprove.emit(row);
+  }
+
+  reject(row: any) {
+    this.onReject.emit(row);
+  }
+
+  showApproveFor(row: any): boolean {
+    return !!this.actions.approve && (row?.estado ?? 'aprobado') === 'pendiente';
+  }
+
+  showRejectFor(row: any): boolean {
+    return !!this.actions.reject && (row?.estado ?? 'aprobado') === 'pendiente';
+  }
+
+  showEditFor(row: any): boolean {
+    if (!this.actions.edit) return false;
+    const estado = row?.estado ?? 'aprobado';
+    if (this.allowEditApproved) return true;
+    return estado !== 'aprobado';
+  }
+
+  showDeleteFor(row: any): boolean {
+    if (!this.actions.delete) return false;
+    const estado = row?.estado ?? 'aprobado';
+    if (this.allowDeleteApproved) return true;
+    return estado !== 'aprobado';
   }
 
   // =========================================================

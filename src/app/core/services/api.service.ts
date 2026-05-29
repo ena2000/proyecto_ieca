@@ -18,6 +18,13 @@ export class ApiService {
     return this.http.get<T>(this.url(path), { params: this.toParams(params) });
   }
 
+  getBlob(path: string, params?: Record<string, string | number | boolean>): Observable<Blob> {
+    return this.http.get(this.url(path), {
+      params: this.toParams(params),
+      responseType: 'blob'
+    });
+  }
+
   post<T>(path: string, body: unknown): Observable<T> {
     return this.http.post<T>(this.url(path), body);
   }

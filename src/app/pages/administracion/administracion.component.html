@@ -112,6 +112,63 @@
 
     </div>
 
+    <!-- Auditoría -->
+    <section class="section-block">
+      <div class="backup-card">
+        <div class="backup-header">
+          <ion-icon name="cloud-download-outline" class="text-blue"></ion-icon>
+          <div>
+            <h2 class="text-blue">Auditoría (CSV)</h2>
+            <p class="backup-subtitle">Descarga para revisión en Excel</p>
+          </div>
+        </div>
+        <p class="backup-text">
+          Genera un archivo <strong>.csv</strong> con la trazabilidad de ingresos y gastos (quién creó y
+          quién editó por última vez). Puedes filtrarlo por tipo y rango de fechas.
+        </p>
+
+        <div style="margin: 12px 0 10px 0; display: grid; gap: 10px;">
+          <div style="display: grid; gap: 6px;">
+            <span class="config-label">Tipo</span>
+            <select
+              class="ieca-input"
+              [(ngModel)]="auditTipo"
+              aria-label="Tipo de auditoría">
+              <option value="todos">Todos</option>
+              <option value="ingresos">Solo ingresos</option>
+              <option value="gastos">Solo gastos</option>
+            </select>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div style="display: grid; gap: 6px;">
+              <span class="config-label">Desde</span>
+              <input
+                class="ieca-input"
+                type="date"
+                [(ngModel)]="auditDesde"
+                aria-label="Desde" />
+            </div>
+            <div style="display: grid; gap: 6px;">
+              <span class="config-label">Hasta</span>
+              <input
+                class="ieca-input"
+                type="date"
+                [(ngModel)]="auditHasta"
+                aria-label="Hasta" />
+            </div>
+          </div>
+        </div>
+
+        <div class="backup-actions">
+          <button type="button" class="btn-backup btn-backup--primary" (click)="descargarAuditoria()">
+            <ion-icon name="cloud-download-outline"></ion-icon>
+            <span>Descargar auditoría (CSV)</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
     <!-- Respaldo de datos -->
     <section class="section-block">
       <div class="backup-card">

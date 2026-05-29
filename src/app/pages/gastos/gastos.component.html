@@ -78,32 +78,22 @@
             <ion-button
               fill="clear"
               type="button"
-              id="btn-fecha-form"
               class="calendar-icon-btn"
-              aria-label="Seleccionar fecha">
+              aria-label="Seleccionar fecha"
+              (click)="abrirSelectorFecha('form')">
               <ion-icon
                 slot="icon-only"
                 name="calendar-outline">
               </ion-icon>
             </ion-button>
+            <input
+              #dateInputForm
+              type="date"
+              class="ieca-date-picker-hidden"
+              [value]="isoToDateInputValue(nuevoGasto.fecha)"
+              (change)="onNativeDateChange($any($event.target).value, 'form')"
+              aria-label="Seleccionar fecha del gasto" />
           </div>
-          <ion-popover
-            trigger="btn-fecha-form"
-            triggerAction="click"
-            class="image-style-popover"
-            #popoverFechaForm>
-            <ng-template>
-              <ion-datetime
-                presentation="date"
-                size="cover"
-                locale="es-ES"
-                [showDefaultButtons]="false"
-                [(ngModel)]="nuevoGasto.fecha"
-                name="fechaForm"
-                (ionChange)="onFechaPickerChange($event, popoverFechaForm)">
-              </ion-datetime>
-            </ng-template>
-          </ion-popover>
         </div>
 
         <div class="input-group">
@@ -425,29 +415,22 @@
               <ion-button
                 fill="clear"
                 type="button"
-                id="btn-desde"
-                class="calendar-icon-btn">
+                class="calendar-icon-btn"
+                aria-label="Seleccionar fecha desde"
+                (click)="abrirSelectorFecha('desde')">
                 <ion-icon
                   slot="icon-only"
                   name="calendar-outline">
                 </ion-icon>
               </ion-button>
+              <input
+                #dateInputDesde
+                type="date"
+                class="ieca-date-picker-hidden"
+                [value]="isoToDateInputValue(filtroFechaInicio)"
+                (change)="onNativeDateChange($any($event.target).value, 'desde')"
+                aria-label="Desde la fecha" />
             </div>
-            <ion-popover
-              trigger="btn-desde"
-              triggerAction="click"
-              class="image-style-popover"
-              #popoverDesde>
-              <ng-template>
-                <ion-datetime
-                  presentation="date"
-                  size="cover"
-                  [showDefaultButtons]="false"
-                  [(ngModel)]="filtroFechaInicio"
-                  (ionChange)="onPickerDateChange($event, 'desde', popoverDesde)">
-                </ion-datetime>
-              </ng-template>
-            </ion-popover>
           </div>
 
           <div class="filter-item">
@@ -465,29 +448,22 @@
               <ion-button
                 fill="clear"
                 type="button"
-                id="btn-hasta"
-                class="calendar-icon-btn">
+                class="calendar-icon-btn"
+                aria-label="Seleccionar fecha hasta"
+                (click)="abrirSelectorFecha('hasta')">
                 <ion-icon
                   slot="icon-only"
                   name="calendar-outline">
                 </ion-icon>
               </ion-button>
+              <input
+                #dateInputHasta
+                type="date"
+                class="ieca-date-picker-hidden"
+                [value]="isoToDateInputValue(filtroFechaFin)"
+                (change)="onNativeDateChange($any($event.target).value, 'hasta')"
+                aria-label="Hasta la fecha" />
             </div>
-            <ion-popover
-              trigger="btn-hasta"
-              triggerAction="click"
-              class="image-style-popover"
-              #popoverHasta>
-              <ng-template>
-                <ion-datetime
-                  presentation="date"
-                  size="cover"
-                  [showDefaultButtons]="false"
-                  [(ngModel)]="filtroFechaFin"
-                  (ionChange)="onPickerDateChange($event, 'hasta', popoverHasta)">
-                </ion-datetime>
-              </ng-template>
-            </ion-popover>
           </div>
 
           <div class="filter-item" *ngIf="puedeAprobar">

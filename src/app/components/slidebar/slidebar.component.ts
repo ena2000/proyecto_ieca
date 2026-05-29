@@ -10,8 +10,7 @@ import {
 import { Subject, combineLatest } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { AuthService } from '../../core/services/auth.service';
-import { IngresosService } from '../../services/ingresos.service';
-import { GastosService } from '../../services/gastos.service';
+import { NotificacionesService } from '../../core/services/notificaciones.service';
 
 export interface MenuItem {
   label: string;
@@ -54,16 +53,15 @@ export class SlidebarComponent implements OnInit, OnDestroy {
   menuPrincipal: MenuItem[] = [];
   menuSistema: MenuItem[] = [];
 
-  private ingresosCount = 0;
-  private gastosCount   = 0;
+  private ingresosNoLeidas = 0;
+  private gastosNoLeidas   = 0;
   private destroy$ = new Subject<void>();
 
   constructor(
     private readonly navCtrl: NavController,
     private readonly router: Router,
     private readonly authService: AuthService,
-    private readonly ingresosService: IngresosService,
-    private readonly gastosService: GastosService
+    private readonly notificacionesService: NotificacionesService
   ) {
     addIcons({
       'grid-outline': gridOutline,
@@ -103,14 +101,14 @@ export class SlidebarComponent implements OnInit, OnDestroy {
     this.actualizarMenusPorRol();
 
     combineLatest([
-      this.ingresosService.ingresos$,
-      this.gastosService.gastos$,
+      this.notificacionesService.lista$,
       this.authService.session$
     ])
       .pipe(takeUntil(this.destroy$))
-      .subscribe(([ingresos, gastos]) => {
-        this.ingresosCount = ingresos.length;
-        this.gastosCount   = gastos.length;
+      .subscribe(() => {
+        const uid = this.authService.getSession()?.id ?? '';
+        this.ingresosNoLeidas = this.notificacionesService.getNoLeidasCountPorTipo(uid, 'ingreso');
+        this.gastosNoLeidas   = this.notificacionesService.getNoLeidasCountPorTipo(uid, 'gasto');
         this.actualizarMenusPorRol();
       });
   }
@@ -122,7 +120,7 @@ export class SlidebarComponent implements OnInit, OnDestroy {
     this.actualizarBadgesFinanzas();
   }
 
-  /** Contador en menú solo para administrador y contable (no líder/co-líder). */
+  /** Badges de notificaciones no leídas (admin y contable). */
   private debeMostrarBadgesFinanzas(): boolean {
     return this.authService.isAdministrador() || this.authService.isContable();
   }
@@ -132,11 +130,11 @@ export class SlidebarComponent implements OnInit, OnDestroy {
 
     this.menuPrincipal = this.menuPrincipal.map(item => {
       if (item.route === '/ingresos') {
-        const badge = mostrar && this.ingresosCount > 0 ? this.ingresosCount : undefined;
+        const badge = mostrar && this.ingresosNoLeidas > 0 ? this.ingresosNoLeidas : undefined;
         return { ...item, badge };
       }
       if (item.route === '/gastos') {
-        const badge = mostrar && this.gastosCount > 0 ? this.gastosCount : undefined;
+        const badge = mostrar && this.gastosNoLeidas > 0 ? this.gastosNoLeidas : undefined;
         return { ...item, badge };
       }
       return { ...item, badge: undefined };

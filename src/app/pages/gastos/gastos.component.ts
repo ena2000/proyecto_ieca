@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, ViewChild, ElementRef } from '@angular/core';
 import { ViewWillEnter } from '@ionic/angular';
 import { CommonModule, registerLocaleData } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -6,8 +6,8 @@ import localeEs from '@angular/common/locales/es';
 
 import {
   IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent,
-  IonIcon, IonItem, IonLabel, IonDatetime, IonInput, IonButton,
-  IonSearchbar, ToastController, IonPopover, IonBadge, IonGrid, IonRow, IonCol, IonSelect, IonSelectOption
+  IonIcon, IonItem, IonLabel, IonInput, IonButton,
+  IonSearchbar, ToastController, IonBadge, IonGrid, IonRow, IonCol, IonSelect, IonSelectOption
 } from '@ionic/angular/standalone';
 
 import { AlertController, LoadingController } from '@ionic/angular';
@@ -25,6 +25,7 @@ import { takeUntil } from 'rxjs/operators';
 import { TablaGeneralComponent, TableColumn } from 'src/app/components/tabla-general/tabla-general.component';
 import { NotificacionesBellComponent } from 'src/app/components/notificaciones-bell/notificaciones-bell.component';
 import { formatearISOaDDMMYYYY } from '../../shared/utils/date.util';
+import { abrirSelectorFechaNativo, isoToDateInputValue } from '../../shared/utils/date-picker.util';
 import {
   procesarComprobante,
   esComprobantePdf
@@ -60,11 +61,9 @@ registerLocaleData(localeEs);
     IonIcon,
     IonItem,
     IonLabel,
-    IonDatetime,
     IonInput,
     IonButton,
     IonSearchbar,
-    IonPopover,
     IonBadge,
     IonGrid,
     IonRow,
@@ -77,6 +76,12 @@ registerLocaleData(localeEs);
   providers: [AlertController, ToastController, LoadingController]
 })
 export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
+
+  readonly isoToDateInputValue = isoToDateInputValue;
+
+  @ViewChild('dateInputForm') dateInputForm?: ElementRef<HTMLInputElement>;
+  @ViewChild('dateInputDesde') dateInputDesde?: ElementRef<HTMLInputElement>;
+  @ViewChild('dateInputHasta') dateInputHasta?: ElementRef<HTMLInputElement>;
 
   fechaManualForm: string = '';
 
@@ -242,12 +247,34 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
     }
   }
 
-  onFechaPickerChange(event: any, popover: IonPopover) {
-    const fechaIso = event.detail.value;
-    if (fechaIso) {
-      this.nuevoGasto.fecha = fechaIso;
-      this.fechaManualForm  = formatearISOaDDMMYYYY(fechaIso);
-      popover.dismiss();
+  abrirSelectorFecha(tipo: 'form' | 'desde' | 'hasta'): void {
+    const input =
+      tipo === 'form'
+        ? this.dateInputForm?.nativeElement
+        : tipo === 'desde'
+          ? this.dateInputDesde?.nativeElement
+          : this.dateInputHasta?.nativeElement;
+    abrirSelectorFechaNativo(input);
+  }
+
+  onNativeDateChange(value: string, tipo: 'form' | 'desde' | 'hasta'): void {
+    const yyyyMMdd = String(value || '').trim();
+    if (!yyyyMMdd) return;
+    const iso = new Date(`${yyyyMMdd}T00:00:00`).toISOString();
+
+    if (tipo === 'form') {
+      this.nuevoGasto.fecha = iso;
+      this.fechaManualForm = formatearISOaDDMMYYYY(iso);
+      return;
+    }
+
+    const formateada = formatearISOaDDMMYYYY(iso);
+    if (tipo === 'desde') {
+      this.filtroFechaInicio = iso;
+      this.fechaManualDesde = formateada;
+    } else {
+      this.filtroFechaFin = iso;
+      this.fechaManualHasta = formateada;
     }
   }
 
@@ -273,21 +300,6 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
           this.filtroFechaFin = iso;
         }
       }
-    }
-  }
-
-  onPickerDateChange(event: any, tipo: 'desde' | 'hasta', popover: IonPopover) {
-    const fechaIso = event.detail.value;
-    if (fechaIso) {
-      const formateada = formatearISOaDDMMYYYY(fechaIso);
-      if (tipo === 'desde') {
-        this.filtroFechaInicio = fechaIso;
-        this.fechaManualDesde  = formateada;
-      } else {
-        this.filtroFechaFin   = fechaIso;
-        this.fechaManualHasta = formateada;
-      }
-      popover.dismiss();
     }
   }
 

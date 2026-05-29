@@ -58,6 +58,11 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
     { titulo: 'Reportes',    descripcion: 'Balances y estados financieros',icono: 'stats-chart-outline',   ruta: '/reportes',    color: 'orange' },
   ];
 
+  // Filtros de auditoría (para descarga CSV)
+  auditTipo: 'todos' | 'ingresos' | 'gastos' = 'todos';
+  auditDesde = '';
+  auditHasta = '';
+
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -157,6 +162,19 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
       this.mostrarToast('Respaldo exportado exitosamente', 'success');
     } catch {
       this.mostrarToast('No se pudo generar el respaldo', 'danger');
+    }
+  }
+
+  async descargarAuditoria() {
+    try {
+      await this.administracionService.descargarAuditoriaCsv({
+        tipo: this.auditTipo,
+        desde: this.auditDesde || undefined,
+        hasta: this.auditHasta || undefined
+      });
+      this.mostrarToast('Auditoría descargada', 'success');
+    } catch {
+      this.mostrarToast('No se pudo descargar la auditoría', 'danger');
     }
   }
 

@@ -1,4 +1,4 @@
-import { Component, HostBinding, OnDestroy, OnInit } from '@angular/core';
+import { Component, HostBinding, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   IonButton, IonButtons, IonIcon, IonPopover, IonContent,
@@ -37,6 +37,8 @@ import { Notificacion } from '../../core/models/notificacion.model';
   styleUrls: ['./notificaciones-bell.component.scss']
 })
 export class NotificacionesBellComponent implements OnInit, OnDestroy {
+
+  @ViewChild('notifPopover') popoverRef?: IonPopover;
 
   @HostBinding('class.ieca-notificaciones-bell-host--hidden')
   oculto = true;
@@ -90,6 +92,7 @@ export class NotificacionesBellComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    void this.popoverRef?.dismiss();
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -106,18 +109,47 @@ export class NotificacionesBellComponent implements OnInit, OnDestroy {
     return 'lock-closed-outline';
   }
 
-  async abrirNotificacion(n: Notificacion, popover: IonPopover): Promise<void> {
+  /** Abre/cierra el popover sin depender de trigger HTML (evita fallos al reabrir). */
+  async togglePopover(ev: Event): Promise<void> {
+    ev.stopPropagation();
+    const popover = this.popoverRef;
+    if (!popover) return;
+
+    if (this.popoverAbierto) {
+      await popover.dismiss();
+      return;
+    }
+
+    popover.event = ev;
+    await popover.present();
+  }
+
+  onPopoverDismiss(): void {
+    this.popoverAbierto = false;
+  }
+
+  onPopoverPresent(): void {
+    this.popoverAbierto = true;
+    this.actualizarLista();
+  }
+
+  async abrirNotificacion(n: Notificacion, ev: Event): Promise<void> {
+    ev.stopPropagation();
     const uid = this.authService.getSession()?.id;
     if (uid) {
       this.notificacionesService.marcarLeida(n.id, uid);
     }
-    await popover.dismiss();
+
+    this.popoverAbierto = false;
+    await this.popoverRef?.dismiss();
+
     if (n.ruta) {
       await this.navCtrl.navigateRoot(n.ruta, { animated: false });
     }
   }
 
-  marcarTodasLeidas(): void {
+  marcarTodasLeidas(ev: Event): void {
+    ev.stopPropagation();
     const uid = this.authService.getSession()?.id;
     if (uid) {
       this.notificacionesService.marcarTodasLeidas(uid);

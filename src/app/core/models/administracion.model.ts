@@ -27,5 +27,6 @@ export interface BackupIeca {
   gastos: unknown[];
   ministerios: unknown[];
   usuarios: unknown[];
+  notificaciones?: unknown[];
   ultimoCierre: string | null;
 }

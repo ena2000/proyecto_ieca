@@ -19,17 +19,20 @@
 
         <form [formGroup]="loginForm" (ngSubmit)="onLogin()" class="form-content">
           
-          <label class="input-label">Usuario</label>
-          <ion-item lines="none" class="modern-input">
+          <label class="input-label" [class.text-danger]="usuarioError">Usuario</label>
+          <ion-item lines="none" class="modern-input" [class.input-error]="usuarioError">
             <ion-input 
               formControlName="usuario" 
               type="text" 
               placeholder="Ingresa tu usuario">
             </ion-input>
           </ion-item>
+          @if (usuarioError) {
+            <small class="field-error">{{ usuarioError }}</small>
+          }
 
-          <label class="input-label">Contraseña</label>
-          <ion-item lines="none" class="modern-input password-item">
+          <label class="input-label" [class.text-danger]="passwordError">Contraseña</label>
+          <ion-item lines="none" class="modern-input password-item" [class.input-error]="passwordError">
             <ion-input 
               formControlName="password" 
               [type]="showPassword ? 'text' : 'password'" 
@@ -49,12 +52,15 @@
               </ion-icon>
             </ion-button>
           </ion-item>
+          @if (passwordError) {
+            <small class="field-error">{{ passwordError }}</small>
+          }
 
           <div class="forgot-container">
             <p class="forgot-text">¿Olvidaste tu contraseña?</p>
           </div>
 
-          <ion-button expand="block" type="submit" class="submit-btn" [disabled]="loginForm.invalid">
+          <ion-button expand="block" type="submit" class="submit-btn">
             Iniciar Sesión
             <ion-icon slot="end" name="arrow-forward-circle"></ion-icon>
           </ion-button>

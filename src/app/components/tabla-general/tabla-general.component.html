@@ -17,7 +17,7 @@
           </th>
 
           <th
-            *ngIf="actions.edit || actions.delete"
+            *ngIf="actions.edit || actions.delete || actions.approve || actions.reject"
             class="actions-header"
             style="text-align: center;">
 
@@ -38,7 +38,7 @@
             <div class="skeleton skeleton-text"></div>
           </td>
 
-          <td *ngIf="actions.edit || actions.delete">
+          <td *ngIf="actions.edit || actions.delete || actions.approve || actions.reject">
             <div class="skeleton skeleton-btn"></div>
           </td>
 
@@ -60,23 +60,28 @@
           ====================================================== -->
           <td *ngFor="let col of columns">
 
-            <!-- ================= IMAGE ================= -->
-            <ng-container *ngIf="col.type === 'image'">
+            <!-- ================= IMAGE / EVIDENCE ================= -->
+            <ng-container *ngIf="col.type === 'image' || col.type === 'evidence'">
 
               <div
                 class="table-img-container"
                 [class.clickable-img]="row[col.field]"
-                (click)="row[col.field] && openLightbox(row[col.field])"
+                (click)="row[col.field] && openEvidence(row[col.field])"
                 role="button"
                 tabindex="0"
-                [attr.aria-label]="'Ver imagen'">
+                [attr.aria-label]="esPdf(row[col.field]) ? 'Ver PDF' : 'Ver imagen'">
 
                 <img
-                  *ngIf="row[col.field]"
+                  *ngIf="row[col.field] && !esPdf(row[col.field])"
                   [src]="row[col.field]"
                   class="table-thumbnail"
                   loading="lazy"
                   alt="imagen del registro">
+
+                <div class="pdf-thumb" *ngIf="row[col.field] && esPdf(row[col.field])">
+                  <ion-icon name="document-text-outline"></ion-icon>
+                  <span>PDF</span>
+                </div>
 
                 <div class="img-hover-overlay" *ngIf="row[col.field]">
                   <ion-icon name="search-outline"></ion-icon>
@@ -95,7 +100,7 @@
 
             <!-- ================= BADGE ================= -->
             <ng-container *ngIf="col.type === 'badge'">
-              <span class="badge">
+              <span class="badge" [ngClass]="row.estado ? 'badge--' + row.estado : ''">
                 {{ row[col.field] }}
               </span>
             </ng-container>
@@ -122,13 +127,31 @@
           <!-- =====================================================
                ACCIONES
           ====================================================== -->
-          <td *ngIf="actions.edit || actions.delete">
+          <td *ngIf="actions.edit || actions.delete || actions.approve || actions.reject">
 
             <div class="action-buttons">
 
+              <button
+                *ngIf="showApproveFor(row)"
+                class="btn-approve"
+                (click)="approve(row)"
+                title="Aprobar"
+                aria-label="Aprobar gasto">
+                <ion-icon name="checkmark-circle-outline"></ion-icon>
+              </button>
+
+              <button
+                *ngIf="showRejectFor(row)"
+                class="btn-reject"
+                (click)="reject(row)"
+                title="Rechazar"
+                aria-label="Rechazar gasto">
+                <ion-icon name="close-circle-outline"></ion-icon>
+              </button>
+
               <!-- ================= EDIT ================= -->
               <button
-                *ngIf="actions.edit"
+                *ngIf="showEditFor(row)"
                 class="btn-edit"
                 (click)="edit(row)"
                 title="Editar"
@@ -140,7 +163,7 @@
 
               <!-- ================= DELETE ================= -->
               <button
-                *ngIf="actions.delete"
+                *ngIf="showDeleteFor(row)"
                 class="btn-delete"
                 [disabled]="isDeleting(row)"
                 (click)="delete(row)"
@@ -172,7 +195,7 @@
         ====================================================== -->
         <tr *ngIf="data.length === 0">
 
-          <td [attr.colspan]="columns.length + (actions.edit || actions.delete ? 1 : 0)">
+          <td [attr.colspan]="columns.length + (actions.edit || actions.delete || actions.approve || actions.reject ? 1 : 0)">
 
             <div class="empty-state">
 
@@ -245,7 +268,7 @@
 ====================================================== -->
 <div
   class="lightbox-overlay"
-  *ngIf="selectedImage"
+  *ngIf="selectedImage || selectedPdf"
   (click)="closeLightbox()"
   role="dialog"
   aria-modal="true">
@@ -253,7 +276,7 @@
   <button
     class="close-lightbox"
     (click)="closeLightbox()"
-    aria-label="Cerrar imagen">
+    aria-label="Cerrar visor">
 
     <ion-icon name="close-outline"></ion-icon>
 
@@ -261,14 +284,23 @@
 
   <div
     class="lightbox-content"
+    [class.lightbox-content--pdf]="selectedPdf"
     (click)="$event.stopPropagation()">
 
     <img
+      *ngIf="selectedImage"
       [src]="selectedImage"
       alt="imagen del registro">
 
+    <iframe
+      *ngIf="selectedPdf"
+      [src]="selectedPdf"
+      title="Comprobante PDF"
+      class="lightbox-pdf">
+    </iframe>
+
     <div class="lightbox-caption">
-      Evidencia del registro
+      {{ selectedPdf ? 'Comprobante PDF' : 'Evidencia del registro' }}
     </div>
 
   </div>

@@ -199,6 +199,36 @@ export class AdministracionService {
     URL.revokeObjectURL(url);
   }
 
+  async descargarAuditoriaCsv(filters?: {
+    tipo?: 'todos' | 'ingresos' | 'gastos';
+    desde?: string; // YYYY-MM-DD
+    hasta?: string; // YYYY-MM-DD
+  }): Promise<void> {
+    const stamp = new Date().toISOString().substring(0, 10);
+    const filename = `auditoria_ieca_${stamp}.csv`;
+
+    if (environment.useLocalFallback) {
+      const csv = this.generarAuditoriaCsvLocal(filters);
+      this.downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), filename);
+      return;
+    }
+
+    const params: Record<string, string> = {};
+    const tipo = filters?.tipo && filters.tipo !== 'todos' ? filters.tipo : undefined;
+    if (tipo) params['tipo'] = tipo;
+
+    const toDesde = (d?: string) => (d ? `${d}T00:00:00` : undefined);
+    const toHasta = (d?: string) => (d ? `${d}T23:59:59.999` : undefined);
+
+    const desde = toDesde(filters?.desde);
+    const hasta = toHasta(filters?.hasta);
+    if (desde) params['desde'] = desde;
+    if (hasta) params['hasta'] = hasta;
+
+    const blob = await firstValueFrom(this.api.getBlob(API.admin.auditoria, params));
+    this.downloadBlob(blob, filename);
+  }
+
   async restaurarBackup(backup: BackupIeca): Promise<void> {
     if (environment.useLocalFallback) {
       this.restaurarBackupLocal(backup);
@@ -231,6 +261,90 @@ export class AdministracionService {
       usuarios:     this.dataService.getUsuariosActuales(),
       ultimoCierre: localStorage.getItem(ULTIMO_CIERRE_KEY)
     };
+  }
+
+  private generarAuditoriaCsvLocal(filters?: {
+    tipo?: 'todos' | 'ingresos' | 'gastos';
+    desde?: string;
+    hasta?: string;
+  }): string {
+    const tipo = filters?.tipo ?? 'todos';
+
+    const desde = filters?.desde ? new Date(`${filters.desde}T00:00:00`) : null;
+    const hasta = filters?.hasta ? new Date(`${filters.hasta}T23:59:59.999`) : null;
+
+    const inRange = (iso?: string) => {
+      if (!iso) return true;
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return true;
+      if (desde && d < desde) return false;
+      if (hasta && d > hasta) return false;
+      return true;
+    };
+
+    const ingresos =
+      tipo === 'todos' || tipo === 'ingresos'
+        ? this.dataService.getIngresosActuales()
+            .filter(i => inRange(i.fecha))
+            .map(i => ({ ...i, tipo: 'ingreso' }))
+        : [];
+
+    const gastos =
+      tipo === 'todos' || tipo === 'gastos'
+        ? this.dataService.getGastosActuales()
+            .filter(g => inRange(g.fecha))
+            .map(g => ({ ...g, tipo: 'gasto' }))
+        : [];
+
+    const rows = [...ingresos, ...gastos].sort((a: any, b: any) => {
+      const da = a.fecha ? new Date(a.fecha).getTime() : 0;
+      const db = b.fecha ? new Date(b.fecha).getTime() : 0;
+      return db - da;
+    });
+
+    const headers = [
+      'tipo',
+      'id',
+      'fecha',
+      'fechaFormateada',
+      'ministerio',
+      'ministerioId',
+      'descripcion',
+      'monto',
+      'estado',
+      'auditCreadoPorId',
+      'auditCreadoPorNombre',
+      'auditCreadoEn',
+      'auditActualizadoPorId',
+      'auditActualizadoPorNombre',
+      'auditActualizadoEn',
+      'aprobadoPor',
+      'fechaAprobacion',
+      'rechazadoPor',
+      'fechaRechazo',
+      'motivoRechazo'
+    ];
+
+    const escape = (v: any) => {
+      if (v == null) return '';
+      const s = String(v);
+      return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+
+    const lines = [headers.map(escape).join(',')];
+    for (const r of rows as any[]) {
+      lines.push(headers.map(h => escape(r[h])).join(','));
+    }
+    return lines.join('\r\n');
+  }
+
+  private downloadBlob(blob: Blob, filename: string): void {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   private restaurarBackupLocal(backup: BackupIeca): void {

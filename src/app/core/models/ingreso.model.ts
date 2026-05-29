@@ -1,6 +1,8 @@
+import { AuditoriaMovimiento } from './auditoria.model';
+
 export type IngresoEstado = 'pendiente' | 'aprobado' | 'rechazado';
 
-export interface Ingreso {
+export interface Ingreso extends AuditoriaMovimiento {
   id: number;
   fecha: string;
   descripcion: string;

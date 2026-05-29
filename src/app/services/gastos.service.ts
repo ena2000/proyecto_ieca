@@ -7,6 +7,8 @@ import { ApiService } from '../core/services/api.service';
 import { API } from '../core/constants/api.constants';
 import { environment } from '../../environments/environment';
 import { estadoGasto } from '../shared/utils/gasto.util';
+import { stampAuditoriaLocal, stampAuditoriaActualizacionLocal } from '../shared/utils/audit.util';
+import { AuthService } from '../core/services/auth.service';
 
 @Injectable({ providedIn: 'root' })
 export class GastosService {
@@ -17,7 +19,8 @@ export class GastosService {
 
   constructor(
     private notificacionesService: NotificacionesService,
-    private api: ApiService
+    private api: ApiService,
+    private authService: AuthService
   ) {
     this.reload();
   }
@@ -113,7 +116,8 @@ export class GastosService {
   }
 
   private createLocal(gasto: Omit<Gasto, 'id'>, fechaFormateada: string): Gasto {
-    const nuevo: Gasto = { ...gasto, id: this.nextId(), fechaFormateada };
+    const audit = stampAuditoriaLocal(this.authService.getSession());
+    const nuevo: Gasto = { ...gasto, id: this.nextId(), fechaFormateada, ...audit };
     this.persist([nuevo, ...this.getAll()]);
     this.notifyCreate(nuevo);
     return nuevo;
@@ -123,12 +127,14 @@ export class GastosService {
     const current = this.getAll().find(g => g.id === id);
     const estado: GastoEstado =
       current && estadoGasto(current) !== 'aprobado' ? 'pendiente' : (gasto.estado ?? 'pendiente');
+    const audit = stampAuditoriaActualizacionLocal(current ?? {}, this.authService.getSession());
     const actualizado: Gasto = {
       ...gasto,
       id,
       fechaFormateada,
       estado: gasto.estado ?? estado,
-      motivoRechazo: estado === 'pendiente' ? undefined : gasto.motivoRechazo
+      motivoRechazo: estado === 'pendiente' ? undefined : gasto.motivoRechazo,
+      ...audit
     };
     this.persist(this.getAll().map(g => (g.id === id ? actualizado : g)));
     return actualizado;
@@ -137,7 +143,8 @@ export class GastosService {
   private aprobarLocal(id: number): Gasto {
     const lista = this.getAll().map(g => {
       if (g.id !== id) return g;
-      return { ...g, estado: 'aprobado' as GastoEstado, motivoRechazo: undefined };
+      const audit = stampAuditoriaActualizacionLocal(g, this.authService.getSession());
+      return { ...g, estado: 'aprobado' as GastoEstado, motivoRechazo: undefined, ...audit };
     });
     this.persist(lista);
     const updated = lista.find(g => g.id === id)!;
@@ -153,10 +160,12 @@ export class GastosService {
   private rechazarLocal(id: number, motivo?: string): Gasto {
     const lista = this.getAll().map(g => {
       if (g.id !== id) return g;
+      const audit = stampAuditoriaActualizacionLocal(g, this.authService.getSession());
       return {
         ...g,
         estado: 'rechazado' as GastoEstado,
-        motivoRechazo: motivo?.trim() || 'Sin motivo indicado'
+        motivoRechazo: motivo?.trim() || 'Sin motivo indicado',
+        ...audit
       };
     });
     this.persist(lista);

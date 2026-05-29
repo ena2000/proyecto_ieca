@@ -96,6 +96,10 @@
   font-weight: 800;
   background: #e2e8f0;
   color: #475569;
+
+  &--pendiente { background: #fef3c7; color: #b45309; }
+  &--aprobado  { background: #d1fae5; color: #047857; }
+  &--rechazado { background: #fee2e2; color: #b91c1c; }
 }
 
 /* =========================================================
@@ -174,6 +178,55 @@
   &:hover:not(:disabled) {
     background: #dc2626;
   }
+}
+
+.btn-approve {
+  background: #10b981;
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+
+  &:hover:not(:disabled) {
+    background: #059669;
+  }
+}
+
+.btn-reject {
+  background: #f59e0b;
+  box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);
+
+  &:hover:not(:disabled) {
+    background: #d97706;
+  }
+}
+
+.pdf-thumb {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: #fee2e2;
+  border-radius: 8px;
+  color: #b91c1c;
+  font-size: 0.55rem;
+  font-weight: 800;
+
+  ion-icon {
+    font-size: 1.25rem;
+  }
+}
+
+.lightbox-content--pdf {
+  width: min(92vw, 900px);
+  height: min(85vh, 720px);
+}
+
+.lightbox-pdf {
+  width: 100%;
+  height: calc(100% - 40px);
+  border: none;
+  border-radius: 8px;
+  background: #fff;
 }
 
 /* =========================================================

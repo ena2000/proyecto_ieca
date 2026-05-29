@@ -1,20 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonicModule, LoadingController, ToastController } from '@ionic/angular';
+import { IonicModule, LoadingController, ToastController, NavController } from '@ionic/angular';
 import { Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-
-interface LoginResponse {
-  success: boolean;
-  token?: string;
-  user?: {
-    id: string;
-    usuario: string;
-    email?: string;
-    rol?: string;
-  };
-  mensaje?: string;
-}
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -27,18 +16,15 @@ export class LoginComponent implements OnInit {
   loginForm: FormGroup;
   showPassword = false;
   isLoading = false;
-
-  // Datos quemados para prueba
-  private readonly HARDCODED_USERS = [
-    { usuario: 'admin', password: '123456', id: '1', rol: 'admin', email: 'admin@ieca.com' },
-    { usuario: 'usuario', password: 'password123', id: '2', rol: 'user', email: 'user@ieca.com' }
-  ];
+  submitted = false;
 
   constructor(
     private fb: FormBuilder,
     private loadingCtrl: LoadingController,
     private toastCtrl: ToastController,
-    private router: Router
+    private router: Router,
+    private navCtrl: NavController,
+    private authService: AuthService
   ) {
     this.loginForm = this.fb.group({
       usuario: ['', [Validators.required, Validators.minLength(4)]],
@@ -46,11 +32,16 @@ export class LoginComponent implements OnInit {
     });
   }
 
-  ngOnInit() {}
+  ngOnInit() {
+    if (this.authService.isAuthenticated()) {
+      this.navCtrl.navigateRoot(this.authService.getRutaPorDefecto(), { animated: false });
+    }
+  }
 
   async onLogin() {
+    this.submitted = true;
     if (!this.loginForm.valid) {
-      this.presentToast('Por favor, completa los campos correctamente', 'warning');
+      this.loginForm.markAllAsTouched();
       return;
     }
 
@@ -62,27 +53,19 @@ export class LoginComponent implements OnInit {
     await loading.present();
 
     try {
-      // Simulación de llamada al backend
-      const response = await this.authenticate(
+      const result = await this.authService.login(
         this.loginForm.value.usuario,
         this.loginForm.value.password
       );
 
       await loading.dismiss();
 
-      if (response.success) {
-        // Guardar datos en localStorage para usar después
-        if (response.token) {
-          localStorage.setItem('auth_token', response.token);
-        }
-        if (response.user) {
-          localStorage.setItem('user_data', JSON.stringify(response.user));
-        }
-
-        this.presentToast(`¡Bienvenido ${response.user?.usuario}!`, 'success');
-        this.router.navigate(['/dashboard']);
+      if (result.success) {
+        const user = this.authService.getSession();
+        this.presentToast(`¡Bienvenido ${user?.usuario}!`, 'success');
+        await this.navCtrl.navigateRoot(this.authService.getRutaPorDefecto(), { animated: false });
       } else {
-        this.presentToast(response.mensaje || 'Usuario o contraseña incorrectos', 'danger');
+        this.presentToast(result.mensaje || 'Usuario o contraseña incorrectos', 'danger');
       }
     } catch (error) {
       await loading.dismiss();
@@ -91,35 +74,6 @@ export class LoginComponent implements OnInit {
     } finally {
       this.isLoading = false;
     }
-  }
-
-  private authenticate(usuario: string, password: string): Promise<LoginResponse> {
-    return new Promise((resolve) => {
-      // Simular latencia de red (1.5 segundos)
-      setTimeout(() => {
-        const user = this.HARDCODED_USERS.find(
-          u => u.usuario === usuario && u.password === password
-        );
-
-        if (user) {
-          resolve({
-            success: true,
-            token: `token_${user.id}_${Date.now()}`,
-            user: {
-              id: user.id,
-              usuario: user.usuario,
-              email: user.email,
-              rol: user.rol
-            }
-          });
-        } else {
-          resolve({
-            success: false,
-            mensaje: 'Usuario o contraseña incorrectos'
-          });
-        }
-      }, 1500);
-    });
   }
 
   async presentToast(msj: string, color: string) {
@@ -134,5 +88,21 @@ export class LoginComponent implements OnInit {
 
   togglePassword() {
     this.showPassword = !this.showPassword;
+  }
+
+  get usuarioError(): string | null {
+    const c = this.loginForm.get('usuario');
+    if (!c || (!this.submitted && !c.touched)) return null;
+    if (c.hasError('required')) return 'El usuario es obligatorio.';
+    if (c.hasError('minlength')) return 'Mínimo 4 caracteres.';
+    return null;
+  }
+
+  get passwordError(): string | null {
+    const c = this.loginForm.get('password');
+    if (!c || (!this.submitted && !c.touched)) return null;
+    if (c.hasError('required')) return 'La contraseña es obligatoria.';
+    if (c.hasError('minlength')) return 'Mínimo 6 caracteres.';
+    return null;
   }
 }

@@ -1,17 +1,8 @@
-<ion-app>
+<ion-app [class.ieca-has-sidebar]="mostrarMenu">
   @if (mostrarMenu) {
-    <!-- El 'when="lg"' significa que el menú se queda fijo en pantallas grandes -->
-    <ion-split-pane when="lg" contentId="main-content">
-      
-      <app-slidebar></app-slidebar>
-
-      <!-- Usamos ion-router-outlet directamente con el ID -->
-      <ion-router-outlet></ion-router-outlet>
-
-    </ion-split-pane>
-  } 
-  @else {
-    <!-- Pantalla completa para Login -->
-    <ion-router-outlet></ion-router-outlet>
+    <app-slidebar></app-slidebar>
   }
+  <div class="app-main">
+    <ion-router-outlet></ion-router-outlet>
+  </div>
 </ion-app>
