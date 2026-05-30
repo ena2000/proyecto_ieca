@@ -9,7 +9,7 @@
 </ion-header>
 
 <ion-content class="ion-padding gray-bg">
-  <div class="container-wrapper">
+  <div class="container-wrapper page-dashboard">
 
     <!-- Welcome -->
     <div class="welcome-header">
@@ -17,45 +17,85 @@
       <h1>{{ tituloAlcance }}</h1>
     </div>
 
-    <!-- KPI Cards -->
+    <!-- KPI Cards (sin repetir ingresos/gastos del mes; eso va en la tarjeta lateral) -->
     <div class="kpi-grid">
-
-      <div class="kpi-card kpi-balance">
-        <div class="kpi-icon">💼</div>
-        <div class="kpi-info">
-          <span class="kpi-label">Balance General</span>
-          <span class="kpi-value">$ {{ kpis.balance | number:'1.2-2' }}</span>
-          <span class="kpi-trend neutral">↑ Disponible</span>
+      @if (esVistaMinisterio) {
+        <div class="kpi-card kpi-trans">
+          <div class="kpi-icon">📝</div>
+          <div class="kpi-info">
+            <span class="kpi-label">Registros del mes</span>
+            <span class="kpi-value">{{ kpis.transacciones }}</span>
+            <span class="kpi-trend neutral">Ingresos y gastos</span>
+          </div>
         </div>
-      </div>
 
-      <div class="kpi-card kpi-income">
-        <div class="kpi-icon">💵</div>
-        <div class="kpi-info">
-          <span class="kpi-label">Ingresos del Mes</span>
-          <span class="kpi-value">$ {{ kpis.ingresos | number:'1.2-2' }}</span>
-          <span class="kpi-trend pos">↑ {{ kpis.tendenciaIngresos }} vs mes anterior</span>
+        <div class="kpi-card kpi-pending" [class.kpi-pending--alert]="pendientes.total > 0">
+          <div class="kpi-icon">⏳</div>
+          <div class="kpi-info">
+            <span class="kpi-label">En espera</span>
+            <span class="kpi-value">{{ pendientes.total }}</span>
+            <span class="kpi-trend neutral">Por aprobar</span>
+          </div>
         </div>
-      </div>
 
-      <div class="kpi-card kpi-expense">
-        <div class="kpi-icon">🧾</div>
-        <div class="kpi-info">
-          <span class="kpi-label">Gastos del Mes</span>
-          <span class="kpi-value">$ {{ kpis.gastosMes | number:'1.2-2' }}</span>
-          <span class="kpi-trend neg">↓ {{ kpis.tendenciaGastos }} vs mes anterior</span>
+        <div class="kpi-card kpi-chart-i">
+          <div class="kpi-icon">📊</div>
+          <div class="kpi-info">
+            <span class="kpi-label">Ingresos 6 meses</span>
+            <span class="kpi-value">$ {{ chartTotales.ingresos | number:'1.0-0' }}</span>
+            <span class="kpi-trend neutral">Acumulado</span>
+          </div>
         </div>
-      </div>
 
-      <div class="kpi-card kpi-ministry">
-        <div class="kpi-icon">🏛️</div>
-        <div class="kpi-info">
-          <span class="kpi-label">Ministerios Activos</span>
-          <span class="kpi-value">{{ kpis.ministeriosActivos }}</span>
-          <span class="kpi-trend neutral">👥 Con actividad</span>
+        <div class="kpi-card kpi-chart-g">
+          <div class="kpi-icon">📉</div>
+          <div class="kpi-info">
+            <span class="kpi-label">Gastos 6 meses</span>
+            <span class="kpi-value">$ {{ chartTotales.gastos | number:'1.0-0' }}</span>
+            <span class="kpi-trend neutral">Acumulado</span>
+          </div>
         </div>
-      </div>
+      } @else {
+        <div class="kpi-card kpi-trend-i">
+          <div class="kpi-icon">📈</div>
+          <div class="kpi-info">
+            <span class="kpi-label">Ingresos vs mes ant.</span>
+            <span class="kpi-value" [class.pos]="tendenciaIngresosPositiva" [class.neg]="!tendenciaIngresosPositiva">
+              {{ tendenciaIngresosPositiva ? '↑' : '↓' }} {{ kpis.tendenciaIngresos }}
+            </span>
+            <span class="kpi-trend neutral">Tendencia mensual</span>
+          </div>
+        </div>
 
+        <div class="kpi-card kpi-trend-g">
+          <div class="kpi-icon">📉</div>
+          <div class="kpi-info">
+            <span class="kpi-label">Gastos vs mes ant.</span>
+            <span class="kpi-value" [class.neg]="tendenciaGastosPositiva" [class.pos]="!tendenciaGastosPositiva">
+              {{ tendenciaGastosPositiva ? '↑' : '↓' }} {{ kpis.tendenciaGastos }}
+            </span>
+            <span class="kpi-trend neutral">Tendencia mensual</span>
+          </div>
+        </div>
+
+        <div class="kpi-card kpi-trans">
+          <div class="kpi-icon">📝</div>
+          <div class="kpi-info">
+            <span class="kpi-label">Registros del mes</span>
+            <span class="kpi-value">{{ kpis.transacciones }}</span>
+            <span class="kpi-trend neutral">Ingresos y gastos</span>
+          </div>
+        </div>
+
+        <div class="kpi-card kpi-ministry">
+          <div class="kpi-icon">🏛️</div>
+          <div class="kpi-info">
+            <span class="kpi-label">Ministerios activos</span>
+            <span class="kpi-value">{{ kpis.ministeriosActivos }}</span>
+            <span class="kpi-trend neutral">Con actividad</span>
+          </div>
+        </div>
+      }
     </div>
 
     <!-- Main Grid -->
@@ -74,7 +114,7 @@
           </div>
         </div>
 
-        @if (chartTieneDatos) {
+        <div class="chart-panel" [class.is-hidden]="!chartTieneDatos">
           <div class="chart-summary">
             <div class="chart-stat">
               <span class="chart-stat-label">Total ingresos</span>
@@ -87,101 +127,148 @@
             </div>
           </div>
 
-          <div class="chart-wrap">
-            <div class="y-axis">
-              @for (tick of yAxisTicks; track tick) {
-                <span class="y-tick">{{ formatAxis(tick) }}</span>
-              }
-            </div>
-
-            <div class="chart-plot">
-              <div class="plot-area">
-                <div class="grid-lines" aria-hidden="true">
-                  @for (tick of yAxisTicks; track tick) {
-                    <div class="grid-line"></div>
-                  }
-                </div>
-
-                <div class="bar-chart">
-                @for (d of chartData; track d.mes; let i = $index) {
-                  <div class="bgroup" [style.--i]="i">
-                    <div class="bars">
-                      <div class="bar-shell bar-shell-i"
-                           [style.height.%]="barHeightPercent(d.ingresos)"
-                           [style.--delay]="(i * 70) + 'ms'">
-                        <div class="bar bar-i">
-                          <div class="bar-tooltip">
-                            <span class="tooltip-label">Ingresos</span>
-                            <span class="tooltip-val">{{ formatTooltip(d.ingresos) }}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="bar-shell bar-shell-g"
-                           [style.height.%]="barHeightPercent(d.gastos)"
-                           [style.--delay]="(i * 70 + 35) + 'ms'">
-                        <div class="bar bar-g">
-                          <div class="bar-tooltip">
-                            <span class="tooltip-label">Gastos</span>
-                            <span class="tooltip-val">{{ formatTooltip(d.gastos) }}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                }
-                </div>
-              </div>
-
-              <div class="x-axis">
-                @for (d of chartData; track d.mes) {
-                  <span class="blabel">{{ d.mes }}</span>
-                }
-              </div>
-            </div>
-          </div>
-        } @else {
-          <div class="chart-empty">
-            <div class="chart-empty-icon">📊</div>
-            <p class="chart-empty-title">Sin datos para mostrar</p>
-            <p class="chart-empty-sub">Registra ingresos y gastos para ver el comparativo mensual.</p>
-          </div>
-        }
-      </div>
-
-      <!-- Ministry distribution -->
-      <div class="card">
-        <div class="card-head">
-          <div>
-            <h3 class="card-title">Por Ministerio</h3>
-            <p class="card-sub">Distribución de ingresos</p>
+          <div class="chart-canvas-wrap">
+            <canvas #ingresosGastosChart aria-label="Gráfico comparativo de ingresos y gastos por mes"></canvas>
           </div>
         </div>
-        <div class="min-list">
-          @if (ministerios.length > 0) {
-            @for (m of ministerios; track m.nombre) {
-              <div class="min-item">
-                <div class="min-info">
-                  <span class="min-dot" [style.background]="m.color"></span>
-                  <span class="min-name">{{ m.nombre }}</span>
-                </div>
-                <div class="min-bar-w">
-                  <div class="min-bar" [style.width.%]="m.porcentaje" [style.background]="m.color"></div>
-                </div>
-                <span class="min-pct">{{ m.porcentaje }}%</span>
+
+        <div class="chart-empty" [class.is-hidden]="chartTieneDatos">
+          <div class="chart-empty-icon">📊</div>
+          <p class="chart-empty-title">Sin datos para mostrar</p>
+          <p class="chart-empty-sub">Registra ingresos y gastos para ver el comparativo mensual.</p>
+        </div>
+      </div>
+
+      <!-- Side summary (all roles) -->
+      <div class="card side-summary-card">
+        <div class="card-head">
+          <div>
+            <h3 class="card-title">{{ tituloTarjetaLateral }}</h3>
+            <p class="card-sub">{{ subtituloTarjetaLateral }}</p>
+          </div>
+        </div>
+
+        <div class="side-summary-body">
+          <!-- Mes actual: útil para admin, contable y líder -->
+          <div class="side-mes-block">
+            <p class="side-section-label">Este mes</p>
+            <div class="side-mes-row">
+              <span class="side-mes-label"><span class="ldot ldot-i"></span>Ingresos</span>
+              <span class="side-mes-val ingreso">$ {{ kpis.ingresos | number:'1.2-2' }}</span>
+            </div>
+            <div class="side-mes-row">
+              <span class="side-mes-label"><span class="ldot ldot-g"></span>Gastos</span>
+              <span class="side-mes-val gasto">$ {{ kpis.gastosMes | number:'1.2-2' }}</span>
+            </div>
+
+            <div class="side-ratio-bar" aria-hidden="true">
+              <div class="side-ratio-ing" [style.width.%]="proporcionIngresosMes"></div>
+              <div class="side-ratio-gas" [style.width.%]="proporcionGastosMes"></div>
+            </div>
+
+            <div class="side-mes-row side-mes-result">
+              <span class="side-mes-label">Resultado</span>
+              <span class="side-mes-val" [class.pos]="kpis.superavit >= 0" [class.neg]="kpis.superavit < 0">
+                $ {{ kpis.superavit | number:'1.2-2' }}
+              </span>
+            </div>
+          </div>
+
+          @if (esVistaMinisterio) {
+            <!-- Líder: comparativo vs mes anterior -->
+            <div class="side-trends">
+              <p class="side-section-label">Vs mes anterior</p>
+              <div class="side-trend-row">
+                <span>Ingresos</span>
+                <span [class.pos]="tendenciaIngresosPositiva" [class.neg]="!tendenciaIngresosPositiva">
+                  {{ tendenciaIngresosPositiva ? '↑' : '↓' }} {{ kpis.tendenciaIngresos }}
+                </span>
               </div>
-            }
+              <div class="side-trend-row">
+                <span>Gastos</span>
+                <span [class.neg]="tendenciaGastosPositiva" [class.pos]="!tendenciaGastosPositiva">
+                  {{ tendenciaGastosPositiva ? '↑' : '↓' }} {{ kpis.tendenciaGastos }}
+                </span>
+              </div>
+              <div class="side-trend-row">
+                <span>Registros del mes</span>
+                <span class="side-trend-neutral">{{ kpis.transacciones }}</span>
+              </div>
+            </div>
           } @else {
-            <p style="text-align: center; color: #999; padding: 20px;">
-              Sin datos aún. Ingresa datos en otras secciones.
-            </p>
+            <!-- Admin / contable: desglose de los ingresos del mes -->
+            <div class="side-min-block">
+              <p class="side-section-label">Desglose de ingresos del mes</p>
+              <div class="min-list">
+                @if (ministerios.length > 0) {
+                  @for (m of ministerios; track m.nombre) {
+                    <div class="min-entry">
+                      <div class="min-item">
+                        <div class="min-info">
+                          <span class="min-dot" [style.background]="m.color"></span>
+                          <span class="min-name">{{ m.nombre }}</span>
+                        </div>
+                        <div class="min-bar-w">
+                          <div class="min-bar" [style.width.%]="m.porcentaje" [style.background]="m.color"></div>
+                        </div>
+                        <span class="min-pct">{{ m.porcentaje }}%</span>
+                      </div>
+                      <div class="min-monto">$ {{ m.monto | number:'1.2-2' }}</div>
+                    </div>
+                  }
+                } @else {
+                  <p class="min-empty">Sin ingresos aprobados este mes.</p>
+                }
+              </div>
+            </div>
           }
+
+          <!-- Pendientes: distinto mensaje según rol -->
+          <div class="side-pending" [class.side-pending--alert]="pendientes.total > 0">
+            @if (pendientes.total > 0) {
+              <p class="side-pending-title">
+                {{ puedeAprobar ? 'Pendientes de aprobación' : 'En espera de aprobación' }}
+              </p>
+              <p class="side-pending-detail">
+                @if (pendientes.ingresos > 0 && pendientes.gastos > 0) {
+                  Toca cada tipo para revisar
+                } @else if (pendientes.ingresos > 0) {
+                  {{ pendientes.ingresos }} ingreso{{ pendientes.ingresos === 1 ? '' : 's' }} por revisar
+                } @else {
+                  {{ pendientes.gastos }} gasto{{ pendientes.gastos === 1 ? '' : 's' }} por revisar
+                }
+              </p>
+              <div class="side-pending-actions">
+                @if (pendientes.ingresos > 0) {
+                  <a
+                    class="side-pending-chip"
+                    routerLink="/ingresos"
+                    [queryParams]="{ pendientes: '1' }"
+                    routerDirection="root">
+                    {{ pendientes.ingresos }} ing.
+                  </a>
+                }
+                @if (pendientes.gastos > 0) {
+                  <a
+                    class="side-pending-chip"
+                    routerLink="/gastos"
+                    [queryParams]="{ pendientes: '1' }"
+                    routerDirection="root">
+                    {{ pendientes.gastos }} gast.
+                  </a>
+                }
+              </div>
+            } @else {
+              <p class="side-pending-ok">✓ Sin registros pendientes</p>
+            }
+          </div>
         </div>
       </div>
 
     </div>
 
     <!-- Bottom Grid -->
-    <div class="bottom-grid">
+    <div class="dashboard-bottom-grid">
 
       <!-- Recent movements -->
       <div class="card">
@@ -251,18 +338,13 @@
         </div>
         <div class="quick-stats">
           <div class="qs-row">
-            <span class="qs-label">Superávit del mes</span>
-            <span class="qs-val pos">$ {{ kpis.superavit | number:'1.2-2' }}</span>
-          </div>
-          <div class="qs-div"></div>
-          <div class="qs-row">
-            <span class="qs-label">Transacciones registradas</span>
-            <span class="qs-val">{{ kpis.transacciones }}</span>
+            <span class="qs-label">Movimientos recientes</span>
+            <span class="qs-val">{{ movimientos.length }}</span>
           </div>
           <div class="qs-div"></div>
           <div class="qs-row">
             <span class="qs-label">Último registro</span>
-            <span class="qs-val">Hoy</span>
+            <span class="qs-val">{{ ultimoRegistroEtiqueta }}</span>
           </div>
         </div>
       </div>

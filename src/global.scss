@@ -1,8 +1,9 @@
+@use 'theme/page-layout' as *;
+
 /* ==========================================================================
    IMPORTAR FUENTE
    ========================================================================== */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-@import 'theme/page-layout.scss';
 
 /* ==========================================================================
    VARIABLES GLOBALES
@@ -20,6 +21,7 @@
   --ieca-yellow: #f4e530;
   --ieca-charcoal: #353432;
   --ieca-green: #10b981;
+  --ieca-orange: #f59e0b;
 
   /* ==========================================================================
      TEXTO
@@ -80,6 +82,11 @@
   --ieca-transition-fast: all 0.2s ease;
   --ieca-transition-medium: all 0.3s ease;
 
+  /* Sidebar */
+  --ieca-sidebar-collapsed: 72px;
+  --ieca-sidebar-expanded: 260px;
+  --ieca-sidebar-width: var(--ieca-sidebar-collapsed);
+
   /* ==========================================================================
      IONIC COLORS
      ========================================================================== */
@@ -99,12 +106,13 @@
 }
 
 /* ==========================================================================
-   BODY
+   BODY / APP SHELL
    ========================================================================== */
 html,
-body,
-ion-app {
-  overflow-x: hidden;
+body {
+  height: 100%;
+  margin: 0;
+  overflow-x: clip;
   max-width: 100%;
 }
 
@@ -113,6 +121,18 @@ body {
   background: var(--ieca-bg);
   color: var(--ieca-text-primary);
   font-size: 0.82rem;
+}
+
+app-root {
+  display: block;
+  height: 100%;
+}
+
+ion-app {
+  display: block;
+  height: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 /* ==========================================================================
@@ -200,6 +220,7 @@ p {
 .text-blue { color: var(--ieca-blue); }
 .text-green { color: var(--ieca-green); }
 .text-red { color: var(--ieca-red); }
+.text-danger { color: var(--ieca-red); }
 .text-purple { color: var(--ieca-purple); }
 .gray-bg { --background: var(--ieca-bg); }
 
@@ -249,6 +270,32 @@ p {
   min-height: var(--input-height);
   font-size: 0.82rem;
   transition: var(--ieca-transition-fast);
+}
+
+/* Inputs nativos (select / date) sin romper el look global */
+input.ieca-input,
+select.ieca-input {
+  width: 100%;
+  background: #f8fafc;
+  padding: 0 var(--space-3);
+  height: var(--input-height);
+  box-sizing: border-box;
+  outline: none;
+  color: var(--ieca-text-primary);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+/* Solo los date-selectors van blancos */
+input.ieca-input[type='date'] {
+  background: #ffffff;
+}
+
+input.ieca-input:focus,
+select.ieca-input:focus {
+  border-color: var(--ieca-blue);
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(46, 53, 143, 0.08);
 }
 
 .ieca-input.item-has-focus {
@@ -301,7 +348,6 @@ ion-button {
 
 .button-disabled {
   opacity: 0.6;
-  pointer-events: none;
 }
 
 /* ==========================================================================
@@ -331,6 +377,58 @@ ion-menu#main-menu::part(container) {
   border-right: 1px solid rgba(0, 0, 0, 0.12);
 }
 
+/* Área principal: ancho y alto completos para que Ionic pinte bien las páginas */
+.app-main {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  box-sizing: border-box;
+}
+
+ion-app.ieca-has-sidebar .app-main {
+  margin-left: var(--ieca-sidebar-width);
+  width: calc(100% - var(--ieca-sidebar-width));
+  transition:
+    margin-left 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+ion-app.ieca-has-sidebar:has(app-slidebar.sidebar-open) {
+  --ieca-sidebar-width: var(--ieca-sidebar-expanded);
+}
+
+/* Altura explícita: sin esto ion-page queda aplastada y solo se ve un fragmento */
+ion-app .app-main ion-router-outlet {
+  display: block;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  contain: none;
+}
+
+ion-app .app-main .ion-page {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  contain: layout size style;
+}
+
+ion-app .app-main .ion-page > ion-header {
+  flex-shrink: 0;
+}
+
+ion-app .app-main .ion-page > ion-content {
+  flex: 1;
+  --overflow: auto;
+}
+
 /* ==========================================================================
    SCROLLBAR WEB
    ========================================================================== */
@@ -351,6 +449,12 @@ ion-menu#main-menu::part(container) {
   :root {
     --input-height: 40px;
     --button-height: 40px;
+    --ieca-sidebar-expanded: min(260px, 85vw);
+  }
+
+  ion-app.ieca-has-sidebar:has(app-slidebar.sidebar-open) .app-main {
+    margin-left: min(var(--ieca-sidebar-expanded), 85vw);
+    width: calc(100% - min(var(--ieca-sidebar-expanded), 85vw));
   }
 }
 

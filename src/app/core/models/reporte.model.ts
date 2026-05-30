@@ -10,6 +10,8 @@ export interface Reporte {
   fecha: string;
   titulo: string;
   tipo: string;
+  cuentaCodigo?: string;
+  cuentaNombre?: string;
   ingresos: number;
   gastos: number;
   saldo: number;

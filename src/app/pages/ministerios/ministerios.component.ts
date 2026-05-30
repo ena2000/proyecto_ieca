@@ -8,7 +8,7 @@ import { takeUntil } from 'rxjs/operators';
 import {
   IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent,
   IonIcon, IonItem, IonLabel, IonInput, IonButton,
-  IonSearchbar, IonPopover, IonSelect, IonSelectOption,
+  IonSearchbar, IonSelect, IonSelectOption,
   ToastController
 } from '@ionic/angular/standalone';
 
@@ -42,7 +42,7 @@ registerLocaleData(localeEs);
     FormsModule,
     IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent,
     IonIcon, IonItem, IonLabel, IonInput, IonButton,
-    IonSearchbar, IonPopover, IonSelect, IonSelectOption,
+    IonSearchbar, IonSelect, IonSelectOption,
     TablaGeneralComponent,
     NotificacionesBellComponent
   ],

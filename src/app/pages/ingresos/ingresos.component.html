@@ -188,11 +188,12 @@
 
         <div class="input-group">
           <ion-label class="ieca-label">
-            Tipo de ingreso *
+            Cuenta contable *
           </ion-label>
           <ion-item
             lines="none"
-            class="ieca-input-item ieca-input">
+            class="ieca-input-item ieca-input"
+            [class.error-border]="intentoEnvio && !nuevoIngreso.cuentaCodigo">
             <ion-icon
               slot="start"
               name="options-outline"
@@ -200,11 +201,16 @@
             </ion-icon>
             <ion-select
               interface="popover"
-              [(ngModel)]="nuevoIngreso.tipo"
-              name="tipo"
+              [(ngModel)]="nuevoIngreso.cuentaCodigo"
+              name="cuentaCodigo"
               class="ieca-select"
-              placeholder="Seleccione uno">
-              <ion-select-option *ngFor="let tipoIng of tiposIngreso" [value]="tipoIng">{{ tipoIng }}</ion-select-option>
+              placeholder="Seleccione cuenta"
+              (ionChange)="onCuentaIngresoChange($any($event.detail.value))">
+              <ion-select-option
+                *ngFor="let c of cuentasIngreso"
+                [value]="c.codigo">
+                {{ etiquetaOpcionCuenta(c) }}
+              </ion-select-option>
             </ion-select>
           </ion-item>
         </div>
@@ -351,6 +357,9 @@
           <span class="badge-count badge-count--warn" *ngIf="puedeAprobar && pendientesCount > 0">
             {{ pendientesCount }} pendiente(s)
           </span>
+          <span class="badge-count badge-count--filter" *ngIf="filtroSoloPendientes">
+            Solo pendientes
+          </span>
         </div>
         <div class="list-header-actions">
           <button
@@ -483,11 +492,11 @@
         [actions]="acciones"
         [allowEditApproved]="authService.isAdministrador()"
         [allowDeleteApproved]="authService.isAdministrador()"
-        (onEdit)="editarIngreso($event)"
-        (onDelete)="eliminarIngreso($event)"
-        (onApprove)="aprobarIngreso($event)"
-        (onReject)="rechazarIngreso($event)"
-        (onEvidenceClick)="verComprobante($event)">
+        (rowEdit)="editarIngreso($event)"
+        (rowDelete)="eliminarIngreso($event)"
+        (rowApprove)="aprobarIngreso($event)"
+        (rowReject)="rechazarIngreso($event)"
+        (evidenceClick)="verComprobante($event)">
       </app-tabla-general>
 
     </div>

@@ -29,4 +29,5 @@ export interface BackupIeca {
   usuarios: unknown[];
   notificaciones?: unknown[];
   ultimoCierre: string | null;
+  periodosCerrados?: string[];
 }

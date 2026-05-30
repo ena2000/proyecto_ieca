@@ -7,7 +7,13 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   token: string;
+  refreshToken: string;
   user: SessionUser;
+}
+
+export interface RefreshTokenResponse {
+  token: string;
+  refreshToken: string;
 }
 
 export interface ApiErrorBody {

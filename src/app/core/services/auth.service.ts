@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, firstValueFrom, of } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
-import { SessionUser, LoginResponse } from '../models';
+import { SessionUser, LoginResponse, RefreshTokenResponse } from '../models';
 import {
   AppRole,
   ROLES,
@@ -24,7 +24,10 @@ interface LoginResult {
 export class AuthService {
 
   private readonly TOKEN_KEY = 'auth_token';
+  private readonly REFRESH_KEY = 'auth_refresh_token';
   private readonly USER_KEY  = 'user_data';
+
+  private refreshInFlight: Promise<boolean> | null = null;
 
   private sessionSubject = new BehaviorSubject<SessionUser | null>(this.loadSession());
   readonly session$: Observable<SessionUser | null> = this.sessionSubject.asObservable();
@@ -78,11 +81,13 @@ export class AuthService {
 
   login(usuario: string, password: string): Promise<LoginResult> {
     if (environment.useLocalFallback) {
-      return loginLocalFallback(usuario, password, (token, user) => this.persistSession(token, user));
+      return loginLocalFallback(usuario, password, (token, refreshToken, user) =>
+        this.persistSession(token, refreshToken, user)
+      );
     }
     return firstValueFrom(
       this.api.post<LoginResponse>(API.auth.login, { usuario, password }).pipe(
-        tap(res => this.persistSession(res.token, res.user)),
+        tap(res => this.persistSession(res.token, res.refreshToken, res.user)),
         map(() => ({ success: true } as LoginResult)),
         catchError(err => of({
           success: false,
@@ -97,8 +102,40 @@ export class AuthService {
       this.api.post(API.auth.logout, {}).subscribe({ error: () => undefined });
     }
     localStorage.removeItem(this.TOKEN_KEY);
+    localStorage.removeItem(this.REFRESH_KEY);
     localStorage.removeItem(this.USER_KEY);
     this.sessionSubject.next(null);
+  }
+
+  /** Renueva el access token usando el refresh token almacenado. */
+  refreshAccessToken(): Promise<boolean> {
+    if (environment.useLocalFallback) {
+      return Promise.resolve(!!localStorage.getItem(this.TOKEN_KEY));
+    }
+
+    if (this.refreshInFlight) {
+      return this.refreshInFlight;
+    }
+
+    const refreshToken = localStorage.getItem(this.REFRESH_KEY);
+    if (!refreshToken) {
+      return Promise.resolve(false);
+    }
+
+    this.refreshInFlight = firstValueFrom(
+      this.api.post<RefreshTokenResponse>(API.auth.refresh, { refreshToken }).pipe(
+        tap(res => {
+          localStorage.setItem(this.TOKEN_KEY, res.token);
+          localStorage.setItem(this.REFRESH_KEY, res.refreshToken);
+        }),
+        map(() => true),
+        catchError(() => of(false))
+      )
+    ).finally(() => {
+      this.refreshInFlight = null;
+    });
+
+    return this.refreshInFlight;
   }
 
   changePassword(oldPassword: string, newPassword: string): Promise<void> {
@@ -109,7 +146,8 @@ export class AuthService {
       if (!current) return;
       const updated: SessionUser = { ...current, mustChangePassword: false };
       const token = localStorage.getItem(this.TOKEN_KEY) || '';
-      this.persistSession(token, updated);
+      const refreshToken = localStorage.getItem(this.REFRESH_KEY) || '';
+      this.persistSession(token, refreshToken, updated);
     });
   }
 
@@ -125,11 +163,12 @@ export class AuthService {
     );
   }
 
-  private persistSession(token: string, user: SessionUser): void {
+  private persistSession(token: string, refreshToken: string, user: SessionUser): void {
     const rol = normalizarRol(user.rol);
     const session: SessionUser = { ...user, rol: rol ?? user.rol };
 
     localStorage.setItem(this.TOKEN_KEY, token);
+    localStorage.setItem(this.REFRESH_KEY, refreshToken);
     localStorage.setItem(this.USER_KEY, JSON.stringify(session));
     this.sessionSubject.next(session);
     this.notificacionesService.recargar();

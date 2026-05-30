@@ -17,11 +17,11 @@ export class ModalFormComponent {
   @Input() fields: any[] = []; // 👈 dinámico
   @Input() data: any = {};     // 👈 datos a editar
 
-  @Output() close = new EventEmitter<void>();
+  @Output() modalDismiss = new EventEmitter<void>();
   @Output() save = new EventEmitter<any>();
 
   cerrar() {
-    this.close.emit();
+    this.modalDismiss.emit();
   }
 
   guardar() {

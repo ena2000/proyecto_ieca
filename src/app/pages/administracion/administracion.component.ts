@@ -10,16 +10,6 @@ import {
 } from '@ionic/angular/standalone';
 import { RouterLink } from '@angular/router';
 import { AlertController } from '@ionic/angular';
-import { addIcons } from 'ionicons';
-import {
-  peopleOutline, businessOutline, trendingUpOutline, trendingDownOutline,
-  settingsOutline, notificationsOutline, lockClosedOutline,
-  optionsOutline,
-  alertCircleOutline, arrowForwardOutline, statsChartOutline,
-  walletOutline, calendarOutline, checkmarkCircleOutline,
-  shieldCheckmarkOutline, timeOutline, cloudDownloadOutline,
-  cloudUploadOutline, trashOutline
-} from 'ionicons/icons';
 import { Subject, combineLatest } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -28,9 +18,16 @@ import { AuthService } from '../../core/services/auth.service';
 import { DataService } from '../../services/data.service';
 import { AdministracionService } from '../../services/administracion.service';
 import { NotificacionesBellComponent } from '../../components/notificaciones-bell/notificaciones-bell.component';
-import { formatearISOaDDMMYYYY } from '../../shared/utils/date.util';
 import { abrirSelectorFechaNativo } from '../../shared/utils/date-picker.util';
 import { withLoadingResult, getHttpErrorMessage } from '../../shared/utils/loading.util';
+import { registerAdministracionPageIcons } from '../../shared/utils/administracion-page.icons';
+import {
+  aplicarFechaManualAuditoria,
+  aplicarFechaNativaAuditoria
+} from '../../shared/utils/audit-fecha.util';
+import { ACCESOS_RAPIDOS_ADMIN } from './administracion-accesos.constants';
+
+registerAdministracionPageIcons();
 
 @Component({
   selector: 'app-administracion',
@@ -47,27 +44,14 @@ import { withLoadingResult, getHttpErrorMessage } from '../../shared/utils/loadi
   providers: [AlertController, ToastController, LoadingController]
 })
 export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter {
-
   resumen: ResumenAdmin[] = [];
   actividad: ActividadAdmin[] = [];
-  configIglesia: ConfigIglesia = {
-    nombre:        '',
-    periodoActual: '',
-    version:       ''
-  };
+  configIglesia: ConfigIglesia = { nombre: '', periodoActual: '', version: '' };
   mesActualCerrado = false;
 
-  accesosRapidos = [
-    { titulo: 'Usuarios',    descripcion: 'Cuentas y permisos de acceso',  icono: 'people-outline',        ruta: '/usuarios',    color: 'blue'   },
-    { titulo: 'Ministerios', descripcion: 'Departamentos y liderazgos',    icono: 'business-outline',      ruta: '/ministerios', color: 'purple' },
-    { titulo: 'Ingresos',    descripcion: 'Ofrendas, diezmos y entradas',  icono: 'trending-up-outline',   ruta: '/ingresos',    color: 'green'  },
-    { titulo: 'Gastos',      descripcion: 'Egresos y compras autorizadas', icono: 'trending-down-outline', ruta: '/gastos',      color: 'red'    },
-    { titulo: 'Reportes',    descripcion: 'Balances y estados financieros',icono: 'stats-chart-outline',   ruta: '/reportes',    color: 'orange' },
-  ];
+  readonly accesosRapidos = ACCESOS_RAPIDOS_ADMIN;
 
-  // Filtros de auditoría (para descarga CSV)
   auditTipo: 'todos' | 'ingresos' | 'gastos' = 'todos';
-  /** YYYY-MM-DD para API */
   auditDesde = '';
   auditHasta = '';
   auditFechaManualDesde = '';
@@ -85,32 +69,10 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
     private alertController: AlertController,
     private toastController: ToastController,
     private loadingController: LoadingController
-  ) {
-    addIcons({
-      'people-outline':            peopleOutline,
-      'business-outline':          businessOutline,
-      'trending-up-outline':       trendingUpOutline,
-      'trending-down-outline':     trendingDownOutline,
-      'settings-outline':          settingsOutline,
-      'notifications-outline':     notificationsOutline,
-      'lock-closed-outline':       lockClosedOutline,
-      'alert-circle-outline':      alertCircleOutline,
-      'arrow-forward-outline':     arrowForwardOutline,
-      'stats-chart-outline':       statsChartOutline,
-      'wallet-outline':            walletOutline,
-      'calendar-outline':          calendarOutline,
-      'checkmark-circle-outline':  checkmarkCircleOutline,
-      'shield-checkmark-outline':  shieldCheckmarkOutline,
-      'time-outline':              timeOutline,
-      'cloud-download-outline':    cloudDownloadOutline,
-      'cloud-upload-outline':      cloudUploadOutline,
-      'trash-outline':             trashOutline
-    });
-  }
+  ) {}
 
-  ngOnInit() {
+  ngOnInit(): void {
     void this.cargarDatos();
-
     combineLatest([
       this.dataService.ingresos$,
       this.dataService.gastos$,
@@ -121,49 +83,48 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
       .subscribe(() => void this.cargarDatos());
   }
 
-  ngOnDestroy() {
+  ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
   }
 
-  ionViewWillEnter() {
+  ionViewWillEnter(): void {
     this.dataService.refreshAllData();
     void this.cargarDatos();
   }
 
   get usuarioSesion(): string {
-    const sesion = this.authService.getSession();
-    return sesion?.usuario?.trim() || '—';
+    return this.authService.getSession()?.usuario?.trim() || '—';
   }
 
-  private async cargarDatos() {
+  private async cargarDatos(): Promise<void> {
     await this.administracionService.cargarConfigRemota();
-    this.resumen           = this.administracionService.getResumen();
-    this.actividad         = this.administracionService.getActividadReciente();
-    this.configIglesia     = this.administracionService.getConfigIglesia();
-    this.mesActualCerrado  = this.administracionService.isMesActualCerrado();
+    this.resumen = this.administracionService.getResumen();
+    this.actividad = this.administracionService.getActividadReciente();
+    this.configIglesia = this.administracionService.getConfigIglesia();
+    this.mesActualCerrado = this.administracionService.isMesActualCerrado();
   }
 
-  async ejecutarCierreMes() {
+  async ejecutarCierreMes(): Promise<void> {
     const alert = await this.alertController.create({
-      header:    '⚠️ Cierre Financiero',
+      header: '⚠️ Cierre Financiero',
       subHeader: `Periodo: ${this.configIglesia.periodoActual}`,
-      message:   'Esta acción congela todos los movimientos del periodo actual. <strong>Es irreversible.</strong> ¿Confirmas el cierre?',
+      message: 'Esta acción congela todos los movimientos del periodo actual. <strong>Es irreversible.</strong> ¿Confirmas el cierre?',
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
         {
-          text:    'Sí, cerrar periodo',
-          role:    'destructive',
+          text: 'Sí, cerrar periodo',
+          role: 'destructive',
           handler: () => {
             void withLoadingResult(this.loadingController, 'Cerrando periodo...', () =>
               this.administracionService.ejecutarCierreMes()
             )
               .then(() => {
                 void this.cargarDatos();
-                this.mostrarToast(`Periodo ${this.configIglesia.periodoActual} cerrado exitosamente`, 'success');
+                void this.mostrarToast(`Periodo ${this.configIglesia.periodoActual} cerrado exitosamente`, 'success');
               })
               .catch((err: unknown) => {
-                this.mostrarToast(getHttpErrorMessage(err, 'No se pudo ejecutar el cierre'), 'danger');
+                void this.mostrarToast(getHttpErrorMessage(err, 'No se pudo ejecutar el cierre'), 'danger');
               });
           }
         }
@@ -172,7 +133,35 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
     await alert.present();
   }
 
-  async exportarBackup() {
+  async enviarResumenEmail(): Promise<void> {
+    try {
+      const result = await withLoadingResult(
+        this.loadingController,
+        'Enviando resumen...',
+        () => this.administracionService.enviarResumenAlertasEmail(true)
+      );
+
+      if (result.skipped) {
+        const msg = result.message || 'No se envió el correo.';
+        await this.mostrarToast(msg, 'warning');
+        return;
+      }
+
+      const canal = result.mailResult?.channel === 'email' ? 'correo' : 'consola (dev)';
+      const n = result.resumen?.pendientes?.length ?? 0;
+      await this.mostrarToast(
+        `Resumen enviado por ${canal}. Pendientes antiguos: ${n}.`,
+        'success'
+      );
+    } catch (err) {
+      await this.mostrarToast(
+        getHttpErrorMessage(err, 'No se pudo enviar el resumen'),
+        'danger'
+      );
+    }
+  }
+
+  async exportarBackup(): Promise<void> {
     try {
       const backup = await withLoadingResult(
         this.loadingController,
@@ -180,64 +169,40 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
         () => this.administracionService.crearBackup()
       );
       this.administracionService.descargarBackup(backup);
-      this.mostrarToast('Respaldo exportado exitosamente', 'success');
+      await this.mostrarToast('Respaldo exportado exitosamente', 'success');
     } catch (err) {
-      this.mostrarToast(getHttpErrorMessage(err, 'No se pudo generar el respaldo'), 'danger');
+      await this.mostrarToast(getHttpErrorMessage(err, 'No se pudo generar el respaldo'), 'danger');
     }
   }
 
   abrirSelectorFecha(tipo: 'desde' | 'hasta'): void {
-    const input =
-      tipo === 'desde'
-        ? this.dateInputAuditDesde?.nativeElement
-        : this.dateInputAuditHasta?.nativeElement;
+    const input = tipo === 'desde'
+      ? this.dateInputAuditDesde?.nativeElement
+      : this.dateInputAuditHasta?.nativeElement;
     abrirSelectorFechaNativo(input);
   }
 
   validarFechaManualAudit(event: Event, tipo: 'desde' | 'hasta'): void {
-    const raw = (event as CustomEvent).detail?.value ?? (event.target as HTMLInputElement)?.value ?? '';
-    let val = String(raw).replace(/\D/g, '');
-    if (val.length > 2) val = val.substring(0, 2) + '/' + val.substring(2);
-    if (val.length > 5) val = val.substring(0, 5) + '/' + val.substring(5, 9);
-
-    if (tipo === 'desde') {
-      this.auditFechaManualDesde = val;
-    } else {
-      this.auditFechaManualHasta = val;
-    }
-
-    if (val.length === 10) {
-      const parts = val.split('/');
-      const dateObj = new Date(+parts[2], +parts[1] - 1, +parts[0]);
-      if (!isNaN(dateObj.getTime())) {
-        const yyyy = dateObj.getFullYear();
-        const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
-        const dd = String(dateObj.getDate()).padStart(2, '0');
-        const ymd = `${yyyy}-${mm}-${dd}`;
-        if (tipo === 'desde') {
-          this.auditDesde = ymd;
-        } else {
-          this.auditHasta = ymd;
-        }
-      }
-    }
+    const raw = (event as CustomEvent).detail?.value
+      ?? (event.target as HTMLInputElement)?.value
+      ?? '';
+    const upd = aplicarFechaManualAuditoria(String(raw), tipo);
+    if (upd.auditDesde != null) this.auditDesde = upd.auditDesde;
+    if (upd.auditHasta != null) this.auditHasta = upd.auditHasta;
+    if (upd.auditFechaManualDesde != null) this.auditFechaManualDesde = upd.auditFechaManualDesde;
+    if (upd.auditFechaManualHasta != null) this.auditFechaManualHasta = upd.auditFechaManualHasta;
   }
 
   onNativeDateChangeAudit(value: string, tipo: 'desde' | 'hasta'): void {
-    const yyyyMMdd = String(value || '').trim();
-    if (!yyyyMMdd) return;
-    const iso = new Date(`${yyyyMMdd}T00:00:00`).toISOString();
-    const formateada = formatearISOaDDMMYYYY(iso);
-    if (tipo === 'desde') {
-      this.auditDesde = yyyyMMdd;
-      this.auditFechaManualDesde = formateada;
-    } else {
-      this.auditHasta = yyyyMMdd;
-      this.auditFechaManualHasta = formateada;
-    }
+    const upd = aplicarFechaNativaAuditoria(value, tipo);
+    if (!upd) return;
+    if (upd.auditDesde != null) this.auditDesde = upd.auditDesde;
+    if (upd.auditHasta != null) this.auditHasta = upd.auditHasta;
+    if (upd.auditFechaManualDesde != null) this.auditFechaManualDesde = upd.auditFechaManualDesde;
+    if (upd.auditFechaManualHasta != null) this.auditFechaManualHasta = upd.auditFechaManualHasta;
   }
 
-  async descargarAuditoria() {
+  async descargarAuditoria(): Promise<void> {
     try {
       await withLoadingResult(this.loadingController, 'Generando auditoría...', () =>
         this.administracionService.descargarAuditoriaCsv({
@@ -246,25 +211,25 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
           hasta: this.auditHasta || undefined
         })
       );
-      this.mostrarToast('Auditoría descargada', 'success');
+      await this.mostrarToast('Auditoría descargada', 'success');
     } catch (err) {
-      this.mostrarToast(getHttpErrorMessage(err, 'No se pudo descargar la auditoría'), 'danger');
+      await this.mostrarToast(getHttpErrorMessage(err, 'No se pudo descargar la auditoría'), 'danger');
     }
   }
 
-  async importarBackup(event: Event) {
+  async importarBackup(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
-    const file  = input.files?.[0];
+    const file = input.files?.[0];
     if (!file) return;
 
     const alert = await this.alertController.create({
-      header:  '⚠️ Restaurar Backup',
+      header: '⚠️ Restaurar Backup',
       message: 'Esto reemplazará <strong>todos los datos actuales</strong> con los del archivo. ¿Confirmas?',
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
         {
-          text:    'Sí, restaurar',
-          role:    'destructive',
+          text: 'Sí, restaurar',
+          role: 'destructive',
           handler: () => {
             const reader = new FileReader();
             reader.onload = async (e: ProgressEvent<FileReader>) => {
@@ -274,9 +239,9 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
                   this.administracionService.restaurarBackup(backup)
                 );
                 await this.cargarDatos();
-                this.mostrarToast('Respaldo restaurado exitosamente', 'success');
+                await this.mostrarToast('Respaldo restaurado exitosamente', 'success');
               } catch (err) {
-                this.mostrarToast(
+                await this.mostrarToast(
                   getHttpErrorMessage(err, 'Error: archivo de respaldo inválido o fallo en el servidor'),
                   'danger'
                 );
@@ -291,35 +256,40 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
     input.value = '';
   }
 
-  async limpiarTodosLosDatos() {
+  async limpiarTodosLosDatos(): Promise<void> {
     const alert1 = await this.alertController.create({
-      header:  '🚨 Eliminar todos los datos',
+      header: '🚨 Eliminar todos los datos',
       message: 'Se borrarán <strong>todos los ingresos, gastos, ministerios y usuarios</strong>. Esta acción no se puede deshacer.',
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
         {
-          text:    'Sí, entiendo el riesgo',
-          role:    'destructive',
+          text: 'Sí, entiendo el riesgo',
+          role: 'destructive',
           handler: async () => {
             const alert2 = await this.alertController.create({
-              header:  '¿Estás completamente seguro?',
+              header: '¿Estás completamente seguro?',
               message: 'Escribe ELIMINAR para confirmar.',
-              inputs:  [{ name: 'confirmacion', type: 'text', placeholder: 'ELIMINAR' }],
+              inputs: [{ name: 'confirmacion', type: 'text', placeholder: 'ELIMINAR' }],
               buttons: [
                 { text: 'Cancelar', role: 'cancel' },
                 {
-                  text:    'Eliminar todo',
-                  role:    'destructive',
+                  text: 'Eliminar todo',
+                  role: 'destructive',
                   handler: (data) => {
                     if (data.confirmacion === 'ELIMINAR') {
-                      void this.administracionService.limpiarTodosLosDatos().then(() => {
-                        void this.cargarDatos();
-                        this.mostrarToast('Todos los datos han sido eliminados', 'warning');
-                      }).catch((err) => {
-                        this.mostrarToast(getHttpErrorMessage(err, 'No se pudieron eliminar los datos'), 'danger');
-                      });
+                      void this.administracionService.limpiarTodosLosDatos()
+                        .then(() => {
+                          void this.cargarDatos();
+                          void this.mostrarToast('Todos los datos han sido eliminados', 'warning');
+                        })
+                        .catch((err) => {
+                          void this.mostrarToast(
+                            getHttpErrorMessage(err, 'No se pudieron eliminar los datos'),
+                            'danger'
+                          );
+                        });
                     } else {
-                      this.mostrarToast('Texto incorrecto, operación cancelada', 'medium');
+                      void this.mostrarToast('Texto incorrecto, operación cancelada', 'medium');
                     }
                   }
                 }
@@ -333,9 +303,9 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
     await alert1.present();
   }
 
-  async mostrarToast(mensaje: string, color: string) {
+  async mostrarToast(mensaje: string, color: string): Promise<void> {
     const toast = await this.toastController.create({
-      message:  mensaje,
+      message: mensaje,
       duration: 2500,
       color,
       position: 'top'

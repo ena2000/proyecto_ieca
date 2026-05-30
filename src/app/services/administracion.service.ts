@@ -15,7 +15,7 @@ const ULTIMO_CIERRE_KEY = 'ultimoCierre';
 const PERIODOS_CERRADOS_KEY = 'periodosCerrados';
 
 const CONFIG_DEFAULT: ConfigIglesia = {
-  nombre:        'Iglesia Evangélica La Alborada',
+  nombre:        'Iglesia del Evangelio Cuadrangular "La Alborada"',
   periodoActual: '',
   version:       'v1.0.0'
 };
@@ -29,6 +29,18 @@ export class AdministracionService {
     private api: ApiService,
     private cierreService: CierreService
   ) {}
+
+  async enviarResumenAlertasEmail(force = false): Promise<{
+    skipped?: boolean;
+    reason?: string;
+    message?: string;
+    mailResult?: { sent: boolean; channel: string };
+    resumen?: { pendientes: unknown[]; cierre: { activo: boolean } };
+  }> {
+    return firstValueFrom(
+      this.api.post(API.admin.alertasEnviar, { force })
+    );
+  }
 
   async cargarConfigRemota(): Promise<void> {
     try {

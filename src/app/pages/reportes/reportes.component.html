@@ -21,7 +21,7 @@
 
 <ion-content class="ion-padding gray-bg">
 
-  <div class="container-wrapper">
+  <div class="container-wrapper page-reportes">
 
     <div class="page-header page-header--reportes">
 
@@ -30,7 +30,7 @@
           Reportes Financieros
         </h1>
         <p>
-          Visualiza los informes financieros y el rendimiento por período.
+          Consulta movimientos, totales y desglose por cuenta según el período seleccionado.
         </p>
       </div>
 
@@ -50,10 +50,10 @@
       <div class="list-section-header">
         <div class="title-box">
           <h2 class="text-blue">
-            Historial de Reportes
+            Movimientos financieros
           </h2>
           <span class="badge-count">
-            {{ listaFiltrada.length }} reportes encontrados
+            {{ listaFiltrada.length }} movimiento{{ listaFiltrada.length === 1 ? '' : 's' }}
           </span>
         </div>
         <div class="list-header-actions">
@@ -70,7 +70,7 @@
               animated="true"
               debounce="300"
               class="professional-search"
-              placeholder="Buscar por título..."
+              placeholder="Buscar por descripción..."
               [(ngModel)]="searchTerm">
             </ion-searchbar>
           </div>
@@ -210,46 +210,46 @@
         @if (filtroMovimiento !== 'gastos') {
           <div class="total-item ingresos">
             <span class="total-label">Ingresos Totales</span>
-            <span class="total-value">{{ totalIngresosFiltrado | currency:'':'.':'1.2-2' }}</span>
+            <span class="total-value">{{ formatearMoneda(totalIngresosFiltrado) }}</span>
           </div>
         }
         @if (filtroMovimiento !== 'ingresos') {
           <div class="total-item gastos">
             <span class="total-label">Gastos Totales</span>
-            <span class="total-value">{{ totalGastosFiltrado | currency:'':'.':'1.2-2' }}</span>
+            <span class="total-value">{{ formatearMoneda(totalGastosFiltrado) }}</span>
           </div>
         }
         <div class="total-item saldo">
           <span class="total-label">Saldo Neto</span>
           <span class="total-value" [class.negative]="totalSaldoFiltrado < 0">
-            {{ totalSaldoFiltrado | currency:'':'.':'1.2-2' }}
+            {{ formatearMoneda(totalSaldoFiltrado) }}
           </span>
         </div>
       </div>
 
       <div class="desglose-card" *ngIf="desgloseAgregado.length > 0">
-        <h3 class="desglose-title">Desglose por Categoría</h3>
+        <h3 class="desglose-title">Desglose por cuenta</h3>
         <div class="desglose-table">
           <div class="desglose-header">
-            <div class="col-categoria">Categoría</div>
+            <div class="col-categoria">Cuenta</div>
             <div class="col-cantidad">Ingresos</div>
             <div class="col-cantidad">Gastos</div>
             <div class="col-cantidad">Saldo</div>
           </div>
           <div class="desglose-row" *ngFor="let item of desgloseAgregado">
             <div class="col-categoria">{{ item.categoria }}</div>
-            <div class="col-cantidad ingresos">{{ item.ingresos | currency:'':'.':'1.2-2' }}</div>
-            <div class="col-cantidad gastos">{{ item.gastos | currency:'':'.':'1.2-2' }}</div>
-            <div class="col-cantidad" [class.negative]="item.saldo < 0">{{ item.saldo | currency:'':'.':'1.2-2' }}</div>
+            <div class="col-cantidad ingresos">{{ formatearMoneda(item.ingresos) }}</div>
+            <div class="col-cantidad gastos">{{ formatearMoneda(item.gastos) }}</div>
+            <div class="col-cantidad" [class.negative]="item.saldo < 0">{{ formatearMoneda(item.saldo) }}</div>
           </div>
         </div>
       </div>
 
       <app-tabla-general
         [columns]="columnsReportes"
-        [data]="listaFiltrada"
-        (onEdit)="descargarReporte($event)"
-        (onImageClick)="verImagen($event)">
+        [data]="listaFiltradaTabla"
+        (rowEdit)="descargarReporte($event)"
+        (evidenceClick)="verImagen($event)">
       </app-tabla-general>
 
     </div>
@@ -276,7 +276,7 @@
         [src]="fotoSeleccionada"
         alt="Reporte ampliado en pantalla completa">
       <div class="lightbox-caption">
-        Vista previa del reporte
+        Vista previa del comprobante
       </div>
     </div>
 

@@ -264,8 +264,8 @@
         [columns]="columnsUsuarios"
         [data]="listaFiltrada"
         [actions]="acciones"
-        (onEdit)="editarUsuario($event)"
-        (onDelete)="eliminarUsuario($event)">
+        (rowEdit)="editarUsuario($event)"
+        (rowDelete)="eliminarUsuario($event)">
       </app-tabla-general>
 
     </div>

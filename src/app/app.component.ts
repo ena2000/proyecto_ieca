@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { IonApp, IonRouterOutlet, IonSplitPane } from '@ionic/angular/standalone';
+import { IonApp, IonRouterOutlet } from '@ionic/angular/standalone';
 import { SlidebarComponent } from './components/slidebar/slidebar.component';
 import { CommonModule } from '@angular/common'; 
 import { Router, NavigationEnd } from '@angular/router'; 
@@ -26,7 +26,6 @@ import {
   imports: [
     IonApp, 
     IonRouterOutlet, 
-    IonSplitPane,      
     SlidebarComponent, 
     CommonModule
   ],

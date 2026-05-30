@@ -187,8 +187,8 @@
         [columns]="columnsMinisterios"
         [data]="listaFiltrada"
         [actions]="acciones"
-        (onEdit)="editarMinisterio($event)"
-        (onDelete)="eliminarMinisterio($event)">
+        (rowEdit)="editarMinisterio($event)"
+        (rowDelete)="eliminarMinisterio($event)">
       </app-tabla-general>
 
     </div>

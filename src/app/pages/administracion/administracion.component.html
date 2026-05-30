@@ -9,7 +9,7 @@
 </ion-header>
 
 <ion-content class="ion-padding gray-bg">
-  <div class="container-wrapper">
+  <div class="container-wrapper page-admin">
 
     <div class="page-header page-header--rich">
       <div>
@@ -67,7 +67,7 @@
     </section>
 
     <!-- Grid inferior: Config + Actividad -->
-    <div class="bottom-grid">
+    <div class="admin-bottom-grid">
 
       <section class="section-block">
         <h2 class="section-title text-blue">Configuración del Sistema</h2>
@@ -111,6 +111,30 @@
       </section>
 
     </div>
+
+    <!-- Alertas por email -->
+    <section class="section-block">
+      <div class="backup-card">
+        <div class="backup-header">
+          <ion-icon name="mail-outline" class="text-blue"></ion-icon>
+          <div>
+            <h2 class="text-blue">Alertas por correo</h2>
+            <p class="backup-subtitle">Pendientes &gt; 48 h y recordatorio de cierre</p>
+          </div>
+        </div>
+        <p class="backup-text">
+          Envía un resumen a <strong>administradores y contables</strong> con movimientos pendientes de
+          aprobación antiguos y aviso si el mes está por cerrar. Requiere SMTP en el servidor.
+        </p>
+        <ion-button
+          expand="block"
+          class="ieca-btn-primary"
+          (click)="enviarResumenEmail()">
+          <ion-icon slot="start" name="mail-outline"></ion-icon>
+          Enviar resumen ahora
+        </ion-button>
+      </div>
+    </section>
 
     <!-- Auditoría -->
     <section class="section-block">

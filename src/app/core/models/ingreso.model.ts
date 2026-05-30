@@ -9,6 +9,9 @@ export interface Ingreso extends AuditoriaMovimiento {
   monto: number | null;
   foto: string;
   tipo: string;
+  /** Cuenta contable elegida en el formulario. */
+  cuentaCodigo?: string;
+  cuentaNombre?: string;
   ministerio: string;
   ministerioId?: number;
   usuarioId?: number;
@@ -17,4 +20,7 @@ export interface Ingreso extends AuditoriaMovimiento {
   estado?: IngresoEstado;
   motivoRechazo?: string;
   comprobanteTipo?: 'imagen' | 'pdf';
+  /** Periodo contable cerrado (cierre mensual). */
+  cerrado?: boolean;
+  periodoCierre?: string;
 }

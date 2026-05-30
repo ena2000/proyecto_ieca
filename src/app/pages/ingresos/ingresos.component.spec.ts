@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { provideIonicAngular } from '@ionic/angular/standalone';
 import { IngresosComponent } from './ingresos.component';
+import { provideComponentTestBed } from '../../testing/component-test.helpers';
 
 describe('IngresosComponent', () => {
   let component: IngresosComponent;
@@ -8,12 +8,8 @@ describe('IngresosComponent', () => {
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      // Al ser Standalone, se importa directamente aquí en lugar de usar "declarations"
       imports: [IngresosComponent],
-      // Proveemos el entorno de Ionic para componentes Standalone
-      providers: [
-        provideIonicAngular()
-      ]
+      providers: provideComponentTestBed()
     }).compileComponents();
 
     fixture = TestBed.createComponent(IngresosComponent);
@@ -28,7 +24,7 @@ describe('IngresosComponent', () => {
   it('should initialize with default values', () => {
     expect(component.modoEdicion).toBeFalse();
     expect(component.intentoEnvio).toBeFalse();
-    expect(component.nuevoIngreso.tipo).toBe('Ofrenda');
+    expect(component.nuevoIngreso.cuentaCodigo).toBe('4102');
     expect(component.nuevoIngreso.ministerio).toBe('General');
   });
 

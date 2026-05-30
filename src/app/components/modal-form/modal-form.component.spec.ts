@@ -1,7 +1,6 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { IonicModule } from '@ionic/angular';
-
 import { ModalFormComponent } from './modal-form.component';
+import { provideComponentTestBed } from '../../testing/component-test.helpers';
 
 describe('ModalFormComponent', () => {
   let component: ModalFormComponent;
@@ -9,8 +8,8 @@ describe('ModalFormComponent', () => {
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      declarations: [ ModalFormComponent ],
-      imports: [IonicModule.forRoot()]
+      imports: [ModalFormComponent],
+      providers: provideComponentTestBed()
     }).compileComponents();
 
     fixture = TestBed.createComponent(ModalFormComponent);

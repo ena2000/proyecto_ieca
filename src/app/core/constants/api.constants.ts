@@ -2,7 +2,10 @@ export const API = {
   auth: {
     login:  '/auth/login',
     logout: '/auth/logout',
+    refresh: '/auth/refresh',
     changePassword: '/auth/change-password',
+    forgotPassword: '/auth/forgot-password',
+    resetPassword: '/auth/reset-password',
     me:     '/auth/me'
   },
   ingresos: {
@@ -32,6 +35,9 @@ export const API = {
     restore: '/admin/restore',
     datos:   '/admin/datos',
     cierre:  '/admin/cierre',
-    auditoria: '/admin/auditoria'
+    auditoria: '/admin/auditoria',
+    loginAuditoria: '/admin/login-auditoria',
+    alertasResumen: '/admin/alertas/resumen',
+    alertasEnviar: '/admin/alertas/enviar'
   }
 } as const;

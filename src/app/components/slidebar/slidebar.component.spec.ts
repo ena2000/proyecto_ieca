@@ -1,7 +1,6 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { IonicModule } from '@ionic/angular';
-
 import { SlidebarComponent } from './slidebar.component';
+import { provideComponentTestBed } from '../../testing/component-test.helpers';
 
 describe('SlidebarComponent', () => {
   let component: SlidebarComponent;
@@ -9,8 +8,8 @@ describe('SlidebarComponent', () => {
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      declarations: [ SlidebarComponent ],
-      imports: [IonicModule.forRoot()]
+      imports: [SlidebarComponent],
+      providers: provideComponentTestBed()
     }).compileComponents();
 
     fixture = TestBed.createComponent(SlidebarComponent);

@@ -1,3 +1,8 @@
+@use 'dashboard-layout' as *;
+@use 'administracion-layout' as *;
+@use 'reportes-layout' as *;
+@use 'tabla-general' as *;
+
 /* ==========================================================================
    LAYOUT DE PÁGINAS IECA — estilos compartidos entre pantallas
    ========================================================================== */
@@ -976,8 +981,3 @@ app-slidebar {
     pointer-events: auto;
   }
 }
-
-@import 'dashboard-layout';
-@import 'administracion-layout';
-@import 'reportes-layout';
-@import 'tabla-general';

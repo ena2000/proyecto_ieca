@@ -9,7 +9,10 @@ export interface Gasto extends AuditoriaMovimiento {
   monto: number | null;
   foto: string;
   categoria: string;
-  proveedor: string;
+  cuentaCodigo?: string;
+  cuentaNombre?: string;
+  /** Legacy: registros antiguos pueden tener valor; ya no se captura en el formulario. */
+  proveedor?: string;
   ministerio?: string;
   ministerioId?: number;
   usuarioId?: number;
@@ -19,4 +22,6 @@ export interface Gasto extends AuditoriaMovimiento {
   estado?: GastoEstado;
   motivoRechazo?: string;
   comprobanteTipo?: 'imagen' | 'pdf';
+  cerrado?: boolean;
+  periodoCierre?: string;
 }
