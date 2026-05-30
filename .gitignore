@@ -27,6 +27,8 @@ log.txt
 /dist
 /tmp
 /out-tsc
+/server/dist
+server/logs
 /bazel-out
 
 # Node

@@ -41,4 +41,13 @@ module.exports = function (config) {
     singleRun: false,
     restartOnFileChange: true
   });
+
+  if (process.env.CI) {
+    config.set({
+      browsers: ['ChromeHeadless'],
+      singleRun: true,
+      restartOnFileChange: false,
+      reporters: ['progress']
+    });
+  }
 };

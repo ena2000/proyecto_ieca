@@ -1,0 +1,84 @@
+# CI: lint, pruebas y build (frontend + API)
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Frontend (lint, test, build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm run test:ci
+        env:
+          CI: true
+
+      - name: Production build
+        run: npm run build:ci
+
+  backend:
+    name: Backend (unit tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        working-directory: server
+        run: npm ci
+
+      - name: Typecheck
+        working-directory: server
+        run: npm run typecheck
+
+      - name: Build
+        working-directory: server
+        run: npm run build
+
+      - name: Verificar artefacto compilado
+        working-directory: server
+        run: test -f dist/index.js
+
+      - name: Unit tests
+        working-directory: server
+        run: npm test
+        env:
+          JWT_SECRET: unit-test-jwt-secret-min-32-characters-long-for-ci!!
+          IECA_USE_MEMORY_DB: 'true'
+          RATE_LIMIT_LOGIN_MAX: '1000'
+          RATE_LIMIT_API_MAX: '10000'

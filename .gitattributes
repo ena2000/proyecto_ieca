@@ -1,0 +1,5 @@
+# Normaliza finales de línea y evita rutas duplicadas en Windows (src\app vs src/app).
+* text=auto eol=lf
+
+*.{cmd,bat} text eol=crlf
+*.{png,gif,jpg,jpeg,ico,webp,pdf} binary

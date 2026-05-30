@@ -1,0 +1,32 @@
+const { z } = require('zod');
+
+const cierreSchema = z.object({
+  periodo: z.string().trim().min(1).max(50).optional()
+});
+
+const auditoriaQuerySchema = z.object({
+  tipo: z.enum(['todos', 'ingresos', 'gastos']).optional().default('todos'),
+  desde: z.string().max(30).optional(),
+  hasta: z.string().max(30).optional()
+});
+
+/** Estructura mínima de un respaldo válido; el resto lo valida restoreBackup. */
+const restoreSchema = z
+  .object({
+    version: z.string().min(1).max(20),
+    fecha: z.string().optional(),
+    ingresos: z.array(z.record(z.string(), z.unknown())).optional(),
+    gastos: z.array(z.record(z.string(), z.unknown())).optional(),
+    ministerios: z.array(z.record(z.string(), z.unknown())).optional(),
+    usuarios: z.array(z.record(z.string(), z.unknown())).optional(),
+    notificaciones: z.array(z.record(z.string(), z.unknown())).optional(),
+    ultimoCierre: z.unknown().optional(),
+    periodosCerrados: z.array(z.unknown()).optional()
+  })
+  .passthrough();
+
+module.exports = {
+  cierreSchema,
+  auditoriaQuerySchema,
+  restoreSchema
+};

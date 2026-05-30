@@ -1,6 +1,11 @@
 import { HttpErrorResponse } from '@angular/common/http';
 
-const AUTH_PUBLIC_PATHS = ['/auth/login', '/auth/forgot-password', '/auth/reset-password'];
+const AUTH_PUBLIC_PATHS = [
+  '/auth/login',
+  '/auth/refresh',
+  '/auth/forgot-password',
+  '/auth/reset-password'
+];
 
 /**
  * Mensaje amigable para errores HTTP (red, 401, 429, validación, etc.).
