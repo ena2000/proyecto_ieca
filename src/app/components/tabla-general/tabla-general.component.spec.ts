@@ -1,7 +1,6 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { IonicModule } from '@ionic/angular';
-
 import { TablaGeneralComponent } from './tabla-general.component';
+import { provideComponentTestBed } from '../../testing/component-test.helpers';
 
 describe('TablaGeneralComponent', () => {
   let component: TablaGeneralComponent;
@@ -9,8 +8,8 @@ describe('TablaGeneralComponent', () => {
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      declarations: [ TablaGeneralComponent ],
-      imports: [IonicModule.forRoot()]
+      imports: [TablaGeneralComponent],
+      providers: provideComponentTestBed()
     }).compileComponents();
 
     fixture = TestBed.createComponent(TablaGeneralComponent);

@@ -3,7 +3,6 @@ import {
   Input,
   Output,
   EventEmitter,
-  OnInit,
   OnChanges,
   SimpleChanges,
   HostListener
@@ -56,7 +55,7 @@ export interface TableActions {
   standalone: true,
   imports: [CommonModule, IonIcon, IonSpinner]
 })
-export class TablaGeneralComponent implements OnInit, OnChanges {
+export class TablaGeneralComponent implements OnChanges {
 
   // =========================================================
   // INPUTS TIPADOS
@@ -73,11 +72,11 @@ export class TablaGeneralComponent implements OnInit, OnChanges {
   // =========================================================
   // OUTPUTS
   // =========================================================
-  @Output() onEdit = new EventEmitter<any>();
-  @Output() onDelete = new EventEmitter<any>();
-  @Output() onApprove = new EventEmitter<any>();
-  @Output() onReject = new EventEmitter<any>();
-  @Output() onEvidenceClick = new EventEmitter<string>();
+  @Output() rowEdit = new EventEmitter<any>();
+  @Output() rowDelete = new EventEmitter<any>();
+  @Output() rowApprove = new EventEmitter<any>();
+  @Output() rowReject = new EventEmitter<any>();
+  @Output() evidenceClick = new EventEmitter<string>();
 
   // =========================================================
   // ESTADO PAGINACIÓN
@@ -119,8 +118,6 @@ export class TablaGeneralComponent implements OnInit, OnChanges {
     this.closeLightbox();
   }
 
-  ngOnInit() {}
-
   ngOnChanges(changes: SimpleChanges) {
 
     if (changes['data']) {
@@ -142,7 +139,7 @@ export class TablaGeneralComponent implements OnInit, OnChanges {
 
   openEvidence(url: string) {
     if (!url) return;
-    this.onEvidenceClick.emit(url);
+    this.evidenceClick.emit(url);
     if (this.esPdf(url)) {
       this.selectedPdf = url;
       document.body.style.overflow = 'hidden';
@@ -159,11 +156,11 @@ export class TablaGeneralComponent implements OnInit, OnChanges {
   }
 
   approve(row: any) {
-    this.onApprove.emit(row);
+    this.rowApprove.emit(row);
   }
 
   reject(row: any) {
-    this.onReject.emit(row);
+    this.rowReject.emit(row);
   }
 
   showApproveFor(row: any): boolean {
@@ -218,7 +215,7 @@ export class TablaGeneralComponent implements OnInit, OnChanges {
   // =========================================================
   edit(row: any) {
     this.editingRowId = row.id ?? null;
-    this.onEdit.emit(row);
+    this.rowEdit.emit(row);
   }
 
   // =========================================================
@@ -228,7 +225,7 @@ export class TablaGeneralComponent implements OnInit, OnChanges {
     this.deletingRowId = row.id ?? null;
 
     // emit inmediato (el padre maneja lógica real)
-    this.onDelete.emit(row);
+    this.rowDelete.emit(row);
 
     // reset visual state
     setTimeout(() => {

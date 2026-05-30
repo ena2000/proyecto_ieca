@@ -1,0 +1,417 @@
+/* Reportes — estilos movidos desde reportes.component.scss */
+.page-reportes {
+
+.page-header--reportes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.page-header__text {
+  flex: 1;
+  min-width: 200px;
+}
+
+.btn-exportar-excel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-4);
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--ieca-blue);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(46, 53, 143, 0.28);
+  transition: var(--ieca-transition-fast);
+
+  ion-icon {
+    font-size: 1.1rem;
+  }
+
+  &:hover {
+    background: var(--ieca-blue-light);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.reportes-filters {
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.filters-layout {
+  display: grid;
+  gap: var(--space-4);
+  width: 100%;
+}
+
+.filters-section {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+@media (min-width: 640px) {
+  .filters-layout {
+    grid-template-columns: minmax(0, 1fr) 220px;
+    grid-template-areas:
+      'periodo ministerio'
+      'movimiento movimiento';
+    align-items: end;
+  }
+
+  .filters-section--periodo {
+    grid-area: periodo;
+    align-self: start;
+  }
+
+  .filters-section--ministerio {
+    grid-area: ministerio;
+  }
+
+  .filters-section--movimiento {
+    grid-area: movimiento;
+    align-self: start;
+  }
+}
+
+.reportes-filters__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--ieca-blue);
+  letter-spacing: -0.02em;
+  margin-bottom: var(--space-4);
+
+  ion-icon {
+    font-size: 1rem;
+  }
+}
+
+.filter-label {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #334155;
+}
+
+.filters-section--periodo {
+  align-items: flex-start;
+}
+
+.filters-section--ministerio {
+  width: 100%;
+  max-width: 220px;
+}
+
+.movimiento-chips {
+  margin-bottom: 0;
+}
+
+.movimiento-chips .periodo-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  ion-icon {
+    font-size: 0.95rem;
+  }
+}
+
+.periodo-chip--ingreso.periodo-chip--active {
+  border-color: var(--ieca-green);
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--ieca-green);
+}
+
+.periodo-chip--gasto.periodo-chip--active {
+  border-color: var(--ieca-red);
+  background: rgba(228, 32, 33, 0.08);
+  color: var(--ieca-red);
+}
+
+.totales-card--solo-ingresos,
+.totales-card--solo-gastos {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.periodo-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.periodo-chip {
+  border: 1.5px solid var(--ieca-border);
+  background: #f8fafc;
+  color: #475569;
+  border-radius: var(--radius-pill);
+  padding: var(--space-2) var(--space-4);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--ieca-transition-fast);
+
+  &:hover {
+    border-color: var(--ieca-blue);
+    color: var(--ieca-blue);
+  }
+
+  &--active {
+    border-color: var(--ieca-blue);
+    background: rgba(46, 53, 143, 0.08);
+    color: var(--ieca-blue);
+    box-shadow: 0 2px 8px rgba(46, 53, 143, 0.12);
+  }
+}
+
+.periodo-mes-control {
+  display: inline-flex;
+  align-items: stretch;
+  width: fit-content;
+  max-width: 100%;
+  min-height: var(--input-height);
+  border: 1.5px solid var(--ieca-border);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  overflow: hidden;
+}
+
+.periodo-mes-control__btn {
+  --color: var(--ieca-blue);
+  --padding-start: 6px;
+  --padding-end: 6px;
+  margin: 0;
+  align-self: center;
+  flex-shrink: 0;
+}
+
+.periodo-mes-select {
+  flex: 1 1 auto;
+  min-width: 168px;
+  max-width: 220px;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  border-left: 1px solid var(--ieca-border);
+  border-right: 1px solid var(--ieca-border);
+  --background: transparent;
+
+  ion-select {
+    color: var(--ieca-blue);
+    font-weight: 800;
+  }
+}
+
+.periodo-historial-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #64748b;
+  background: #f1f5f9;
+  border-radius: var(--radius-md);
+
+  ion-icon {
+    font-size: 1rem;
+    color: var(--ieca-blue);
+  }
+}
+
+.ministerio-select-item {
+  margin: 0;
+}
+
+.periodo-select-item {
+  --background: #f8fafc;
+  --padding-start: var(--space-3);
+  --inner-padding-end: var(--space-3);
+  border: 1.5px solid var(--ieca-border);
+  border-radius: var(--radius-md);
+  min-height: var(--input-height);
+  transition: var(--ieca-transition-fast);
+
+  &:focus-within {
+    border-color: var(--ieca-blue);
+    --background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(46, 53, 143, 0.08);
+  }
+
+  ion-select {
+    width: 100%;
+    font-size: 0.82rem;
+    font-weight: 700;
+  }
+}
+
+@media (max-width: 639px) {
+  .filters-section--ministerio {
+    max-width: 280px;
+  }
+
+  .periodo-mes-control {
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .periodo-mes-select {
+    max-width: none;
+  }
+}
+
+.totales-card {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  min-width: 0;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.total-item {
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  border-left: 4px solid;
+  background: #f8fafc;
+
+  &.ingresos {
+    border-left-color: var(--ieca-green);
+  }
+
+  &.gastos {
+    border-left-color: var(--ieca-red);
+  }
+
+  &.saldo {
+    border-left-color: var(--ieca-blue);
+  }
+}
+
+.total-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.total-value {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0f172a;
+
+  &.negative {
+    color: var(--ieca-red);
+  }
+}
+
+.desglose-card {
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-md);
+  background: white;
+  border: 1px solid var(--ieca-border);
+  padding: var(--space-4);
+}
+
+.desglose-title {
+  margin: 0 0 var(--space-3) 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ieca-blue);
+}
+
+.desglose-table {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.desglose-header {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background: #f1f5f9;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: #334155;
+}
+
+.desglose-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--ieca-border);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.col-categoria {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.col-cantidad {
+  text-align: right;
+  font-weight: 600;
+  font-size: 0.85rem;
+
+  &.ingresos {
+    color: var(--ieca-green);
+  }
+
+  &.gastos {
+    color: var(--ieca-red);
+  }
+
+  &.negative {
+    color: var(--ieca-red);
+  }
+}
+
+@media (max-width: 768px) {
+  .totales-card {
+    grid-template-columns: 1fr;
+  }
+
+  .desglose-header,
+  .desglose-row {
+    grid-template-columns: 1fr 1fr !important;
+    font-size: 0.75rem;
+  }
+}
+
+}

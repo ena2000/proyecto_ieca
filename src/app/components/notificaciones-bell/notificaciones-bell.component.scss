@@ -16,6 +16,29 @@
 
 .notif-popover {
   --width: min(340px, 92vw);
+  --max-height: min(420px, 70vh);
+
+  &::part(content) {
+    overflow: hidden;
+  }
+}
+
+.notif-popover-panel {
+  display: flex;
+  flex-direction: column;
+  max-height: min(420px, 70vh);
+  overflow: hidden;
+}
+
+.notif-popover__scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 320px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 
 .notif-bell-btn {
@@ -37,11 +60,6 @@
   line-height: 16px;
   text-align: center;
   pointer-events: none;
-}
-
-.notif-popover__content {
-  --padding-top: 0;
-  --padding-bottom: 0;
 }
 
 .notif-popover__header {
@@ -88,8 +106,6 @@
 
 .notif-list {
   padding: var(--space-2) 0;
-  max-height: 320px;
-  overflow-y: auto;
 }
 
 .notif-item--unread {

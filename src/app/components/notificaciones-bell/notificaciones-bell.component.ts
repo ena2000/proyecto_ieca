@@ -1,7 +1,7 @@
-import { Component, HostBinding, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostBinding, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
-  IonButton, IonButtons, IonIcon, IonPopover, IonContent,
+  IonButton, IonButtons, IonIcon, IonPopover,
   IonList, IonItem, IonLabel, NavController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
@@ -28,7 +28,6 @@ import { Notificacion } from '../../core/models/notificacion.model';
     IonButton,
     IonIcon,
     IonPopover,
-    IonContent,
     IonList,
     IonItem,
     IonLabel
@@ -39,6 +38,7 @@ import { Notificacion } from '../../core/models/notificacion.model';
 export class NotificacionesBellComponent implements OnInit, OnDestroy {
 
   @ViewChild('notifPopover') popoverRef?: IonPopover;
+  @ViewChild('scrollArea') scrollArea?: ElementRef<HTMLElement>;
 
   @HostBinding('class.ieca-notificaciones-bell-host--hidden')
   oculto = true;
@@ -131,6 +131,19 @@ export class NotificacionesBellComponent implements OnInit, OnDestroy {
   onPopoverPresent(): void {
     this.popoverAbierto = true;
     this.actualizarLista();
+  }
+
+  /** La rueda del mouse suele irse a la página; forzamos scroll en el panel. */
+  onScrollWheel(event: WheelEvent): void {
+    const el = this.scrollArea?.nativeElement;
+    if (!el) return;
+
+    const maxScroll = el.scrollHeight - el.clientHeight;
+    if (maxScroll <= 0) return;
+
+    el.scrollTop = Math.max(0, Math.min(maxScroll, el.scrollTop + event.deltaY));
+    event.preventDefault();
+    event.stopPropagation();
   }
 
   async abrirNotificacion(n: Notificacion, ev: Event): Promise<void> {

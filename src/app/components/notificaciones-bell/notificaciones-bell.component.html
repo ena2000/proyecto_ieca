@@ -23,7 +23,7 @@
     (didDismiss)="onPopoverDismiss()"
     (didPresent)="onPopoverPresent()">
     <ng-template>
-      <ion-content class="notif-popover__content">
+      <div class="notif-popover-panel">
         <div class="notif-popover__header">
           <h3>Notificaciones</h3>
           @if (noLeidas > 0) {
@@ -37,34 +37,36 @@
           }
         </div>
 
-        @if (lista.length === 0) {
-          <p class="notif-empty">No hay notificaciones por ahora.</p>
-        } @else {
-          <ion-list lines="none" class="notif-list">
-            @for (n of lista; track n.id) {
-              <ion-item
-                button
-                detail="false"
-                [class.notif-item--unread]="esNoLeida(n)"
-                (click)="abrirNotificacion(n, $event)">
-                <div
-                  class="notif-item__icon"
-                  [class.notif-item__icon--ingreso]="n.tipo === 'ingreso'"
-                  [class.notif-item__icon--gasto]="n.tipo === 'gasto'"
-                  [class.notif-item__icon--cierre]="n.tipo === 'cierre'"
-                  slot="start">
-                  <ion-icon [name]="iconoPara(n)"></ion-icon>
-                </div>
-                <ion-label>
-                  <strong>{{ n.titulo }}</strong>
-                  <p>{{ n.mensaje }}</p>
-                  <span class="notif-time">{{ tiempo(n.fecha) }}</span>
-                </ion-label>
-              </ion-item>
-            }
-          </ion-list>
-        }
-      </ion-content>
+        <div class="notif-popover__scroll" #scrollArea (wheel)="onScrollWheel($event)">
+          @if (lista.length === 0) {
+            <p class="notif-empty">No hay notificaciones por ahora.</p>
+          } @else {
+            <ion-list lines="none" class="notif-list">
+              @for (n of lista; track n.id) {
+                <ion-item
+                  button
+                  detail="false"
+                  [class.notif-item--unread]="esNoLeida(n)"
+                  (click)="abrirNotificacion(n, $event)">
+                  <div
+                    class="notif-item__icon"
+                    [class.notif-item__icon--ingreso]="n.tipo === 'ingreso'"
+                    [class.notif-item__icon--gasto]="n.tipo === 'gasto'"
+                    [class.notif-item__icon--cierre]="n.tipo === 'cierre'"
+                    slot="start">
+                    <ion-icon [name]="iconoPara(n)"></ion-icon>
+                  </div>
+                  <ion-label>
+                    <strong>{{ n.titulo }}</strong>
+                    <p>{{ n.mensaje }}</p>
+                    <span class="notif-time">{{ tiempo(n.fecha) }}</span>
+                  </ion-label>
+                </ion-item>
+              }
+            </ion-list>
+          }
+        </div>
+      </div>
     </ng-template>
   </ion-popover>
 }
