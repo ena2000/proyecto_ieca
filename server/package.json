@@ -6,7 +6,6 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "prestart": "node scripts/verify-production.js",
     "dev": "tsx watch src/index.ts",
     "seed": "tsx scripts/seed-passwords.js",
     "alertas": "tsx scripts/enviar-alertas.js",
@@ -15,8 +14,8 @@
     "usuario:inicial": "tsx scripts/crear-usuario-inicial.js",
     "typecheck": "tsc --noEmit",
     "verify:prod": "node scripts/verify-production.js",
-    "test": "tsx --import ./test/setup.js --test test/**/*.test.js",
-    "test:integration": "tsx --test test/http.integration.test.js"
+    "test": "node scripts/run-tests.js",
+    "test:integration": "tsx --import ./test/setup.js --test test/http.integration.test.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
