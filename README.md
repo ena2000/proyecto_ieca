@@ -676,8 +676,8 @@ Workflow: [`.github/workflows/release.yml`](.github/workflows/release.yml)
 
 | Disparador | Comportamiento |
 |------------|----------------|
-| Push a `main` / `master` | Espera CI exitoso → genera artefactos |
-| `workflow_dispatch` | Build manual desde Actions |
+| **CI completado** en `main` / `master` | Se ejecuta solo si CI terminó en **success** |
+| `workflow_dispatch` | Build manual desde Actions (sin esperar CI) |
 | Tag `v*` | Build al publicar versión |
 
 **Artefactos generados:**
@@ -685,7 +685,7 @@ Workflow: [`.github/workflows/release.yml`](.github/workflows/release.yml)
 | Artefacto | Contenido |
 |-----------|-----------|
 | `ieca-frontend-www` | Carpeta `www/` (sitio estático) |
-| `ieca-server` | API con `node_modules` de producción |
+| `ieca-server` | API compilada (`dist/`) con `node_modules` de producción |
 
 Descarga: GitHub → **Actions** → **Release build** → **Artifacts**.
 
@@ -728,7 +728,8 @@ Resumen rápido:
 | Periodo cerrado al guardar | Cierre ejecutado | No modificar ese mes; admin puede restaurar backup |
 | Pantalla en blanco tras deploy | SPA sin rewrite | Configura fallback a `index.html` |
 | Avisos Ionicons en tests | Limitación Karma headless | No afecta resultado; tests pasan |
-| Release workflow falla esperando CI | CI aún en curso o falló | Espera CI verde o usa `workflow_dispatch` |
+| Release cancelado — CI no exitoso | CI falló en el mismo push | Corrige el workflow **CI** primero; el release se relanzará solo al completar CI en verde |
+| Release manual | CI aún en curso | Usa **workflow_dispatch** o espera a que CI termine |
 
 ---
 
