@@ -1,4 +1,5 @@
 import { LoadingController } from '@ionic/angular';
+import { getHttpErrorMessage } from './error-message.util';
 
 export async function withLoading(
   loadingCtrl: LoadingController,
@@ -10,6 +11,23 @@ export async function withLoading(
   try {
     await task();
   } finally {
-    await loading.dismiss();
+    await loading.dismiss().catch(() => undefined);
   }
 }
+
+/** Igual que withLoading pero devuelve el resultado y propaga errores tras cerrar el spinner. */
+export async function withLoadingResult<T>(
+  loadingCtrl: LoadingController,
+  message: string,
+  task: () => Promise<T>
+): Promise<T> {
+  const loading = await loadingCtrl.create({ message, spinner: 'circles' });
+  await loading.present();
+  try {
+    return await task();
+  } finally {
+    await loading.dismiss().catch(() => undefined);
+  }
+}
+
+export { getHttpErrorMessage };

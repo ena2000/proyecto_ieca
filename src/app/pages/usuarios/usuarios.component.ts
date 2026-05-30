@@ -24,6 +24,12 @@ import { Usuario, Ministerio } from '../../core/models';
 import { DataService } from '../../services/data.service';
 import { UsuariosService, UsuarioPayload, UsuarioCreateResponse } from '../../services/usuarios.service';
 import { withLoading } from '../../shared/utils/loading.util';
+import {
+  isRolSinMinisterio,
+  ROL_LIDER,
+  validarUsuarioForm
+} from '../../shared/utils/liderazgo.util';
+import { ROLES } from '../../core/constants/roles.constants';
 
 registerLocaleData(localeEs);
 
@@ -88,9 +94,10 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   ];
 
   acciones = { edit: true, delete: true };
-  rolesUsuario:   string[] = ['Administrador', 'Contable', 'Lider/CoLider'];
+  rolesUsuario:   string[] = [ROLES.ADMIN, ROLES.CONTABLE, ROLES.LIDER];
   estadosUsuario: string[] = ['Activo', 'Inactivo', 'Suspendido'];
-  readonly ROL_LIDER = 'Lider/CoLider';
+  readonly ROL_LIDER = ROLES.LIDER;
+  readonly isRolSinMinisterio = isRolSinMinisterio;
 
   constructor(
     private toastController: ToastController,
@@ -165,23 +172,41 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   }
 
   onRolChange(): void {
-    if (this.nuevoUsuario.rol !== this.ROL_LIDER) {
+    if (isRolSinMinisterio(this.nuevoUsuario.rol)) {
       this.nuevoUsuario.ministerioId = undefined;
     }
   }
 
-  async registrarUsuario() {
-    this.intentoEnvio = true;
-    if (!this.esFormularioValido) {
-      this.mostrarToast('Por favor, completa los campos obligatorios correctamente.', 'danger');
-      return;
-    }
-
+  private prepararPayloadUsuario(): UsuarioPayload {
     const { id, ...datos } = this.nuevoUsuario;
     const payload: UsuarioPayload = {
       ...(datos as UsuarioPayload),
       ...(this.password.trim() ? { password: this.password } : {})
     };
+    if (isRolSinMinisterio(payload.rol)) {
+      payload.ministerioId = undefined;
+    }
+    return payload;
+  }
+
+  async registrarUsuario() {
+    this.intentoEnvio = true;
+    if (!this.esFormularioValido) {
+      this.mostrarToast(this.mensajeValidacion, 'danger');
+      return;
+    }
+
+    const errorLiderazgo = validarUsuarioForm(
+      this.nuevoUsuario,
+      this.listaMinisterios,
+      this.modoEdicion ? this.idEditando : null
+    );
+    if (errorLiderazgo) {
+      this.mostrarToast(errorLiderazgo, 'danger');
+      return;
+    }
+
+    const payload = this.prepararPayloadUsuario();
 
     const guardando = this.modoEdicion ? 'Actualizando usuario...' : 'Guardando usuario...';
 
@@ -281,12 +306,31 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   }
 
   get esFormularioValido(): boolean {
-    return (
+    const base =
       this.nuevoUsuario.nombre?.trim().length >= 3 &&
       this.nuevoUsuario.email?.trim().length  >= 5 &&
       this.nuevoUsuario.email?.includes('@') &&
-      // Password opcional: si se omite al crear, el backend genera una temporal.
-      (this.password.trim() ? this.password.trim().length >= 6 : true)
-    );
+      (this.password.trim() ? this.password.trim().length >= 6 : true);
+
+    if (!base) return false;
+    if (this.nuevoUsuario.rol === this.ROL_LIDER && this.nuevoUsuario.ministerioId == null) {
+      return false;
+    }
+    return validarUsuarioForm(
+      this.nuevoUsuario,
+      this.listaMinisterios,
+      this.modoEdicion ? this.idEditando : null
+    ) == null;
+  }
+
+  get mensajeValidacion(): string {
+    if (this.nuevoUsuario.rol === this.ROL_LIDER && this.nuevoUsuario.ministerioId == null) {
+      return 'Selecciona el ministerio del líder o co-líder.';
+    }
+    return validarUsuarioForm(
+      this.nuevoUsuario,
+      this.listaMinisterios,
+      this.modoEdicion ? this.idEditando : null
+    ) ?? 'Completa los campos obligatorios correctamente.';
   }
 }

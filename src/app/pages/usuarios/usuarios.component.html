@@ -157,8 +157,13 @@
               <ion-select-option *ngFor="let min of listaMinisterios" [value]="min.id">{{ min.nombre }}</ion-select-option>
             </ion-select>
           </ion-item>
-          <small class="error-text" *ngIf="nuevoUsuario.rol !== ROL_LIDER">
-            Solo aplica para el rol Líder/CoLider.
+          <small class="error-text" *ngIf="isRolSinMinisterio(nuevoUsuario.rol)">
+            Administrador y Contable no llevan ministerio asignado.
+          </small>
+          <small
+            class="error-text"
+            *ngIf="intentoEnvio && nuevoUsuario.rol === ROL_LIDER && !nuevoUsuario.ministerioId">
+            El Líder/CoLíder debe tener un ministerio.
           </small>
         </div>
 

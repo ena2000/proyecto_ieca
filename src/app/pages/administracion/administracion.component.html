@@ -127,34 +127,79 @@
           quién editó por última vez). Puedes filtrarlo por tipo y rango de fechas.
         </p>
 
-        <div style="margin: 12px 0 10px 0; display: grid; gap: 10px;">
-          <div style="display: grid; gap: 6px;">
-            <span class="config-label">Tipo</span>
-            <select
-              class="ieca-input"
-              [(ngModel)]="auditTipo"
-              aria-label="Tipo de auditoría">
-              <option value="todos">Todos</option>
-              <option value="ingresos">Solo ingresos</option>
-              <option value="gastos">Solo gastos</option>
-            </select>
+        <div class="audit-filters">
+          <div class="audit-filters__item">
+            <ion-label class="ieca-label">Tipo</ion-label>
+            <ion-item lines="none" class="ieca-input-item ieca-input">
+              <ion-icon slot="start" name="options-outline" class="text-blue"></ion-icon>
+              <ion-select
+                interface="popover"
+                [(ngModel)]="auditTipo"
+                class="ieca-select"
+                aria-label="Tipo de auditoría">
+                <ion-select-option value="todos">Todos</ion-select-option>
+                <ion-select-option value="ingresos">Solo ingresos</ion-select-option>
+                <ion-select-option value="gastos">Solo gastos</ion-select-option>
+              </ion-select>
+            </ion-item>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <div style="display: grid; gap: 6px;">
-              <span class="config-label">Desde</span>
+          <div class="audit-filters__item">
+            <ion-label class="ieca-label">Desde</ion-label>
+            <div class="hybrid-date-container table-hybrid-fix">
+              <ion-input
+                [(ngModel)]="auditFechaManualDesde"
+                placeholder="DD/MM/AAAA"
+                maxlength="10"
+                class="manual-input"
+                inputmode="numeric"
+                autocomplete="off"
+                (ionInput)="validarFechaManualAudit($event, 'desde')">
+              </ion-input>
+              <ion-button
+                fill="clear"
+                type="button"
+                class="calendar-icon-btn"
+                aria-label="Seleccionar fecha desde"
+                (click)="abrirSelectorFecha('desde')">
+                <ion-icon slot="icon-only" name="calendar-outline"></ion-icon>
+              </ion-button>
               <input
-                class="ieca-input"
+                #dateInputAuditDesde
                 type="date"
-                [(ngModel)]="auditDesde"
+                class="ieca-date-picker-hidden"
+                [value]="auditDesde"
+                (change)="onNativeDateChangeAudit($any($event.target).value, 'desde')"
                 aria-label="Desde" />
             </div>
-            <div style="display: grid; gap: 6px;">
-              <span class="config-label">Hasta</span>
+          </div>
+
+          <div class="audit-filters__item">
+            <ion-label class="ieca-label">Hasta</ion-label>
+            <div class="hybrid-date-container table-hybrid-fix">
+              <ion-input
+                [(ngModel)]="auditFechaManualHasta"
+                placeholder="DD/MM/AAAA"
+                maxlength="10"
+                class="manual-input"
+                inputmode="numeric"
+                autocomplete="off"
+                (ionInput)="validarFechaManualAudit($event, 'hasta')">
+              </ion-input>
+              <ion-button
+                fill="clear"
+                type="button"
+                class="calendar-icon-btn"
+                aria-label="Seleccionar fecha hasta"
+                (click)="abrirSelectorFecha('hasta')">
+                <ion-icon slot="icon-only" name="calendar-outline"></ion-icon>
+              </ion-button>
               <input
-                class="ieca-input"
+                #dateInputAuditHasta
                 type="date"
-                [(ngModel)]="auditHasta"
+                class="ieca-date-picker-hidden"
+                [value]="auditHasta"
+                (change)="onNativeDateChangeAudit($any($event.target).value, 'hasta')"
                 aria-label="Hasta" />
             </div>
           </div>
@@ -217,16 +262,24 @@
           </div>
         </div>
         <p class="critical-text">
-          Congela el registro de transacciones del periodo
-          <strong>{{ configIglesia.periodoActual }}</strong> e inyecta el balance
-          final en los reportes históricos. Una vez ejecutado, no se podrán
-          registrar ni modificar movimientos del periodo.
+          Al final de cada mes, cierra el periodo
+          <strong>{{ configIglesia.periodoActual }}</strong>.
+          Los ingresos y gastos de ese mes quedarán congelados: no se podrán
+          crear, editar, eliminar ni aprobar/rechazar. El mes siguiente
+          (<strong>periodo activo</strong>) seguirá abierto hasta su propio cierre.
           <strong>Esta acción es irreversible.</strong>
         </p>
+        <p class="cierre-estado" *ngIf="mesActualCerrado">
+          El periodo <strong>{{ configIglesia.periodoActual }}</strong> ya está cerrado.
+        </p>
         <div class="critical-footer">
-          <button type="button" class="btn-cierre" (click)="ejecutarCierreMes()">
+          <button
+            type="button"
+            class="btn-cierre"
+            [disabled]="mesActualCerrado"
+            (click)="ejecutarCierreMes()">
             <ion-icon name="lock-closed-outline"></ion-icon>
-            <span>Ejecutar Cierre Maestro de Caja</span>
+            <span>{{ mesActualCerrado ? 'Periodo ya cerrado' : 'Cerrar ' + configIglesia.periodoActual }}</span>
           </button>
         </div>
       </div>

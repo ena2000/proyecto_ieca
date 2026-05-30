@@ -8,9 +8,11 @@ import { NotificacionesService } from '../core/services/notificaciones.service';
 import { ApiService } from '../core/services/api.service';
 import { API } from '../core/constants/api.constants';
 import { environment } from '../../environments/environment';
-import { getMesActualLabel } from '../shared/utils/month.util';
+import { getMesActualLabel, periodoKeyFromFecha } from '../shared/utils/month.util';
+import { CierreService } from '../core/services/cierre.service';
 
 const ULTIMO_CIERRE_KEY = 'ultimoCierre';
+const PERIODOS_CERRADOS_KEY = 'periodosCerrados';
 
 const CONFIG_DEFAULT: ConfigIglesia = {
   nombre:        'Iglesia Evangélica La Alborada',
@@ -21,31 +23,27 @@ const CONFIG_DEFAULT: ConfigIglesia = {
 @Injectable({ providedIn: 'root' })
 export class AdministracionService {
 
-  private ultimoCierreApi: string | null = null;
-
   constructor(
     private dataService: DataService,
     private notificacionesService: NotificacionesService,
-    private api: ApiService
+    private api: ApiService,
+    private cierreService: CierreService
   ) {}
 
   async cargarConfigRemota(): Promise<void> {
-    if (environment.useLocalFallback) return;
     try {
-      const cfg = await firstValueFrom(
-        this.api.get<{ ultimoCierre: string | null }>(API.admin.config)
-      );
-      this.ultimoCierreApi = cfg.ultimoCierre;
+      await this.cierreService.cargar();
     } catch (err) {
       console.error('[AdministracionService] cargarConfigRemota:', err);
     }
   }
 
   getUltimoCierre(): string {
-    if (!environment.useLocalFallback) {
-      return this.ultimoCierreApi ?? 'N/A';
-    }
-    return localStorage.getItem(ULTIMO_CIERRE_KEY) || 'N/A';
+    return this.cierreService.getUltimoCierreLabel();
+  }
+
+  isMesActualCerrado(): boolean {
+    return this.cierreService.isMesActualCerrado();
   }
 
   getConfigIglesia(): ConfigIglesia {
@@ -163,10 +161,21 @@ export class AdministracionService {
       ruta: '/administracion'
     });
 
+    const periodoKey = periodoKeyFromFecha(new Date().toISOString());
+
     if (environment.useLocalFallback) {
-      localStorage.setItem(ULTIMO_CIERRE_KEY, fechaCierre);
-      const ingresos = this.dataService.getIngresosActuales().map(i => ({ ...i, cerrado: true }));
-      const gastos   = this.dataService.getGastosActuales().map(g => ({ ...g, cerrado: true }));
+      this.cierreService.aplicarCierreLocal(fechaCierre);
+      const marcarMes = <T extends { fecha?: string; cerrado?: boolean; periodoCierre?: string }>(
+        lista: T[]
+      ): T[] =>
+        lista.map(item => {
+          if (periodoKey && periodoKeyFromFecha(item.fecha) === periodoKey) {
+            return { ...item, cerrado: true, periodoCierre: periodoKey };
+          }
+          return item;
+        });
+      const ingresos = marcarMes(this.dataService.getIngresosActuales());
+      const gastos   = marcarMes(this.dataService.getGastosActuales());
       localStorage.setItem('ingresos', JSON.stringify(ingresos));
       localStorage.setItem('gastos', JSON.stringify(gastos));
       this.dataService.refreshAllData();
@@ -174,10 +183,14 @@ export class AdministracionService {
       return;
     }
 
-    await firstValueFrom(
-      this.api.post<{ ultimoCierre: string }>(API.admin.cierre, { periodo: fechaCierre })
+    const res = await firstValueFrom(
+      this.api.post<{
+        ultimoCierre: string;
+        periodosCerrados: string[];
+        mesActualCerrado?: boolean;
+      }>(API.admin.cierre, { periodo: fechaCierre })
     );
-    this.ultimoCierreApi = fechaCierre;
+    this.cierreService.sincronizarDesdeApi(res);
     this.dataService.refreshAllData();
     this.dataService.notifyChanges();
   }
@@ -246,7 +259,7 @@ export class AdministracionService {
       return;
     }
     await firstValueFrom(this.api.delete(API.admin.datos));
-    this.ultimoCierreApi = null;
+    this.cierreService.limpiarLocal();
     this.dataService.refreshAllData();
     this.notificacionesService.recargar();
   }
@@ -259,7 +272,8 @@ export class AdministracionService {
       gastos:       this.dataService.getGastosActuales(),
       ministerios:  this.dataService.getMinisteriosActuales(),
       usuarios:     this.dataService.getUsuariosActuales(),
-      ultimoCierre: localStorage.getItem(ULTIMO_CIERRE_KEY)
+      ultimoCierre: localStorage.getItem(ULTIMO_CIERRE_KEY),
+      periodosCerrados: JSON.parse(localStorage.getItem(PERIODOS_CERRADOS_KEY) || '[]')
     };
   }
 
@@ -353,6 +367,10 @@ export class AdministracionService {
     if (backup.ministerios) localStorage.setItem('ministerios', JSON.stringify(backup.ministerios));
     if (backup.usuarios)    localStorage.setItem('usuarios', JSON.stringify(backup.usuarios));
     if (backup.ultimoCierre) localStorage.setItem(ULTIMO_CIERRE_KEY, backup.ultimoCierre);
+    if (backup.periodosCerrados) {
+      localStorage.setItem(PERIODOS_CERRADOS_KEY, JSON.stringify(backup.periodosCerrados));
+    }
+    void this.cierreService.cargar();
     this.dataService.refreshAllData();
   }
 
@@ -362,6 +380,8 @@ export class AdministracionService {
     localStorage.removeItem('ministerios');
     localStorage.removeItem('usuarios');
     localStorage.removeItem(ULTIMO_CIERRE_KEY);
+    localStorage.removeItem(PERIODOS_CERRADOS_KEY);
+    this.cierreService.limpiarLocal();
     this.dataService.refreshAllData();
   }
 

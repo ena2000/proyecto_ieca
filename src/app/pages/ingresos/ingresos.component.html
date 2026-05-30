@@ -29,6 +29,10 @@
     </div>
 
     <ng-container *ngIf="!soloLectura">
+    <div class="cierre-alert" *ngIf="periodoFormularioCerrado">
+      El periodo <strong>{{ etiquetaPeriodoFormulario }}</strong> está cerrado.
+      No puedes registrar ni modificar movimientos de ese mes.
+    </div>
     <div class="page-header">
 
       <h1 class="text-blue">
@@ -303,6 +307,7 @@
               expand="block"
               type="button"
               class="ieca-button-primary btn-main"
+              [disabled]="periodoFormularioCerrado"
               [class.button-disabled]="intentoEnvio && !esFormularioValido"
               (click)="registrarIngreso()">
               <ion-icon [name]="modoEdicion ? 'save-outline' : 'add-circle-outline'"></ion-icon>
@@ -435,21 +440,6 @@
                 (change)="onNativeDateChange($any($event.target).value, 'hasta')"
                 aria-label="Hasta la fecha" />
             </div>
-          </div>
-
-          <div class="filter-item" *ngIf="puedeAprobar">
-            <ion-label>Estado</ion-label>
-            <ion-item lines="none" class="ieca-input-item ieca-input filter-select-item">
-              <ion-select
-                interface="popover"
-                [(ngModel)]="filtroEstado"
-                placeholder="Todos">
-                <ion-select-option value="todos">Todos</ion-select-option>
-                <ion-select-option value="pendiente">Pendiente</ion-select-option>
-                <ion-select-option value="aprobado">Aprobado</ion-select-option>
-                <ion-select-option value="rechazado">Rechazado</ion-select-option>
-              </ion-select>
-            </ion-item>
           </div>
 
           <div class="filter-item">

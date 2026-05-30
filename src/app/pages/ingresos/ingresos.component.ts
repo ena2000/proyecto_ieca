@@ -37,6 +37,7 @@ import { Ingreso, IngresoEstado, Ministerio, Usuario } from '../../core/models';
 import { DataService } from '../../services/data.service';
 import { IngresosService } from '../../services/ingresos.service';
 import { AuthService } from '../../core/services/auth.service';
+import { CierreService } from '../../core/services/cierre.service';
 
 registerLocaleData(localeEs);
 
@@ -117,7 +118,6 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
   comprobanteEsPdf = false;
 
   tiposIngreso: string[] = ['Ofrenda', 'Diezmo', 'Talento', 'Donación', 'Otro'];
-  filtroEstado: 'todos' | IngresoEstado = 'todos';
 
   columnsIngresos: TableColumn[] = [
     { field: 'foto',            header: 'Comprobante', type: 'evidence' },
@@ -140,7 +140,8 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
     private loadingController: LoadingController,
     private dataService: DataService,
     private ingresosService: IngresosService,
-    readonly authService: AuthService
+    readonly authService: AuthService,
+    private cierreService: CierreService
   ) {
     addIcons({
       'calendar-outline':       calendarOutline,
@@ -161,6 +162,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   ngOnInit() {
+    void this.cierreService.cargar();
     this.soloLectura = this.authService.isSoloLecturaFinanzas();
     this.puedeAprobar = this.authService.isAdministrador() || this.authService.isContable();
     this.ministerioScopeId = this.authService.getMinisterioScopeId();
@@ -179,8 +181,21 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   ionViewWillEnter() {
+    void this.cierreService.cargar();
     this.dataService.refreshAllData();
     this.cargarRelaciones();
+  }
+
+  get periodoFormularioCerrado(): boolean {
+    return this.cierreService.estaCerrado(this.nuevoIngreso.fecha);
+  }
+
+  get etiquetaPeriodoFormulario(): string {
+    return this.cierreService.etiquetaPeriodo(this.nuevoIngreso.fecha);
+  }
+
+  movimientoEnPeriodoCerrado(item: Ingreso): boolean {
+    return this.cierreService.estaCerrado(item.fecha, item.cerrado);
   }
 
   private configurarAccionesTabla(): void {
@@ -330,8 +345,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
       !!this.fechaManualDesde ||
       !!this.fechaManualHasta ||
       this.filtroMontoMin !== null ||
-      this.filtroMontoMax !== null ||
-      this.filtroEstado !== 'todos';
+      this.filtroMontoMax !== null;
   }
 
   limpiarFiltros(): void {
@@ -342,7 +356,6 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
     this.fechaManualHasta = '';
     this.filtroMontoMin = null;
     this.filtroMontoMax = null;
-    this.filtroEstado = 'todos';
   }
 
   get listaFiltrada(): Ingreso[] {
@@ -377,10 +390,6 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
       filtrados = filtrados.filter(i => (i.monto || 0) <= this.filtroMontoMax!);
     }
 
-    if (this.filtroEstado !== 'todos') {
-      filtrados = filtrados.filter(i => estadoIngreso(i) === this.filtroEstado);
-    }
-
     return filtrados.map(i => ({
       ...i,
       estado: estadoIngreso(i),
@@ -410,6 +419,13 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
   async registrarIngreso() {
     this.intentoEnvio = true;
+    if (this.periodoFormularioCerrado) {
+      this.mostrarToast(
+        `El periodo ${this.etiquetaPeriodoFormulario} está cerrado. No se pueden registrar movimientos.`,
+        'warning'
+      );
+      return;
+    }
     this.aplicarAlcanceMinisterioAlFormulario();
     if (!this.esFormularioValido) {
       this.mostrarToast(this.mensajeValidacion, 'danger');
@@ -458,6 +474,10 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
   async aprobarIngreso(item: Ingreso) {
     if (!this.puedeAprobar || estadoIngreso(item) !== 'pendiente') return;
+    if (this.movimientoEnPeriodoCerrado(item)) {
+      this.mostrarToast('No se puede aprobar un ingreso de un periodo cerrado.', 'warning');
+      return;
+    }
     try {
       await withLoading(this.loadingController, 'Aprobando ingreso...', async () => {
         await firstValueFrom(this.ingresosService.aprobar(item.id));
@@ -472,6 +492,10 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
   async rechazarIngreso(item: Ingreso) {
     if (!this.puedeAprobar || estadoIngreso(item) !== 'pendiente') return;
+    if (this.movimientoEnPeriodoCerrado(item)) {
+      this.mostrarToast('No se puede rechazar un ingreso de un periodo cerrado.', 'warning');
+      return;
+    }
 
     const alert = await this.alertController.create({
       header:  'Rechazar ingreso',
@@ -507,6 +531,10 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
       this.mostrarToast('No puedes editar registros de otro ministerio.', 'warning');
       return;
     }
+    if (this.movimientoEnPeriodoCerrado(item)) {
+      this.mostrarToast('No puedes editar ingresos de un periodo cerrado.', 'warning');
+      return;
+    }
     if (this.authService.isLider() && estadoIngreso(item) === 'aprobado') {
       this.mostrarToast('No puedes editar un ingreso ya aprobado.', 'warning');
       return;
@@ -525,6 +553,10 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
   async eliminarIngreso(item: Ingreso) {
     if (!this.perteneceAlcance(item)) {
       this.mostrarToast('No puedes eliminar registros de otro ministerio.', 'warning');
+      return;
+    }
+    if (this.movimientoEnPeriodoCerrado(item)) {
+      this.mostrarToast('No puedes eliminar ingresos de un periodo cerrado.', 'warning');
       return;
     }
     if (this.authService.isLider() && estadoIngreso(item) === 'aprobado') {

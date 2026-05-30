@@ -41,6 +41,7 @@ import { TableActions } from 'src/app/components/tabla-general/tabla-general.com
 import { DataService } from '../../services/data.service';
 import { GastosService } from '../../services/gastos.service';
 import { AuthService } from '../../core/services/auth.service';
+import { CierreService } from '../../core/services/cierre.service';
 
 registerLocaleData(localeEs);
 
@@ -96,7 +97,6 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
     monto:         null,
     foto:          '',
     categoria:     'Servicios',
-    proveedor:     '',
     ministerio:    'General',
     ministerioId:  undefined,
     usuarioId:     undefined,
@@ -122,14 +122,12 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
   comprobanteEsPdf = false;
 
   categoriasGasto: string[] = ['Servicios', 'Suministros', 'Mantenimiento', 'Personal', 'Impuestos', 'Otros'];
-  filtroEstado: 'todos' | GastoEstado = 'todos';
 
   columnsGastos: TableColumn[] = [
     { field: 'foto',            header: 'Comprobante', type: 'evidence' },
     { field: 'fechaFormateada', header: 'Fecha'                        },
     { field: 'estadoEtiqueta',  header: 'Estado',      type: 'badge'    },
     { field: 'categoria',       header: 'Categoría'                    },
-    { field: 'proveedor',       header: 'Proveedor/Beneficiario'       },
     { field: 'descripcion',     header: 'Descripción'                  },
     { field: 'monto',           header: 'Monto',       type: 'currency' }
   ];
@@ -145,7 +143,8 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
     private loadingController: LoadingController,
     private dataService: DataService,
     private gastosService: GastosService,
-    readonly authService: AuthService
+    readonly authService: AuthService,
+    private cierreService: CierreService
   ) {
     addIcons({
       'calendar-outline':      calendarOutline,
@@ -166,6 +165,7 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   ngOnInit() {
+    void this.cierreService.cargar();
     this.soloLectura = this.authService.isSoloLecturaFinanzas();
     this.puedeAprobar = this.authService.isAdministrador() || this.authService.isContable();
     this.ministerioScopeId = this.authService.getMinisterioScopeId();
@@ -184,7 +184,20 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   ionViewWillEnter() {
+    void this.cierreService.cargar();
     this.cargarRelaciones();
+  }
+
+  get periodoFormularioCerrado(): boolean {
+    return this.cierreService.estaCerrado(this.nuevoGasto.fecha);
+  }
+
+  get etiquetaPeriodoFormulario(): string {
+    return this.cierreService.etiquetaPeriodo(this.nuevoGasto.fecha);
+  }
+
+  movimientoEnPeriodoCerrado(item: Gasto): boolean {
+    return this.cierreService.estaCerrado(item.fecha, item.cerrado);
   }
 
   private configurarAccionesTabla(): void {
@@ -335,8 +348,7 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
       !!this.fechaManualDesde ||
       !!this.fechaManualHasta ||
       this.filtroMontoMin !== null ||
-      this.filtroMontoMax !== null ||
-      this.filtroEstado !== 'todos';
+      this.filtroMontoMax !== null;
   }
 
   limpiarFiltros(): void {
@@ -347,7 +359,6 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
     this.fechaManualHasta = '';
     this.filtroMontoMin = null;
     this.filtroMontoMax = null;
-    this.filtroEstado = 'todos';
   }
 
   get listaFiltrada(): Gasto[] {
@@ -361,7 +372,7 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
       const search = this.searchTerm.toLowerCase();
       filtrados = filtrados.filter(g =>
         g.descripcion?.toLowerCase().includes(search) ||
-        g.proveedor?.toLowerCase().includes(search)
+        g.categoria?.toLowerCase().includes(search)
       );
     }
 
@@ -382,10 +393,6 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
       filtrados = filtrados.filter(g => (g.monto || 0) <= this.filtroMontoMax!);
     }
 
-    if (this.filtroEstado !== 'todos') {
-      filtrados = filtrados.filter(g => estadoGasto(g) === this.filtroEstado);
-    }
-
     return filtrados.map(g => ({
       ...g,
       estado: estadoGasto(g),
@@ -395,6 +402,13 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
   async registrarGasto() {
     this.intentoEnvio = true;
+    if (this.periodoFormularioCerrado) {
+      this.mostrarToast(
+        `El periodo ${this.etiquetaPeriodoFormulario} está cerrado. No se pueden registrar movimientos.`,
+        'warning'
+      );
+      return;
+    }
     this.aplicarAlcanceMinisterioAlFormulario();
 
     if (!this.esFormularioValido) {
@@ -475,6 +489,10 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
       this.mostrarToast('No puedes editar registros de otro ministerio.', 'warning');
       return;
     }
+    if (this.movimientoEnPeriodoCerrado(item)) {
+      this.mostrarToast('No puedes editar gastos de un periodo cerrado.', 'warning');
+      return;
+    }
     if (this.authService.isLider() && estadoGasto(item) === 'aprobado') {
       this.mostrarToast('No puedes editar un gasto ya aprobado.', 'warning');
       return;
@@ -492,6 +510,10 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
   async aprobarGasto(item: Gasto) {
     if (!this.puedeAprobar || estadoGasto(item) !== 'pendiente') return;
+    if (this.movimientoEnPeriodoCerrado(item)) {
+      this.mostrarToast('No se puede aprobar un gasto de un periodo cerrado.', 'warning');
+      return;
+    }
     try {
       await withLoading(this.loadingController, 'Aprobando gasto...', async () => {
         await firstValueFrom(this.gastosService.aprobar(item.id));
@@ -506,6 +528,10 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
   async rechazarGasto(item: Gasto) {
     if (!this.puedeAprobar || estadoGasto(item) !== 'pendiente') return;
+    if (this.movimientoEnPeriodoCerrado(item)) {
+      this.mostrarToast('No se puede rechazar un gasto de un periodo cerrado.', 'warning');
+      return;
+    }
 
     const alert = await this.alertController.create({
       header:  'Rechazar gasto',
@@ -539,6 +565,10 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
   async eliminarGasto(item: Gasto) {
     if (!this.perteneceAlcance(item)) {
       this.mostrarToast('No puedes eliminar registros de otro ministerio.', 'warning');
+      return;
+    }
+    if (this.movimientoEnPeriodoCerrado(item)) {
+      this.mostrarToast('No puedes eliminar gastos de un periodo cerrado.', 'warning');
       return;
     }
     if (this.authService.isLider() && estadoGasto(item) === 'aprobado') {
@@ -579,7 +609,6 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
       monto:         null,
       foto:          '',
       categoria:     'Servicios',
-      proveedor:     '',
       ministerio:    'General',
       ministerioId:  undefined,
       usuarioId:     undefined,
@@ -635,7 +664,6 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
     return (
       (this.nuevoGasto.descripcion?.trim().length ?? 0) >= 3 &&
       Number.isFinite(monto) && monto > 0 &&
-      (this.nuevoGasto.proveedor?.trim().length ?? 0) >= 2 &&
       this.fechaManualForm.length === 10 &&
       (!ministerioRequerido || this.nuevoGasto.ministerioId != null)
     );
@@ -646,9 +674,6 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
     if (!Number.isFinite(monto) || monto <= 0) return 'Ingresa un monto válido mayor a cero.';
     if (this.listaMinisterios.length > 0 && this.nuevoGasto.ministerioId == null) {
       return 'Selecciona un ministerio.';
-    }
-    if ((this.nuevoGasto.proveedor?.trim().length ?? 0) < 2) {
-      return 'Ingresa el proveedor o beneficiario.';
     }
     if ((this.nuevoGasto.descripcion?.trim().length ?? 0) < 3) {
       return 'La descripción debe tener al menos 3 caracteres.';

@@ -25,6 +25,10 @@ import { Ministerio, Usuario } from '../../core/models';
 import { DataService } from '../../services/data.service';
 import { MinisteriosService } from '../../services/ministerios.service';
 import { withLoading } from '../../shared/utils/loading.util';
+import {
+  usuariosElegiblesComoLider,
+  validarMinisterioForm
+} from '../../shared/utils/liderazgo.util';
 
 registerLocaleData(localeEs);
 
@@ -68,9 +72,10 @@ export class MinisteriosComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   columnsMinisterios: TableColumn[] = [
-    { field: 'nombre',          header: 'Nombre'                   },
-    { field: 'fechaFormateada', header: 'Creado'                   },
-    { field: 'estado',          header: 'Estado', type: 'badge'    }
+    { field: 'nombre',        header: 'Nombre'                },
+    { field: 'liderNombre',   header: 'Líder'                 },
+    { field: 'coLiderNombre', header: 'Co-líder'              },
+    { field: 'estado',        header: 'Estado', type: 'badge' }
   ];
 
   acciones = { edit: true, delete: true };
@@ -98,7 +103,13 @@ export class MinisteriosComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.ministeriosService.ministerios$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(list => { this.listaMinisterios = list; });
+      .subscribe(list => {
+        this.listaMinisterios = list;
+        this.cargarUsuarios();
+      });
+    this.dataService.usuarios$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.cargarUsuarios());
     this.cargarUsuarios();
   }
 
@@ -128,13 +139,38 @@ export class MinisteriosComponent implements OnInit, OnDestroy {
       filtrados = filtrados.filter(m => m.hldrId === this.filtroLiderId);
     }
 
-    return filtrados;
+    return filtrados.map(m => ({
+      ...m,
+      liderNombre:   this.nombreUsuario(m.hldrId),
+      coLiderNombre: this.nombreUsuario(m.coLiderId)
+    }));
+  }
+
+  private nombreUsuario(userId?: number): string {
+    if (userId == null) return '—';
+    const user = this.listaUsuarios.find(u => Number(u.id) === Number(userId));
+    return user?.nombre?.trim() || '—';
+  }
+
+  get lideresDisponibles(): Usuario[] {
+    return usuariosElegiblesComoLider(this.listaUsuarios);
   }
 
   async registrarMinisterio() {
     this.intentoEnvio = true;
     if (!this.esFormularioValido) {
-      this.mostrarToast('Por favor, completa los campos obligatorios correctamente.', 'danger');
+      this.mostrarToast(this.mensajeValidacion, 'danger');
+      return;
+    }
+
+    const errorLiderazgo = validarMinisterioForm(
+      this.nuevoMinisterio,
+      this.listaUsuarios,
+      this.listaMinisterios,
+      this.modoEdicion ? this.idEditando : null
+    );
+    if (errorLiderazgo) {
+      this.mostrarToast(errorLiderazgo, 'danger');
       return;
     }
 
@@ -157,6 +193,7 @@ export class MinisteriosComponent implements OnInit, OnDestroy {
         }
       });
 
+      this.cargarUsuarios();
       this.resetFormulario();
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Error al guardar';
@@ -229,6 +266,24 @@ export class MinisteriosComponent implements OnInit, OnDestroy {
   }
 
   get esFormularioValido(): boolean {
-    return this.nuevoMinisterio.nombre?.trim().length >= 3;
+    if (this.nuevoMinisterio.nombre?.trim().length < 3) return false;
+    return validarMinisterioForm(
+      this.nuevoMinisterio,
+      this.listaUsuarios,
+      this.listaMinisterios,
+      this.modoEdicion ? this.idEditando : null
+    ) == null;
+  }
+
+  get mensajeValidacion(): string {
+    if (this.nuevoMinisterio.nombre?.trim().length < 3) {
+      return 'El nombre del ministerio debe tener al menos 3 caracteres.';
+    }
+    return validarMinisterioForm(
+      this.nuevoMinisterio,
+      this.listaUsuarios,
+      this.listaMinisterios,
+      this.modoEdicion ? this.idEditando : null
+    ) ?? 'Revisa los datos del ministerio.';
   }
 }

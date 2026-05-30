@@ -13,19 +13,11 @@ import { NotificacionesService } from './notificaciones.service';
 import { ApiService } from './api.service';
 import { API } from '../constants/api.constants';
 import { environment } from '../../../environments/environment';
+import { loginLocalFallback } from './auth-local.fallback';
 
 interface LoginResult {
   success: boolean;
   mensaje?: string;
-}
-
-interface HardcodedUser {
-  usuario: string;
-  password: string;
-  id: string;
-  rol: AppRole;
-  email: string;
-  ministerioId?: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -33,31 +25,6 @@ export class AuthService {
 
   private readonly TOKEN_KEY = 'auth_token';
   private readonly USER_KEY  = 'user_data';
-
-  private readonly HARDCODED_USERS: HardcodedUser[] = [
-    {
-      usuario: 'admin',
-      password: '123456',
-      id: '1',
-      rol: ROLES.ADMIN,
-      email: 'admin@ieca.com'
-    },
-    {
-      usuario: 'contable',
-      password: '123456',
-      id: '2',
-      rol: ROLES.CONTABLE,
-      email: 'contable@ieca.com'
-    },
-    {
-      usuario: 'lider',
-      password: '123456',
-      id: '3',
-      rol: ROLES.LIDER,
-      email: 'lider@ieca.com',
-      ministerioId: 1
-    }
-  ];
 
   private sessionSubject = new BehaviorSubject<SessionUser | null>(this.loadSession());
   readonly session$: Observable<SessionUser | null> = this.sessionSubject.asObservable();
@@ -111,7 +78,7 @@ export class AuthService {
 
   login(usuario: string, password: string): Promise<LoginResult> {
     if (environment.useLocalFallback) {
-      return this.loginLocal(usuario, password);
+      return loginLocalFallback(usuario, password, (token, user) => this.persistSession(token, user));
     }
     return firstValueFrom(
       this.api.post<LoginResponse>(API.auth.login, { usuario, password }).pipe(
@@ -146,30 +113,16 @@ export class AuthService {
     });
   }
 
-  private loginLocal(usuario: string, password: string): Promise<LoginResult> {
-    return new Promise(resolve => {
-      setTimeout(() => {
-        const found = this.HARDCODED_USERS.find(
-          u => u.usuario === usuario && u.password === password
-        );
+  forgotPassword(usuario: string): Promise<{ message: string; devCode?: string }> {
+    return firstValueFrom(
+      this.api.post<{ message: string; devCode?: string }>(API.auth.forgotPassword, { usuario })
+    );
+  }
 
-        if (!found) {
-          resolve({ success: false, mensaje: 'Usuario o contraseña incorrectos' });
-          return;
-        }
-
-        const session: SessionUser = {
-          id: found.id,
-          usuario: found.usuario,
-          email: found.email,
-          rol: found.rol,
-          ministerioId: found.ministerioId
-        };
-
-        this.persistSession(`token_${found.id}_${Date.now()}`, session);
-        resolve({ success: true });
-      }, 800);
-    });
+  resetPassword(usuario: string, code: string, newPassword: string): Promise<{ message: string }> {
+    return firstValueFrom(
+      this.api.post<{ message: string }>(API.auth.resetPassword, { usuario, code, newPassword })
+    );
   }
 
   private persistSession(token: string, user: SessionUser): void {

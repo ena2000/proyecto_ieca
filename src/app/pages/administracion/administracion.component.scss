@@ -199,6 +199,28 @@
 .activity-meta   { font-size: 0.68rem; font-weight: 500; color: #94a3b8; }
 
 /* ==========================================================================
+   AUDITORÍA — filtros (mismo estilo que ingresos/gastos)
+   ========================================================================== */
+.audit-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.audit-filters__item {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .audit-filters {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
    RESPALDO
    ========================================================================== */
 .backup-card {
@@ -335,6 +357,16 @@
   }
 }
 
+.cierre-estado {
+  margin: 0 0 1rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.12);
+  color: #991b1b;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
 .btn-cierre {
   display: inline-flex; align-items: center; gap: 0.5rem;
   padding: 0.65rem 1.4rem;
@@ -345,8 +377,14 @@
   letter-spacing: -0.01em;
   ion-icon { font-size: 1.1rem; }
 
-  &:hover  { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(239,68,68,0.3); }
-  &:active { transform: translateY(0); }
+  &:hover:not(:disabled)  { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(239,68,68,0.3); }
+  &:active:not(:disabled) { transform: translateY(0); }
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
 }
 
 /* ==========================================================================
