@@ -5,6 +5,7 @@ import { DataService } from './data.service';
 import { gastoAprobado } from '../shared/utils/gasto.util';
 import { ingresoAprobado } from '../shared/utils/ingreso.util';
 import { formatearISOaDDMMYYYY } from '../shared/utils/date.util';
+import { etiquetaCuentaReporte } from '../shared/utils/reportes-cuenta.util';
 import {
   estiloEncabezadoTabla,
   estiloFilaDatos,
@@ -47,7 +48,9 @@ export class ReportesService {
         fecha:           i.fecha,
         fechaFormateada: formatearISOaDDMMYYYY(i.fecha),
         titulo:          i.descripcion,
-        tipo:            i.tipo || 'Ingreso',
+        tipo:            i.cuentaNombre || i.tipo || 'Ingreso',
+        cuentaCodigo:    i.cuentaCodigo,
+        cuentaNombre:    i.cuentaNombre || i.tipo,
         ministerio:      i.ministerio || 'General',
         ministerioId:    i.ministerioId,
         ingresos:        i.monto || 0,
@@ -64,7 +67,9 @@ export class ReportesService {
         fecha:           g.fecha,
         fechaFormateada: formatearISOaDDMMYYYY(g.fecha),
         titulo:          g.descripcion,
-        tipo:            g.categoria || 'Gasto',
+        tipo:            g.cuentaNombre || g.categoria || 'Gasto',
+        cuentaCodigo:    g.cuentaCodigo,
+        cuentaNombre:    g.cuentaNombre || g.categoria,
         ministerio:      this.resolverNombreMinisterio(g.ministerioId, g.ministerio, ministerios),
         ministerioId:    g.ministerioId,
         ingresos:        0,
@@ -97,7 +102,7 @@ export class ReportesService {
     const desgloseMap = new Map<string, DesgloseReporte>();
 
     reportes.forEach(r => {
-      const categoria = r.tipo || 'Sin categoría';
+      const categoria = etiquetaCuentaReporte(r);
       const existing = desgloseMap.get(categoria) || {
         categoria,
         ingresos: 0,
@@ -177,7 +182,7 @@ export class ReportesService {
     marcar(r, 0, estiloSeccion(), COLS);
     r++;
 
-    filas[r] = ['Fecha', 'Descripción', 'Tipo', 'Ministerio', 'Ingresos', 'Gastos', 'Saldo'];
+    filas[r] = ['Fecha', 'Descripción', 'Cuenta', 'Ministerio', 'Ingresos', 'Gastos', 'Saldo'];
     for (let c = 0; c < COLS; c++) {
       marcar(r, c, estiloEncabezadoTabla());
     }
@@ -187,7 +192,7 @@ export class ReportesService {
       filas[r] = [
         rep.fechaFormateada || '',
         rep.titulo || '',
-        rep.tipo || '',
+        etiquetaCuentaReporte(rep),
         rep.ministerio || '',
         rep.ingresos ?? 0,
         rep.gastos ?? 0,
@@ -208,11 +213,11 @@ export class ReportesService {
       filas[r] = [];
       r++;
 
-      filas[r] = ['Desglose por categoría'];
+      filas[r] = ['Desglose por cuenta'];
       marcar(r, 0, estiloSeccion(), COLS);
       r++;
 
-      filas[r] = ['Categoría', 'Ingresos', 'Gastos', 'Saldo', '', '', ''];
+      filas[r] = ['Cuenta', 'Ingresos', 'Gastos', 'Saldo', '', '', ''];
       for (let c = 0; c < 4; c++) {
         marcar(r, c, estiloEncabezadoTabla());
       }
