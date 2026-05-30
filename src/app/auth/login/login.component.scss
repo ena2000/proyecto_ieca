@@ -156,6 +156,22 @@
 .footer-info {
   text-align: center;
   margin-top: 25px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+
+  .forgot-link {
+    color: var(--ieca-purple);
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .forgot-link:hover {
+    text-decoration: underline;
+  }
+
   .badge {
     background: rgba(46, 53, 143, 0.08);
     color: var(--ieca-blue);

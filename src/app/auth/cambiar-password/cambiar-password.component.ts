@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { IonicModule, LoadingController, NavController, ToastController } from '@ionic/angular';
 import { AuthService } from '../../core/services/auth.service';
+import { getHttpErrorMessage } from '../../shared/utils/error-message.util';
 
 @Component({
   selector: 'app-cambiar-password',
@@ -58,9 +59,8 @@ export class CambiarPasswordComponent implements OnInit {
       await this.toast('Contraseña actualizada. ¡Listo!', 'success');
       await this.navCtrl.navigateRoot(this.auth.getRutaPorDefecto(), { animated: false });
     } catch (err) {
-      await loading.dismiss();
-      const msg = err instanceof Error ? err.message : 'No se pudo cambiar la contraseña';
-      await this.toast(msg, 'danger');
+      await loading.dismiss().catch(() => undefined);
+      await this.toast(getHttpErrorMessage(err, 'No se pudo cambiar la contraseña'), 'danger');
     }
   }
 

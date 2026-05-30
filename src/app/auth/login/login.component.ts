@@ -4,6 +4,7 @@ import { IonicModule, LoadingController, ToastController, NavController } from '
 import { Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
+import { getHttpErrorMessage } from '../../shared/utils/error-message.util';
 
 @Component({
   selector: 'app-login',
@@ -58,8 +59,6 @@ export class LoginComponent implements OnInit {
         this.loginForm.value.password
       );
 
-      await loading.dismiss();
-
       if (result.success) {
         const user = this.authService.getSession();
         this.presentToast(`¡Bienvenido ${user?.usuario}!`, 'success');
@@ -68,10 +67,9 @@ export class LoginComponent implements OnInit {
         this.presentToast(result.mensaje || 'Usuario o contraseña incorrectos', 'danger');
       }
     } catch (error) {
-      await loading.dismiss();
-      this.presentToast('Error en la autenticación. Intenta de nuevo.', 'danger');
-      console.error('Error en login:', error);
+      this.presentToast(getHttpErrorMessage(error, 'Error en la autenticación. Intenta de nuevo.'), 'danger');
     } finally {
+      await loading.dismiss().catch(() => undefined);
       this.isLoading = false;
     }
   }

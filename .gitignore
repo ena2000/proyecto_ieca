@@ -31,8 +31,17 @@ log.txt
 
 # Node
 /node_modules
+server/node_modules
 npm-debug.log
 yarn-error.log
+
+# Firebase (nunca subir credenciales)
+**/firebase-service-account.json
+**/serviceAccountKey.json
+**/*-firebase-adminsdk-*.json
+.env
+.env.*
+server/.env
 
 # IDEs and editors
 .idea/

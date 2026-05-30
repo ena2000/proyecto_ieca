@@ -56,17 +56,14 @@
             <small class="field-error">{{ passwordError }}</small>
           }
 
-          <div class="forgot-container">
-            <p class="forgot-text">¿Olvidaste tu contraseña?</p>
-          </div>
-
-          <ion-button expand="block" type="submit" class="submit-btn">
+          <ion-button expand="block" type="submit" class="submit-btn" [disabled]="isLoading">
             Iniciar Sesión
             <ion-icon slot="end" name="arrow-forward-circle"></ion-icon>
           </ion-button>
         </form>
 
         <div class="footer-info">
+          <a routerLink="/recuperar-password" class="forgot-link">¿Olvidaste tu contraseña?</a>
           <span class="badge">@2025 IECA</span>
         </div>
       </div>
