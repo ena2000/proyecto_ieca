@@ -20,8 +20,53 @@ function encontrarConflictoMinisterio(ministerios, userId, excluirMinisterioId) 
   return ministerios.find((m) => usuarioEnMinisterio(m, userId, excluirMinisterioId)) ?? null;
 }
 
+function idsLideresEnMinisterio(min, usuarios, excluirUsuarioId = null) {
+  const ids = new Set();
+  if (min.hldrId != null) ids.add(Number(min.hldrId));
+  if (min.coLiderId != null) ids.add(Number(min.coLiderId));
+  for (const u of usuarios) {
+    if (u.rol !== ROL_LIDER) continue;
+    if (Number(u.ministerioId) !== Number(min.id)) continue;
+    if (excluirUsuarioId != null && Number(u.id) === Number(excluirUsuarioId)) continue;
+    ids.add(Number(u.id));
+  }
+  return ids;
+}
+
+function ministerioTieneCupo(min, usuarios, excluirUsuarioId = null) {
+  return idsLideresEnMinisterio(min, usuarios, excluirUsuarioId).size < 2;
+}
+
+async function validarCupoMinisterioParaLider(ministerioId, usuarioId = null) {
+  const [ministerios, usuarios] = await Promise.all([
+    listCollection('ministerios'),
+    listCollection('usuarios')
+  ]);
+  const min = ministerios.find((m) => Number(m.id) === Number(ministerioId));
+  if (!min) {
+    const err = new Error('Ministerio no válido.');
+    err.status = 400;
+    throw err;
+  }
+
+  if (usuarioId != null) {
+    const uid = Number(usuarioId);
+    const ids = idsLideresEnMinisterio(min, usuarios, uid);
+    if (ids.has(uid) || ids.size < 2) return;
+  } else if (ministerioTieneCupo(min, usuarios)) {
+    return;
+  }
+
+  const err = new Error(
+    `El ministerio "${min.nombre}" ya tiene un líder y un co-líder (máximo 2). ` +
+      'Asígnalos en Ministerios o libera un cupo antes de agregar otro.'
+  );
+  err.status = 400;
+  throw err;
+}
+
 /**
- * Admin y Contable no llevan ministerio. Líder debe tener uno y no liderar otro.
+ * Admin y Contable no llevan ministerio. Líder debe tener uno, cupo y sin cruzar ministerios.
  */
 async function normalizarYValidarUsuario(body, usuarioId = null) {
   const rol = body.rol;
@@ -57,6 +102,8 @@ async function normalizarYValidarUsuario(body, usuarioId = null) {
       throw err;
     }
   }
+
+  await validarCupoMinisterioParaLider(ministerioId, usuarioId);
 
   body.ministerioId = ministerioId;
   return body;
@@ -96,7 +143,7 @@ async function validarUsuarioComoLiderDeMinisterio(userId, ministerioId, rolLabe
     Number(user.ministerioId) !== Number(ministerioId)
   ) {
     const err = new Error(
-      `${user.nombre} está vinculado a otro ministerio en su perfil. Ajusta el usuario o el ministerio.`
+      `${user.nombre} ya está vinculado a otro ministerio en Usuarios. Ajusta el usuario o el ministerio.`
     );
     err.status = 400;
     throw err;
@@ -156,5 +203,7 @@ module.exports = {
   validarMinisterioLiderazgo,
   sincronizarLideresMinisterio,
   isRolSinMinisterio,
+  idsLideresEnMinisterio,
+  ministerioTieneCupo,
   ROL_LIDER
 };

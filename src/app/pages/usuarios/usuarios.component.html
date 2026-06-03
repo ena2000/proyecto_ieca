@@ -154,7 +154,7 @@
               name="ministerioId"
               class="ieca-select"
               placeholder="Seleccione un ministerio">
-              <ion-select-option *ngFor="let min of listaMinisterios" [value]="min.id">{{ min.nombre }}</ion-select-option>
+              <ion-select-option *ngFor="let min of ministeriosParaLider" [value]="min.id">{{ min.nombre }}</ion-select-option>
             </ion-select>
           </ion-item>
           <small class="error-text" *ngIf="isRolSinMinisterio(nuevoUsuario.rol)">
@@ -164,6 +164,9 @@
             class="error-text"
             *ngIf="intentoEnvio && nuevoUsuario.rol === ROL_LIDER && !nuevoUsuario.ministerioId">
             El Líder/CoLíder debe tener un ministerio.
+          </small>
+          <small class="error-text" *ngIf="nuevoUsuario.rol === ROL_LIDER && ministeriosParaLider.length === 0">
+            No hay ministerios con cupo (máximo 1 líder y 1 co-líder por ministerio).
           </small>
         </div>
 

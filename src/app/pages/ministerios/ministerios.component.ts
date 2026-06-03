@@ -27,7 +27,7 @@ import { MinisteriosService } from '../../services/ministerios.service';
 import { withLoading } from '../../shared/utils/loading.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
 import {
-  usuariosElegiblesComoLider,
+  usuariosElegiblesParaMinisterio,
   validarMinisterioForm
 } from '../../shared/utils/liderazgo.util';
 
@@ -153,8 +153,32 @@ export class MinisteriosComponent implements OnInit, OnDestroy {
     return user?.nombre?.trim() || '—';
   }
 
-  get lideresDisponibles(): Usuario[] {
-    return usuariosElegiblesComoLider(this.listaUsuarios);
+  private get ministerioIdForm(): number | null {
+    return this.modoEdicion ? this.idEditando : null;
+  }
+
+  get lideresParaHldr(): Usuario[] {
+    return usuariosElegiblesParaMinisterio(
+      this.listaUsuarios,
+      this.listaMinisterios,
+      this.ministerioIdForm,
+      {
+        mantenerUserIds: [this.nuevoMinisterio.hldrId],
+        excluirUserIds: [this.nuevoMinisterio.coLiderId]
+      }
+    );
+  }
+
+  get lideresParaCo(): Usuario[] {
+    return usuariosElegiblesParaMinisterio(
+      this.listaUsuarios,
+      this.listaMinisterios,
+      this.ministerioIdForm,
+      {
+        mantenerUserIds: [this.nuevoMinisterio.coLiderId],
+        excluirUserIds: [this.nuevoMinisterio.hldrId]
+      }
+    );
   }
 
   async registrarMinisterio() {

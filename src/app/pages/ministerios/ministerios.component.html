@@ -78,7 +78,7 @@
               class="ieca-select"
               placeholder="Seleccione líder">
               <ion-select-option [value]="null">Sin asignar</ion-select-option>
-              <ion-select-option *ngFor="let user of lideresDisponibles" [value]="user.id">
+              <ion-select-option *ngFor="let user of lideresParaHldr" [value]="user.id">
                 {{ user.nombre }}
               </ion-select-option>
             </ion-select>
@@ -97,7 +97,7 @@
               class="ieca-select"
               placeholder="Seleccione co-líder">
               <ion-select-option [value]="null">Sin asignar</ion-select-option>
-              <ion-select-option *ngFor="let user of lideresDisponibles" [value]="user.id">
+              <ion-select-option *ngFor="let user of lideresParaCo" [value]="user.id">
                 {{ user.nombre }}
               </ion-select-option>
             </ion-select>

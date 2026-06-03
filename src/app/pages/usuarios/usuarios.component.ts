@@ -27,6 +27,7 @@ import { withLoading } from '../../shared/utils/loading.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
 import {
   isRolSinMinisterio,
+  ministeriosConCupoParaLider,
   ROL_LIDER,
   validarUsuarioForm
 } from '../../shared/utils/liderazgo.util';
@@ -125,6 +126,9 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     this.usuariosService.usuarios$
       .pipe(takeUntil(this.destroy$))
       .subscribe(list => { this.listaUsuarios = list; });
+    this.dataService.ministerios$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.cargarMinisterios());
     this.cargarMinisterios();
   }
 
@@ -182,6 +186,15 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     }
   }
 
+  get ministeriosParaLider(): Ministerio[] {
+    return ministeriosConCupoParaLider(
+      this.listaMinisterios,
+      this.listaUsuarios,
+      this.modoEdicion ? this.idEditando : null,
+      this.nuevoUsuario.ministerioId ?? null
+    );
+  }
+
   private prepararPayloadUsuario(): UsuarioPayload {
     const { id, ...datos } = this.nuevoUsuario;
     const payload: UsuarioPayload = {
@@ -204,6 +217,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     const errorLiderazgo = validarUsuarioForm(
       this.nuevoUsuario,
       this.listaMinisterios,
+      this.listaUsuarios,
       this.modoEdicion ? this.idEditando : null
     );
     if (errorLiderazgo) {
@@ -335,6 +349,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     return validarUsuarioForm(
       this.nuevoUsuario,
       this.listaMinisterios,
+      this.listaUsuarios,
       this.modoEdicion ? this.idEditando : null
     ) == null;
   }
@@ -346,6 +361,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     return validarUsuarioForm(
       this.nuevoUsuario,
       this.listaMinisterios,
+      this.listaUsuarios,
       this.modoEdicion ? this.idEditando : null
     ) ?? 'Completa los campos obligatorios correctamente.';
   }

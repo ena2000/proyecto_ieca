@@ -69,7 +69,6 @@ export class UsuariosService {
   }
 
   private createLocal(usuario: UsuarioPayload): Usuario {
-    // En modo local no se gestiona contraseña (solo backend).
     const { password: _ignored, ...data } = usuario;
     const nuevo: Usuario = { ...data, id: this.nextId() };
     this.persist([nuevo, ...this.getAll()]);
