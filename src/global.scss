@@ -443,7 +443,7 @@ ion-app .app-main .ion-page > ion-content {
 }
 
 /* ==========================================================================
-   RESPONSIVE
+   RESPONSIVE — ventana del navegador estrecha (app web, no móvil)
    ========================================================================== */
 @media (max-width: 768px) {
   :root {
@@ -496,4 +496,128 @@ ion-popover {
   &::part(content) {
     background: var(--ion-background-color, #ffffff);
   }
+}
+
+/* ==========================================================================
+   FEEDBACK: TOAST, ALERT, LOADING (app web — ventana del navegador reducida)
+   ========================================================================== */
+ion-toast.ieca-toast {
+  --border-radius: var(--radius-lg);
+  --box-shadow: 0 10px 32px rgba(15, 23, 42, 0.22);
+  --width: min(460px, calc(100vw - 24px));
+  --max-width: calc(100vw - 24px);
+  --top: calc(var(--toolbar-height) + 12px);
+  --start: 12px;
+  --end: 12px;
+  font-weight: 600;
+  z-index: 100000;
+}
+
+/* Toasts dentro del área de contenido (sidebar fijo en escritorio) */
+ion-app.ieca-has-sidebar ion-toast.ieca-toast {
+  --start: calc(var(--ieca-sidebar-width) + 12px);
+  --width: min(460px, calc(100vw - var(--ieca-sidebar-width) - 24px));
+  --max-width: calc(100vw - var(--ieca-sidebar-width) - 24px);
+}
+
+ion-toast.ieca-toast::part(message) {
+  white-space: normal;
+  line-height: 1.45;
+  text-align: center;
+  padding: 2px 4px;
+  word-break: break-word;
+}
+
+ion-toast.ieca-toast::part(container) {
+  padding: 10px 14px;
+}
+
+ion-toast.ieca-toast::part(button) {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: none;
+}
+
+/* Ventana del navegador estrecha (no diseño móvil) */
+@media (max-width: 900px) {
+  ion-toast.ieca-toast {
+    --width: calc(100vw - 20px);
+    --max-width: calc(100vw - 20px);
+    --start: 10px;
+    --end: 10px;
+  }
+
+  ion-app.ieca-has-sidebar ion-toast.ieca-toast {
+    --start: 10px;
+    --width: calc(100vw - 20px);
+    --max-width: calc(100vw - 20px);
+  }
+
+  ion-toast.ieca-toast::part(container) {
+    padding: 12px 14px;
+  }
+
+  ion-toast.ieca-toast::part(message) {
+    font-size: 0.84rem;
+  }
+}
+
+ion-alert {
+  --width: min(400px, calc(100vw - 28px));
+  --max-width: calc(100vw - 28px);
+}
+
+ion-alert .alert-head {
+  padding-top: 16px;
+}
+
+ion-alert .alert-title {
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+ion-alert .alert-message,
+ion-alert .alert-sub-title {
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.5;
+  font-size: 0.86rem;
+  text-align: left;
+  max-height: min(50vh, 320px);
+  overflow-y: auto;
+}
+
+ion-alert .alert-button-group {
+  flex-wrap: wrap;
+}
+
+ion-alert .alert-button {
+  min-height: 36px;
+  font-size: 0.84rem;
+  cursor: pointer;
+}
+
+ion-loading.ieca-loading {
+  --width: min(280px, calc(100vw - 40px));
+  --max-width: calc(100vw - 40px);
+  --height: auto;
+  --border-radius: var(--radius-lg);
+  --spinner-color: var(--ieca-blue);
+  --backdrop-opacity: 0.35;
+}
+
+ion-loading.ieca-loading .loading-wrapper {
+  padding: 20px 18px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--ieca-shadow-lg);
+}
+
+ion-loading.ieca-loading .loading-content {
+  white-space: normal;
+  text-align: center;
+  line-height: 1.45;
+  font-size: 0.84rem;
+  font-weight: 600;
+  max-width: min(240px, calc(100vw - 80px));
+  word-break: break-word;
 }

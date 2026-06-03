@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { IonicModule, LoadingController, NavController, ToastController } from '@ionic/angular';
 import { AuthService } from '../../core/services/auth.service';
 import { getHttpErrorMessage } from '../../shared/utils/error-message.util';
+import { presentIecaToast } from '../../shared/utils/toast.util';
 
 type Paso = 'solicitar' | 'restablecer';
 
@@ -59,7 +60,8 @@ export class RecuperarPasswordComponent {
     this.isLoading = true;
     const loading = await this.loadingCtrl.create({
       message: 'Enviando código...',
-      spinner: 'circles'
+      spinner: 'circles',
+      cssClass: 'ieca-loading'
     });
     await loading.present();
 
@@ -90,7 +92,8 @@ export class RecuperarPasswordComponent {
     this.isLoading = true;
     const loading = await this.loadingCtrl.create({
       message: 'Actualizando contraseña...',
-      spinner: 'circles'
+      spinner: 'circles',
+      cssClass: 'ieca-loading'
     });
     await loading.present();
 
@@ -114,12 +117,6 @@ export class RecuperarPasswordComponent {
   }
 
   private async toast(message: string, color: string): Promise<void> {
-    const t = await this.toastCtrl.create({
-      message,
-      duration: 3200,
-      color,
-      position: 'top'
-    });
-    await t.present();
+    await presentIecaToast(this.toastCtrl, message, color, 3200);
   }
 }

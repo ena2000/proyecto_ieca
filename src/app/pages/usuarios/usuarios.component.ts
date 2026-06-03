@@ -24,6 +24,7 @@ import { Usuario, Ministerio } from '../../core/models';
 import { DataService } from '../../services/data.service';
 import { UsuariosService, UsuarioPayload, UsuarioCreateResponse } from '../../services/usuarios.service';
 import { withLoading } from '../../shared/utils/loading.util';
+import { presentIecaToast } from '../../shared/utils/toast.util';
 import {
   isRolSinMinisterio,
   ROL_LIDER,
@@ -223,7 +224,10 @@ export class UsuariosComponent implements OnInit, OnDestroy {
           const res = await firstValueFrom(this.usuariosService.create(payload)) as UsuarioCreateResponse;
           await this.mostrarToast('Usuario creado exitosamente', 'success');
           if (!this.password.trim() && res?.tempPassword) {
-            this.mostrarContrasenaTemporal(res.usuario, res.tempPassword);
+            this.mostrarContrasenaTemporal(
+              res.usuario ?? payload.email ?? 'usuario',
+              res.tempPassword
+            );
           }
         }
       });
@@ -314,13 +318,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   }
 
   async mostrarToast(mensaje: string, color: string) {
-    const toast = await this.toastController.create({
-      message:  mensaje,
-      duration: 2000,
-      color,
-      position: 'top'
-    });
-    await toast.present();
+    await presentIecaToast(this.toastController, mensaje, color);
   }
 
   get esFormularioValido(): boolean {

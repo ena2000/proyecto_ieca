@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { IonicModule, LoadingController, NavController, ToastController } from '@ionic/angular';
 import { AuthService } from '../../core/services/auth.service';
 import { getHttpErrorMessage } from '../../shared/utils/error-message.util';
+import { presentIecaToast } from '../../shared/utils/toast.util';
 
 @Component({
   selector: 'app-cambiar-password',
@@ -49,7 +50,8 @@ export class CambiarPasswordComponent implements OnInit {
 
     const loading = await this.loadingCtrl.create({
       message: 'Actualizando contraseña...',
-      spinner: 'circles'
+      spinner: 'circles',
+      cssClass: 'ieca-loading'
     });
     await loading.present();
 
@@ -65,8 +67,7 @@ export class CambiarPasswordComponent implements OnInit {
   }
 
   private async toast(message: string, color: string): Promise<void> {
-    const t = await this.toastCtrl.create({ message, duration: 2500, color, position: 'top' });
-    await t.present();
+    await presentIecaToast(this.toastCtrl, message, color, 2800);
   }
 }
 

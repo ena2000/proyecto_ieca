@@ -5,6 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
 import { getHttpErrorMessage } from '../../shared/utils/error-message.util';
+import { presentIecaToast } from '../../shared/utils/toast.util';
 
 @Component({
   selector: 'app-login',
@@ -49,7 +50,8 @@ export class LoginComponent implements OnInit {
     this.isLoading = true;
     const loading = await this.loadingCtrl.create({
       message: 'Validando credenciales...',
-      spinner: 'circles'
+      spinner: 'circles',
+      cssClass: 'ieca-loading'
     });
     await loading.present();
 
@@ -75,13 +77,7 @@ export class LoginComponent implements OnInit {
   }
 
   async presentToast(msj: string, color: string) {
-    const toast = await this.toastCtrl.create({
-      message: msj,
-      duration: 2000,
-      color: color,
-      position: 'bottom'
-    });
-    await toast.present();
+    await presentIecaToast(this.toastCtrl, msj, color);
   }
 
   togglePassword() {

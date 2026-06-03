@@ -2,6 +2,7 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { ToastController } from '@ionic/angular/standalone';
 import { AuthService } from '../services/auth.service';
+import { presentIecaToast } from '../../shared/utils/toast.util';
 import { puedeAccederRuta, rutaPorDefecto } from '../constants/roles.constants';
 
 export const roleGuard: CanActivateFn = async (_route, state) => {
@@ -29,13 +30,12 @@ export const roleGuard: CanActivateFn = async (_route, state) => {
     return true;
   }
 
-  const toast = await toastCtrl.create({
-    message:  'No tienes permiso para acceder a esta sección.',
-    duration: 3200,
-    color:    'warning',
-    position: 'top'
-  });
-  await toast.present();
+  await presentIecaToast(
+    toastCtrl,
+    'No tienes permiso para acceder a esta sección.',
+    'warning',
+    3200
+  );
 
   return router.createUrlTree([
     auth.getRutaPorDefecto() || rutaPorDefecto(auth.getRol())

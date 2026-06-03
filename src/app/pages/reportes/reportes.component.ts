@@ -37,6 +37,7 @@ import {
   cerrarVisorComprobante
 } from '../../shared/utils/movimiento-comprobante.util';
 import { etiquetaCuentaReporte } from '../../shared/utils/reportes-cuenta.util';
+import { presentIecaToast } from '../../shared/utils/toast.util';
 
 export type { FiltroMovimientoReporte } from '../../shared/utils/reportes-filtros.util';
 
@@ -266,12 +267,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
   }
 
   async mostrarToast(mensaje: string, color: string): Promise<void> {
-    const toast = await this.toastController.create({
-      message: mensaje,
-      duration: 2000,
-      color,
-      position: 'top'
-    });
-    await toast.present();
+    await presentIecaToast(this.toastController, mensaje, color);
   }
 }

@@ -272,51 +272,52 @@
 
   </div>
 
-  @if (contrasenaTemporal) {
-    <div
-      class="lightbox-overlay temp-password-overlay"
-      (click)="cerrarContrasenaTemporal()">
-      <div
-        class="temp-password-card"
-        role="dialog"
-        aria-labelledby="temp-password-title"
-        (click)="$event.stopPropagation()">
-        <button
-          type="button"
-          class="close-lightbox temp-password-close"
-          aria-label="Cerrar"
-          (click)="cerrarContrasenaTemporal()">
-          <ion-icon name="close-outline"></ion-icon>
-        </button>
-
-        <h2 id="temp-password-title" class="temp-password-title">
-          Contraseña temporal
-        </h2>
-        <p class="temp-password-user">
-          Usuario: <strong>{{ contrasenaTemporal.usuario }}</strong>
-        </p>
-
-        <button
-          type="button"
-          class="temp-password-copy"
-          (click)="copiarContrasenaTemporal()">
-          <span class="temp-password-value">{{ contrasenaTemporal.password }}</span>
-          <ion-icon name="copy-outline" aria-hidden="true"></ion-icon>
-        </button>
-        <p class="temp-password-hint">Toca la contraseña para copiarla</p>
-
-        <p class="temp-password-note">
-          Compártela una sola vez. Al iniciar sesión el usuario puede cambiarla.
-        </p>
-
-        <ion-button
-          expand="block"
-          class="ieca-button-primary temp-password-ok"
-          (click)="cerrarContrasenaTemporal()">
-          Entendido
-        </ion-button>
-      </div>
-    </div>
-  }
-
 </ion-content>
+
+@if (contrasenaTemporal) {
+  <div
+    class="lightbox-overlay temp-password-overlay"
+    (click)="cerrarContrasenaTemporal()">
+    <div
+      class="temp-password-card"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="temp-password-title"
+      (click)="$event.stopPropagation()">
+      <button
+        type="button"
+        class="close-lightbox temp-password-close"
+        aria-label="Cerrar"
+        (click)="cerrarContrasenaTemporal()">
+        <ion-icon name="close-outline"></ion-icon>
+      </button>
+
+      <h2 id="temp-password-title" class="temp-password-title">
+        Contraseña temporal
+      </h2>
+      <p class="temp-password-user">
+        Usuario: <strong>{{ contrasenaTemporal.usuario }}</strong>
+      </p>
+
+      <button
+        type="button"
+        class="temp-password-copy"
+        (click)="copiarContrasenaTemporal()">
+        <span class="temp-password-value">{{ contrasenaTemporal.password }}</span>
+        <ion-icon name="copy-outline" aria-hidden="true"></ion-icon>
+      </button>
+      <p class="temp-password-hint">Clic en la contraseña para copiarla</p>
+
+      <p class="temp-password-note">
+        Compártela una sola vez. Al iniciar sesión el usuario puede cambiarla.
+      </p>
+
+      <ion-button
+        expand="block"
+        class="ieca-button-primary temp-password-ok"
+        (click)="cerrarContrasenaTemporal()">
+        Entendido
+      </ion-button>
+    </div>
+  </div>
+}

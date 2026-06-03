@@ -6,7 +6,11 @@ export async function withLoading(
   message: string,
   task: () => Promise<void>
 ): Promise<void> {
-  const loading = await loadingCtrl.create({ message, spinner: 'circles' });
+  const loading = await loadingCtrl.create({
+    message,
+    spinner: 'circles',
+    cssClass: 'ieca-loading'
+  });
   await loading.present();
   try {
     await task();
@@ -21,7 +25,11 @@ export async function withLoadingResult<T>(
   message: string,
   task: () => Promise<T>
 ): Promise<T> {
-  const loading = await loadingCtrl.create({ message, spinner: 'circles' });
+  const loading = await loadingCtrl.create({
+    message,
+    spinner: 'circles',
+    cssClass: 'ieca-loading'
+  });
   await loading.present();
   try {
     return await task();

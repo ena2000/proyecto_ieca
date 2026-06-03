@@ -1,0 +1,17 @@
+---
+description: IECA es aplicación web de escritorio/navegador, no app móvil
+alwaysApply: true
+---
+
+# App web (no móvil)
+
+Este proyecto se usa en **navegador de escritorio** (panel administrativo IECA), no como app móvil nativa ni PWA táctil.
+
+Al diseñar UI, copys y estilos:
+
+- Usar lenguaje de **escritorio**: "clic", "copiar", "ventana", no "toca" ni patrones solo touch.
+- Los `@media` son para **ventanas del navegador reducidas**, no breakpoints móviles.
+- Evitar `safe-area-inset`, gestos touch-first y metáforas móviles innecesarias.
+- Toasts y modales deben respetar el **sidebar fijo** (`--ieca-sidebar-width`) y la barra superior.
+- Preferir `cursor: pointer`, hover y selección de texto donde aplique.
+- Usar `presentIecaToast` (`src/app/shared/utils/toast.util.ts`) para mensajes de estado.

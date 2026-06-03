@@ -25,6 +25,7 @@ import { Ministerio, Usuario } from '../../core/models';
 import { DataService } from '../../services/data.service';
 import { MinisteriosService } from '../../services/ministerios.service';
 import { withLoading } from '../../shared/utils/loading.util';
+import { presentIecaToast } from '../../shared/utils/toast.util';
 import {
   usuariosElegiblesComoLider,
   validarMinisterioForm
@@ -256,13 +257,7 @@ export class MinisteriosComponent implements OnInit, OnDestroy {
   }
 
   async mostrarToast(mensaje: string, color: string) {
-    const toast = await this.toastController.create({
-      message:  mensaje,
-      duration: 2000,
-      color,
-      position: 'top'
-    });
-    await toast.present();
+    await presentIecaToast(this.toastController, mensaje, color);
   }
 
   get esFormularioValido(): boolean {

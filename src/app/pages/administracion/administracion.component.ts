@@ -20,6 +20,7 @@ import { AdministracionService } from '../../services/administracion.service';
 import { NotificacionesBellComponent } from '../../components/notificaciones-bell/notificaciones-bell.component';
 import { abrirSelectorFechaNativo } from '../../shared/utils/date-picker.util';
 import { withLoadingResult, getHttpErrorMessage } from '../../shared/utils/loading.util';
+import { presentIecaToast } from '../../shared/utils/toast.util';
 import { registerAdministracionPageIcons } from '../../shared/utils/administracion-page.icons';
 import {
   aplicarFechaManualAuditoria,
@@ -304,12 +305,6 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
   }
 
   async mostrarToast(mensaje: string, color: string): Promise<void> {
-    const toast = await this.toastController.create({
-      message: mensaje,
-      duration: 2500,
-      color,
-      position: 'top'
-    });
-    await toast.present();
+    await presentIecaToast(this.toastController, mensaje, color, 2800);
   }
 }

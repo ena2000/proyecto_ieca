@@ -140,6 +140,10 @@ export class TablaGeneralComponent implements OnChanges {
   openEvidence(url: string) {
     if (!url) return;
     this.evidenceClick.emit(url);
+    // Si la página padre maneja el visor (gastos/ingresos), no abrir el lightbox interno.
+    if (this.evidenceClick.observed) {
+      return;
+    }
     if (this.esPdf(url)) {
       this.selectedPdf = url;
       document.body.style.overflow = 'hidden';

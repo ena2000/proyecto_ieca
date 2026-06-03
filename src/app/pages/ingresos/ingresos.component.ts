@@ -19,6 +19,7 @@ import { formatearISOaDDMMYYYY } from '../../shared/utils/date.util';
 import { abrirSelectorFechaNativo, isoToDateInputValue } from '../../shared/utils/date-picker.util';
 import { procesarComprobante, esComprobantePdf } from '../../shared/utils/comprobante-upload.util';
 import { withLoading } from '../../shared/utils/loading.util';
+import { presentIecaToast } from '../../shared/utils/toast.util';
 import { estadoIngreso, etiquetaEstadoIngreso, ingresoPendiente } from '../../shared/utils/ingreso.util';
 import { registerMovimientoPageIcons } from '../../shared/utils/movimiento-page.icons';
 import { filtrarMovimientos, hayFiltrosMovimientoActivos, FiltrosMovimiento } from '../../shared/utils/movimiento-filtros.util';
@@ -541,8 +542,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   async mostrarToast(mensaje: string, color: string): Promise<void> {
-    const toast = await this.toastController.create({ message: mensaje, duration: 2000, color, position: 'top' });
-    await toast.present();
+    await presentIecaToast(this.toastController, mensaje, color);
   }
 
   onCuentaIngresoChange(codigo: string): void {

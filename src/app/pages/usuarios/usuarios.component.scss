@@ -1,15 +1,25 @@
 .temp-password-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
   padding: 24px;
+  overflow-y: auto;
+  align-items: center;
+  align-content: center;
 }
 
 .temp-password-card {
   position: relative;
   width: min(420px, 100%);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
   padding: 28px 24px 24px;
+  margin: auto;
   border-radius: var(--radius-lg, 16px);
   background: #ffffff;
   box-shadow: 0 24px 48px rgba(15, 23, 42, 0.25);
   text-align: center;
+  box-sizing: border-box;
 }
 
 .temp-password-close {
@@ -26,6 +36,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 1;
 
   &:hover {
     background: var(--ieca-red, #dc2626);
@@ -35,6 +46,7 @@
 
 .temp-password-title {
   margin: 0 0 8px;
+  padding-right: 28px;
   color: var(--ieca-blue, #1d4ed8);
   font-size: 1.35rem;
   font-weight: 800;
@@ -44,6 +56,7 @@
   margin: 0 0 20px;
   color: #64748b;
   font-size: 0.95rem;
+  word-break: break-word;
 
   strong {
     color: #0f172a;
@@ -64,6 +77,7 @@
   color: var(--ieca-blue, #1d4ed8);
   cursor: pointer;
   transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+  box-sizing: border-box;
 
   &:hover {
     background: rgba(29, 78, 216, 0.12);
@@ -87,6 +101,8 @@
   letter-spacing: 0.06em;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   user-select: all;
+  word-break: break-all;
+  overflow-wrap: anywhere;
 }
 
 .temp-password-hint {
@@ -105,4 +121,42 @@
 
 .temp-password-ok {
   margin: 0;
+}
+
+/* Ventana del navegador reducida */
+@media (max-width: 720px) {
+  .temp-password-card {
+    padding: 24px 16px 16px;
+  }
+
+  .temp-password-title {
+    font-size: 1.1rem;
+  }
+
+  .temp-password-value {
+    font-size: 1.05rem;
+    letter-spacing: 0.03em;
+  }
+
+  .temp-password-copy {
+    flex-wrap: wrap;
+    padding: 12px 14px;
+    gap: 8px;
+  }
+
+  .temp-password-note,
+  .temp-password-hint {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-height: 560px) {
+  .temp-password-overlay {
+    align-items: flex-start;
+  }
+
+  .temp-password-card {
+    margin-top: 8px;
+    margin-bottom: 8px;
+  }
 }

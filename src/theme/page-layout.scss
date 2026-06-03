@@ -895,6 +895,7 @@ ion-select {
   }
 }
 
+/* Layout en ventana del navegador estrecha (escritorio reducido) */
 @media (max-width: 768px) {
   .ieca-grid-form {
     grid-template-columns: 1fr !important;
@@ -959,6 +960,23 @@ ion-select {
 
   .page-header--rich {
     flex-direction: column;
+  }
+
+  .error-text {
+    font-size: 0.76rem;
+    line-height: 1.4;
+  }
+
+  .edit-status-badge {
+    flex-wrap: wrap;
+    max-width: 100%;
+    font-size: 0.78rem;
+    line-height: 1.35;
+  }
+
+  .cierre-alert {
+    font-size: 0.82rem;
+    line-height: 1.45;
   }
 }
 
