@@ -267,7 +267,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   async eliminarUsuario(item: Usuario) {
     const alert = await this.alertController.create({
       header:  'Confirmar eliminación',
-      message: `¿Estás seguro de eliminar el usuario #${item.id}?`,
+      message: `¿Estás seguro de eliminar al usuario "${item.nombre?.trim() || item.email || 'sin nombre'}"?`,
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
         {

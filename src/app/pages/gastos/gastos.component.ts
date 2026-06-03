@@ -486,7 +486,7 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
     }
     const alert = await this.alertController.create({
       header: 'Confirmar eliminación',
-      message: `¿Estás seguro de eliminar el registro #${item.id}?`,
+      message: `¿Estás seguro de eliminar el registro "${item.descripcion?.trim() || item.cuentaNombre?.trim() || 'sin descripción'}"?`,
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
         {

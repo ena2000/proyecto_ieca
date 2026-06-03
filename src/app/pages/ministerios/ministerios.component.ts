@@ -239,7 +239,7 @@ export class MinisteriosComponent implements OnInit, OnDestroy {
   async eliminarMinisterio(item: Ministerio) {
     const alert = await this.alertController.create({
       header:  'Confirmar eliminación',
-      message: `¿Estás seguro de eliminar el ministerio #${item.id}?`,
+      message: `¿Estás seguro de eliminar el ministerio "${item.nombre?.trim() || 'sin nombre'}"?`,
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
         {
