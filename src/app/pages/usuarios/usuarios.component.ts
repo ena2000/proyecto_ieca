@@ -15,7 +15,7 @@ import { LoadingController } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import {
   notificationsOutline, expandOutline, closeOutline, pencilOutline,
-  trashOutline, addCircleOutline, optionsOutline, saveOutline
+  trashOutline, addCircleOutline, optionsOutline, saveOutline, copyOutline
 } from 'ionicons/icons';
 
 import { TablaGeneralComponent, TableColumn } from 'src/app/components/tabla-general/tabla-general.component';
@@ -83,6 +83,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
 
   searchTerm:       string = '';
   fotoSeleccionada: string | null = null;
+  contrasenaTemporal: { usuario: string; password: string } | null = null;
 
   private destroy$ = new Subject<void>();
 
@@ -114,7 +115,8 @@ export class UsuariosComponent implements OnInit, OnDestroy {
       'trash-outline':         trashOutline,
       'add-circle-outline':    addCircleOutline,
       'options-outline':       optionsOutline,
-      'save-outline':          saveOutline
+      'save-outline':          saveOutline,
+      'copy-outline':          copyOutline
     });
   }
 
@@ -132,7 +134,9 @@ export class UsuariosComponent implements OnInit, OnDestroy {
 
   @HostListener('document:keydown.escape', [])
   handleEscapeKey() {
-    if (this.fotoSeleccionada) {
+    if (this.contrasenaTemporal) {
+      this.cerrarContrasenaTemporal();
+    } else if (this.fotoSeleccionada) {
       this.cerrarImagen();
     }
   }
@@ -219,15 +223,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
           const res = await firstValueFrom(this.usuariosService.create(payload)) as UsuarioCreateResponse;
           await this.mostrarToast('Usuario creado exitosamente', 'success');
           if (!this.password.trim() && res?.tempPassword) {
-            const alert = await this.alertController.create({
-              header: 'Contraseña temporal',
-              message:
-                `Usuario: ${res.usuario}\n` +
-                `Contraseña temporal: ${res.tempPassword}\n\n` +
-                `Compártela una sola vez. Al iniciar sesión puede cambiarla.`,
-              buttons: ['OK']
-            });
-            await alert.present();
+            this.mostrarContrasenaTemporal(res.usuario, res.tempPassword);
           }
         }
       });
@@ -293,6 +289,28 @@ export class UsuariosComponent implements OnInit, OnDestroy {
 
   cargarMinisterios() {
     this.listaMinisterios = this.dataService.getMinisteriosActuales();
+  }
+
+  mostrarContrasenaTemporal(usuario: string, password: string): void {
+    this.contrasenaTemporal = { usuario, password };
+    document.body.style.overflow = 'hidden';
+  }
+
+  cerrarContrasenaTemporal(): void {
+    this.contrasenaTemporal = null;
+    document.body.style.overflow = 'auto';
+  }
+
+  async copiarContrasenaTemporal(): Promise<void> {
+    const password = this.contrasenaTemporal?.password;
+    if (!password) return;
+
+    try {
+      await navigator.clipboard.writeText(password);
+      await this.mostrarToast('Contraseña copiada al portapapeles', 'success');
+    } catch {
+      await this.mostrarToast('No se pudo copiar. Selecciónala manualmente.', 'warning');
+    }
   }
 
   async mostrarToast(mensaje: string, color: string) {

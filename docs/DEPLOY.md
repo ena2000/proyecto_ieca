@@ -2,6 +2,15 @@
 
 Guía para publicar el frontend (Angular/Ionic) y la API (Node.js + TypeScript) en **producción real**.
 
+### Plataforma de uso
+
+| Ámbito | Estado |
+|--------|--------|
+| **Web (navegador)** | Uso previsto y despliegue actual: la aplicación se opera desde el **navegador en escritorio** (hosting estático + API). |
+| **Móvil** | **Implementación futura** — no está previsto desplegar ni dar soporte oficial en teléfono en esta fase. |
+
+A nivel técnico, el frontend **ya está orientado a móvil**: **Ionic 8**, estilos **responsive**, metaetiquetas en `index.html` para pantallas pequeñas y **Capacitor 8** en el proyecto (`capacitor.config.ts`). Eso facilitará una fase posterior (PWA, navegador móvil o app nativa), pero **esta guía y los flujos de release cubren solo web**: no hay proyectos Android/iOS generados ni builds móviles documentados aquí.
+
 ---
 
 ## Checklist obligatorio

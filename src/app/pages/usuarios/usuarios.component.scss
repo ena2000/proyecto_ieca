@@ -1,1 +1,108 @@
-/* Estilos de layout: src/theme/page-layout.scss */
+.temp-password-overlay {
+  padding: 24px;
+}
+
+.temp-password-card {
+  position: relative;
+  width: min(420px, 100%);
+  padding: 28px 24px 24px;
+  border-radius: var(--radius-lg, 16px);
+  background: #ffffff;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.25);
+  text-align: center;
+}
+
+.temp-password-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.08);
+  color: #334155;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background: var(--ieca-red, #dc2626);
+    color: #ffffff;
+  }
+}
+
+.temp-password-title {
+  margin: 0 0 8px;
+  color: var(--ieca-blue, #1d4ed8);
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.temp-password-user {
+  margin: 0 0 20px;
+  color: #64748b;
+  font-size: 0.95rem;
+
+  strong {
+    color: #0f172a;
+  }
+}
+
+.temp-password-copy {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  margin: 0 auto 8px;
+  padding: 16px 20px;
+  border: 2px dashed rgba(29, 78, 216, 0.35);
+  border-radius: 14px;
+  background: rgba(29, 78, 216, 0.06);
+  color: var(--ieca-blue, #1d4ed8);
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+
+  &:hover {
+    background: rgba(29, 78, 216, 0.12);
+    border-color: var(--ieca-blue, #1d4ed8);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  ion-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+  }
+}
+
+.temp-password-value {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  user-select: all;
+}
+
+.temp-password-hint {
+  margin: 0 0 16px;
+  color: var(--ieca-purple, #7c3aed);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.temp-password-note {
+  margin: 0 0 20px;
+  color: #64748b;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.temp-password-ok {
+  margin: 0;
+}

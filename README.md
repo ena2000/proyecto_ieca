@@ -4,6 +4,15 @@ Sistema web para la administración financiera de la **Iglesia Evangélica La Al
 
 **Stack:** Angular 20 + Ionic 8 (frontend) · Node.js + Express 5 (API) · Firebase Firestore (datos).
 
+### Plataforma de uso
+
+| Ámbito | Estado |
+|--------|--------|
+| **Web (navegador)** | Uso previsto y despliegue actual: la aplicación se opera desde el **navegador en escritorio** (hosting estático + API). |
+| **Móvil** | **Implementación futura** — no está previsto desplegar ni dar soporte oficial en teléfono en esta fase. |
+
+A nivel técnico, el frontend **ya está orientado a móvil**: **Ionic 8**, estilos **responsive**, metaetiquetas en `index.html` para pantallas pequeñas y **Capacitor 8** en el proyecto (`capacitor.config.ts`). Eso facilitará una fase posterior (PWA, navegador móvil o app nativa), pero hoy no hay proyectos Android/iOS generados ni builds móviles en el flujo de release.
+
 ---
 
 ## Tabla de contenidos
@@ -114,7 +123,7 @@ En desarrollo, las peticiones a `/api` se redirigen al backend con `src/proxy.co
 | Frontend | Angular 20, Ionic 8, TypeScript, SCSS, Chart.js |
 | Backend | Node.js 20+, **TypeScript**, Express 5, JWT, bcryptjs, Zod, Helmet |
 | Base de datos | Firebase Firestore |
-| Móvil | Capacitor 8 (web responsive; builds nativos opcionales) |
+| Móvil (futuro) | Capacitor 8 + UI responsive; despliegue móvil no activo; base lista para una fase posterior |
 | Exportación | xlsx, xlsx-js-style |
 | CI/CD | GitHub Actions (lint, test, build, artefactos de release) |
 
