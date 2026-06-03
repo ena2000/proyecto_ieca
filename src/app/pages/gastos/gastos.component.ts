@@ -581,4 +581,16 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
       ministerioScopeId: this.ministerioScopeId
     });
   }
+
+  get editandoRechazado(): boolean {
+    if (!this.modoEdicion || this.idEditando == null) return false;
+    const item = this.listaGastos.find(g => g.id === this.idEditando);
+    return item ? estadoGasto(item) === 'rechazado' : estadoGasto(this.nuevoGasto) === 'rechazado';
+  }
+
+  get motivoRechazoEdicion(): string | undefined {
+    if (!this.modoEdicion || this.idEditando == null) return undefined;
+    const item = this.listaGastos.find(g => g.id === this.idEditando);
+    return item?.motivoRechazo ?? this.nuevoGasto.motivoRechazo;
+  }
 }

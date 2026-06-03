@@ -1,16 +1,25 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { Notificacion, NotificacionTipo } from '../models/notificacion.model';
+import {
+  Notificacion,
+  NotificacionAudiencia,
+  NotificacionTipo
+} from '../models/notificacion.model';
 import { ApiService } from './api.service';
 import { API } from '../constants/api.constants';
 import { environment } from '../../../environments/environment';
+import { AppRole } from '../constants/roles.constants';
+import { filtrarNotificacionesParaSesion } from '../../shared/utils/notificacion-filtro.util';
 
 export interface NuevaNotificacion {
   tipo: NotificacionTipo;
   titulo: string;
   mensaje: string;
   ruta?: string;
+  audiencia?: NotificacionAudiencia;
+  ministerioId?: number;
+  actorUserId?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -55,18 +64,42 @@ export class NotificacionesService {
     return this.listaSubject.getValue();
   }
 
+  getListaParaSesion(
+    rol: AppRole | null | undefined,
+    ministerioId?: number | null,
+    usuarioId?: string | null
+  ): Notificacion[] {
+    return filtrarNotificacionesParaSesion(this.getLista(), rol, ministerioId, usuarioId);
+  }
+
   estaLeidaPor(n: Notificacion, usuarioId: string): boolean {
     return (n.leidasPor ?? []).includes(String(usuarioId));
   }
 
-  getNoLeidasCount(usuarioId: string): number {
+  getNoLeidasCount(
+    usuarioId: string,
+    rol?: AppRole | null,
+    ministerioId?: number | null,
+    excluirActor = true
+  ): number {
     if (!usuarioId) return 0;
-    return this.getLista().filter(n => !this.estaLeidaPor(n, usuarioId)).length;
+    const lista = rol != null
+      ? this.getListaParaSesion(rol, ministerioId, excluirActor ? usuarioId : null)
+      : this.getLista();
+    return lista.filter(n => !this.estaLeidaPor(n, usuarioId)).length;
   }
 
-  getNoLeidasCountPorTipo(usuarioId: string, tipo: NotificacionTipo): number {
+  getNoLeidasCountPorTipo(
+    usuarioId: string,
+    tipo: NotificacionTipo,
+    rol?: AppRole | null,
+    ministerioId?: number | null
+  ): number {
     if (!usuarioId) return 0;
-    return this.getLista().filter(
+    const lista = rol != null
+      ? this.getListaParaSesion(rol, ministerioId, usuarioId)
+      : this.getLista();
+    return lista.filter(
       n => n.tipo === tipo && !this.estaLeidaPor(n, usuarioId)
     ).length;
   }
@@ -148,6 +181,9 @@ export class NotificacionesService {
       titulo: datos.titulo,
       mensaje: datos.mensaje,
       ruta: datos.ruta,
+      audiencia: datos.audiencia ?? 'staff',
+      ministerioId: datos.ministerioId,
+      actorUserId: datos.actorUserId,
       fecha: new Date().toISOString(),
       leidasPor: []
     };
@@ -218,6 +254,9 @@ export class NotificacionesService {
       mensaje: n.mensaje,
       ruta: n.ruta,
       fecha: n.fecha,
+      audiencia: n.audiencia ?? 'staff',
+      ministerioId: n.ministerioId != null ? Number(n.ministerioId) : undefined,
+      actorUserId: n.actorUserId != null ? String(n.actorUserId) : undefined,
       leidasPor: (n.leidasPor ?? []).map(String)
     };
   }

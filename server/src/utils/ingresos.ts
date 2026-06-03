@@ -1,6 +1,11 @@
 const { ROLES } = require('../middleware/auth');
 const { getById, updateInCollection } = require('./firestore');
-const { createNotificacion } = require('./notificaciones');
+const {
+  notificarResolucionMovimientoLider,
+  notificarMovimientoModificado,
+  notificarMovimientoEliminado,
+  notificarMovimientoCreado
+} = require('./notificacion-movimiento');
 const { stampActualizacion, resolveActor } = require('./auditoria');
 const { assertPeriodoAbierto, assertMovimientoModificable } = require('./cierre');
 
@@ -76,26 +81,8 @@ async function beforeUpdateIngreso(body, current) {
   if (body?.fecha) await assertPeriodoAbierto(body.fecha);
 }
 
-async function notificarIngresoCreado(created) {
-  const ministerio = created.ministerio || 'General';
-  const monto = Number(created.monto || 0).toFixed(2);
-  const base = `${ministerio} · ${created.descripcion || ''} · $ ${monto}`;
-
-  if (created.estado === 'pendiente') {
-    return createNotificacion({
-      tipo: 'ingreso',
-      titulo: 'Ingreso pendiente de aprobación',
-      mensaje: base,
-      ruta: '/ingresos'
-    });
-  }
-
-  return createNotificacion({
-    tipo: 'ingreso',
-    titulo: 'Nuevo ingreso',
-    mensaje: base,
-    ruta: '/ingresos'
-  });
+async function notificarIngresoCreado(created, req) {
+  return notificarMovimientoCreado({ tipo: 'ingreso', movimiento: created, req });
 }
 
 async function aprobarIngreso(id, req) {
@@ -131,11 +118,11 @@ async function aprobarIngreso(id, req) {
     )
   );
 
-  await createNotificacion({
+  await notificarResolucionMovimientoLider({
     tipo: 'ingreso',
-    titulo: 'Ingreso aprobado',
-    mensaje: `${current.ministerio || 'General'} · ${current.descripcion || ''} fue aprobado.`,
-    ruta: '/ingresos'
+    estado: 'aprobado',
+    movimiento: current,
+    req
   });
 
   return updated;
@@ -155,13 +142,14 @@ async function rechazarIngreso(id, req, motivo) {
   }
 
   const actor = await resolveActor(req);
+  const motivoTxt = motivo ? String(motivo).trim() : 'Sin motivo indicado';
   const updated = await updateInCollection(
     COLLECTION,
     id,
     stampActualizacion(
       {
         estado: 'rechazado',
-        motivoRechazo: motivo ? String(motivo).trim() : 'Sin motivo indicado',
+        motivoRechazo: motivoTxt,
         rechazadoPor: req.user.sub,
         fechaRechazo: new Date().toISOString()
       },
@@ -170,7 +158,32 @@ async function rechazarIngreso(id, req, motivo) {
     )
   );
 
+  await notificarResolucionMovimientoLider({
+    tipo: 'ingreso',
+    estado: 'rechazado',
+    movimiento: current,
+    motivo: motivoTxt,
+    req
+  });
+
   return updated;
+}
+
+async function afterUpdateIngreso(updated, req, current) {
+  await notificarMovimientoModificado({
+    tipo: 'ingreso',
+    movimiento: updated,
+    req,
+    current
+  });
+}
+
+async function afterDeleteIngreso(deleted, req) {
+  await notificarMovimientoEliminado({
+    tipo: 'ingreso',
+    movimiento: deleted,
+    req
+  });
 }
 
 module.exports = {
@@ -180,6 +193,8 @@ module.exports = {
   beforeUpdateIngreso,
   assertIngresoModificable,
   notificarIngresoCreado,
+  afterUpdateIngreso,
+  afterDeleteIngreso,
   aprobarIngreso,
   rechazarIngreso,
   normalizarEstado

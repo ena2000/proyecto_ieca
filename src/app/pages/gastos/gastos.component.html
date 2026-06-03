@@ -52,9 +52,22 @@
         Registra los egresos de caja, compras o pagos de servicios operacionales.
         <span *ngIf="authService.isLider()"> Los gastos del líder quedan <strong>pendientes de aprobación</strong> por contable o administrador.</span>
       </p>
-      <p *ngIf="modoEdicion">
+      <p *ngIf="modoEdicion && !editandoRechazado">
         Modifica la información y guarda los cambios del egreso financiero.
       </p>
+
+      <div
+        class="rechazo-reenvio-alert"
+        *ngIf="modoEdicion && editandoRechazado">
+        <strong>Registro rechazado.</strong>
+        Motivo: {{ motivoRechazoEdicion || 'Sin motivo indicado' }}.
+        <span *ngIf="authService.isLider()">
+          Corrige los datos y guarda; el gasto volverá a <strong>pendiente de aprobación</strong>.
+        </span>
+        <span *ngIf="!authService.isLider()">
+          Si guardas cambios, quedará <strong>pendiente de aprobación</strong> para revisión.
+        </span>
+      </div>
 
     </div>
 

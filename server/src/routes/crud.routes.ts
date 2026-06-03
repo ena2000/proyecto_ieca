@@ -19,6 +19,8 @@ const {
   beforeUpdateGasto,
   assertGastoModificable,
   notificarGastoCreado,
+  afterUpdateGasto,
+  afterDeleteGasto,
   aprobarGasto,
   rechazarGasto
 } = require('../utils/gastos');
@@ -29,6 +31,8 @@ const {
   beforeUpdateIngreso,
   assertIngresoModificable,
   notificarIngresoCreado,
+  afterUpdateIngreso,
+  afterDeleteIngreso,
   aprobarIngreso,
   rechazarIngreso
 } = require('../utils/ingresos');
@@ -93,6 +97,7 @@ function createCrudRouter(collection, options: {
   onUpdate?: Function;
   afterCreate?: Function;
   afterUpdate?: Function;
+  afterDelete?: Function;
   scopeField?: string;
   allowPassword?: boolean;
   generatePasswordOnCreate?: boolean;
@@ -109,6 +114,7 @@ function createCrudRouter(collection, options: {
     onUpdate,
     afterCreate,
     afterUpdate,
+    afterDelete,
     scopeField,
     allowPassword,
     generatePasswordOnCreate,
@@ -277,7 +283,7 @@ function createCrudRouter(collection, options: {
       if (!updated) return res.status(404).json({ message: 'No encontrado' });
       if (afterUpdate) {
         try {
-          await afterUpdate(updated, req);
+          await afterUpdate(updated, req, current);
         } catch (hookErr) {
           console.error(`[${collection} afterUpdate]`, hookErr);
         }
@@ -300,6 +306,14 @@ function createCrudRouter(collection, options: {
         const perm = await canModify(req, current);
         if (!perm.ok) {
           return res.status(403).json({ message: perm.message || 'No tienes permisos' });
+        }
+      }
+
+      if (afterDelete) {
+        try {
+          await afterDelete(current, req);
+        } catch (hookErr) {
+          console.error(`[${collection} afterDelete]`, hookErr);
         }
       }
 
@@ -372,7 +386,9 @@ const ingresosRouter = createCrudRouter('ingresos', {
   beforeCreate: beforeCreateIngreso,
   beforeUpdate: beforeUpdateIngreso,
   canModify: assertIngresoModificable,
-  afterCreate: (created) => notificarIngresoCreado(created),
+  afterCreate: (created, req) => notificarIngresoCreado(created, req),
+  afterUpdate: afterUpdateIngreso,
+  afterDelete: afterDeleteIngreso,
   audit: true
 });
 
@@ -407,7 +423,9 @@ const gastosRouter = createCrudRouter('gastos', {
   beforeCreate: beforeCreateGasto,
   beforeUpdate: beforeUpdateGasto,
   canModify: assertGastoModificable,
-  afterCreate: (created) => notificarGastoCreado(created),
+  afterCreate: (created, req) => notificarGastoCreado(created, req),
+  afterUpdate: afterUpdateGasto,
+  afterDelete: afterDeleteGasto,
   audit: true
 });
 

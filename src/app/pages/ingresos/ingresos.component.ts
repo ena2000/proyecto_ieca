@@ -572,4 +572,16 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
       ministerioScopeId: this.ministerioScopeId
     });
   }
+
+  get editandoRechazado(): boolean {
+    if (!this.modoEdicion || this.idEditando == null) return false;
+    const item = this.listaIngresos.find(i => i.id === this.idEditando);
+    return item ? estadoIngreso(item) === 'rechazado' : estadoIngreso(this.nuevoIngreso) === 'rechazado';
+  }
+
+  get motivoRechazoEdicion(): string | undefined {
+    if (!this.modoEdicion || this.idEditando == null) return undefined;
+    const item = this.listaIngresos.find(i => i.id === this.idEditando);
+    return item?.motivoRechazo ?? this.nuevoIngreso.motivoRechazo;
+  }
 }

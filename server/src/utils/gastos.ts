@@ -1,6 +1,11 @@
 const { ROLES } = require('../middleware/auth');
 const { getById, updateInCollection } = require('./firestore');
-const { createNotificacion } = require('./notificaciones');
+const {
+  notificarResolucionMovimientoLider,
+  notificarMovimientoModificado,
+  notificarMovimientoEliminado,
+  notificarMovimientoCreado
+} = require('./notificacion-movimiento');
 const { stampActualizacion, resolveActor } = require('./auditoria');
 const { assertPeriodoAbierto, assertMovimientoModificable } = require('./cierre');
 
@@ -76,26 +81,8 @@ async function beforeUpdateGasto(body, current) {
   if (body?.fecha) await assertPeriodoAbierto(body.fecha);
 }
 
-async function notificarGastoCreado(created) {
-  const ministerio = created.ministerio || 'General';
-  const monto = Number(created.monto || 0).toFixed(2);
-  const base = `${ministerio} · ${created.descripcion || ''} · $ ${monto}`;
-
-  if (created.estado === 'pendiente') {
-    return createNotificacion({
-      tipo: 'gasto',
-      titulo: 'Gasto pendiente de aprobación',
-      mensaje: base,
-      ruta: '/gastos'
-    });
-  }
-
-  return createNotificacion({
-    tipo: 'gasto',
-    titulo: 'Nuevo gasto',
-    mensaje: base,
-    ruta: '/gastos'
-  });
+async function notificarGastoCreado(created, req) {
+  return notificarMovimientoCreado({ tipo: 'gasto', movimiento: created, req });
 }
 
 async function aprobarGasto(id, req) {
@@ -131,11 +118,11 @@ async function aprobarGasto(id, req) {
     )
   );
 
-  await createNotificacion({
+  await notificarResolucionMovimientoLider({
     tipo: 'gasto',
-    titulo: 'Gasto aprobado',
-    mensaje: `${current.ministerio || 'General'} · ${current.descripcion || ''} fue aprobado.`,
-    ruta: '/gastos'
+    estado: 'aprobado',
+    movimiento: current,
+    req
   });
 
   return updated;
@@ -155,13 +142,14 @@ async function rechazarGasto(id, req, motivo) {
   }
 
   const actor = await resolveActor(req);
+  const motivoTxt = motivo ? String(motivo).trim() : 'Sin motivo indicado';
   const updated = await updateInCollection(
     COLLECTION,
     id,
     stampActualizacion(
       {
         estado: 'rechazado',
-        motivoRechazo: motivo ? String(motivo).trim() : 'Sin motivo indicado',
+        motivoRechazo: motivoTxt,
         rechazadoPor: req.user.sub,
         fechaRechazo: new Date().toISOString()
       },
@@ -170,7 +158,32 @@ async function rechazarGasto(id, req, motivo) {
     )
   );
 
+  await notificarResolucionMovimientoLider({
+    tipo: 'gasto',
+    estado: 'rechazado',
+    movimiento: current,
+    motivo: motivoTxt,
+    req
+  });
+
   return updated;
+}
+
+async function afterUpdateGasto(updated, req, current) {
+  await notificarMovimientoModificado({
+    tipo: 'gasto',
+    movimiento: updated,
+    req,
+    current
+  });
+}
+
+async function afterDeleteGasto(deleted, req) {
+  await notificarMovimientoEliminado({
+    tipo: 'gasto',
+    movimiento: deleted,
+    req
+  });
 }
 
 module.exports = {
@@ -180,6 +193,8 @@ module.exports = {
   beforeUpdateGasto,
   assertGastoModificable,
   notificarGastoCreado,
+  afterUpdateGasto,
+  afterDeleteGasto,
   aprobarGasto,
   rechazarGasto,
   normalizarEstado

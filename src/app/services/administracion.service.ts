@@ -167,6 +167,7 @@ export class AdministracionService {
     const fechaCierre = getMesActualLabel();
 
     this.notificacionesService.registrar({
+      audiencia: 'staff',
       tipo: 'cierre',
       titulo: 'Cierre financiero mensual',
       mensaje: `Se cerró el periodo ${fechaCierre}. Los movimientos del mes quedan congelados.`,

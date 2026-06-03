@@ -107,8 +107,14 @@ export class SlidebarComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
         const uid = this.authService.getSession()?.id ?? '';
-        this.ingresosNoLeidas = this.notificacionesService.getNoLeidasCountPorTipo(uid, 'ingreso');
-        this.gastosNoLeidas   = this.notificacionesService.getNoLeidasCountPorTipo(uid, 'gasto');
+        const rol = this.authService.getRol();
+        const ministerioId = this.authService.getMinisterioScopeId();
+        this.ingresosNoLeidas = this.notificacionesService.getNoLeidasCountPorTipo(
+          uid, 'ingreso', rol, ministerioId
+        );
+        this.gastosNoLeidas = this.notificacionesService.getNoLeidasCountPorTipo(
+          uid, 'gasto', rol, ministerioId
+        );
         this.actualizarMenusPorRol();
       });
   }
@@ -120,9 +126,13 @@ export class SlidebarComponent implements OnInit, OnDestroy {
     this.actualizarBadgesFinanzas();
   }
 
-  /** Badges de notificaciones no leídas (admin y contable). */
+  /** Badges de notificaciones no leídas (admin, contable y líder). */
   private debeMostrarBadgesFinanzas(): boolean {
-    return this.authService.isAdministrador() || this.authService.isContable();
+    return (
+      this.authService.isAdministrador() ||
+      this.authService.isContable() ||
+      this.authService.isLider()
+    );
   }
 
   private actualizarBadgesFinanzas(): void {

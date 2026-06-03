@@ -5,10 +5,13 @@ const {
   updateInCollection
 } = require('./firestore');
 
+const { ROLES } = require('../middleware/auth');
+
 const COLLECTION = 'notificaciones';
 const MAX_ITEMS = 40;
 
 const TIPOS_VALIDOS = new Set(['ingreso', 'gasto', 'cierre']);
+const AUDIENCIAS_VALIDAS = new Set(['staff', 'lider']);
 
 function toNotificacion(entity) {
   if (!entity) return null;
@@ -19,8 +22,45 @@ function toNotificacion(entity) {
     mensaje: entity.mensaje,
     ruta: entity.ruta || undefined,
     fecha: entity.fecha,
+    audiencia: entity.audiencia || 'staff',
+    ministerioId:
+      entity.ministerioId != null && entity.ministerioId !== ''
+        ? Number(entity.ministerioId)
+        : undefined,
+    actorUserId:
+      entity.actorUserId != null && entity.actorUserId !== ''
+        ? String(entity.actorUserId)
+        : undefined,
     leidasPor: Array.isArray(entity.leidasPor) ? entity.leidasPor.map(String) : []
   };
+}
+
+/** Admin/contable: pendientes y cierres. Líder: solo resolución de sus movimientos. */
+function filterNotificacionesForUser(lista, user) {
+  const rol = user?.rol;
+  const ministerioId = user?.ministerioId;
+  const uid = user?.sub != null ? String(user.sub) : '';
+
+  return lista.filter((n) => {
+    if (uid && n.actorUserId && String(n.actorUserId) === uid) {
+      return false;
+    }
+    const aud = n.audiencia || 'staff';
+    if (rol === ROLES.LIDER) {
+      if (aud !== 'lider') return false;
+      if (n.ministerioId == null || ministerioId == null) return false;
+      return Number(n.ministerioId) === Number(ministerioId);
+    }
+    if (rol === ROLES.ADMIN || rol === ROLES.CONTABLE) {
+      return aud === 'staff';
+    }
+    return false;
+  });
+}
+
+function userPuedeNotificaciones(user) {
+  const rol = user?.rol;
+  return rol === ROLES.ADMIN || rol === ROLES.CONTABLE || rol === ROLES.LIDER;
 }
 
 async function trimNotificaciones() {
@@ -38,15 +78,32 @@ async function trimNotificaciones() {
   );
 }
 
-async function createNotificacion({ tipo, titulo, mensaje, ruta }) {
+async function createNotificacion({
+  tipo,
+  titulo,
+  mensaje,
+  ruta,
+  audiencia = 'staff',
+  ministerioId = null,
+  actorUserId = null
+}) {
   if (!TIPOS_VALIDOS.has(tipo)) {
     throw new Error('Tipo de notificación inválido');
+  }
+  const aud = String(audiencia || 'staff');
+  if (!AUDIENCIAS_VALIDAS.has(aud)) {
+    throw new Error('Audiencia de notificación inválida');
   }
   const created = await createInCollection(COLLECTION, {
     tipo,
     titulo: String(titulo ?? '').trim(),
     mensaje: String(mensaje ?? '').trim(),
     ruta: ruta ? String(ruta) : null,
+    audiencia: aud,
+    ministerioId:
+      ministerioId != null && ministerioId !== '' ? Number(ministerioId) : null,
+    actorUserId:
+      actorUserId != null && actorUserId !== '' ? String(actorUserId) : null,
     fecha: new Date().toISOString(),
     leidasPor: []
   });
@@ -59,6 +116,16 @@ async function listNotificaciones() {
   return lista
     .map(toNotificacion)
     .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+}
+
+async function listNotificacionesForUser(user) {
+  const lista = await listNotificaciones();
+  return filterNotificacionesForUser(lista, user);
+}
+
+async function getVisibleIdsForUser(user) {
+  const visible = await listNotificacionesForUser(user);
+  return new Set(visible.map((n) => String(n.id)));
 }
 
 async function getNotificacionById(id) {
@@ -81,45 +148,50 @@ async function marcarLeida(id, userId) {
   return toNotificacion(updated);
 }
 
-async function marcarTodasLeidas(userId) {
+async function marcarTodasLeidas(userId, user) {
   const lista = await listCollection(COLLECTION);
   const uid = String(userId);
+  const visibleIds = await getVisibleIdsForUser(user);
   await Promise.all(
-    lista.map(async (n) => {
-      const leidasPor = addUserToLeidas(n.leidasPor, uid);
-      await updateInCollection(COLLECTION, n.id, { leidasPor });
-    })
+    lista
+      .filter((n) => visibleIds.has(String(n.id)))
+      .map(async (n) => {
+        const leidasPor = addUserToLeidas(n.leidasPor, uid);
+        await updateInCollection(COLLECTION, n.id, { leidasPor });
+      })
   );
-  return listNotificaciones();
+  return listNotificacionesForUser(user);
 }
 
-async function marcarLeidasPorRuta(userId, ruta) {
+async function marcarLeidasPorRuta(userId, ruta, user) {
   const lista = await listCollection(COLLECTION);
   const uid = String(userId);
   const target = String(ruta);
+  const visibleIds = await getVisibleIdsForUser(user);
   await Promise.all(
     lista
-      .filter((n) => n.ruta === target)
+      .filter((n) => n.ruta === target && visibleIds.has(String(n.id)))
       .map(async (n) => {
         const leidasPor = addUserToLeidas(n.leidasPor, uid);
         await updateInCollection(COLLECTION, n.id, { leidasPor });
       })
   );
-  return listNotificaciones();
+  return listNotificacionesForUser(user);
 }
 
-async function marcarLeidasPorTipo(userId, tipo) {
+async function marcarLeidasPorTipo(userId, tipo, user) {
   const lista = await listCollection(COLLECTION);
   const uid = String(userId);
+  const visibleIds = await getVisibleIdsForUser(user);
   await Promise.all(
     lista
-      .filter((n) => n.tipo === tipo)
+      .filter((n) => n.tipo === tipo && visibleIds.has(String(n.id)))
       .map(async (n) => {
         const leidasPor = addUserToLeidas(n.leidasPor, uid);
         await updateInCollection(COLLECTION, n.id, { leidasPor });
       })
   );
-  return listNotificaciones();
+  return listNotificacionesForUser(user);
 }
 
 module.exports = {
@@ -127,6 +199,9 @@ module.exports = {
   TIPOS_VALIDOS,
   createNotificacion,
   listNotificaciones,
+  listNotificacionesForUser,
+  filterNotificacionesForUser,
+  userPuedeNotificaciones,
   getNotificacionById,
   marcarLeida,
   marcarTodasLeidas,

@@ -81,9 +81,12 @@ export class NotificacionesBellComponent implements OnInit, OnDestroy {
   }
 
   private actualizarLista(): void {
-    const uid = this.authService.getSession()?.id ?? '';
-    this.lista    = this.notificacionesService.getLista();
-    this.noLeidas = this.notificacionesService.getNoLeidasCount(uid);
+    const session = this.authService.getSession();
+    const uid = session?.id ?? '';
+    const rol = this.authService.getRol();
+    const ministerioId = this.authService.getMinisterioScopeId();
+    this.lista = this.notificacionesService.getListaParaSesion(rol, ministerioId, uid);
+    this.noLeidas = this.notificacionesService.getNoLeidasCount(uid, rol, ministerioId);
   }
 
   esNoLeida(n: Notificacion): boolean {
@@ -99,7 +102,9 @@ export class NotificacionesBellComponent implements OnInit, OnDestroy {
 
   private actualizarVisibilidad(): void {
     this.visible =
-      this.authService.isAdministrador() || this.authService.isContable();
+      this.authService.isAdministrador() ||
+      this.authService.isContable() ||
+      this.authService.isLider();
     this.oculto = !this.visible;
   }
 
