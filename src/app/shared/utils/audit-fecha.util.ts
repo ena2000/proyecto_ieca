@@ -27,11 +27,16 @@ export function aplicarFechaManualAuditoria(
   tipo: 'desde' | 'hasta'
 ): ActualizacionFechaAuditoria {
   const val = formatearEntradaFechaManual(raw);
+  if (!val.trim()) {
+    return tipo === 'desde'
+      ? { auditDesde: '', auditFechaManualDesde: '' }
+      : { auditHasta: '', auditFechaManualHasta: '' };
+  }
   const ymd = yyyyMmDdDesdeFechaManual(val);
   if (!ymd) {
     return tipo === 'desde'
-      ? { auditFechaManualDesde: val }
-      : { auditFechaManualHasta: val };
+      ? { auditDesde: '', auditFechaManualDesde: val }
+      : { auditHasta: '', auditFechaManualHasta: val };
   }
   return tipo === 'desde'
     ? { auditDesde: ymd, auditFechaManualDesde: val }
@@ -43,7 +48,11 @@ export function aplicarFechaNativaAuditoria(
   tipo: 'desde' | 'hasta'
 ): ActualizacionFechaAuditoria | null {
   const yyyyMMdd = String(value || '').trim();
-  if (!yyyyMMdd) return null;
+  if (!yyyyMMdd) {
+    return tipo === 'desde'
+      ? { auditDesde: '', auditFechaManualDesde: '' }
+      : { auditHasta: '', auditFechaManualHasta: '' };
+  }
   const iso = new Date(`${yyyyMMdd}T00:00:00`).toISOString();
   const formateada = formatearISOaDDMMYYYY(iso);
   return tipo === 'desde'

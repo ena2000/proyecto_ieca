@@ -19,7 +19,8 @@ import {
   cloudDownloadOutline,
   cloudUploadOutline,
   trashOutline,
-  mailOutline
+  mailOutline,
+  closeOutline
 } from 'ionicons/icons';
 
 export function registerAdministracionPageIcons(): void {
@@ -43,6 +44,7 @@ export function registerAdministracionPageIcons(): void {
     'cloud-download-outline': cloudDownloadOutline,
     'cloud-upload-outline': cloudUploadOutline,
     'trash-outline': trashOutline,
-    'mail-outline': mailOutline
+    'mail-outline': mailOutline,
+    'close-outline': closeOutline
   });
 }

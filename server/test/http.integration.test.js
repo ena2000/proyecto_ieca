@@ -211,4 +211,49 @@ describe('API HTTP (integración en memoria)', () => {
     assert.ok(res.body.resumen.pendientes.length >= 1);
     assert.equal(res.body.destinatarios.length, 2);
   });
+
+  it('GET /api/admin/auditoria sin filtros devuelve ingresos y gastos', async () => {
+    const hash = await bcrypt.hash('123456', 4);
+    seedMemoryCollection('usuarios', [
+      {
+        id: 1,
+        usuario: 'admin',
+        rol: 'Administrador',
+        estado: 'Activo',
+        passwordHash: hash
+      }
+    ]);
+    seedMemoryCollection('ingresos', [
+      {
+        id: 10,
+        fecha: '2026-05-15T12:00:00.000Z',
+        fechaFormateada: '15/05/2026',
+        monto: 100,
+        descripcion: 'Ofrenda'
+      }
+    ]);
+    seedMemoryCollection('gastos', [
+      {
+        id: 20,
+        fecha: '2026-05-20T12:00:00.000Z',
+        fechaFormateada: '20/05/2026',
+        monto: 30,
+        descripcion: 'Material'
+      }
+    ]);
+
+    const login = await request(app)
+      .post('/api/auth/login')
+      .send({ usuario: 'admin', password: '123456' });
+
+    const res = await request(app)
+      .get('/api/admin/auditoria')
+      .set('Authorization', `Bearer ${login.body.token}`);
+
+    assert.equal(res.status, 200);
+    const csv = String(res.text);
+    const lines = csv.trim().split(/\r?\n/);
+    assert.ok(lines.length >= 2, 'debe incluir cabecera y al menos un movimiento');
+    assert.ok(csv.includes('Ofrenda') || csv.includes('Material'));
+  });
 });

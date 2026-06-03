@@ -4,10 +4,15 @@ const cierreSchema = z.object({
   periodo: z.string().trim().min(1).max(50).optional()
 });
 
+const emptyToUndefined = (v) => (v === '' || v == null ? undefined : v);
+
 const auditoriaQuerySchema = z.object({
-  tipo: z.enum(['todos', 'ingresos', 'gastos']).optional().default('todos'),
-  desde: z.string().max(30).optional(),
-  hasta: z.string().max(30).optional()
+  tipo: z.preprocess(
+    emptyToUndefined,
+    z.enum(['todos', 'ingresos', 'gastos']).optional().default('todos')
+  ),
+  desde: z.preprocess(emptyToUndefined, z.string().max(40).optional()),
+  hasta: z.preprocess(emptyToUndefined, z.string().max(40).optional())
 });
 
 /** Estructura mínima de un respaldo válido; el resto lo valida restoreBackup. */

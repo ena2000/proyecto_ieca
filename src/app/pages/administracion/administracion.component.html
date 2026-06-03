@@ -230,6 +230,10 @@
         </div>
 
         <div class="backup-actions">
+          <button type="button" class="btn-backup btn-backup--secondary" (click)="limpiarFiltrosAuditoria()">
+            <ion-icon name="close-outline"></ion-icon>
+            <span>Limpiar filtros</span>
+          </button>
           <button type="button" class="btn-backup btn-backup--primary" (click)="descargarAuditoria()">
             <ion-icon name="cloud-download-outline"></ion-icon>
             <span>Descargar auditoría (CSV)</span>

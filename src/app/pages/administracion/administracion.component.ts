@@ -203,14 +203,35 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
     if (upd.auditFechaManualHasta != null) this.auditFechaManualHasta = upd.auditFechaManualHasta;
   }
 
+  private filtrosAuditoria(): {
+    tipo: 'todos' | 'ingresos' | 'gastos';
+    desde?: string;
+    hasta?: string;
+  } {
+    const tipo = this.auditTipo ?? 'todos';
+    const desde =
+      this.auditFechaManualDesde.trim().length === 10 && this.auditDesde
+        ? this.auditDesde
+        : undefined;
+    const hasta =
+      this.auditFechaManualHasta.trim().length === 10 && this.auditHasta
+        ? this.auditHasta
+        : undefined;
+    return { tipo, desde, hasta };
+  }
+
+  limpiarFiltrosAuditoria(): void {
+    this.auditTipo = 'todos';
+    this.auditDesde = '';
+    this.auditHasta = '';
+    this.auditFechaManualDesde = '';
+    this.auditFechaManualHasta = '';
+  }
+
   async descargarAuditoria(): Promise<void> {
     try {
       await withLoadingResult(this.loadingController, 'Generando auditoría...', () =>
-        this.administracionService.descargarAuditoriaCsv({
-          tipo: this.auditTipo,
-          desde: this.auditDesde || undefined,
-          hasta: this.auditHasta || undefined
-        })
+        this.administracionService.descargarAuditoriaCsv(this.filtrosAuditoria())
       );
       await this.mostrarToast('Auditoría descargada', 'success');
     } catch (err) {

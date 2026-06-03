@@ -20,7 +20,11 @@ function validate(schema, source = 'body') {
         message: formatZodError(result.error)
       });
     }
-    req[source] = result.data;
+    if (source === 'query' || source === 'params') {
+      Object.assign(req[source], result.data);
+    } else {
+      req[source] = result.data;
+    }
     return next();
   };
 }

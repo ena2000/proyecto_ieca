@@ -239,9 +239,9 @@ export class AdministracionService {
       return;
     }
 
-    const params: Record<string, string> = {};
-    const tipo = filters?.tipo && filters.tipo !== 'todos' ? filters.tipo : undefined;
-    if (tipo) params['tipo'] = tipo;
+    const params: Record<string, string> = {
+      tipo: filters?.tipo ?? 'todos'
+    };
 
     const toDesde = (d?: string) => (d ? `${d}T00:00:00` : undefined);
     const toHasta = (d?: string) => (d ? `${d}T23:59:59.999` : undefined);
@@ -252,7 +252,14 @@ export class AdministracionService {
     if (hasta) params['hasta'] = hasta;
 
     const blob = await firstValueFrom(this.api.getBlob(API.admin.auditoria, params));
-    this.downloadBlob(blob, filename);
+    const csv = await blob.text();
+    const lineas = csv.trim().split(/\r?\n/).filter(Boolean);
+    if (lineas.length <= 1) {
+      throw new Error(
+        'No hay registros para exportar. Revisa los filtros o registra ingresos/gastos con trazabilidad.'
+      );
+    }
+    this.downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), filename);
   }
 
   async restaurarBackup(backup: BackupIeca): Promise<void> {
@@ -300,10 +307,18 @@ export class AdministracionService {
     const desde = filters?.desde ? new Date(`${filters.desde}T00:00:00`) : null;
     const hasta = filters?.hasta ? new Date(`${filters.hasta}T23:59:59.999`) : null;
 
-    const inRange = (iso?: string) => {
-      if (!iso) return true;
-      const d = new Date(iso);
-      if (Number.isNaN(d.getTime())) return true;
+    const inRange = (item: { fecha?: string; fechaFormateada?: string }) => {
+      let d: Date | null = null;
+      if (item.fecha) {
+        const parsed = new Date(item.fecha);
+        if (!Number.isNaN(parsed.getTime())) d = parsed;
+      }
+      if (!d && item.fechaFormateada?.length === 10 && item.fechaFormateada.includes('/')) {
+        const [dd, mm, yyyy] = item.fechaFormateada.split('/');
+        const parsed = new Date(Number(yyyy), Number(mm) - 1, Number(dd));
+        if (!Number.isNaN(parsed.getTime())) d = parsed;
+      }
+      if (!d) return true;
       if (desde && d < desde) return false;
       if (hasta && d > hasta) return false;
       return true;
@@ -312,14 +327,14 @@ export class AdministracionService {
     const ingresos =
       tipo === 'todos' || tipo === 'ingresos'
         ? this.dataService.getIngresosActuales()
-            .filter(i => inRange(i.fecha))
+            .filter(i => inRange(i))
             .map(i => ({ ...i, tipo: 'ingreso' }))
         : [];
 
     const gastos =
       tipo === 'todos' || tipo === 'gastos'
         ? this.dataService.getGastosActuales()
-            .filter(g => inRange(g.fecha))
+            .filter(g => inRange(g))
             .map(g => ({ ...g, tipo: 'gasto' }))
         : [];
 
@@ -361,6 +376,11 @@ export class AdministracionService {
     const lines = [headers.map(escape).join(',')];
     for (const r of rows as any[]) {
       lines.push(headers.map(h => escape(r[h])).join(','));
+    }
+    if (lines.length <= 1) {
+      throw new Error(
+        'No hay registros para exportar. Revisa los filtros o registra ingresos/gastos con trazabilidad.'
+      );
     }
     return lines.join('\r\n');
   }

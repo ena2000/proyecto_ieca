@@ -38,17 +38,37 @@ function toCsv(rows, headers) {
   return lines.join('\r\n');
 }
 
-function parseIsoDate(input) {
+function parseDateFilter(input, endOfDay = false) {
   if (!input) return null;
-  const d = new Date(String(input));
+  const s = String(input).trim();
+  if (!s) return null;
+  let d;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    d = new Date(`${s}T${endOfDay ? '23:59:59.999' : '00:00:00'}`);
+  } else {
+    d = new Date(s);
+  }
   if (Number.isNaN(d.getTime())) return null;
   return d;
 }
 
-function inRange(iso, desde, hasta) {
-  if (!iso) return true;
-  const d = new Date(String(iso));
-  if (Number.isNaN(d.getTime())) return true;
+function parseMovementDate(entity) {
+  if (entity?.fecha) {
+    const d = new Date(String(entity.fecha));
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+  const ff = entity?.fechaFormateada;
+  if (typeof ff === 'string' && ff.length === 10 && ff.includes('/')) {
+    const [dd, mm, yyyy] = ff.split('/');
+    const d = new Date(Number(yyyy), Number(mm) - 1, Number(dd));
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+  return null;
+}
+
+function inRange(entity, desde, hasta) {
+  const d = parseMovementDate(entity);
+  if (!d) return true;
   if (desde && d < desde) return false;
   if (hasta && d > hasta) return false;
   return true;
@@ -172,9 +192,11 @@ router.get('/login-auditoria', async (req, res) => {
 /** GET /api/admin/auditoria — descargar CSV de auditoría (solo admin). */
 router.get('/auditoria', validate(auditoriaQuerySchema, 'query'), async (req, res) => {
   try {
-    const { tipo, desde: desdeStr, hasta: hastaStr } = req.query;
-    const desde = parseIsoDate(desdeStr);
-    const hasta = parseIsoDate(hastaStr);
+    const tipo = req.query.tipo ?? 'todos';
+    const desdeStr = req.query.desde;
+    const hastaStr = req.query.hasta;
+    const desde = parseDateFilter(desdeStr, false);
+    const hasta = parseDateFilter(hastaStr, true);
 
     const includeIngresos = tipo === 'todos' || tipo === 'ingresos';
     const includeGastos = tipo === 'todos' || tipo === 'gastos';
@@ -184,7 +206,7 @@ router.get('/auditoria', validate(auditoriaQuerySchema, 'query'), async (req, re
     if (includeIngresos) {
       const ingresos = await listCollection('ingresos');
       for (const i of ingresos) {
-        if (!inRange(i.fecha, desde, hasta)) continue;
+        if (!inRange(i, desde, hasta)) continue;
         rows.push({
           tipo: 'ingreso',
           id: i.id,
@@ -213,7 +235,7 @@ router.get('/auditoria', validate(auditoriaQuerySchema, 'query'), async (req, re
     if (includeGastos) {
       const gastos = await listCollection('gastos');
       for (const g of gastos) {
-        if (!inRange(g.fecha, desde, hasta)) continue;
+        if (!inRange(g, desde, hasta)) continue;
         rows.push({
           tipo: 'gasto',
           id: g.id,
