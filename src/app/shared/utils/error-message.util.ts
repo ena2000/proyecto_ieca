@@ -16,7 +16,10 @@ export function getHttpErrorMessage(error: unknown, fallback = 'Ocurrió un erro
       return 'Sin conexión con el servidor. Verifica tu internet o que el API esté activo.';
     }
     if (error.status === 429) {
-      return 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.';
+      return (
+        extractBodyMessage(error) ||
+        'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.'
+      );
     }
     if (error.status === 401) {
       return extractBodyMessage(error) || 'Sesión expirada o credenciales incorrectas.';
