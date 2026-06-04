@@ -176,7 +176,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
   private inicializarPermisos(): void {
     this.soloLectura = this.authService.isSoloLecturaFinanzas();
-    this.puedeAprobar = this.authService.isAdministrador() || this.authService.isContable();
+    this.puedeAprobar = this.authService.isAdministrador();
     this.ministerioScopeId = this.authService.getMinisterioScopeId();
     this.acciones = accionesTablaMovimiento({
       puedeAprobar: this.puedeAprobar,

@@ -10,6 +10,8 @@ export interface Notificacion {
   fecha: string;
   /** staff = admin/contable; lider = resolución de movimientos del ministerio. */
   audiencia?: NotificacionAudiencia;
+  /** Quién originó la acción (p. ej. Lider/CoLider). El contable solo ve staff con origen del líder. */
+  origenRol?: string;
   ministerioId?: number;
   /** Usuario que ejecutó la acción; no debe ver esta notificación. */
   actorUserId?: string;

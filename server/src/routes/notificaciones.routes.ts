@@ -60,7 +60,8 @@ router.post('/', requireStaffNotifRole, validate(createNotificacionSchema), asyn
       titulo,
       mensaje,
       ruta,
-      audiencia: 'staff'
+      audiencia: 'staff',
+      origenRol: ROLES.ADMIN
     });
     res.status(201).json(created);
   } catch (err) {

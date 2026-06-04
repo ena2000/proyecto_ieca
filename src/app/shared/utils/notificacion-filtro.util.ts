@@ -18,8 +18,11 @@ export function filtrarNotificacionesParaSesion(
       if (n.ministerioId == null || ministerioId == null) return false;
       return Number(n.ministerioId) === Number(ministerioId);
     }
-    if (rol === ROLES.ADMIN || rol === ROLES.CONTABLE) {
+    if (rol === ROLES.ADMIN) {
       return aud === 'staff';
+    }
+    if (rol === ROLES.CONTABLE) {
+      return aud === 'staff' && n.origenRol === ROLES.LIDER;
     }
     return false;
   });

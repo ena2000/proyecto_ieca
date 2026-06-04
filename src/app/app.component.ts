@@ -16,7 +16,11 @@ import {
   saveOutline,
   notificationsOutline,
   eyeOutline,
-  eyeOffOutline
+  eyeOffOutline,
+  checkmarkCircle,
+  informationCircle,
+  warning,
+  shield
 } from 'ionicons/icons';
 
 @Component({
@@ -52,7 +56,11 @@ export class AppComponent {
       'save-outline': saveOutline,
       'notifications-outline': notificationsOutline,
       'eye-outline': eyeOutline,
-      'eye-off-outline': eyeOffOutline
+      'eye-off-outline': eyeOffOutline,
+      'checkmark-circle': checkmarkCircle,
+      'information-circle': informationCircle,
+      warning,
+      shield
     });
 
  // 2. Lógica mejorada para detectar la ruta inicial y cambios

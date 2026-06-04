@@ -7,6 +7,7 @@ import { DataService } from './data.service';
 import { NotificacionesService } from '../core/services/notificaciones.service';
 import { ApiService } from '../core/services/api.service';
 import { API } from '../core/constants/api.constants';
+import { ROLES } from '../core/constants/roles.constants';
 import { environment } from '../../environments/environment';
 import { getMesActualLabel, periodoKeyFromFecha } from '../shared/utils/month.util';
 import { CierreService } from '../core/services/cierre.service';
@@ -168,6 +169,7 @@ export class AdministracionService {
 
     this.notificacionesService.registrar({
       audiencia: 'staff',
+      origenRol: ROLES.ADMIN,
       tipo: 'cierre',
       titulo: 'Cierre financiero mensual',
       mensaje: `Se cerró el periodo ${fechaCierre}. Los movimientos del mes quedan congelados.`,

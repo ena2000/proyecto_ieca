@@ -70,7 +70,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit, Vie
     private ngZone: NgZone
   ) {
     this.ministerioScopeId = this.authService.getMinisterioScopeId();
-    this.puedeAprobar = this.authService.isAdministrador() || this.authService.isContable();
+    this.puedeAprobar = this.authService.isAdministrador();
     this.actualizarAlcanceMinisterio();
   }
 

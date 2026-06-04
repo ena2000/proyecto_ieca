@@ -50,7 +50,7 @@ function onUpdateGasto(body, req, current) {
     };
   }
   if (rol === ROLES.CONTABLE) {
-    const err = new Error('El contable solo puede aprobar o rechazar gastos');
+    const err = new Error('El contable solo puede consultar gastos');
     err.status = 403;
     throw err;
   }
@@ -64,7 +64,7 @@ async function assertGastoModificable(req, entity) {
     return { ok: false, message: err.message };
   }
   if (req.user?.rol === ROLES.CONTABLE) {
-    return { ok: false, message: 'El contable solo puede aprobar o rechazar gastos' };
+    return { ok: false, message: 'El contable solo puede consultar gastos' };
   }
   if (req.user?.rol === ROLES.LIDER && normalizarEstado(entity?.estado) === 'aprobado') {
     return { ok: false, message: 'No puedes modificar un gasto ya aprobado' };
@@ -92,8 +92,8 @@ async function aprobarGasto(id, req) {
   await assertMovimientoModificable(current);
 
   const rol = req.user?.rol;
-  if (rol !== ROLES.ADMIN && rol !== ROLES.CONTABLE) {
-    const err = new Error('No tienes permiso para aprobar gastos');
+  if (rol !== ROLES.ADMIN) {
+    const err = new Error('Solo el administrador puede aprobar gastos');
     err.status = 403;
     throw err;
   }
@@ -135,8 +135,8 @@ async function rechazarGasto(id, req, motivo) {
   await assertMovimientoModificable(current);
 
   const rol = req.user?.rol;
-  if (rol !== ROLES.ADMIN && rol !== ROLES.CONTABLE) {
-    const err = new Error('No tienes permiso para rechazar gastos');
+  if (rol !== ROLES.ADMIN) {
+    const err = new Error('Solo el administrador puede rechazar gastos');
     err.status = 403;
     throw err;
   }

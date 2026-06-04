@@ -31,11 +31,15 @@ function toNotificacion(entity) {
       entity.actorUserId != null && entity.actorUserId !== ''
         ? String(entity.actorUserId)
         : undefined,
+    origenRol:
+      entity.origenRol != null && entity.origenRol !== ''
+        ? String(entity.origenRol)
+        : undefined,
     leidasPor: Array.isArray(entity.leidasPor) ? entity.leidasPor.map(String) : []
   };
 }
 
-/** Admin/contable: pendientes y cierres. Líder: solo resolución de sus movimientos. */
+/** Admin: staff completo. Contable: solo movimientos del líder. Líder: su ministerio. */
 function filterNotificacionesForUser(lista, user) {
   const rol = user?.rol;
   const ministerioId = user?.ministerioId;
@@ -51,8 +55,11 @@ function filterNotificacionesForUser(lista, user) {
       if (n.ministerioId == null || ministerioId == null) return false;
       return Number(n.ministerioId) === Number(ministerioId);
     }
-    if (rol === ROLES.ADMIN || rol === ROLES.CONTABLE) {
+    if (rol === ROLES.ADMIN) {
       return aud === 'staff';
+    }
+    if (rol === ROLES.CONTABLE) {
+      return aud === 'staff' && n.origenRol === ROLES.LIDER;
     }
     return false;
   });
@@ -85,7 +92,8 @@ async function createNotificacion({
   ruta,
   audiencia = 'staff',
   ministerioId = null,
-  actorUserId = null
+  actorUserId = null,
+  origenRol = null
 }) {
   if (!TIPOS_VALIDOS.has(tipo)) {
     throw new Error('Tipo de notificación inválido');
@@ -104,6 +112,8 @@ async function createNotificacion({
       ministerioId != null && ministerioId !== '' ? Number(ministerioId) : null,
     actorUserId:
       actorUserId != null && actorUserId !== '' ? String(actorUserId) : null,
+    origenRol:
+      origenRol != null && origenRol !== '' ? String(origenRol) : null,
     fecha: new Date().toISOString(),
     leidasPor: []
   });

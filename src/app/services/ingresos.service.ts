@@ -201,6 +201,7 @@ export class IngresosService {
       this.notificacionesService.registrar({
         tipo: 'ingreso',
         audiencia: 'staff',
+        origenRol: ROLES.LIDER,
         actorUserId: actor,
         titulo: 'Ingreso actualizado (pendiente de aprobación)',
         mensaje:
@@ -237,6 +238,7 @@ export class IngresosService {
       this.notificacionesService.registrar({
         tipo: 'ingreso',
         audiencia: 'staff',
+        origenRol: ROLES.LIDER,
         actorUserId: actor,
         titulo: 'Ingreso eliminado',
         mensaje: `${base} — fue eliminado por el líder del ministerio.`,
@@ -262,6 +264,7 @@ export class IngresosService {
     this.notificacionesService.registrar({
       tipo: 'ingreso',
       audiencia: 'staff',
+      origenRol: ROLES.LIDER,
       actorUserId: this.actorId(),
       titulo: 'Ingreso corregido (pendiente de aprobación)',
       mensaje:
@@ -276,6 +279,7 @@ export class IngresosService {
       this.notificacionesService.registrar({
         tipo: 'ingreso',
         audiencia: 'staff',
+        origenRol: ROLES.LIDER,
         actorUserId: this.actorId(),
         titulo: 'Ingreso pendiente de aprobación',
         mensaje: `${nuevo.ministerio || 'General'} · ${nuevo.descripcion} · $ ${(nuevo.monto || 0).toFixed(2)}`,

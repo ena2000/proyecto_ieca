@@ -12,6 +12,10 @@ function actorUserId(req) {
   return req?.user?.sub != null ? String(req.user.sub) : null;
 }
 
+function origenRolReq(req) {
+  return req?.user?.rol ?? null;
+}
+
 function rutaTipo(tipo) {
   return tipo === 'gasto' ? '/gastos' : '/ingresos';
 }
@@ -60,6 +64,7 @@ async function notificarMovimientoReenviadoStaff({ tipo, movimiento, req }) {
   return createNotificacion({
     tipo,
     audiencia: 'staff',
+    origenRol: ROLES.LIDER,
     actorUserId: actorUserId(req),
     titulo: `${etiqueta} corregido (pendiente de aprobación)`,
     mensaje: mensajeMovimiento(
@@ -84,6 +89,7 @@ async function notificarMovimientoModificado({ tipo, movimiento, req, current })
     return createNotificacion({
       tipo,
       audiencia: 'staff',
+      origenRol: ROLES.LIDER,
       actorUserId: actor,
       titulo: `${etiquetaTipo(tipo)} actualizado (pendiente de aprobación)`,
       mensaje: mensajeMovimiento(
@@ -123,6 +129,7 @@ async function notificarMovimientoEliminado({ tipo, movimiento, req }) {
     return createNotificacion({
       tipo,
       audiencia: 'staff',
+      origenRol: ROLES.LIDER,
       actorUserId: actor,
       titulo: `${etiquetaTipo(tipo)} eliminado`,
       mensaje: mensajeMovimiento(movimiento, 'fue eliminado por el líder del ministerio.'),
@@ -161,6 +168,7 @@ async function notificarMovimientoCreado({ tipo, movimiento, req }) {
     return createNotificacion({
       tipo,
       audiencia: 'staff',
+      origenRol: ROLES.LIDER,
       actorUserId: actor,
       titulo: `${etiqueta} pendiente de aprobación`,
       mensaje: base.replace(/ — $/, ''),
@@ -184,6 +192,7 @@ async function notificarMovimientoCreado({ tipo, movimiento, req }) {
     return createNotificacion({
       tipo,
       audiencia: 'staff',
+      origenRol: origenRolReq(req),
       actorUserId: actor,
       titulo: `Nuevo ${etiqueta.toLowerCase()}`,
       mensaje: base.replace(/ — $/, ''),

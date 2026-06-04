@@ -20,6 +20,7 @@ export interface NuevaNotificacion {
   audiencia?: NotificacionAudiencia;
   ministerioId?: number;
   actorUserId?: string;
+  origenRol?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -182,6 +183,7 @@ export class NotificacionesService {
       mensaje: datos.mensaje,
       ruta: datos.ruta,
       audiencia: datos.audiencia ?? 'staff',
+      origenRol: datos.origenRol,
       ministerioId: datos.ministerioId,
       actorUserId: datos.actorUserId,
       fecha: new Date().toISOString(),
@@ -257,6 +259,7 @@ export class NotificacionesService {
       audiencia: n.audiencia ?? 'staff',
       ministerioId: n.ministerioId != null ? Number(n.ministerioId) : undefined,
       actorUserId: n.actorUserId != null ? String(n.actorUserId) : undefined,
+      origenRol: n.origenRol != null ? String(n.origenRol) : undefined,
       leidasPor: (n.leidasPor ?? []).map(String)
     };
   }
