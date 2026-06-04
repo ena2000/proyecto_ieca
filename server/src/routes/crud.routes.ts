@@ -42,6 +42,7 @@ const {
   validarMinisterioLiderazgo,
   sincronizarLideresMinisterio
 } = require('../utils/liderazgo');
+const { normalizeEmail } = require('../utils/email-normalize');
 const { validate } = require('../middleware/validate');
 const { idParamSchema, motivoRechazoSchema } = require('../schemas/common.schema');
 const {
@@ -344,10 +345,16 @@ async function afterSaveMinisterio(ministerio) {
 }
 
 async function beforeCreateUsuario(body) {
+  if (body.email != null) {
+    body.email = normalizeEmail(body.email) ?? body.email;
+  }
   await normalizarYValidarUsuario(body, null);
 }
 
 async function beforeUpdateUsuario(body, _req, current) {
+  if (body.email != null) {
+    body.email = normalizeEmail(body.email) ?? body.email;
+  }
   await normalizarYValidarUsuario(body, current?.id ?? null);
 }
 

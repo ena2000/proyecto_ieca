@@ -76,7 +76,7 @@ export function validarUsuarioForm(
     return null;
   }
   if (usuario.ministerioId == null) {
-    return 'El rol Líder/CoLíder debe tener un ministerio asignado.';
+    return null;
   }
 
   const ministerioId = Number(usuario.ministerioId);

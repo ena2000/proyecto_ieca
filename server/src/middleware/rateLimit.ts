@@ -2,7 +2,24 @@ const rateLimit = require('express-rate-limit');
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-/** Respuesta estándar cuando se supera el límite. */
+/** Rutas públicas de auth: tienen su propio rate limit, no cuentan en el general. */
+function isPublicAuthRequest(req) {
+  const url = String(req.originalUrl || req.url || '');
+  return (
+    url.includes('/auth/login') ||
+    url.includes('/auth/forgot-password') ||
+    url.includes('/auth/reset-password') ||
+    url.includes('/auth/refresh') ||
+    url.includes('/auth/logout')
+  );
+}
+
+function isHealthRequest(req) {
+  const url = String(req.originalUrl || req.url || '');
+  return url.includes('/health');
+}
+
+/** Respuesta estándar cuando se supera el límite general del API. */
 function limitHandler(_req, res) {
   res.status(429).json({
     message: 'Demasiadas peticiones. Espera un momento e inténtalo de nuevo.'
@@ -31,28 +48,38 @@ const loginLimiter = rateLimit({
 
 /**
  * Límite para solicitar código de recuperación (correo de verificación).
- * Por defecto: 5 / 15 min en producción; más amplio en desarrollo.
+ * No comparte contador con el límite general del API.
  */
 const forgotPasswordLimiter = rateLimit({
   windowMs: Number(process.env.RATE_LIMIT_FORGOT_WINDOW_MS) || 15 * 60 * 1000,
   max:
     Number(process.env.RATE_LIMIT_FORGOT_MAX) ||
-    (isProduction ? 5 : 20),
+    (isProduction ? 10 : 50),
   standardHeaders: true,
   legacyHeaders: false,
-  handler: forgotPasswordLimitHandler
+  handler: forgotPasswordLimitHandler,
+  /** Errores de servidor (p. ej. SMTP) no consumen intentos. */
+  skipFailedRequests: true
 });
 
 /**
- * Límite general para el resto del API autenticado.
- * 200 peticiones por IP cada 15 minutos.
+ * Límite general para rutas autenticadas del API.
+ * Excluye login, recuperación de contraseña y health.
  */
 const apiLimiter = rateLimit({
   windowMs: Number(process.env.RATE_LIMIT_API_WINDOW_MS) || 15 * 60 * 1000,
-  max: Number(process.env.RATE_LIMIT_API_MAX) || 200,
+  max:
+    Number(process.env.RATE_LIMIT_API_MAX) ||
+    (isProduction ? 200 : 5000),
   standardHeaders: true,
   legacyHeaders: false,
-  handler: limitHandler
+  handler: limitHandler,
+  skip: (req) => isPublicAuthRequest(req) || isHealthRequest(req)
 });
 
-module.exports = { loginLimiter, forgotPasswordLimiter, apiLimiter };
+module.exports = {
+  loginLimiter,
+  forgotPasswordLimiter,
+  apiLimiter,
+  isPublicAuthRequest
+};

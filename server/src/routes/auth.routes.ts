@@ -15,7 +15,7 @@ const {
 const { getClientIp } = require('../utils/request');
 const { recordLoginAttempt } = require('../utils/loginAudit');
 const { requestPasswordReset, resetPasswordWithCode } = require('../utils/passwordReset');
-const { devResetCodeInResponse } = require('../config/env');
+const { smtpConfigured } = require('../config/env');
 
 const router = express.Router();
 
@@ -119,9 +119,17 @@ router.post('/forgot-password', forgotPasswordLimiter, validate(forgotPasswordSc
   try {
     const { usuario } = req.body;
     const result = await requestPasswordReset(usuario);
-    const payload: { message: string; devCode?: string } = { message: result.message };
-    if (devResetCodeInResponse && result.devCode) {
+    const payload: Record<string, unknown> = {
+      message: result.message,
+      codeDispatched: result.codeDispatched,
+      emailSent: result.emailSent,
+      channel: result.channel
+    };
+    if (result.devCode) {
       payload.devCode = result.devCode;
+    }
+    if (!smtpConfigured && process.env.NODE_ENV !== 'production') {
+      console.warn('[auth/forgot-password] SMTP no configurado — código en respuesta dev/console.');
     }
     return res.json(payload);
   } catch (err) {

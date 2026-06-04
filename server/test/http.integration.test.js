@@ -256,4 +256,61 @@ describe('API HTTP (integración en memoria)', () => {
     assert.ok(lines.length >= 2, 'debe incluir cabecera y al menos un movimiento');
     assert.ok(csv.includes('Ofrenda') || csv.includes('Material'));
   });
+
+  it('POST /api/ministerios permite crear sin líder ni co-líder', async () => {
+    const hash = await bcrypt.hash('123456', 4);
+    seedMemoryCollection('usuarios', [
+      {
+        id: 1,
+        usuario: 'admin',
+        rol: 'Administrador',
+        estado: 'Activo',
+        passwordHash: hash
+      }
+    ]);
+
+    const login = await request(app)
+      .post('/api/auth/login')
+      .send({ usuario: 'admin', password: '123456' });
+
+    const res = await request(app)
+      .post('/api/ministerios')
+      .set('Authorization', `Bearer ${login.body.token}`)
+      .send({ nombre: 'DAMAS', estado: 'Activo' });
+
+    assert.equal(res.status, 201);
+    assert.equal(res.body.nombre, 'DAMAS');
+    assert.ok(res.body.id);
+  });
+
+  it('POST /api/usuarios permite Líder/CoLíder sin ministerio', async () => {
+    const hash = await bcrypt.hash('123456', 4);
+    seedMemoryCollection('usuarios', [
+      {
+        id: 1,
+        usuario: 'admin',
+        rol: 'Administrador',
+        estado: 'Activo',
+        passwordHash: hash
+      }
+    ]);
+
+    const login = await request(app)
+      .post('/api/auth/login')
+      .send({ usuario: 'admin', password: '123456' });
+
+    const res = await request(app)
+      .post('/api/usuarios')
+      .set('Authorization', `Bearer ${login.body.token}`)
+      .send({
+        nombre: 'Ana Líder',
+        email: 'ana@ieca.com',
+        rol: 'Lider/CoLider',
+        estado: 'Activo'
+      });
+
+    assert.equal(res.status, 201);
+    assert.equal(res.body.rol, 'Lider/CoLider');
+    assert.equal(res.body.ministerioId, null);
+  });
 });

@@ -1,5 +1,5 @@
 const nodemailer = require('nodemailer');
-const { smtpConfigured, isProduction, devResetCodeInResponse } = require('../config/env');
+const { smtpConfigured, isProduction } = require('../config/env');
 const {
   getLogoAttachment,
   buildPasswordResetEmail,
@@ -7,6 +7,23 @@ const {
 } = require('./email-templates');
 
 let transporter = null;
+let transporterVerified = false;
+
+function smtpErrorMessage(err) {
+  const code = err?.code || '';
+  if (code === 'EAUTH') {
+    return (
+      'No se pudo autenticar con el servidor de correo. ' +
+      'Revisa SMTP_USER, SMTP_PASS y (en Outlook) usa contraseña de aplicación.'
+    );
+  }
+  if (code === 'ECONNECTION' || code === 'ETIMEDOUT' || code === 'ESOCKET') {
+    return (
+      'No hay conexión con el servidor SMTP. Revisa SMTP_HOST, SMTP_PORT y SMTP_SECURE en server/.env.'
+    );
+  }
+  return `No se pudo enviar el correo: ${err?.message || 'error desconocido'}`;
+}
 
 function getTransporter() {
   if (!smtpConfigured) return null;
@@ -18,10 +35,33 @@ function getTransporter() {
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS
+      },
+      tls: {
+        minVersion: 'TLSv1.2'
       }
     });
+    transporterVerified = false;
   }
   return transporter;
+}
+
+async function ensureTransporterReady() {
+  const transport = getTransporter();
+  if (!transport) return null;
+  if (!transporterVerified) {
+    try {
+      await transport.verify();
+    } catch (err) {
+      console.warn('[email] Verificación SMTP falló (se intentará enviar igual):', err?.message || err);
+    }
+    transporterVerified = true;
+  }
+  return transport;
+}
+
+function smtpFromAddress() {
+  const raw = process.env.SMTP_FROM || process.env.SMTP_USER || '';
+  return String(raw).trim().replace(/^["']|["']$/g, '');
 }
 
 function mailAttachments() {
@@ -30,10 +70,13 @@ function mailAttachments() {
 }
 
 async function deliverEmail({ to, subject, text, html }) {
-  const transport = getTransporter();
   const recipients = Array.isArray(to) ? to.filter(Boolean) : [to].filter(Boolean);
+  if (!recipients.length) {
+    throw new Error('No hay destinatarios para el correo.');
+  }
+
   const payload = {
-    from: process.env.SMTP_FROM || process.env.SMTP_USER,
+    from: smtpFromAddress(),
     to: recipients.join(', '),
     subject,
     text,
@@ -41,9 +84,15 @@ async function deliverEmail({ to, subject, text, html }) {
     attachments: mailAttachments()
   };
 
-  if (transport) {
-    await transport.sendMail(payload);
-    return { sent: true, channel: 'email', recipients: recipients.length };
+  if (smtpConfigured) {
+    try {
+      const transport = await ensureTransporterReady();
+      await transport.sendMail(payload);
+      return { sent: true, channel: 'email', recipients: recipients.length };
+    } catch (err) {
+      console.error('[email] Error SMTP:', err);
+      throw new Error(smtpErrorMessage(err));
+    }
   }
 
   if (!isProduction) {
@@ -55,32 +104,34 @@ async function deliverEmail({ to, subject, text, html }) {
     return { sent: false, channel: 'console', recipients: recipients.length };
   }
 
-  throw new Error('El envío de correo no está configurado. Contacta al administrador.');
+  throw new Error(
+    'El envío de correo no está configurado. Configura SMTP en server/.env o contacta al administrador.'
+  );
 }
 
 /**
- * Envía código de recuperación por email. En dev puede loguear el código.
+ * Envía código de recuperación por email. Sin SMTP en desarrollo: consola + devCode.
  */
 async function sendPasswordResetEmail({ to, usuario, code }) {
   const { subject, text, html } = buildPasswordResetEmail({ usuario, code });
-  const transport = getTransporter();
 
-  if (transport) {
+  if (smtpConfigured) {
     await deliverEmail({ to, subject, text, html });
-    return { sent: true, channel: 'email' };
+    return { sent: true, channel: 'email', devCode: undefined };
   }
 
   if (!isProduction) {
     console.log(`\n[DEV] Código de recuperación para ${usuario} (${to}): ${code}\n`);
-    return { sent: false, channel: 'console', devCode: devResetCodeInResponse ? code : undefined };
+    return { sent: false, channel: 'console', devCode: code };
   }
 
-  throw new Error('El envío de correo no está configurado. Contacta al administrador.');
+  throw new Error(
+    'El envío de correo no está configurado. Configura SMTP_HOST, SMTP_USER y SMTP_PASS en server/.env.'
+  );
 }
 
 /**
  * Resumen operativo (pendientes / cierre) a administradores y contables.
- * @param {{ to: string|string[], subject?: string, text?: string, html?: string, resumen?: object }} params
  */
 async function sendOperationalDigestEmail({ to, subject, text, html, resumen }) {
   const recipients = Array.isArray(to) ? to.filter(Boolean) : [to].filter(Boolean);
@@ -103,14 +154,12 @@ async function sendOperationalDigestEmail({ to, subject, text, html, resumen }) 
   textBody = textBody || 'Resumen operativo IECA.';
   htmlBody = htmlBody || undefined;
 
-  const result = await deliverEmail({
+  return deliverEmail({
     to: recipients,
     subject: subjectLine,
     text: textBody,
     html: htmlBody
   });
-
-  return result;
 }
 
-module.exports = { sendPasswordResetEmail, sendOperationalDigestEmail };
+module.exports = { sendPasswordResetEmail, sendOperationalDigestEmail, smtpErrorMessage };

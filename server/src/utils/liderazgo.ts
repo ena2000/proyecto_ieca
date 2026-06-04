@@ -66,7 +66,8 @@ async function validarCupoMinisterioParaLider(ministerioId, usuarioId = null) {
 }
 
 /**
- * Admin y Contable no llevan ministerio. Líder debe tener uno, cupo y sin cruzar ministerios.
+ * Admin y Contable no llevan ministerio. Líder puede crearse sin ministerio
+ * y vincularse después en Ministerios (líder/co-líder).
  */
 async function normalizarYValidarUsuario(body, usuarioId = null) {
   const rol = body.rol;
@@ -86,9 +87,8 @@ async function normalizarYValidarUsuario(body, usuarioId = null) {
     : null;
 
   if (ministerioId == null || Number.isNaN(ministerioId)) {
-    const err = new Error('El rol Líder/CoLíder debe tener un ministerio asignado.');
-    err.status = 400;
-    throw err;
+    body.ministerioId = null;
+    return body;
   }
 
   if (usuarioId != null) {
@@ -157,8 +157,9 @@ async function validarMinisterioLiderazgo(body, ministerioId = null) {
   const hldrId = body.hldrId != null && body.hldrId !== '' ? Number(body.hldrId) : null;
   const coLiderId = body.coLiderId != null && body.coLiderId !== '' ? Number(body.coLiderId) : null;
 
-  body.hldrId = hldrId ?? undefined;
-  body.coLiderId = coLiderId ?? undefined;
+  // Firestore no acepta undefined; null = sin líder/co-líder asignado.
+  body.hldrId = hldrId;
+  body.coLiderId = coLiderId;
 
   if (hldrId != null && coLiderId != null && hldrId === coLiderId) {
     const err = new Error('El líder y el co-líder deben ser personas distintas.');

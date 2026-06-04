@@ -20,6 +20,7 @@ export class RecuperarPasswordComponent {
   paso: Paso = 'solicitar';
   usuarioSolicitado = '';
   devCodeHint: string | null = null;
+  emailEnviado = false;
 
   solicitarForm: FormGroup;
   restablecerForm: FormGroup;
@@ -68,10 +69,15 @@ export class RecuperarPasswordComponent {
     try {
       const usuario = String(this.solicitarForm.value.usuario).trim();
       const res = await this.auth.forgotPassword(usuario);
+      if (!res.codeDispatched) {
+        await this.toast(res.message, 'warning');
+        return;
+      }
       this.usuarioSolicitado = usuario;
       this.devCodeHint = res.devCode ?? null;
+      this.emailEnviado = !!res.emailSent;
       this.paso = 'restablecer';
-      await this.toast(res.message, 'success');
+      await this.toast(res.message, res.emailSent ? 'success' : 'warning');
     } catch (err) {
       await this.toast(getHttpErrorMessage(err, 'No se pudo enviar el código'), 'danger');
     } finally {
@@ -113,6 +119,7 @@ export class RecuperarPasswordComponent {
   volverASolicitar(): void {
     this.paso = 'solicitar';
     this.devCodeHint = null;
+    this.emailEnviado = false;
     this.restablecerForm.reset();
   }
 

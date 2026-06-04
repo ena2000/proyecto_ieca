@@ -41,14 +41,6 @@ function createApp(options: { useMemoryDb?: boolean } = {}) {
   app.use(createHelmetMiddleware());
   app.use(createCorsMiddleware());
   app.use(express.json({ limit: '10mb' }));
-  app.use('/api', apiLimiter);
-
-  app.use((err, req, res, next) => {
-    if (err?.message?.startsWith('CORS:')) {
-      return res.status(403).json({ message: err.message });
-    }
-    return next(err);
-  });
 
   app.get('/api/health', (_req, res) => {
     res.json({
@@ -57,6 +49,15 @@ function createApp(options: { useMemoryDb?: boolean } = {}) {
       version: pkg.version,
       uptimeSeconds: Math.floor(process.uptime())
     });
+  });
+
+  app.use('/api', apiLimiter);
+
+  app.use((err, req, res, next) => {
+    if (err?.message?.startsWith('CORS:')) {
+      return res.status(403).json({ message: err.message });
+    }
+    return next(err);
   });
 
   app.use('/api/auth', authRoutes);

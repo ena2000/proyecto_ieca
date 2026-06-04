@@ -19,7 +19,9 @@
         <ion-icon name="pencil-outline"></ion-icon>
         <span>Editando ministerio <strong>#{{ idEditando }}</strong></span>
       </div>
-      <p *ngIf="!modoEdicion">Registra los ministerios, áreas y departamentos de tu iglesia.</p>
+      <p *ngIf="!modoEdicion">
+        Registra los ministerios de tu iglesia. Puedes crear el ministerio primero y asignar líder y co-líder después.
+      </p>
       <p *ngIf="modoEdicion">Modifica la información y guarda los cambios del ministerio.</p>
     </div>
 
@@ -83,6 +85,9 @@
               </ion-select-option>
             </ion-select>
           </ion-item>
+          <small class="hint-text" *ngIf="lideresParaHldr.length === 0">
+            Crea usuarios con rol Líder/CoLíder en Usuarios; luego podrás elegirlos aquí.
+          </small>
         </div>
 
         <!-- Co-Líder -->

@@ -6,6 +6,6 @@ export interface Usuario {
   email: string;
   rol?: string;
   estado?: string;
-  ministerioId?: number;
+  ministerioId?: number | null;
   fechaFormateada?: string;
 }

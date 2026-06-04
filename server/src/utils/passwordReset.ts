@@ -2,34 +2,59 @@ const crypto = require('node:crypto');
 const bcrypt = require('bcryptjs');
 const { db } = require('../config/firebase');
 const { sendPasswordResetEmail } = require('./email');
+const { normalizeEmail } = require('./email-normalize');
 
 const COLLECTION = 'password_resets';
 const CODE_TTL_MS = 15 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
 
+const MSG_GENERICO =
+  'Si el usuario existe y tiene email registrado, recibirás un código en unos minutos.';
+
 function generateCode() {
   return String(crypto.randomInt(100000, 999999));
 }
 
+function maskEmail(email) {
+  const s = String(email || '').trim();
+  const at = s.indexOf('@');
+  if (at <= 1) return 'tu correo';
+  const user = s.slice(0, at);
+  const domain = s.slice(at + 1);
+  const visible = user.slice(0, Math.min(2, user.length));
+  return `${visible}***@${domain}`;
+}
+
 /** @param {unknown} login @returns {Promise<import('../types/firestore.types').UsuarioDoc | null>} */
 async function findUserByLogin(login) {
-  const value = String(login ?? '').trim();
-  if (!value) return null;
+  const raw = String(login ?? '').trim();
+  if (!raw) return null;
 
   const byUsuario = await db.collection('usuarios')
-    .where('usuario', '==', value)
+    .where('usuario', '==', raw)
     .limit(1)
     .get();
   if (!byUsuario.empty) {
     return { id: byUsuario.docs[0].id, ...byUsuario.docs[0].data() };
   }
 
-  const byEmail = await db.collection('usuarios')
-    .where('email', '==', value.toLowerCase())
+  const byUsuarioLower = await db.collection('usuarios')
+    .where('usuario', '==', raw.toLowerCase())
     .limit(1)
     .get();
-  if (!byEmail.empty) {
-    return { id: byEmail.docs[0].id, ...byEmail.docs[0].data() };
+  if (!byUsuarioLower.empty) {
+    return { id: byUsuarioLower.docs[0].id, ...byUsuarioLower.docs[0].data() };
+  }
+
+  const emailNorm = normalizeEmail(raw);
+  if (emailNorm) {
+    const byEmail = await db.collection('usuarios')
+      .where('email', '==', emailNorm)
+      .limit(1)
+      .get();
+    if (!byEmail.empty) {
+      return { id: byEmail.docs[0].id, ...byEmail.docs[0].data() };
+    }
   }
 
   return null;
@@ -37,21 +62,28 @@ async function findUserByLogin(login) {
 
 /**
  * Crea código temporal y lo envía al email del usuario (si existe).
- * Respuesta genérica para no revelar si el usuario existe.
+ * Respuesta genérica si no hay usuario (no revela existencia).
  */
 async function requestPasswordReset(login) {
   const user = await findUserByLogin(login);
 
   if (!user || (user.estado && user.estado !== 'Activo')) {
     return {
-      message: 'Si el usuario existe y tiene email registrado, recibirás un código en unos minutos.',
+      message: MSG_GENERICO,
+      codeDispatched: false,
+      emailSent: false,
+      channel: 'none',
       devCode: undefined
     };
   }
 
-  if (!user.email?.trim()) {
+  const email = normalizeEmail(user.email);
+  if (!email) {
     return {
-      message: 'Si el usuario existe y tiene email registrado, recibirás un código en unos minutos.',
+      message: MSG_GENERICO,
+      codeDispatched: false,
+      emailSent: false,
+      channel: 'none',
       devCode: undefined
     };
   }
@@ -69,23 +101,37 @@ async function requestPasswordReset(login) {
     createdAt: new Date().toISOString()
   });
 
-  let devCode;
   try {
-    const result = await sendPasswordResetEmail({
-      to: user.email,
+    const mail = await sendPasswordResetEmail({
+      to: email,
       usuario: user.usuario || user.nombre || 'usuario',
       code
     });
-    devCode = result.devCode;
+
+    if (mail.channel === 'email') {
+      return {
+        message:
+          `Enviamos un código de 6 dígitos a ${maskEmail(email)}. ` +
+          'Revisa también spam o correo no deseado (válido 15 minutos).',
+        codeDispatched: true,
+        emailSent: true,
+        channel: 'email',
+        devCode: undefined
+      };
+    }
+
+    return {
+      message:
+        'Correo no configurado en el servidor. Usa el código que aparece en pantalla para continuar.',
+      codeDispatched: true,
+      emailSent: false,
+      channel: 'console',
+      devCode: mail.devCode
+    };
   } catch (err) {
     await db.collection(COLLECTION).doc(String(user.id)).delete().catch(() => undefined);
     throw err;
   }
-
-  return {
-    message: 'Si el usuario existe y tiene email registrado, recibirás un código en unos minutos.',
-    devCode
-  };
 }
 
 /**

@@ -19,6 +19,11 @@ const server = app.listen(PORT, () => {
   if (isProduction) {
     console.log('  Seguridad  → errores 500 ocultos, JWT refresh activo');
   }
+  const { smtpConfigured } = require('./config/env');
+  const smtpLabel = smtpConfigured
+    ? `SMTP ${process.env.SMTP_HOST || 'ok'} (${process.env.SMTP_USER || 'usuario'})`
+    : 'sin SMTP (códigos en consola/pantalla en dev)';
+  console.log(`  Correo     → ${smtpLabel}`);
 
   const { alertasCronEnabled, alertasCronIntervalMs, alertasEmailEnabled } = require('./config/env');
   if (

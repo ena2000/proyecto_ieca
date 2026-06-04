@@ -522,7 +522,7 @@ Sin SMTP en desarrollo, el resumen se imprime en la consola del servidor. Máxim
 | `JWT_SECRET` | Obligatorio, ≥ 32 caracteres; rechaza claves débiles |
 | CORS | Orígenes explícitos (`CORS_ORIGINS`) |
 | Helmet | Cabeceras de seguridad HTTP |
-| Rate limiting | Login: 5 / 15 min por IP; API: 200 / 15 min |
+| Rate limiting | Login: 5 / 15 min por IP; API: 200 / 15 min (prod), 5000 / 15 min (dev); `RATE_LIMIT_API_MAX` |
 | Validación | **Zod** en auth, CRUD, notificaciones, admin |
 | Recuperación | Código 6 dígitos (SMTP o consola en dev) |
 | Auditoría login | IP, usuario, motivo en fallos |

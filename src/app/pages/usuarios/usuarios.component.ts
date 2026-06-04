@@ -203,6 +203,8 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     };
     if (isRolSinMinisterio(payload.rol)) {
       payload.ministerioId = undefined;
+    } else if (payload.rol === this.ROL_LIDER && payload.ministerioId == null) {
+      payload.ministerioId = null;
     }
     return payload;
   }
@@ -343,9 +345,6 @@ export class UsuariosComponent implements OnInit, OnDestroy {
       (this.password.trim() ? this.password.trim().length >= 6 : true);
 
     if (!base) return false;
-    if (this.nuevoUsuario.rol === this.ROL_LIDER && this.nuevoUsuario.ministerioId == null) {
-      return false;
-    }
     return validarUsuarioForm(
       this.nuevoUsuario,
       this.listaMinisterios,
@@ -355,9 +354,6 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   }
 
   get mensajeValidacion(): string {
-    if (this.nuevoUsuario.rol === this.ROL_LIDER && this.nuevoUsuario.ministerioId == null) {
-      return 'Selecciona el ministerio del líder o co-líder.';
-    }
     return validarUsuarioForm(
       this.nuevoUsuario,
       this.listaMinisterios,

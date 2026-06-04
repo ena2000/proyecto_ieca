@@ -20,6 +20,14 @@ interface LoginResult {
   mensaje?: string;
 }
 
+export interface ForgotPasswordResponse {
+  message: string;
+  codeDispatched?: boolean;
+  emailSent?: boolean;
+  channel?: 'email' | 'console' | 'none';
+  devCode?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
 
@@ -151,9 +159,9 @@ export class AuthService {
     });
   }
 
-  forgotPassword(usuario: string): Promise<{ message: string; devCode?: string }> {
+  forgotPassword(usuario: string): Promise<ForgotPasswordResponse> {
     return firstValueFrom(
-      this.api.post<{ message: string; devCode?: string }>(API.auth.forgotPassword, { usuario })
+      this.api.post<ForgotPasswordResponse>(API.auth.forgotPassword, { usuario })
     );
   }
 
