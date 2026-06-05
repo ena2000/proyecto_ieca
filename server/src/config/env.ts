@@ -59,6 +59,28 @@ function getFirebaseServiceAccountPath() {
   return path.join(__dirname, '../../firebase-service-account.json');
 }
 
+function hasFirebaseCredentials(env = process.env) {
+  if (env.FIREBASE_SERVICE_ACCOUNT_JSON?.trim()) return true;
+  return fs.existsSync(getFirebaseServiceAccountPath());
+}
+
+/**
+ * Credenciales Firebase: archivo local (desarrollo/VPS) o JSON en variable (Render, CI).
+ * @returns {Record<string, unknown>}
+ */
+function loadFirebaseServiceAccount() {
+  const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON?.trim();
+  if (raw) {
+    try {
+      return JSON.parse(raw);
+    } catch {
+      console.error('\n[ERROR] FIREBASE_SERVICE_ACCOUNT_JSON no es JSON válido.\n');
+      process.exit(1);
+    }
+  }
+  return require(getFirebaseServiceAccountPath());
+}
+
 /**
  * Devuelve errores de configuración de producción (sin terminar el proceso).
  * @param {NodeJS.ProcessEnv} [env]
@@ -89,8 +111,10 @@ function getProductionConfigErrors(env = process.env) {
     }
   }
 
-  if (!fs.existsSync(getFirebaseServiceAccountPath())) {
-    errors.push('[PRODUCCIÓN] Falta server/firebase-service-account.json.');
+  if (!hasFirebaseCredentials(env)) {
+    errors.push(
+      '[PRODUCCIÓN] Falta Firebase: server/firebase-service-account.json o FIREBASE_SERVICE_ACCOUNT_JSON.'
+    );
   }
 
   return errors;
@@ -131,5 +155,7 @@ module.exports = {
   alertasCronIntervalMs: Number(process.env.ALERTAS_CRON_INTERVAL_MS) || 24 * 60 * 60 * 1000,
   getProductionConfigErrors,
   validateProductionEnvironment,
-  getFirebaseServiceAccountPath
+  getFirebaseServiceAccountPath,
+  hasFirebaseCredentials,
+  loadFirebaseServiceAccount
 };

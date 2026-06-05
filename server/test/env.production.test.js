@@ -47,4 +47,13 @@ describe('getProductionConfigErrors', () => {
     });
     assert.ok(errors.some((e) => /DEV_RESET/i.test(e)));
   });
+
+  it('acepta FIREBASE_SERVICE_ACCOUNT_JSON sin archivo local', () => {
+    const errors = getProductionConfigErrors({
+      NODE_ENV: 'production',
+      CORS_ORIGINS: 'https://app.ieca.org',
+      FIREBASE_SERVICE_ACCOUNT_JSON: '{"type":"service_account","project_id":"demo"}'
+    });
+    assert.ok(!errors.some((e) => /Firebase/i.test(e)));
+  });
 });

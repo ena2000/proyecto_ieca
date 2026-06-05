@@ -1,5 +1,6 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://api.ieca-alborada.org/api',
+  // Render: https://tu-servicio.onrender.com/api — o dominio personalizado en Render
+  apiUrl: 'https://ieca-api.onrender.com/api',
   useLocalFallback: false
 };

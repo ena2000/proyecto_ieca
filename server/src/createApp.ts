@@ -1,6 +1,4 @@
 const express = require('express');
-const fs = require('fs');
-const path = require('path');
 
 const { createCorsMiddleware } = require('./middleware/cors');
 const { createHelmetMiddleware } = require('./middleware/helmet');
@@ -27,10 +25,12 @@ function createApp(options: { useMemoryDb?: boolean } = {}) {
   }
 
   const useMemory = process.env.IECA_USE_MEMORY_DB === 'true';
-  const serviceAccountPath = path.join(__dirname, '../firebase-service-account.json');
+  const { hasFirebaseCredentials } = require('./config/env');
 
-  if (!useMemory && !fs.existsSync(serviceAccountPath)) {
-    throw new Error('[FALTA] Coloca firebase-service-account.json en server/');
+  if (!useMemory && !hasFirebaseCredentials()) {
+    throw new Error(
+      '[FALTA] Firebase: coloca firebase-service-account.json en server/ o define FIREBASE_SERVICE_ACCOUNT_JSON.'
+    );
   }
 
   require('./config/firebase');

@@ -33,9 +33,11 @@ if (isProduction) {
   if (!process.env.CORS_ORIGINS?.trim()) {
     warnings.push('CORS_ORIGINS no configurado — obligatorio en producción.');
   }
-  const firebasePath = path.join(__dirname, '../firebase-service-account.json');
-  if (!fs.existsSync(firebasePath)) {
-    warnings.push('firebase-service-account.json no encontrado.');
+  const hasFirebase =
+    process.env.FIREBASE_SERVICE_ACCOUNT_JSON?.trim() ||
+    fs.existsSync(path.join(__dirname, '../firebase-service-account.json'));
+  if (!hasFirebase) {
+    warnings.push('Firebase no configurado (archivo o FIREBASE_SERVICE_ACCOUNT_JSON).');
   }
 }
 

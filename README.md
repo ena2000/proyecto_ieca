@@ -137,7 +137,7 @@ proyecto_ieca/
 │   ├── ci.yml                   # Lint + tests + build (PR y push)
 │   └── release.yml              # Artefactos de despliegue
 ├── docs/
-│   └── DEPLOY.md                # Guía de despliegue (Firebase, Nginx, PaaS…)
+│   └── DEPLOY.md                # Guía de despliegue (Firebase Hosting + Render)
 ├── src/                         # Frontend
 │   ├── app/
 │   │   ├── auth/                # Login, recuperar y cambiar contraseña
@@ -530,7 +530,7 @@ Sin SMTP en desarrollo, el resumen se imprime en la consola del servidor. Máxim
 | Arranque prod | Rechaza `CORS_ORIGINS` vacío, memoria DB, reset code en JSON, Firebase ausente |
 | Cierre graceful | SIGTERM / SIGINT cierran conexiones antes de salir |
 | Verificación | `npm run verify:prod` + `prestart` antes de `npm start` |
-| PM2 | `server/ecosystem.config.cjs` incluido para VPS |
+| Hosting API | **Render** (Web Service); `ecosystem.config.cjs` opcional para VPS |
 | Demo offline | `auth-local.fallback.ts` excluido del build de producción |
 | Secretos | `.env`, `firebase-service-account.json` en `.gitignore` |
 
@@ -707,16 +707,17 @@ Guía paso a paso: **[docs/DEPLOY.md](docs/DEPLOY.md)**
 Incluye:
 
 - Checklist pre-producción
-- Firebase Hosting, Nginx, Railway/Render, PM2
+- Firebase Hosting (frontend) + **Render** (API)
 - Verificación post-despliegue (`/api/health`, login)
 - Actualización de versiones
 
 Resumen rápido:
 
 1. Descarga artefactos del workflow **Release build** (o ejecuta `npm run build:ci` y empaqueta `server/`).
-2. Configura `JWT_SECRET`, `CORS_ORIGINS` y `firebase-service-account.json` en el host del API.
-3. Sirve `www/` en tu hosting estático o proxy.
-4. Apunta `environment.prod.ts` → `apiUrl` al dominio del API.
+2. Crea un **Web Service** en Render (`server/`, `npm ci --include=dev && npm run build`, `npm start`).
+3. Configura en Render: `JWT_SECRET`, `CORS_ORIGINS`, `FIREBASE_SERVICE_ACCOUNT_JSON`.
+4. Despliega `www/` en Firebase Hosting.
+5. Apunta `environment.prod.ts` → `apiUrl` a la URL del API en Render.
 
 ---
 
