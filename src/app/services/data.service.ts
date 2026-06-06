@@ -9,6 +9,7 @@ import { MinisteriosService } from './ministerios.service';
 import { UsuariosService } from './usuarios.service';
 import { gastoAprobado, gastoPendiente } from '../shared/utils/gasto.util';
 import { ingresoAprobado, ingresoPendiente } from '../shared/utils/ingreso.util';
+import { mesCortoEs } from '../shared/utils/month.util';
 
 export type {
   Ingreso, Gasto, Ministerio, Usuario, Movimiento, KPIs, MesData
@@ -148,13 +149,8 @@ export class DataService {
       })
       .reduce((sum, g) => sum + (g.monto || 0), 0);
 
-    const tendenciaIngresos = ingresosAnterior > 0
-      ? ((totalIngresos - ingresosAnterior) / ingresosAnterior * 100).toFixed(0) + '%'
-      : '0%';
-
-    const tendenciaGastos = gastosAnterior > 0
-      ? ((totalGastos - gastosAnterior) / gastosAnterior * 100).toFixed(0) + '%'
-      : '0%';
+    const tendenciaIngresos = this.calcularTendenciaMensual(totalIngresos, ingresosAnterior);
+    const tendenciaGastos = this.calcularTendenciaMensual(totalGastos, gastosAnterior);
 
     return {
       balance,
@@ -209,7 +205,6 @@ export class DataService {
     const gastos = this.gastosAprobadosParaBalance(
       this.filterPorMinisterio(this.getGastosActuales(), ministerioId)
     );
-    const meses = ['Dic', 'Ene', 'Feb', 'Mar', 'Abr', 'May'];
     const ahora = new Date();
     const chartData: MesData[] = [];
 
@@ -233,7 +228,7 @@ export class DataService {
         .reduce((sum, g) => sum + (g.monto || 0), 0);
 
       chartData.push({
-        mes: meses[fecha.getMonth()],
+        mes: mesCortoEs(fecha.getMonth()),
         ingresos: ingresosDelMes,
         gastos: gastosDelMes
       });
@@ -287,6 +282,15 @@ export class DataService {
     const gastos = this.filterPorMinisterio(this.getGastosActuales(), ministerioId)
       .filter(gastoPendiente).length;
     return { ingresos, gastos, total: ingresos + gastos };
+  }
+
+  /**
+   * Variación % mes actual vs mes anterior.
+   * Si el mes pasado era 0 y este mes hay monto, se registra como +100 % (subió).
+   */
+  private calcularTendenciaMensual(actual: number, anterior: number): string {
+    if (anterior === 0) return actual > 0 ? '100%' : '0%';
+    return ((actual - anterior) / anterior * 100).toFixed(0) + '%';
   }
 
   private formatearFecha(fecha: string): string {

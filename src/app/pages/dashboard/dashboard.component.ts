@@ -14,6 +14,10 @@ import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import { DataService, KPIs, MesData, Movimiento } from '../../services/data.service';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificacionesBellComponent } from '../../components/notificaciones-bell/notificaciones-bell.component';
+import {
+  porcentajeTendenciaDisplay,
+  verboTendenciaDisplay
+} from '../../shared/utils/tendencia-display.util';
 
 Chart.register(...registerables);
 
@@ -185,6 +189,24 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit, Vie
   get proporcionGastosMes(): number {
     const total = this.kpis.ingresos + this.kpis.gastosMes;
     return total > 0 ? (this.kpis.gastosMes / total) * 100 : 0;
+  }
+
+  get tendenciaIngresosPorcentaje(): string {
+    return porcentajeTendenciaDisplay(this.kpis.tendenciaIngresos);
+  }
+
+  get tendenciaGastosPorcentaje(): string {
+    return porcentajeTendenciaDisplay(this.kpis.tendenciaGastos);
+  }
+
+  get tendenciaIngresosVerbo(): string {
+    const v = verboTendenciaDisplay(this.kpis.tendenciaIngresos);
+    return v === 'Igual' ? 'Igual que mes ant.' : v;
+  }
+
+  get tendenciaGastosVerbo(): string {
+    const v = verboTendenciaDisplay(this.kpis.tendenciaGastos);
+    return v === 'Igual' ? 'Igual que mes ant.' : v;
   }
 
   get tendenciaIngresosPositiva(): boolean {

@@ -3,6 +3,16 @@ const MESES_ES = [
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
 ];
 
+const MESES_CORTOS_ES = [
+  'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+  'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
+];
+
+/** Etiqueta corta de mes (0 = enero, 11 = diciembre). */
+export function mesCortoEs(indiceMes: number): string {
+  return MESES_CORTOS_ES[indiceMes] ?? '';
+}
+
 export function padMes(fecha: Date): string {
   const y = fecha.getFullYear();
   const m = String(fecha.getMonth() + 1).padStart(2, '0');

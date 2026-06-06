@@ -32,8 +32,9 @@ A nivel técnico, el frontend **ya está orientado a móvil**: **Ionic 8**, esti
 13. [Pruebas automatizadas](#pruebas-automatizadas)
 14. [Integración continua y release](#integración-continua-y-release)
 15. [Despliegue](#despliegue)
-16. [Solución de problemas](#solución-de-problemas)
-17. [Licencia](#licencia)
+16. [Metodología del proyecto](#metodología-del-proyecto)
+17. [Solución de problemas](#solución-de-problemas)
+18. [Licencia](#licencia)
 
 ---
 
@@ -718,6 +719,16 @@ Resumen rápido:
 3. Configura en Render: `JWT_SECRET`, `CORS_ORIGINS`, `FIREBASE_SERVICE_ACCOUNT_JSON`.
 4. Despliega `www/` en Firebase Hosting.
 5. Apunta `environment.prod.ts` → `apiUrl` a la URL del API en Render.
+
+---
+
+## Metodología del proyecto
+
+Documento formal con el enfoque de desarrollo, ciclo de vida, control de versiones, aseguramiento de calidad y roles del equipo:
+
+**[docs/METODOLOGIA.md](docs/METODOLOGIA.md)**
+
+Resumen: metodología **en cascada (Waterfall)** con seis fases secuenciales — análisis de requisitos, diseño, implementación, pruebas, despliegue y mantenimiento — con entregables documentados por fase y trazabilidad entre requisitos, diseño, código y pruebas.
 
 ---
 

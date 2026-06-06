@@ -61,9 +61,11 @@
           <div class="kpi-info">
             <span class="kpi-label">Ingresos vs mes ant.</span>
             <span class="kpi-value" [class.pos]="tendenciaIngresosPositiva" [class.neg]="!tendenciaIngresosPositiva">
-              {{ tendenciaIngresosPositiva ? '↑' : '↓' }} {{ kpis.tendenciaIngresos }}
+              {{ tendenciaIngresosPorcentaje }}
             </span>
-            <span class="kpi-trend neutral">Tendencia mensual</span>
+            <span class="kpi-trend" [class.pos]="tendenciaIngresosPositiva" [class.neg]="!tendenciaIngresosPositiva">
+              {{ tendenciaIngresosVerbo }}
+            </span>
           </div>
         </div>
 
@@ -72,9 +74,11 @@
           <div class="kpi-info">
             <span class="kpi-label">Gastos vs mes ant.</span>
             <span class="kpi-value" [class.neg]="tendenciaGastosPositiva" [class.pos]="!tendenciaGastosPositiva">
-              {{ tendenciaGastosPositiva ? '↑' : '↓' }} {{ kpis.tendenciaGastos }}
+              {{ tendenciaGastosPorcentaje }}
             </span>
-            <span class="kpi-trend neutral">Tendencia mensual</span>
+            <span class="kpi-trend" [class.neg]="tendenciaGastosPositiva" [class.pos]="!tendenciaGastosPositiva">
+              {{ tendenciaGastosVerbo }}
+            </span>
           </div>
         </div>
 
@@ -179,15 +183,15 @@
             <div class="side-trends">
               <p class="side-section-label">Vs mes anterior</p>
               <div class="side-trend-row">
-                <span>Ingresos</span>
+                <span>Ingresos · {{ tendenciaIngresosVerbo }}</span>
                 <span [class.pos]="tendenciaIngresosPositiva" [class.neg]="!tendenciaIngresosPositiva">
-                  {{ tendenciaIngresosPositiva ? '↑' : '↓' }} {{ kpis.tendenciaIngresos }}
+                  {{ tendenciaIngresosPorcentaje }}
                 </span>
               </div>
               <div class="side-trend-row">
-                <span>Gastos</span>
+                <span>Gastos · {{ tendenciaGastosVerbo }}</span>
                 <span [class.neg]="tendenciaGastosPositiva" [class.pos]="!tendenciaGastosPositiva">
-                  {{ tendenciaGastosPositiva ? '↑' : '↓' }} {{ kpis.tendenciaGastos }}
+                  {{ tendenciaGastosPorcentaje }}
                 </span>
               </div>
               <div class="side-trend-row">
