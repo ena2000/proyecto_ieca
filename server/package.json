@@ -12,6 +12,7 @@
     "alertas:force": "tsx scripts/enviar-alertas.js --force",
     "email:prueba": "tsx scripts/enviar-email-prueba.js",
     "email:logo": "node scripts/copy-email-logo.js",
+    "render:setup": "node scripts/render-setup-helper.js",
     "usuario:inicial": "tsx scripts/crear-usuario-inicial.js",
     "typecheck": "tsc --noEmit",
     "verify:prod": "node scripts/verify-production.js",
