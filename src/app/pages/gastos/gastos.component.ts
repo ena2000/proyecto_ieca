@@ -49,6 +49,7 @@ import {
   etiquetaOpcionCuenta,
   resolverCuentaGastoLegacy
 } from '../../shared/constants/contabilidad-cuentas.constants';
+import { aplicarResponsableSesion, etiquetaResponsableMovimiento } from '../../shared/utils/movimiento-responsable.util';
 import { aplicarCuentaEnGasto, inicializarCuentaGasto } from '../../shared/utils/contabilidad-cuenta-form.util';
 import { Gasto, Ministerio, Usuario } from '../../core/models';
 import { DataService } from '../../services/data.service';
@@ -283,6 +284,14 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
     return ministeriosEnAlcance(this.listaMinisterios, this.ministerioScopeId);
   }
 
+  get etiquetaResponsableFormulario(): string {
+    return etiquetaResponsableMovimiento(
+      this.nuevoGasto,
+      this.listaUsuarios,
+      this.authService.getSession()
+    );
+  }
+
   get hayFiltrosActivos(): boolean {
     return hayFiltrosMovimientoActivos(this.filtros);
   }
@@ -418,6 +427,7 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
       this.modoEdicion = true;
       this.idEditando = item.id;
       this.intentoEnvio = false;
+      this.aplicarResponsableAlFormulario();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }, 50);
   }
@@ -542,12 +552,22 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
     this.aplicarAlcanceMinisterioAlFormulario();
   }
 
+  private aplicarResponsableAlFormulario(): void {
+    this.nuevoGasto = aplicarResponsableSesion(
+      this.nuevoGasto,
+      this.authService.getSession(),
+      this.listaUsuarios,
+      this.modoEdicion
+    );
+  }
+
   private aplicarAlcanceMinisterioAlFormulario(): void {
     this.nuevoGasto = aplicarMinisterioAlMovimiento(
       this.nuevoGasto,
       this.listaMinisterios,
       this.ministerioScopeId
     );
+    this.aplicarResponsableAlFormulario();
   }
 
   async mostrarToast(mensaje: string, color: string): Promise<void> {

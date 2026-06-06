@@ -47,7 +47,7 @@ describe('email-templates', () => {
     assert.match(subject, /pendiente/);
     assert.match(html, /Pendientes de aprobación/);
     assert.match(html, /Recordatorio de cierre mensual/);
-    assert.match(html, /Q 1,000.00/);
+    assert.match(html, /\$ 1,000\.00/);
     assert.match(text, /mant/);
   });
 

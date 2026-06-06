@@ -5,6 +5,18 @@
  */
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 
+const { execSync } = require('child_process');
+const path = require('path');
+
+try {
+  execSync('node scripts/copy-email-logo.js', {
+    cwd: path.join(__dirname, '..'),
+    stdio: 'inherit'
+  });
+} catch {
+  // Si falla la optimización, el envío intentará otras rutas del logo.
+}
+
 const { smtpConfigured } = require('../src/config/env');
 const { sendOperationalDigestEmail } = require('../src/utils/email');
 const { buildTestEmail } = require('../src/utils/email-templates');

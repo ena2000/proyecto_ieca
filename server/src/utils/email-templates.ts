@@ -24,6 +24,7 @@ const APP_NAME = 'Gestión Financiera IECA';
 function resolveLogoPath() {
   const candidates = [
     process.env.EMAIL_LOGO_PATH?.trim(),
+    path.join(__dirname, '../../assets/email/logo_ieca2_email.png'),
     path.join(__dirname, '../../assets/email/logo_ieca2.png'),
     path.join(__dirname, '../../../src/assets/icon/logo_ieca2.png'),
     path.join(__dirname, '../../../src/assets/icon/logo_ieca.png')
@@ -35,13 +36,42 @@ function resolveLogoPath() {
   return null;
 }
 
+function buildLogoBlock() {
+  if (resolveLogoPath()) {
+    return `<img src="cid:${LOGO_CID}" alt="IECA" width="72" height="72" style="display:block;margin:0 auto;border:0;outline:none;" />`;
+  }
+  return `<div style="width:72px;height:72px;margin:0 auto;border-radius:50%;background:${BRAND.yellow};color:${BRAND.blue};font-weight:800;font-size:22px;line-height:72px;text-align:center;">IECA</div>`;
+}
+
+function resolveLogoDataUri() {
+  const url = process.env.EMAIL_LOGO_URL?.trim();
+  if (url) return url;
+
+  const logoPath = resolveLogoPath();
+  if (!logoPath) return null;
+
+  try {
+    const buf = fs.readFileSync(logoPath);
+    const ext = path.extname(logoPath).toLowerCase();
+    const mime =
+      ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg'
+        : ext === '.gif' ? 'image/gif'
+          : ext === '.webp' ? 'image/webp'
+            : 'image/png';
+    return `data:${mime};base64,${buf.toString('base64')}`;
+  } catch {
+    return null;
+  }
+}
+
 function getLogoAttachment() {
   const logoPath = resolveLogoPath();
   if (!logoPath) return null;
   return {
-    filename: path.basename(logoPath),
+    filename: 'logo_ieca2_email.png',
     path: logoPath,
-    cid: LOGO_CID
+    cid: LOGO_CID,
+    contentDisposition: 'inline'
   };
 }
 
@@ -70,10 +100,7 @@ function appUrl() {
 }
 
 function buildLayout({ preheader, title, bodyHtml, footerExtra = '' }) {
-  const logoPath = resolveLogoPath();
-  const logoBlock = logoPath
-    ? `<img src="cid:${LOGO_CID}" alt="IECA" width="72" height="72" style="display:block;margin:0 auto;border:0;outline:none;" />`
-    : `<div style="width:72px;height:72px;margin:0 auto;border-radius:50%;background:${BRAND.yellow};color:${BRAND.blue};font-weight:800;font-size:22px;line-height:72px;text-align:center;">IECA</div>`;
+  const logoBlock = buildLogoBlock();
 
   const preheaderText = escapeHtml(preheader || title);
 
@@ -311,6 +338,7 @@ module.exports = {
   BRAND,
   LOGO_CID,
   resolveLogoPath,
+  resolveLogoDataUri,
   getLogoAttachment,
   buildPasswordResetEmail,
   buildTestEmail,

@@ -118,7 +118,7 @@ async function construirResumenOperativo(options: {
 }
 
 function formatearMontoGtq(monto) {
-  return `Q ${Number(monto || 0).toLocaleString('es-GT', {
+  return `$ ${Number(monto || 0).toLocaleString('es-MX', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   })}`;
