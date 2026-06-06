@@ -1,102 +1,110 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { IonicModule, LoadingController, ToastController } from '@ionic/angular';
 import { Router, RouterLink } from '@angular/router';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
 import { getHttpErrorMessage } from '../../shared/utils/error-message.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-login',
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
   standalone: true,
-  imports: [IonicModule, CommonModule, RouterLink, ReactiveFormsModule]
+  imports: [IonicModule, CommonModule, FormsModule, RouterLink]
 })
 export class LoginComponent implements OnInit {
-  loginForm: FormGroup;
+  usuario = '';
+  password = '';
   showPassword = false;
   isLoading = false;
   submitted = false;
 
   constructor(
-    private fb: FormBuilder,
     private loadingCtrl: LoadingController,
     private toastCtrl: ToastController,
     private router: Router,
     private authService: AuthService
-  ) {
-    this.loginForm = this.fb.group({
-      usuario: ['', [Validators.required, Validators.minLength(4)]],
-      password: ['', [Validators.required, Validators.minLength(6)]]
-    });
-  }
+  ) {}
 
   ngOnInit() {
     if (this.authService.isAuthenticated()) {
       void this.router.navigateByUrl(this.authService.getRutaPorDefecto(), { replaceUrl: true });
+      return;
+    }
+
+    // En producción, despierta Render antes del primer login (cold start).
+    if (environment.production && !environment.useLocalFallback) {
+      const base = environment.apiUrl.replace(/\/$/, '');
+      void fetch(`${base}/health`, { mode: 'cors' }).catch(() => undefined);
     }
   }
 
-  async onLogin() {
+  async onLogin(): Promise<void> {
+    if (this.isLoading) return;
+
     this.submitted = true;
-    if (!this.loginForm.valid) {
-      this.loginForm.markAllAsTouched();
+
+    const u = this.usuario.trim();
+    const p = this.password;
+
+    if (u.length < 4 || p.length < 6) {
+      await this.presentToast('Completa usuario (mín. 4) y contraseña (mín. 6).', 'warning');
       return;
     }
 
     this.isLoading = true;
-    const loading = await this.loadingCtrl.create({
-      message: 'Validando credenciales...',
-      spinner: 'circles',
-      cssClass: 'ieca-loading'
-    });
-    await loading.present();
+    let loading: HTMLIonLoadingElement | null = null;
 
     try {
-      const result = await this.authService.login(
-        this.loginForm.value.usuario,
-        this.loginForm.value.password
-      );
+      loading = await this.loadingCtrl.create({
+        message: 'Conectando con el servidor… La primera vez puede tardar hasta 1 minuto.',
+        spinner: 'circles',
+        cssClass: 'ieca-loading'
+      });
+      await loading.present();
+
+      const result = await this.authService.login(u, p);
 
       if (result.success) {
         const destino = this.authService.getRutaPorDefecto();
-        await this.router.navigateByUrl(destino, { replaceUrl: true });
         const user = this.authService.getSession();
-        await this.presentToast(`¡Bienvenido ${user?.usuario}!`, 'success');
+        void this.router.navigateByUrl(destino, { replaceUrl: true });
+        void this.presentToast(`¡Bienvenido ${user?.usuario}!`, 'success');
       } else {
-        this.presentToast(result.mensaje || 'Usuario o contraseña incorrectos', 'danger');
+        await this.presentToast(result.mensaje || 'Usuario o contraseña incorrectos', 'danger');
       }
     } catch (error) {
-      this.presentToast(getHttpErrorMessage(error, 'Error en la autenticación. Intenta de nuevo.'), 'danger');
+      await this.presentToast(getHttpErrorMessage(error, 'Error en la autenticación. Intenta de nuevo.'), 'danger');
     } finally {
-      await loading.dismiss().catch(() => undefined);
+      if (loading) {
+        await loading.dismiss().catch(() => undefined);
+      }
       this.isLoading = false;
     }
   }
 
-  async presentToast(msj: string, color: string) {
+  async presentToast(msj: string, color: string): Promise<void> {
     await presentIecaToast(this.toastCtrl, msj, color);
   }
 
-  togglePassword() {
+  togglePassword(): void {
     this.showPassword = !this.showPassword;
   }
 
   get usuarioError(): string | null {
-    const c = this.loginForm.get('usuario');
-    if (!c || (!this.submitted && !c.touched)) return null;
-    if (c.hasError('required')) return 'El usuario es obligatorio.';
-    if (c.hasError('minlength')) return 'Mínimo 4 caracteres.';
+    if (!this.submitted) return null;
+    if (!this.usuario.trim()) return 'El usuario es obligatorio.';
+    if (this.usuario.trim().length < 4) return 'Mínimo 4 caracteres.';
     return null;
   }
 
   get passwordError(): string | null {
-    const c = this.loginForm.get('password');
-    if (!c || (!this.submitted && !c.touched)) return null;
-    if (c.hasError('required')) return 'La contraseña es obligatoria.';
-    if (c.hasError('minlength')) return 'Mínimo 6 caracteres.';
+    if (!this.submitted) return null;
+    if (!this.password) return 'La contraseña es obligatoria.';
+    if (this.password.length < 6) return 'Mínimo 6 caracteres.';
     return null;
   }
 }

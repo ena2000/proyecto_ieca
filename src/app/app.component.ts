@@ -17,6 +17,8 @@ import {
   notificationsOutline,
   eyeOutline,
   eyeOffOutline,
+  arrowForwardCircle,
+  mailOutline,
   checkmarkCircle,
   informationCircle,
   warning,
@@ -57,6 +59,8 @@ export class AppComponent {
       'notifications-outline': notificationsOutline,
       'eye-outline': eyeOutline,
       'eye-off-outline': eyeOffOutline,
+      'arrow-forward-circle': arrowForwardCircle,
+      'mail-outline': mailOutline,
       'checkmark-circle': checkmarkCircle,
       'information-circle': informationCircle,
       warning,
@@ -71,8 +75,11 @@ export class AppComponent {
     });
   }
 
+  /** Rutas de autenticación: sin sidebar (solo contenido de la pantalla). */
+  private readonly rutasSinMenu = ['/login', '/recuperar-password', '/cambiar-password'];
+
   private actualizarVisibilidadMenu(url: string) {
-    // Esto asegura que si estás en /login o /login?retry=true funcione
-    this.mostrarMenu = !url.toLowerCase().includes('login');
+    const path = (url.split('?')[0] || '').toLowerCase();
+    this.mostrarMenu = !this.rutasSinMenu.includes(path);
   }
 }

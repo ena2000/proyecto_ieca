@@ -1,0 +1,7 @@
+{
+  "/api": {
+    "target": "https://ieca-api.onrender.com",
+    "secure": true,
+    "changeOrigin": true
+  }
+}

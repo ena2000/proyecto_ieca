@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, firstValueFrom, of } from 'rxjs';
+import { BehaviorSubject, Observable, firstValueFrom, of, timeout, TimeoutError } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 import { SessionUser, LoginResponse, RefreshTokenResponse } from '../models';
 import {
@@ -95,11 +95,14 @@ export class AuthService {
     }
     return firstValueFrom(
       this.api.post<LoginResponse>(API.auth.login, { usuario, password }).pipe(
+        timeout(90_000),
         tap(res => this.persistSession(res.token, res.refreshToken, res.user)),
         map(() => ({ success: true } as LoginResult)),
         catchError(err => of({
           success: false,
-          mensaje: err?.message ?? 'Usuario o contraseña incorrectos'
+          mensaje: err instanceof TimeoutError
+            ? 'El servidor tarda en responder (arranque en Render). Espera un momento e inténtalo de nuevo.'
+            : (err?.message ?? 'Usuario o contraseña incorrectos')
         } as LoginResult))
       )
     );

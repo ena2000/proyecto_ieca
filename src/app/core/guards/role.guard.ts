@@ -26,8 +26,32 @@ export const roleGuard: CanActivateFn = async (_route, state) => {
     return true;
   }
 
+  const rol = auth.getRol();
+  if (!rol) {
+    auth.logout();
+    await presentIecaToast(
+      toastCtrl,
+      'Tu cuenta no tiene un rol válido. Contacta al administrador.',
+      'danger',
+      4000
+    );
+    return router.createUrlTree(['/login']);
+  }
+
   if (auth.puedeAccederRuta(path)) {
     return true;
+  }
+
+  const fallback = auth.getRutaPorDefecto() || rutaPorDefecto(rol);
+  if (fallback === path) {
+    auth.logout();
+    await presentIecaToast(
+      toastCtrl,
+      'No tienes permiso para acceder a esta sección.',
+      'warning',
+      3200
+    );
+    return router.createUrlTree(['/login']);
   }
 
   await presentIecaToast(
@@ -37,7 +61,5 @@ export const roleGuard: CanActivateFn = async (_route, state) => {
     3200
   );
 
-  return router.createUrlTree([
-    auth.getRutaPorDefecto() || rutaPorDefecto(auth.getRol())
-  ]);
+  return router.createUrlTree([fallback]);
 };

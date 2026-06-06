@@ -5,7 +5,7 @@
 
     <div class="login-container">
       <div class="login-card">
-        
+
         <div class="header-section">
           <div class="logo-box">
             <img src="assets/icon/logo_ieca2.png" alt="Logo IECA">
@@ -17,13 +17,16 @@
           </h1>
         </div>
 
-        <form [formGroup]="loginForm" (ngSubmit)="onLogin()" class="form-content">
-          
-          <label class="input-label" [class.text-danger]="usuarioError">Usuario</label>
+        <form class="form-content" (submit)="$event.preventDefault(); onLogin()">
+
+          <label class="input-label" [class.text-danger]="usuarioError" for="login-usuario">Usuario</label>
           <ion-item lines="none" class="modern-input" [class.input-error]="usuarioError">
-            <ion-input 
-              formControlName="usuario" 
-              type="text" 
+            <ion-input
+              id="login-usuario"
+              name="usuario"
+              [(ngModel)]="usuario"
+              type="text"
+              autocomplete="username"
               placeholder="Ingresa tu usuario">
             </ion-input>
           </ion-item>
@@ -31,21 +34,23 @@
             <small class="field-error">{{ usuarioError }}</small>
           }
 
-          <label class="input-label" [class.text-danger]="passwordError">Contraseña</label>
+          <label class="input-label" [class.text-danger]="passwordError" for="login-password">Contraseña</label>
           <ion-item lines="none" class="modern-input password-item" [class.input-error]="passwordError">
-            <ion-input 
-              formControlName="password" 
-              [type]="showPassword ? 'text' : 'password'" 
+            <ion-input
+              id="login-password"
+              name="password"
+              [(ngModel)]="password"
+              [type]="showPassword ? 'text' : 'password'"
+              autocomplete="current-password"
               placeholder="••••••••">
             </ion-input>
-            
+
             <ion-button
               fill="clear"
               slot="end"
               type="button"
               class="custom-eye-btn"
               (click)="togglePassword()">
-
               <ion-icon
                 slot="icon-only"
                 [name]="showPassword ? 'eye-off-outline' : 'eye-outline'">
@@ -56,9 +61,14 @@
             <small class="field-error">{{ passwordError }}</small>
           }
 
-          <ion-button expand="block" type="submit" class="submit-btn" [disabled]="isLoading">
-            Iniciar Sesión
-            <ion-icon slot="end" name="arrow-forward-circle"></ion-icon>
+          <ion-button expand="block" type="button" class="submit-btn" [disabled]="isLoading" (click)="onLogin()">
+            @if (isLoading) {
+              <ion-spinner name="crescent" slot="start"></ion-spinner>
+              Conectando…
+            } @else {
+              Iniciar Sesión
+              <ion-icon slot="end" name="arrow-forward-circle"></ion-icon>
+            }
           </ion-button>
         </form>
 
