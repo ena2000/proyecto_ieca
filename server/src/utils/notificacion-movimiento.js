@@ -25,7 +25,7 @@ function etiquetaTipo(tipo, minuscula = false) {
   return minuscula ? e.toLowerCase() : e;
 }
 
-/** Avisa al líder/co-líder (no al admin/contable que aprobó/rechazó). */
+/** Avisa al líder/co-líder (no al administrador que aprobó/rechazó). */
 async function notificarResolucionMovimientoLider({ tipo, estado, movimiento, motivo, req }) {
   const ministerioId = movimiento.ministerioId;
   if (ministerioId == null || ministerioId === '') return null;

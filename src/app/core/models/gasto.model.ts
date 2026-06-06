@@ -18,7 +18,7 @@ export interface Gasto extends AuditoriaMovimiento {
   usuarioId?: number;
   registradoPor?: string;
   fechaFormateada?: string;
-  /** Flujo de aprobación: líder → pendiente; admin/contable aprueban o rechazan. */
+  /** Flujo de aprobación: líder → pendiente; solo el administrador aprueba o rechaza. */
   estado?: GastoEstado;
   motivoRechazo?: string;
   comprobanteTipo?: 'imagen' | 'pdf';

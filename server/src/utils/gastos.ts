@@ -20,7 +20,7 @@ function normalizarEstado(estado) {
 
 function estadoInicialPorRol(rol): import('../types/firestore.types').MovimientoEstado {
   if (rol === ROLES.LIDER) return 'pendiente';
-  if (rol === ROLES.ADMIN || rol === ROLES.CONTABLE) return 'aprobado';
+  if (rol === ROLES.ADMIN) return 'aprobado';
   return 'pendiente';
 }
 

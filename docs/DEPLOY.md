@@ -212,7 +212,7 @@ En el navegador:
 
 1. Abre el frontend por HTTPS (Firebase Hosting)
 2. Inicia sesión
-3. Comprueba dashboard, ingreso, aprobación (contable) y reportes
+3. Comprueba dashboard, ingreso, aprobación (**administrador**) y reportes
 4. Admin: verifica panel de administración y backup
 
 ---

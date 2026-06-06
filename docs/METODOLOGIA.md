@@ -88,8 +88,8 @@ Recopilar, analizar y documentar las necesidades de IECA para transformarlas en 
 
 | Actor | Descripción |
 |-------|-------------|
-| **Administrador** | Acceso total: usuarios, ministerios, cierre, backup, auditoría. |
-| **Contable** | Aprueba/rechaza movimientos; accede a reportes; sin gestión de usuarios. |
+| **Administrador** | Acceso total: usuarios, ministerios, **aprobación/rechazo de movimientos**, cierre, backup, auditoría. |
+| **Contable** | Consulta ingresos/gastos y reportes; recibe alertas por correo; **no** aprueba movimientos ni gestiona usuarios/ministerios. |
 | **Líder / co-líder** | Registra ingresos/gastos de su ministerio en estado pendiente. |
 
 ### 3.4 Requisitos funcionales principales
@@ -97,9 +97,9 @@ Recopilar, analizar y documentar las necesidades de IECA para transformarlas en 
 | ID | Requisito | Descripción |
 |----|-----------|-------------|
 | RF-01 | Autenticación | Login con JWT, recuperación de contraseña, cambio obligatorio en primer acceso. |
-| RF-02 | Gestión de ingresos | CRUD, comprobantes, filtros, estados pendiente/aprobado/rechazado. |
-| RF-03 | Gestión de gastos | CRUD, categorías, comprobantes, aprobación por contable/admin. |
-| RF-04 | Flujo de aprobación | Líder crea pendiente; contable o admin aprueba o rechaza. |
+| RF-02 | Gestión de ingresos | CRUD, comprobantes, filtros, estados pendiente/aprobado/rechazado; aprobación/rechazo **solo administrador**. |
+| RF-03 | Gestión de gastos | CRUD, categorías, comprobantes; aprobación/rechazo **solo administrador**. |
+| RF-04 | Flujo de aprobación | Líder crea pendiente; **solo el administrador** aprueba o rechaza. |
 | RF-05 | Ministerios | CRUD de departamentos con líder y co-líder (solo admin). |
 | RF-06 | Usuarios | CRUD con roles, contraseña temporal en alta. |
 | RF-07 | Dashboard | KPIs, gráficos y últimos movimientos (solo aprobados). |
@@ -111,6 +111,8 @@ Recopilar, analizar y documentar las necesidades de IECA para transformarlas en 
 ### 3.5 Reglas de negocio clave
 
 - Solo los movimientos en estado **aprobado** cuentan en balance, gráficos, reportes consolidados, **kardex** y **saldo disponible**.
+- Los **líderes** registran en `pendiente`; **solo el administrador** aprueba o rechaza (`PATCH …/aprobar`, `PATCH …/rechazar`).
+- El **contable** consulta movimientos y reportes y recibe alertas por correo, pero **no** ejecuta aprobaciones.
 - Los totales **del período** en Reportes respetan el filtro de mes, ministerio y tipo; el **saldo disponible** y el **kardex** son **históricos** (todos los aprobados del ministerio, sin filtro de mes).
 - Los **periodos cerrados** impiden altas, ediciones y borrados en ese mes.
 - Los **líderes** solo ven y operan sobre su `ministerioId`.
@@ -132,7 +134,7 @@ Recopilar, analizar y documentar las necesidades de IECA para transformarlas en 
 
 **Especificación de requisitos del sistema** — documento con actores, casos de uso, requisitos funcionales/no funcionales, reglas de negocio y alcance del proyecto.
 
-**Criterio de aprobación:** validación por el administrador o contable de IECA antes de pasar a diseño.
+**Criterio de cierre de la fase:** validación de requisitos por el administrador o contable de IECA (como stakeholders) antes de pasar a diseño — independiente del flujo operativo de aprobación de movimientos (solo administrador).
 
 ---
 
@@ -213,7 +215,7 @@ flowchart LR
 |--------|----------------|--------------------------------|
 | Auth | `/login`, `/recuperar-password`, `/cambiar-password` | `/auth/*` |
 | Dashboard | `/dashboard` | Agregación vía `DataService` |
-| Ingresos / Gastos | `/ingresos`, `/gastos` | CRUD + `/aprobar`, `/rechazar` |
+| Ingresos / Gastos | `/ingresos`, `/gastos` | CRUD + `/aprobar`, `/rechazar` (**solo administrador**) |
 | Reportes | `/reportes` | Agregación **client-side** (`DataService`, `ReportesService`); Excel local con `xlsx-js-style` |
 | Usuarios / Ministerios | `/usuarios`, `/ministerios` | CRUD (solo admin); kardex calculado en cliente |
 | Administración | `/administracion` | `/admin/*` |
@@ -296,7 +298,7 @@ flowchart TD
 |-------|--------|-------------------------|
 | 1 | Auth | Login, JWT, guards, recuperación de contraseña |
 | 2 | Ministerios / Usuarios | CRUD admin, asignación de líderes, columna saldo disponible, modal kardex |
-| 3 | Ingresos / Gastos | Formularios, tabla, aprobación, comprobantes |
+| 3 | Ingresos / Gastos | Formularios, tabla, aprobación/rechazo (admin), comprobantes |
 | 4 | Dashboard | KPIs, Chart.js, tendencias, movimientos recientes |
 | 5 | Reportes | Filtros multi-dimensionales, distinción período/histórico, desglose por ministerio y cuenta, kardex inline, Excel enriquecido |
 | 6 | Administración | Resumen ejecutivo, accesos rápidos, cierre mensual, backup, auditoría |
@@ -348,7 +350,7 @@ Verificar que el sistema cumple los requisitos, respeta las reglas de negocio y 
 
 | Requisito | Verificación |
 |-----------|--------------|
-| RF-04 Flujo de aprobación | Líder crea pendiente; contable aprueba; aparece en dashboard y kardex |
+| RF-04 Flujo de aprobación | Líder crea pendiente; administrador aprueba; aparece en dashboard y kardex |
 | RF-08 Reportes / kardex | Desglose por ministerio con saldo disponible; kardex coherente con movimientos aprobados; Excel incluye kardex |
 | RF-09 Cierre mensual | Tras cierre, no se puede editar movimiento del periodo |
 | RF-01 Auth | Login, refresh token, cambio de contraseña obligatorio |
@@ -479,7 +481,7 @@ En mantenimiento, todo cambio sigue el flujo:
 | Rol | Participación por fase |
 |-----|------------------------|
 | **Administrador IECA** | Valida requisitos (F1); prueba administración y cierre (F4–F5); reporta incidencias (F6). |
-| **Contable** | Valida flujos de aprobación y reportes (F1, F4); usuario final en producción (F5–F6). |
+| **Contable** | Valida consulta y reportes (F1, F4); recibe alertas; usuario final en producción (F5–F6). |
 | **Líder / co-líder** | Valida registro de movimientos por ministerio (F1, F4). |
 | **Desarrollador** | Diseño técnico (F2), implementación (F3), pruebas (F4), despliegue (F5), mantenimiento (F6). |
 
