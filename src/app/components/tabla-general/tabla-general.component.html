@@ -17,7 +17,7 @@
           </th>
 
           <th
-            *ngIf="actions.edit || actions.delete || actions.approve || actions.reject"
+            *ngIf="actions.edit || actions.delete || actions.approve || actions.reject || actions.ledger"
             class="actions-header"
             style="text-align: center;">
 
@@ -38,7 +38,7 @@
             <div class="skeleton skeleton-text"></div>
           </td>
 
-          <td *ngIf="actions.edit || actions.delete || actions.approve || actions.reject">
+          <td *ngIf="actions.edit || actions.delete || actions.approve || actions.reject || actions.ledger">
             <div class="skeleton skeleton-btn"></div>
           </td>
 
@@ -127,9 +127,18 @@
           <!-- =====================================================
                ACCIONES
           ====================================================== -->
-          <td *ngIf="actions.edit || actions.delete || actions.approve || actions.reject">
+          <td *ngIf="actions.edit || actions.delete || actions.approve || actions.reject || actions.ledger">
 
             <div class="action-buttons">
+
+              <button
+                *ngIf="actions.ledger"
+                class="btn-ledger"
+                (click)="ledger(row)"
+                title="Ver kardex"
+                aria-label="Ver kardex del ministerio">
+                <ion-icon name="reader-outline"></ion-icon>
+              </button>
 
               <button
                 *ngIf="showApproveFor(row)"
@@ -195,7 +204,7 @@
         ====================================================== -->
         <tr *ngIf="data.length === 0">
 
-          <td [attr.colspan]="columns.length + (actions.edit || actions.delete || actions.approve || actions.reject ? 1 : 0)">
+          <td [attr.colspan]="columns.length + (actions.edit || actions.delete || actions.approve || actions.reject || actions.ledger ? 1 : 0)">
 
             <div class="empty-state">
 

@@ -193,9 +193,83 @@
         [data]="listaFiltrada"
         [actions]="acciones"
         (rowEdit)="editarMinisterio($event)"
-        (rowDelete)="eliminarMinisterio($event)">
+        (rowDelete)="eliminarMinisterio($event)"
+        (rowLedger)="verKardex($event)">
       </app-tabla-general>
 
     </div>
   </div>
 </ion-content>
+
+<ion-modal
+  [isOpen]="kardexAbierto"
+  class="ieca-modal kardex-modal"
+  (didDismiss)="cerrarKardex()">
+  <ng-template>
+    <div class="kardex-modal__content">
+      <div class="kardex-modal__header">
+        <div>
+          <h2>Kardex de saldo</h2>
+          <p *ngIf="ministerioKardex">{{ ministerioKardex.nombre }}</p>
+        </div>
+        <ion-button fill="clear" type="button" (click)="cerrarKardex()" aria-label="Cerrar kardex">
+          <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+        </ion-button>
+      </div>
+
+      <div class="kardex-modal__saldo">
+        <ion-icon name="wallet-outline"></ion-icon>
+        <div>
+          <span>Saldo disponible</span>
+          <strong [class.text-danger]="saldoKardexActual < 0">
+            $ {{ saldoKardexActual | number:'1.2-2' }}
+          </strong>
+        </div>
+      </div>
+
+      <div class="kardex-modal__table-wrap" *ngIf="lineasKardex.length > 0; else kardexVacio">
+        <table class="kardex-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Descripción</th>
+              <th>Cuenta</th>
+              <th>Tipo</th>
+              <th>Ingreso</th>
+              <th>Gasto</th>
+              <th>Saldo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let linea of lineasKardexVista">
+              <td>{{ linea.fechaFormateada }}</td>
+              <td>{{ linea.descripcion }}</td>
+              <td><span class="kardex-cuenta">{{ linea.cuentaEtiqueta }}</span></td>
+              <td>
+                <span class="kardex-tipo" [class.kardex-tipo--ingreso]="linea.tipo === 'ingreso'">
+                  {{ linea.tipo === 'ingreso' ? 'Ingreso' : 'Gasto' }}
+                </span>
+              </td>
+              <td class="kardex-monto kardex-monto--ingreso">
+                {{ linea.ingreso > 0 ? ('$ ' + (linea.ingreso | number:'1.2-2')) : '—' }}
+              </td>
+              <td class="kardex-monto kardex-monto--gasto">
+                {{ linea.gasto > 0 ? ('$ ' + (linea.gasto | number:'1.2-2')) : '—' }}
+              </td>
+              <td class="kardex-monto" [class.text-danger]="linea.saldo < 0">
+                $ {{ linea.saldo | number:'1.2-2' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <ng-template #kardexVacio>
+        <div class="kardex-empty">
+          <ion-icon name="reader-outline"></ion-icon>
+          <p>Este ministerio aún no tiene movimientos aprobados.</p>
+        </div>
+      </ng-template>
+    </div>
+  </ng-template>
+</ion-modal>

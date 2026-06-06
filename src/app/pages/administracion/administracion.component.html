@@ -123,7 +123,7 @@
           </div>
         </div>
         <p class="backup-text">
-          Envía un resumen a <strong>administradores y contables</strong> con movimientos pendientes de
+          Envía un resumen a administradores y contables con movimientos pendientes de
           aprobación antiguos y aviso si el mes está por cerrar. Requiere SMTP en el servidor.
         </p>
         <ion-button
@@ -147,7 +147,7 @@
           </div>
         </div>
         <p class="backup-text">
-          Genera un archivo <strong>.csv</strong> con la trazabilidad de ingresos y gastos (quién creó y
+          Genera un archivo .csv con la trazabilidad de ingresos y gastos (quién creó y
           quién editó por última vez). Puedes filtrarlo por tipo y rango de fechas.
         </p>
 
@@ -253,7 +253,7 @@
           </div>
         </div>
         <p class="backup-text">
-          Exporta un archivo <strong>.json</strong> con ingresos, gastos, ministerios, usuarios y
+          Exporta un archivo .json con ingresos, gastos, ministerios, usuarios y
           notificaciones. Guárdalo en un lugar seguro. Restaurar reemplaza todos los datos actuales
           en el servidor.
         </p>
@@ -290,15 +290,13 @@
           </div>
         </div>
         <p class="critical-text">
-          Al final de cada mes, cierra el periodo
-          <strong>{{ configIglesia.periodoActual }}</strong>.
+          Al final de cada mes, cierra el periodo {{ configIglesia.periodoActual }}.
           Los ingresos y gastos de ese mes quedarán congelados: no se podrán
-          crear, editar, eliminar ni aprobar/rechazar. El mes siguiente
-          (<strong>periodo activo</strong>) seguirá abierto hasta su propio cierre.
-          <strong>Esta acción es irreversible.</strong>
+          crear, editar, eliminar ni aprobar/rechazar. El mes siguiente (periodo activo)
+          seguirá abierto hasta su propio cierre. Esta acción es irreversible.
         </p>
         <p class="cierre-estado" *ngIf="mesActualCerrado">
-          El periodo <strong>{{ configIglesia.periodoActual }}</strong> ya está cerrado.
+          El periodo {{ configIglesia.periodoActual }} ya está cerrado.
         </p>
         <div class="critical-footer">
           <button

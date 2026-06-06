@@ -30,7 +30,7 @@
           Reportes Financieros
         </h1>
         <p>
-          Consulta movimientos, totales y desglose por cuenta según el período seleccionado.
+          Resumen del período que elijas, saldos acumulados por ministerio y detalle en kardex.
         </p>
       </div>
 
@@ -46,36 +46,6 @@
     </div>
 
     <div class="list-container">
-
-      <div class="list-section-header">
-        <div class="title-box">
-          <h2 class="text-blue">
-            Movimientos financieros
-          </h2>
-          <span class="badge-count">
-            {{ listaFiltrada.length }} movimiento{{ listaFiltrada.length === 1 ? '' : 's' }}
-          </span>
-        </div>
-        <div class="list-header-actions">
-          <button
-            type="button"
-            class="btn-limpiar-filtros"
-            *ngIf="hayFiltrosActivos"
-            (click)="limpiarFiltros()">
-            Limpiar filtros
-          </button>
-          <div class="search-wrapper">
-            <ion-searchbar
-              mode="ios"
-              animated="true"
-              debounce="300"
-              class="professional-search"
-              placeholder="Buscar por descripción..."
-              [(ngModel)]="searchTerm">
-            </ion-searchbar>
-          </div>
-        </div>
-      </div>
 
       <div class="reportes-filters ieca-card">
         <div class="filters-layout">
@@ -153,6 +123,7 @@
 
           <section class="filters-section filters-section--ministerio">
             <ion-label class="filter-label">Ministerio</ion-label>
+            <p class="filter-hint">Filtra totales y desgloses. Para ver el kardex, elige un ministerio aquí o en la tabla de abajo.</p>
             <ion-item lines="none" class="periodo-select-item ministerio-select-item">
               <ion-icon slot="start" name="business-outline" class="text-blue"></ion-icon>
               <ion-select
@@ -201,7 +172,41 @@
           </section>
 
         </div>
+
+        <div class="filters-footer" *ngIf="hayFiltrosActivos">
+          <button
+            type="button"
+            class="btn-limpiar-filtros"
+            (click)="limpiarFiltros()">
+            Limpiar filtros
+          </button>
+        </div>
       </div>
+
+      <div class="reportes-alcance-banner" role="note">
+        <ion-icon name="information-circle-outline" aria-hidden="true"></ion-icon>
+        <div class="reportes-alcance-banner__text">
+          <strong>¿Qué significa cada cifra?</strong>
+          <p>
+            <span class="alcance-tag alcance-tag--periodo">Del período</span>
+            Los totales y desgloses corresponden a
+            <strong>{{ etiquetaPeriodoResumen }}</strong>
+            y a los filtros activos.
+          </p>
+          <p>
+            <span class="alcance-tag alcance-tag--historico">Histórico</span>
+            El saldo disponible y el kardex suman todos los movimientos aprobados del ministerio, sin importar el mes.
+          </p>
+        </div>
+      </div>
+
+      <section class="reportes-bloque reportes-bloque--periodo" aria-labelledby="reportes-totales-titulo">
+        <div class="reportes-bloque__head">
+          <span class="alcance-tag alcance-tag--periodo">Del período</span>
+          <h2 id="reportes-totales-titulo" class="reportes-bloque__title">
+            Resumen — {{ etiquetaPeriodoResumen }}
+          </h2>
+        </div>
 
       <div
         class="totales-card"
@@ -209,32 +214,73 @@
         [class.totales-card--solo-gastos]="filtroMovimiento === 'gastos'">
         @if (filtroMovimiento !== 'gastos') {
           <div class="total-item ingresos">
-            <span class="total-label">Ingresos Totales</span>
+            <span class="total-label">Ingresos del período</span>
             <span class="total-value">{{ formatearMoneda(totalIngresosFiltrado) }}</span>
           </div>
         }
         @if (filtroMovimiento !== 'ingresos') {
           <div class="total-item gastos">
-            <span class="total-label">Gastos Totales</span>
+            <span class="total-label">Gastos del período</span>
             <span class="total-value">{{ formatearMoneda(totalGastosFiltrado) }}</span>
           </div>
         }
         <div class="total-item saldo">
-          <span class="total-label">Saldo Neto</span>
+          <span class="total-label">Saldo del período</span>
           <span class="total-value" [class.negative]="totalSaldoFiltrado < 0">
             {{ formatearMoneda(totalSaldoFiltrado) }}
           </span>
+          <span class="total-footnote">Ingresos − gastos del período filtrado</span>
+        </div>
+      </div>
+
+      <div class="desglose-card desglose-card--ministerio" *ngIf="mostrarDesgloseMinisterio">
+        <div class="kardex-card__head">
+          <h3 class="desglose-title">Desglose por ministerio</h3>
+          <p class="kardex-card__hint">
+            Las tres primeras columnas de montos son del período
+            <strong>{{ etiquetaPeriodoResumen }}</strong>.
+            <strong>Disponible</strong> es el acumulado histórico.
+            Haz clic en una fila para abrir el kardex.
+          </p>
+        </div>
+        <div class="desglose-ministerio-table">
+          <div class="desglose-ministerio-header">
+            <div class="col-ministerio">Ministerio</div>
+            <div class="col-cantidad" title="Ingresos aprobados en el período">Ing. período</div>
+            <div class="col-cantidad" title="Gastos aprobados en el período">Gastos período</div>
+            <div class="col-cantidad" title="Ingresos − gastos del período">Resultado</div>
+            <div class="col-cantidad col-cantidad--historico" title="Saldo acumulado de todos los tiempos">Disponible</div>
+          </div>
+          <button
+            type="button"
+            class="desglose-ministerio-row"
+            *ngFor="let item of desgloseMinisterioVista"
+            [class.desglose-ministerio-row--active]="filtroMinisterioId === item.ministerioId"
+            [class.desglose-ministerio-row--static]="filtroMinisterioBloqueado"
+            (click)="seleccionarMinisterioParaKardex(item.ministerioId)">
+            <div class="col-ministerio">{{ item.nombre }}</div>
+            <div class="col-cantidad ingresos">{{ formatearMoneda(item.ingresos) }}</div>
+            <div class="col-cantidad gastos">{{ formatearMoneda(item.gastos) }}</div>
+            <div class="col-cantidad" [class.negative]="item.saldo < 0">{{ formatearMoneda(item.saldo) }}</div>
+            <div class="col-cantidad saldo-disponible" [class.negative]="item.saldoDisponible < 0">
+              {{ formatearMoneda(item.saldoDisponible) }}
+            </div>
+          </button>
         </div>
       </div>
 
       <div class="desglose-card" *ngIf="desgloseAgregado.length > 0">
-        <h3 class="desglose-title">Desglose por cuenta</h3>
+        <div class="reportes-bloque__head reportes-bloque__head--inline">
+          <span class="alcance-tag alcance-tag--periodo">Del período</span>
+          <h3 class="desglose-title">Desglose por cuenta — {{ etiquetaPeriodoResumen }}</h3>
+        </div>
+        <p class="kardex-card__hint">Totales agrupados por cuenta contable en el período seleccionado.</p>
         <div class="desglose-table">
           <div class="desglose-header">
             <div class="col-categoria">Cuenta</div>
             <div class="col-cantidad">Ingresos</div>
             <div class="col-cantidad">Gastos</div>
-            <div class="col-cantidad">Saldo</div>
+            <div class="col-cantidad" title="Ingresos − gastos del período">Resultado</div>
           </div>
           <div class="desglose-row" *ngFor="let item of desgloseAgregado">
             <div class="col-categoria">{{ item.categoria }}</div>
@@ -244,40 +290,86 @@
           </div>
         </div>
       </div>
+      </section>
 
-      <app-tabla-general
-        [columns]="columnsReportes"
-        [data]="listaFiltradaTabla"
-        (rowEdit)="descargarReporte($event)"
-        (evidenceClick)="verImagen($event)">
-      </app-tabla-general>
+      <section class="reportes-bloque reportes-bloque--historico" *ngIf="mostrarKardexMinisterio" aria-labelledby="reportes-kardex-titulo">
+        <div class="reportes-bloque__head">
+          <span class="alcance-tag alcance-tag--historico">Histórico</span>
+          <h2 id="reportes-kardex-titulo" class="reportes-bloque__title">Kardex — {{ nombreMinisterioKardex }}</h2>
+        </div>
 
-    </div>
+      <div class="kardex-card kardex-card--nested">
+        <div class="kardex-card__head kardex-card__head--with-action">
+          <div>
+            <p class="kardex-card__hint">
+              Cada fila muestra un movimiento aprobado. La columna <strong>Saldo acumulado</strong> va sumando desde el primer registro hasta el más reciente.
+            </p>
+          </div>
+          <button
+            type="button"
+            class="btn-volver-ministerios"
+            *ngIf="!filtroMinisterioBloqueado"
+            (click)="limpiarSeleccionMinisterio()">
+            Ver todos los ministerios
+          </button>
+        </div>
 
-  </div>
+        <div class="kardex-card__saldo">
+          <ion-icon name="wallet-outline"></ion-icon>
+          <div>
+            <span>Saldo disponible (histórico)</span>
+            <strong [class.negative]="saldoDisponibleMinisterio < 0">
+              {{ formatearMoneda(saldoDisponibleMinisterio) }}
+            </strong>
+          </div>
+        </div>
 
-  <div
-    class="lightbox-overlay"
-    *ngIf="fotoSeleccionada"
-    (click)="cerrarImagen()">
+        <div class="kardex-card__table-wrap" *ngIf="lineasKardexVista.length > 0; else kardexVacioReportes">
+          <table class="kardex-reportes-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Descripción</th>
+                <th>Cuenta</th>
+                <th>Tipo</th>
+                <th>Ingreso</th>
+                <th>Gasto</th>
+                <th title="Saldo acumulado después de cada movimiento">Saldo acumulado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let linea of lineasKardexVista">
+                <td>{{ linea.fechaFormateada }}</td>
+                <td>{{ linea.descripcion }}</td>
+                <td><span class="kardex-cuenta">{{ linea.cuentaEtiqueta }}</span></td>
+                <td>
+                  <span class="kardex-tipo" [class.kardex-tipo--ingreso]="linea.tipo === 'ingreso'">
+                    {{ linea.tipo === 'ingreso' ? 'Ingreso' : 'Gasto' }}
+                  </span>
+                </td>
+                <td class="kardex-monto kardex-monto--ingreso">
+                  {{ linea.ingreso > 0 ? formatearMoneda(linea.ingreso) : '—' }}
+                </td>
+                <td class="kardex-monto kardex-monto--gasto">
+                  {{ linea.gasto > 0 ? formatearMoneda(linea.gasto) : '—' }}
+                </td>
+                <td class="kardex-monto" [class.negative]="linea.saldo < 0">
+                  {{ formatearMoneda(linea.saldo) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-    <button
-      type="button"
-      class="close-lightbox"
-      aria-label="Cerrar imagen"
-      (click)="cerrarImagen()">
-      <ion-icon name="close-outline"></ion-icon>
-    </button>
-
-    <div
-      class="lightbox-content"
-      (click)="$event.stopPropagation()">
-      <img
-        [src]="fotoSeleccionada"
-        alt="Reporte ampliado en pantalla completa">
-      <div class="lightbox-caption">
-        Vista previa del comprobante
+        <ng-template #kardexVacioReportes>
+          <div class="kardex-empty">
+            <ion-icon name="reader-outline"></ion-icon>
+            <p>Este ministerio aún no tiene movimientos aprobados.</p>
+          </div>
+        </ng-template>
       </div>
+      </section>
+
     </div>
 
   </div>

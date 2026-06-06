@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonicModule, LoadingController, ToastController, NavController } from '@ionic/angular';
+import { IonicModule, LoadingController, ToastController } from '@ionic/angular';
 import { Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
@@ -25,7 +25,6 @@ export class LoginComponent implements OnInit {
     private loadingCtrl: LoadingController,
     private toastCtrl: ToastController,
     private router: Router,
-    private navCtrl: NavController,
     private authService: AuthService
   ) {
     this.loginForm = this.fb.group({
@@ -36,7 +35,7 @@ export class LoginComponent implements OnInit {
 
   ngOnInit() {
     if (this.authService.isAuthenticated()) {
-      this.navCtrl.navigateRoot(this.authService.getRutaPorDefecto(), { animated: false });
+      void this.router.navigateByUrl(this.authService.getRutaPorDefecto(), { replaceUrl: true });
     }
   }
 
@@ -62,9 +61,10 @@ export class LoginComponent implements OnInit {
       );
 
       if (result.success) {
+        const destino = this.authService.getRutaPorDefecto();
+        await this.router.navigateByUrl(destino, { replaceUrl: true });
         const user = this.authService.getSession();
-        this.presentToast(`¡Bienvenido ${user?.usuario}!`, 'success');
-        await this.navCtrl.navigateRoot(this.authService.getRutaPorDefecto(), { animated: false });
+        await this.presentToast(`¡Bienvenido ${user?.usuario}!`, 'success');
       } else {
         this.presentToast(result.mensaje || 'Usuario o contraseña incorrectos', 'danger');
       }

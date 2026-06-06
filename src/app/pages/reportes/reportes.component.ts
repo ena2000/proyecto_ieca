@@ -1,18 +1,17 @@
-import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule, registerLocaleData } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import localeEs from '@angular/common/locales/es';
 import {
   IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent,
-  IonIcon, IonButton, IonSearchbar, ToastController, IonLabel, IonItem,
+  IonIcon, IonButton, ToastController, IonLabel, IonItem,
   IonSelect, IonSelectOption
 } from '@ionic/angular/standalone';
 import { Subject, combineLatest } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
-import { TablaGeneralComponent, TableColumn } from 'src/app/components/tabla-general/tabla-general.component';
 import { NotificacionesBellComponent } from 'src/app/components/notificaciones-bell/notificaciones-bell.component';
-import { Ministerio, Reporte } from '../../core/models';
+import { KardexLinea, Ministerio, Reporte } from '../../core/models';
 import { DataService } from '../../services/data.service';
 import { ReportesService } from '../../services/reportes.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -32,11 +31,6 @@ import {
   etiquetaFiltroMovimientoReporte,
   construirEtiquetaFiltroReporte
 } from '../../shared/utils/reportes-filtros.util';
-import {
-  abrirVisorComprobante,
-  cerrarVisorComprobante
-} from '../../shared/utils/movimiento-comprobante.util';
-import { etiquetaCuentaReporte } from '../../shared/utils/reportes-cuenta.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
 
 export type { FiltroMovimientoReporte } from '../../shared/utils/reportes-filtros.util';
@@ -52,8 +46,8 @@ registerReportesPageIcons();
   imports: [
     CommonModule, FormsModule,
     IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent,
-    IonIcon, IonButton, IonSearchbar, IonLabel, IonItem, IonSelect, IonSelectOption,
-    TablaGeneralComponent, NotificacionesBellComponent
+    IonIcon, IonButton, IonLabel, IonItem, IonSelect, IonSelectOption,
+    NotificacionesBellComponent
   ],
   providers: [ToastController]
 })
@@ -66,20 +60,9 @@ export class ReportesComponent implements OnInit, OnDestroy {
   filtroMes = '';
   filtroMinisterioId: number | null = null;
   filtroMovimiento: FiltroMovimientoReporte = 'todos';
-  fotoSeleccionada: string | null = null;
   periodoPreset: PeriodoPresetReporte = 'este_mes';
   ministerioScopeId: number | null = null;
   filtroMinisterioBloqueado = false;
-
-  columnsReportes: TableColumn[] = [
-    { field: 'fechaFormateada', header: 'Fecha' },
-    { field: 'titulo', header: 'Descripción' },
-    { field: 'cuentaEtiqueta', header: 'Cuenta', type: 'badge' },
-    { field: 'ministerio', header: 'Ministerio' },
-    { field: 'ingresos', header: 'Ingresos', type: 'currency' },
-    { field: 'gastos', header: 'Gastos', type: 'currency' },
-    { field: 'saldo', header: 'Saldo', type: 'currency' }
-  ];
 
   private destroy$ = new Subject<void>();
 
@@ -131,24 +114,13 @@ export class ReportesComponent implements OnInit, OnDestroy {
     this.filtroMovimiento = tipo;
   }
 
-  @HostListener('document:keydown.escape')
-  handleEscapeKey(): void {
-    if (this.fotoSeleccionada) this.cerrarImagen();
-  }
-
-  verImagen(foto: unknown): void {
-    if (!foto || typeof foto !== 'string') return;
-    const state = abrirVisorComprobante(foto);
-    this.fotoSeleccionada = state.comprobanteSeleccionado;
-  }
-
-  cerrarImagen(): void {
-    const state = cerrarVisorComprobante();
-    this.fotoSeleccionada = state.comprobanteSeleccionado;
-  }
-
   get etiquetaMesActivo(): string {
     return this.filtroMes ? etiquetaParaMes(this.filtroMes) : 'Todo el historial';
+  }
+
+  /** Etiqueta corta para títulos y totales del bloque “período”. */
+  get etiquetaPeriodoResumen(): string {
+    return this.etiquetaMesActivo;
   }
 
   get mesesDisponibles(): { value: string; label: string }[] {
@@ -200,13 +172,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
     return filtrarReportes(this.listaReportes, this.filtrosReporte);
   }
 
-  get listaFiltradaTabla(): (Reporte & { cuentaEtiqueta: string })[] {
-    return this.listaFiltrada.map(r => ({
-      ...r,
-      cuentaEtiqueta: etiquetaCuentaReporte(r)
-    }));
-  }
-
   get etiquetaFiltroMovimiento(): string {
     return etiquetaFiltroMovimientoReporte(this.filtroMovimiento);
   }
@@ -227,9 +192,49 @@ export class ReportesComponent implements OnInit, OnDestroy {
     return this.reportesService.calcularDesglose(this.listaFiltrada);
   }
 
-  descargarReporte(item: Reporte): void {
-    void this.mostrarToast(`Preparando reporte: ${item.titulo}`, 'success');
-    setTimeout(() => window.print(), 500);
+  get desgloseMinisterioVista() {
+    return this.reportesService.calcularDesglosePorMinisterio(
+      this.listaFiltrada,
+      this.listaMinisterios,
+      this.ministerioScopeId
+    );
+  }
+
+  get mostrarDesgloseMinisterio(): boolean {
+    return this.desgloseMinisterioVista.length > 0;
+  }
+
+  get mostrarKardexMinisterio(): boolean {
+    return this.filtroMinisterioId != null;
+  }
+
+  get nombreMinisterioKardex(): string {
+    if (this.filtroMinisterioId == null) return '';
+    return this.listaMinisterios.find(m => m.id === this.filtroMinisterioId)?.nombre ?? 'Ministerio';
+  }
+
+  get lineasKardex(): KardexLinea[] {
+    if (this.filtroMinisterioId == null) return [];
+    return this.dataService.getKardexMinisterio(this.filtroMinisterioId);
+  }
+
+  get lineasKardexVista(): KardexLinea[] {
+    return [...this.lineasKardex].reverse();
+  }
+
+  get saldoDisponibleMinisterio(): number {
+    if (this.filtroMinisterioId == null) return 0;
+    return this.dataService.calcularSaldoMinisterio(this.filtroMinisterioId);
+  }
+
+  seleccionarMinisterioParaKardex(ministerioId: number): void {
+    if (this.filtroMinisterioBloqueado) return;
+    this.filtroMinisterioId = ministerioId;
+  }
+
+  limpiarSeleccionMinisterio(): void {
+    if (this.filtroMinisterioBloqueado) return;
+    this.filtroMinisterioId = null;
   }
 
   exportarExcel(): void {
@@ -244,10 +249,27 @@ export class ReportesComponent implements OnInit, OnDestroy {
       this.filtroMovimiento === 'ingresos' ? '_ingresos' :
       this.filtroMovimiento === 'gastos' ? '_gastos' : '';
 
+    const saldosMinisterio = this.reportesService.construirSaldosMinisterio(
+      this.listaMinisterios,
+      this.ministerioScopeId
+    );
+
+    let kardex: KardexLinea[] | undefined;
+    let nombreMinisterioKardex: string | undefined;
+    if (this.filtroMinisterioId != null) {
+      kardex = this.dataService.getKardexMinisterio(this.filtroMinisterioId);
+      nombreMinisterioKardex = this.listaMinisterios.find(
+        m => m.id === this.filtroMinisterioId
+      )?.nombre;
+    }
+
     this.reportesService.descargarExcel({
       reportes,
       desglose: this.reportesService.calcularDesglose(reportes),
       totales: this.reportesService.calcularTotales(reportes),
+      saldosMinisterio,
+      kardex,
+      nombreMinisterioKardex,
       etiquetaFiltro: construirEtiquetaFiltroReporte({
         filtroMes: this.filtroMes,
         etiquetaMesActivo: this.etiquetaMesActivo,

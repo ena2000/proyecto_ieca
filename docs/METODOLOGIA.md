@@ -103,17 +103,19 @@ Recopilar, analizar y documentar las necesidades de IECA para transformarlas en 
 | RF-05 | Ministerios | CRUD de departamentos con líder y co-líder (solo admin). |
 | RF-06 | Usuarios | CRUD con roles, contraseña temporal en alta. |
 | RF-07 | Dashboard | KPIs, gráficos y últimos movimientos (solo aprobados). |
-| RF-08 | Reportes | Filtros por periodo, ministerio y tipo; exportación Excel. |
+| RF-08 | Reportes | Filtros por período, ministerio y tipo; resumen del período; desglose por ministerio (saldo disponible histórico) y por cuenta; kardex por ministerio; exportación Excel enriquecida (agregación client-side). |
 | RF-09 | Cierre mensual | Bloqueo de periodos; movimientos del mes marcados como cerrados. |
 | RF-10 | Administración | Backup/restauración JSON, auditoría CSV, alertas por email. |
 | RF-11 | Notificaciones | Alertas de pendientes y eventos del sistema por usuario. |
 
 ### 3.5 Reglas de negocio clave
 
-- Solo los movimientos en estado **aprobado** cuentan en balance, gráficos y reportes consolidados.
+- Solo los movimientos en estado **aprobado** cuentan en balance, gráficos, reportes consolidados, **kardex** y **saldo disponible**.
+- Los totales **del período** en Reportes respetan el filtro de mes, ministerio y tipo; el **saldo disponible** y el **kardex** son **históricos** (todos los aprobados del ministerio, sin filtro de mes).
 - Los **periodos cerrados** impiden altas, ediciones y borrados en ese mes.
 - Los **líderes** solo ven y operan sobre su `ministerioId`.
 - El **cierre mensual** procesa movimientos por lotes (hasta 500 operaciones por lote en Firestore).
+- El **kardex** es una vista derivada calculada en el cliente: ledger cronológico de ingresos/gastos aprobados por ministerio; no existe colección ni endpoint dedicado.
 
 ### 3.6 Requisitos no funcionales
 
@@ -179,9 +181,10 @@ flowchart LR
 
 | Capa | Ubicación | Responsabilidad |
 |------|-----------|-----------------|
-| **Presentación** | `src/app/pages/`, `components/` | UI Ionic; lógica de presentación en utilidades |
-| **Servicios** | `src/app/services/` | Cache, HTTP, agregación (`DataService`) |
-| **Core** | `src/app/core/` | Guards, interceptors, modelos, auth |
+| **Presentación** | `src/app/pages/`, `components/` | UI Ionic; componente `tabla-general` reutilizable; lógica en utilidades |
+| **Servicios** | `src/app/services/` | Cache, HTTP, agregación (`DataService`), reportes y Excel (`ReportesService`) |
+| **Core** | `src/app/core/` | Guards, interceptors, modelos (`KardexLinea`, `Reporte`, …), auth |
+| **Theme** | `src/theme/` | Layouts por pantalla (`_reportes-layout`, `_tabla-general`, …) |
 | **API** | `server/src/routes/`, `utils/` | Reglas de negocio, validación, Firestore Admin |
 | **Utilidades** | `shared/utils/`, `server/src/utils/` | Lógica pura reutilizable y testeable |
 
@@ -197,16 +200,52 @@ flowchart LR
 | `config/sistema` | Periodos cerrados, último cierre |
 | `login_auditoria` | Intentos de login (éxito/fallo) |
 
+**Vistas derivadas (no persistidas en Firestore):**
+
+| Concepto | Origen | Uso |
+|----------|--------|-----|
+| **Kardex de ministerio** | Ingresos/gastos aprobados por `ministerioId` | Ledger cronológico con saldo acumulado; modal en Ministerios e inline en Reportes |
+| **Saldo disponible** | Última línea del kardex | Columna en desglose de Reportes y tabla de Ministerios |
+
 ### 4.6 Diseño de módulos funcionales
 
-| Módulo | Rutas frontend | Endpoints API |
-|--------|----------------|---------------|
+| Módulo | Rutas frontend | Endpoints API / origen de datos |
+|--------|----------------|--------------------------------|
 | Auth | `/login`, `/recuperar-password`, `/cambiar-password` | `/auth/*` |
-| Dashboard | `/dashboard` | Agregación vía servicios |
+| Dashboard | `/dashboard` | Agregación vía `DataService` |
 | Ingresos / Gastos | `/ingresos`, `/gastos` | CRUD + `/aprobar`, `/rechazar` |
-| Reportes | `/reportes` | Consultas filtradas |
-| Usuarios / Ministerios | `/usuarios`, `/ministerios` | CRUD (solo admin) |
+| Reportes | `/reportes` | Agregación **client-side** (`DataService`, `ReportesService`); Excel local con `xlsx-js-style` |
+| Usuarios / Ministerios | `/usuarios`, `/ministerios` | CRUD (solo admin); kardex calculado en cliente |
 | Administración | `/administracion` | `/admin/*` |
+
+### 4.6.1 Flujo del kardex (vista derivada)
+
+```mermaid
+flowchart LR
+  subgraph Fuentes
+    I[Ingresos aprobados]
+    G[Gastos aprobados]
+  end
+  subgraph DataService
+    K[getKardexMinisterio]
+    S[calcularSaldoMinisterio]
+  end
+  subgraph UI
+    R[Reportes: desglose + kardex inline]
+    M[Ministerios: columna saldo + modal]
+  end
+  subgraph Export
+    E[ReportesService.descargarExcel]
+  end
+  I --> K
+  G --> K
+  K --> S
+  S --> R
+  K --> R
+  S --> M
+  K --> M
+  K --> E
+```
 
 ### 4.7 Diseño de seguridad
 
@@ -235,7 +274,7 @@ Construir el sistema completo según el diseño aprobado, respetando la arquitec
 2. Implementación del backend (Express, rutas, middleware, utilidades).
 3. Implementación del frontend (páginas, servicios, componentes compartidos).
 4. Integración frontend–API (proxy en desarrollo, `apiUrl` en producción).
-5. Implementación de exportación Excel, notificaciones y alertas por correo.
+5. Implementación de exportación Excel (incl. kardex), kardex client-side, notificaciones y alertas por correo.
 6. Control de versiones con Git y revisión de código.
 
 ### 5.3 Orden de implementación por módulo
@@ -248,24 +287,26 @@ flowchart TD
   B --> C[Ingresos y gastos]
   C --> D[Dashboard y reportes]
   C --> E[Notificaciones]
-  D --> F[Administración y cierre]
+  D --> M[Ministerios: saldo + kardex]
+  M --> F[Administración y cierre]
   F --> G[Alertas email y auditoría]
 ```
 
 | Orden | Módulo | Componentes principales |
 |-------|--------|-------------------------|
 | 1 | Auth | Login, JWT, guards, recuperación de contraseña |
-| 2 | Ministerios / Usuarios | CRUD admin, asignación de líderes |
+| 2 | Ministerios / Usuarios | CRUD admin, asignación de líderes, columna saldo disponible, modal kardex |
 | 3 | Ingresos / Gastos | Formularios, tabla, aprobación, comprobantes |
-| 4 | Dashboard | KPIs, Chart.js, movimientos recientes |
-| 5 | Reportes | Filtros, Excel, impresión |
-| 6 | Administración | Cierre mensual, backup, auditoría |
+| 4 | Dashboard | KPIs, Chart.js, tendencias, movimientos recientes |
+| 5 | Reportes | Filtros multi-dimensionales, distinción período/histórico, desglose por ministerio y cuenta, kardex inline, Excel enriquecido |
+| 6 | Administración | Resumen ejecutivo, accesos rápidos, cierre mensual, backup, auditoría |
 | 7 | Notificaciones / Alertas | Campana UI, emails operativos |
 
 ### 5.4 Estándares de codificación
 
 - **TypeScript** en frontend y backend.
 - **Separación de responsabilidades:** UI en componentes; lógica en `shared/utils/` y `server/src/utils/`.
+- **Estilos de layout:** partials SCSS en `src/theme/` por pantalla (reportes, tabla general, administración).
 - **Lazy loading** de páginas principales (`loadComponent`).
 - **Mensajes de commit** descriptivos en español.
 - **Lint** con ESLint (Angular) antes de integrar cambios.
@@ -307,7 +348,8 @@ Verificar que el sistema cumple los requisitos, respeta las reglas de negocio y 
 
 | Requisito | Verificación |
 |-----------|--------------|
-| RF-04 Flujo de aprobación | Líder crea pendiente; contable aprueba; aparece en dashboard |
+| RF-04 Flujo de aprobación | Líder crea pendiente; contable aprueba; aparece en dashboard y kardex |
+| RF-08 Reportes / kardex | Desglose por ministerio con saldo disponible; kardex coherente con movimientos aprobados; Excel incluye kardex |
 | RF-09 Cierre mensual | Tras cierre, no se puede editar movimiento del periodo |
 | RF-01 Auth | Login, refresh token, cambio de contraseña obligatorio |
 | RNF-01 Seguridad | Rate limit login; JWT rechazado sin token; bcrypt en contraseñas |
@@ -410,7 +452,7 @@ Garantizar la operación continua del sistema, corregir incidencias y aplicar me
 |------|-------------|-----------------|
 | **Correctivo** | Reparar fallos | Error en filtro de auditoría, CI roto |
 | **Adaptativo** | Ajustar a cambios del entorno | Nueva URL de API, credenciales Firebase |
-| **Perfectivo** | Mejorar funcionalidad existente | Mensajes de confirmación, toasts unificados |
+| **Perfectivo** | Mejorar funcionalidad existente | Kardex por ministerio, reportes con distinción período/histórico, toasts unificados |
 | **Preventivo** | Evitar fallos futuros | Tests de cierre mensual, backup antes de cierre |
 
 ### 8.4 Gestión de incidencias y cambios
@@ -484,6 +526,7 @@ flowchart LR
 | Requisito | Diseño | Implementación | Prueba |
 |-----------|--------|----------------|--------|
 | RF-02 Ingresos | `pages/ingresos`, CRUD API | `ingresos.component`, `ingresos.routes` | `movimiento-filtros.util.spec.ts`, manual por rol |
+| RF-08 Reportes | `pages/reportes`, `ReportesService`, kardex en `DataService` | `reportes.component`, `reportes-filtros.util` | `reportes-filtros.util.spec.ts`, manual kardex/Excel |
 | RF-09 Cierre | `admin.routes`, `cierre-mensual.ts` | Panel administración | `cierre-mensual.test.js`, `http.integration.test.js` |
 | RF-01 Auth | JWT, guards | `auth.routes`, `authGuard` | `auth.test.js`, login manual |
 
@@ -491,8 +534,9 @@ flowchart LR
 
 ## 13. Referencias internas
 
-- [README.md](../README.md) — Visión general, API, roles, scripts.
+- [README.md](../README.md) — Visión general, API, roles, scripts, kardex y datos demo.
 - [DEPLOY.md](./DEPLOY.md) — Despliegue y checklist de producción.
+- [backup-demo-ieca.json](./backup-demo-ieca.json) — Respaldo JSON de ejemplo para restauración y pruebas de kardex.
 - [.github/workflows/ci.yml](../.github/workflows/ci.yml) — Integración continua.
 - [.github/workflows/release.yml](../.github/workflows/release.yml) — Artefactos de release.
 

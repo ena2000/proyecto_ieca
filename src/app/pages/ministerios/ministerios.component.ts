@@ -9,6 +9,7 @@ import {
   IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent,
   IonIcon, IonItem, IonLabel, IonInput, IonButton,
   IonSearchbar, IonSelect, IonSelectOption,
+  IonModal,
   ToastController
 } from '@ionic/angular/standalone';
 
@@ -16,12 +17,13 @@ import { AlertController, LoadingController } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import {
   documentTextOutline, saveOutline, notificationsOutline,
-  pencilOutline, trashOutline, closeOutline, addCircleOutline, optionsOutline
+  pencilOutline, trashOutline, closeOutline, addCircleOutline, optionsOutline,
+  readerOutline, walletOutline
 } from 'ionicons/icons';
 
 import { TablaGeneralComponent, TableColumn } from 'src/app/components/tabla-general/tabla-general.component';
 import { NotificacionesBellComponent } from 'src/app/components/notificaciones-bell/notificaciones-bell.component';
-import { Ministerio, Usuario } from '../../core/models';
+import { Ministerio, Usuario, KardexLinea } from '../../core/models';
 import { DataService } from '../../services/data.service';
 import { MinisteriosService } from '../../services/ministerios.service';
 import { withLoading } from '../../shared/utils/loading.util';
@@ -43,7 +45,7 @@ registerLocaleData(localeEs);
     FormsModule,
     IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent,
     IonIcon, IonItem, IonLabel, IonInput, IonButton,
-    IonSearchbar, IonSelect, IonSelectOption,
+    IonSearchbar, IonSelect, IonSelectOption, IonModal,
     TablaGeneralComponent,
     NotificacionesBellComponent
   ],
@@ -76,10 +78,11 @@ export class MinisteriosComponent implements OnInit, OnDestroy {
     { field: 'nombre',        header: 'Nombre'                },
     { field: 'liderNombre',   header: 'Líder'                 },
     { field: 'coLiderNombre', header: 'Co-líder'              },
+    { field: 'saldo',         header: 'Saldo disponible', type: 'currency' },
     { field: 'estado',        header: 'Estado', type: 'badge' }
   ];
 
-  acciones = { edit: true, delete: true };
+  acciones = { edit: true, delete: true, ledger: true };
   estadosMinisterio: string[] = ['Activo', 'Pausado', 'Inactivo'];
 
   constructor(
@@ -97,9 +100,15 @@ export class MinisteriosComponent implements OnInit, OnDestroy {
       'trash-outline':         trashOutline,
       'close-outline':         closeOutline,
       'add-circle-outline':    addCircleOutline,
-      'options-outline':       optionsOutline
+      'options-outline':       optionsOutline,
+      'reader-outline':        readerOutline,
+      'wallet-outline':        walletOutline
     });
   }
+
+  kardexAbierto = false;
+  ministerioKardex: Ministerio | null = null;
+  lineasKardex: KardexLinea[] = [];
 
   ngOnInit() {
     this.ministeriosService.ministerios$
@@ -111,6 +120,13 @@ export class MinisteriosComponent implements OnInit, OnDestroy {
     this.dataService.usuarios$
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => this.cargarUsuarios());
+    this.dataService.dataRevision$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        if (this.ministerioKardex) {
+          this.lineasKardex = this.dataService.getKardexMinisterio(this.ministerioKardex.id);
+        }
+      });
     this.cargarUsuarios();
   }
 
@@ -143,8 +159,31 @@ export class MinisteriosComponent implements OnInit, OnDestroy {
     return filtrados.map(m => ({
       ...m,
       liderNombre:   this.nombreUsuario(m.hldrId),
-      coLiderNombre: this.nombreUsuario(m.coLiderId)
+      coLiderNombre: this.nombreUsuario(m.coLiderId),
+      saldo:         this.dataService.calcularSaldoMinisterio(m.id)
     }));
+  }
+
+  get saldoKardexActual(): number {
+    if (!this.lineasKardex.length) return 0;
+    return this.lineasKardex[this.lineasKardex.length - 1].saldo;
+  }
+
+  /** Movimientos del más reciente al más antiguo. */
+  get lineasKardexVista(): KardexLinea[] {
+    return [...this.lineasKardex].reverse();
+  }
+
+  verKardex(item: Ministerio): void {
+    this.ministerioKardex = item;
+    this.lineasKardex = this.dataService.getKardexMinisterio(item.id);
+    this.kardexAbierto = true;
+  }
+
+  cerrarKardex(): void {
+    this.kardexAbierto = false;
+    this.ministerioKardex = null;
+    this.lineasKardex = [];
   }
 
   private nombreUsuario(userId?: number): string {

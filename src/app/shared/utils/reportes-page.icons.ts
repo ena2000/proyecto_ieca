@@ -10,7 +10,10 @@ import {
   funnelOutline,
   businessOutline,
   cashOutline,
-  trendingDownOutline
+  trendingDownOutline,
+  walletOutline,
+  readerOutline,
+  informationCircleOutline
 } from 'ionicons/icons';
 
 export function registerReportesPageIcons(): void {
@@ -25,6 +28,9 @@ export function registerReportesPageIcons(): void {
     'funnel-outline': funnelOutline,
     'business-outline': businessOutline,
     'cash-outline': cashOutline,
-    'trending-down-outline': trendingDownOutline
+    'trending-down-outline': trendingDownOutline,
+    'wallet-outline': walletOutline,
+    'reader-outline': readerOutline,
+    'information-circle-outline': informationCircleOutline
   });
 }

@@ -5,6 +5,15 @@ export interface DesgloseReporte {
   saldo: number;
 }
 
+export interface DesgloseMinisterioReporte {
+  ministerioId: number;
+  nombre: string;
+  ingresos: number;
+  gastos: number;
+  saldo: number;
+  saldoDisponible: number;
+}
+
 export interface Reporte {
   id: number;
   fecha: string;

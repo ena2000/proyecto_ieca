@@ -110,7 +110,7 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
     const alert = await this.alertController.create({
       header: '⚠️ Cierre Financiero',
       subHeader: `Periodo: ${this.configIglesia.periodoActual}`,
-      message: 'Esta acción congela todos los movimientos del periodo actual. <strong>Es irreversible.</strong> ¿Confirmas el cierre?',
+      message: `Esta acción congela todos los movimientos del periodo ${this.configIglesia.periodoActual}. Es irreversible. ¿Confirmas el cierre?`,
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
         {
@@ -246,7 +246,7 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
 
     const alert = await this.alertController.create({
       header: '⚠️ Restaurar Backup',
-      message: 'Esto reemplazará <strong>todos los datos actuales</strong> con los del archivo. ¿Confirmas?',
+      message: 'Esto reemplazará todos los datos actuales con los del archivo de respaldo. ¿Confirmas?',
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
         {
@@ -281,7 +281,7 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
   async limpiarTodosLosDatos(): Promise<void> {
     const alert1 = await this.alertController.create({
       header: '🚨 Eliminar todos los datos',
-      message: 'Se borrarán <strong>todos los ingresos, gastos, ministerios y usuarios</strong>. Esta acción no se puede deshacer.',
+      message: 'Se borrarán todos los ingresos, gastos, ministerios y usuarios. Esta acción no se puede deshacer.',
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
         {

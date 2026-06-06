@@ -22,7 +22,8 @@ import {
   closeOutline,
   checkmarkCircleOutline,
   closeCircleOutline,
-  documentTextOutline
+  documentTextOutline,
+  readerOutline
 } from 'ionicons/icons';
 
 
@@ -42,6 +43,7 @@ export interface TableActions {
   delete?: boolean;
   approve?: boolean;
   reject?: boolean;
+  ledger?: boolean;
 }
 
 
@@ -76,6 +78,7 @@ export class TablaGeneralComponent implements OnChanges {
   @Output() rowDelete = new EventEmitter<any>();
   @Output() rowApprove = new EventEmitter<any>();
   @Output() rowReject = new EventEmitter<any>();
+  @Output() rowLedger = new EventEmitter<any>();
   @Output() evidenceClick = new EventEmitter<string>();
 
   // =========================================================
@@ -106,7 +109,8 @@ export class TablaGeneralComponent implements OnChanges {
       closeOutline,
       checkmarkCircleOutline,
       closeCircleOutline,
-      documentTextOutline
+      documentTextOutline,
+      readerOutline
     });
   }
 
@@ -165,6 +169,10 @@ export class TablaGeneralComponent implements OnChanges {
 
   reject(row: any) {
     this.rowReject.emit(row);
+  }
+
+  ledger(row: any) {
+    this.rowLedger.emit(row);
   }
 
   showApproveFor(row: any): boolean {

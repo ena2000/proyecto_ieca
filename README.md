@@ -44,17 +44,18 @@ A nivel técnico, el frontend **ya está orientado a móvil**: **Ionic 8**, esti
 |--------|----------------|
 | **Dashboard** | KPIs (balance, ingresos, gastos, tendencias), gráficos de 6 meses, distribución por ministerio, últimos movimientos |
 | **Ingresos / Gastos** | CRUD, comprobantes (imagen/PDF), filtros, aprobación/rechazo, alcance por ministerio para líderes |
-| **Ministerios** | Departamentos con líder y co-líder (solo administrador) |
+| **Ministerios** | CRUD de departamentos con líder y co-líder; columna **saldo disponible**; modal **kardex** por ministerio (solo administrador) |
 | **Usuarios** | Roles, contraseña temporal en alta, cambio obligatorio al primer acceso |
-| **Reportes** | Filtros por periodo, ministerio y tipo; exportación Excel; desglose por cuenta; impresión |
-| **Administración** | Cierre mensual, backup/restauración JSON, auditoría CSV, **alertas por email**, limpieza de datos |
+| **Reportes** | Filtros por período (mes actual, anterior, historial, mes concreto), ministerio y tipo; resumen del período; desglose por ministerio (incluye **saldo disponible histórico**) y por cuenta contable; **kardex** al seleccionar ministerio; exportación Excel con totales, saldos, detalle y kardex |
+| **Administración** | Resumen ejecutivo, accesos rápidos, cierre mensual, backup/restauración JSON, auditoría CSV, **alertas por email**, limpieza de datos |
 | **Notificaciones** | Pendientes y eventos del sistema |
 | **Auth** | Login JWT, recuperación por código de 6 dígitos, cambio de contraseña |
 
 ### Reglas de negocio clave
 
 - Los **líderes** crean movimientos en estado `pendiente`; **contable** o **administrador** aprueban o rechazan.
-- Solo movimientos **aprobados** cuentan en balance, gráficos y reportes consolidados.
+- Solo movimientos **aprobados** cuentan en balance, gráficos, reportes consolidados, **kardex** y **saldo disponible**.
+- Los totales **del período** en Reportes respetan el filtro de mes/ministerio/tipo; el **saldo disponible** y el **kardex** son **históricos** (todos los movimientos aprobados del ministerio, sin filtro de mes).
 - Los **periodos cerrados** bloquean altas, ediciones y borrados en ese mes.
 - El **cierre mensual** marca movimientos del periodo y actualiza la configuración del sistema (por lotes de hasta 500 operaciones en Firestore).
 
@@ -138,11 +139,13 @@ proyecto_ieca/
 │   ├── ci.yml                   # Lint + tests + build (PR y push)
 │   └── release.yml              # Artefactos de despliegue
 ├── docs/
-│   └── DEPLOY.md                # Guía de despliegue (Firebase Hosting + Render)
+│   ├── DEPLOY.md                # Guía de despliegue (Firebase Hosting + Render)
+│   ├── METODOLOGIA.md           # Metodología en cascada y trazabilidad del proyecto
+│   └── backup-demo-ieca.json    # Respaldo demo para pruebas de restauración y kardex
 ├── src/                         # Frontend
 │   ├── app/
 │   │   ├── auth/                # Login, recuperar y cambiar contraseña
-│   │   ├── components/          # Tabla, sidebar, notificaciones…
+│   │   ├── components/          # Tabla general, sidebar, notificaciones…
 │   │   ├── core/                # Guards, interceptors, modelos, API, auth
 │   │   ├── pages/               # Pantallas (varias con lógica en utils)
 │   │   ├── services/            # ingresos, gastos, data, reportes…
@@ -152,6 +155,7 @@ proyecto_ieca/
 │   ├── environments/
 │   │   ├── environment.ts       # Dev (apiUrl, useLocalFallback)
 │   │   └── environment.prod.ts  # Producción
+│   ├── theme/                   # Estilos globales por pantalla (_reportes-layout, _tabla-general…)
 │   └── proxy.conf.json
 ├── server/                      # API REST
 │   ├── src/
@@ -192,7 +196,8 @@ proyecto_ieca/
 | `movimiento-page.icons.ts` | Iconos Ionicons en ingresos/gastos |
 | `movimiento-query.util.ts` | Query `?pendientes=1` en rutas |
 | **Reportes** | |
-| `reportes-filtros.util.ts` | Filtros, periodos y totales |
+| `reportes-filtros.util.ts` | Presets de período, filtrado y etiquetas de exportación |
+| `reportes-cuenta.util.ts` | Etiqueta unificada de cuenta contable en reportes y kardex |
 | `reportes-page.icons.ts` | Iconos de la pantalla reportes |
 | **Administración** | |
 | `audit-fecha.util.ts` | Fechas de auditoría (desde/hasta) |
@@ -208,9 +213,20 @@ proyecto_ieca/
 | `loading.util.ts`, `error-message.util.ts` | UX y errores HTTP |
 | `excel-ieca.styles.ts` | Estilos de exportación Excel |
 | `contabilidad-cuentas.constants.ts` | Cuentas contables en formularios ingreso/gasto |
-| `reportes-cuenta.util.ts` | Etiqueta de cuenta en Reportes y Excel |
 
 Constantes en páginas: `administracion-accesos.constants.ts` (accesos rápidos del panel admin).
+
+### Componentes compartidos destacados
+
+| Componente | Uso |
+|------------|-----|
+| `tabla-general` | Tabla reutilizable con paginación, badges, comprobantes y acciones (editar, eliminar, aprobar/rechazar, **kardex** vía botón `ledger`) |
+| `ReportesService` | Agregación client-side, desglose por ministerio/cuenta y exportación Excel (`descargarExcel`) |
+| `DataService` | Cache de ingresos/gastos; `getKardexMinisterio()`, `calcularSaldoMinisterio()`, `dataRevision$` para refrescar vistas derivadas |
+
+Modelos en `core/models/`: `kardex.model.ts` (`KardexLinea`), `reporte.model.ts` (`Reporte`, `DesgloseMinisterioReporte`, `DesgloseReporte`).
+
+Estilos de layout en `src/theme/_reportes-layout.scss` y `src/theme/_tabla-general.scss` (importados vía `page-layout.scss`).
 
 ### Colecciones Firestore
 
@@ -479,9 +495,25 @@ Authorization: Bearer <token>
 
 ### Cuenta contable en movimientos
 
-Al registrar un **ingreso** o **gasto**, eliges la **cuenta contable** en el formulario (ej. `4102 — Diezmos y ofrendas`). En **Reportes** la tabla y el Excel muestran la columna **Cuenta**. Las opciones del menú están en `src/app/shared/constants/contabilidad-cuentas.constants.ts`.
+Al registrar un **ingreso** o **gasto**, eliges la **cuenta contable** en el formulario (ej. `4102 — Diezmos y ofrendas`). En **Reportes**, el **kardex** y el Excel incluyen la columna **Cuenta**. Las opciones del menú están en `src/app/shared/constants/contabilidad-cuentas.constants.ts`.
 
-> **Exportación CSV contable (kardex):** pendiente para una versión futura. Por ahora solo **Exportar a Excel** en Reportes.
+### Kardex de saldo por ministerio
+
+El **kardex** es una vista derivada (no hay colección Firestore ni endpoint dedicado): suma cronológica de ingresos y gastos **aprobados** por `ministerioId`. El **saldo disponible** es el último saldo acumulado del kardex.
+
+| Dónde | Qué muestra |
+|-------|-------------|
+| **Reportes** | Desglose por ministerio con columna *Disponible*; kardex inline al seleccionar ministerio |
+| **Ministerios** | Columna *Saldo disponible*; modal kardex por fila (botón morado) |
+| **Excel** | Hoja/sección kardex opcional al exportar con ministerio seleccionado |
+
+Los cálculos se hacen en el cliente (`DataService` + `ReportesService`) a partir de los movimientos ya cargados.
+
+> **Exportación CSV contable:** pendiente para una versión futura. El kardex está disponible en pantalla y en **Exportar a Excel**.
+
+### Datos demo
+
+El archivo `docs/backup-demo-ieca.json` contiene ministerios, usuarios, ingresos y gastos de ejemplo (estados mixtos y cuentas contables). Sirve para probar **Restaurar respaldo** en Administración y validar kardex/saldos sin datos reales.
 
 ---
 
@@ -728,7 +760,7 @@ Documento formal con el enfoque de desarrollo, ciclo de vida, control de version
 
 **[docs/METODOLOGIA.md](docs/METODOLOGIA.md)**
 
-Resumen: metodología **en cascada (Waterfall)** con seis fases secuenciales — análisis de requisitos, diseño, implementación, pruebas, despliegue y mantenimiento — con entregables documentados por fase y trazabilidad entre requisitos, diseño, código y pruebas.
+Resumen: metodología **en cascada (Waterfall)** con seis fases secuenciales — análisis de requisitos, diseño, implementación, pruebas, despliegue y mantenimiento — con entregables documentados por fase y trazabilidad entre requisitos, diseño, código y pruebas. Incluye el diseño del **kardex client-side** y la agregación de reportes sin endpoint dedicado.
 
 ---
 

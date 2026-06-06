@@ -661,3 +661,17 @@ ion-loading.ieca-loading .loading-content {
   max-width: min(240px, calc(100vw - 80px));
   word-break: break-word;
 }
+
+/* Modal kardex (Ministerios): ocupa casi todo el ancho útil del panel */
+ion-modal.kardex-modal {
+  --width: min(1280px, calc(100vw - var(--ieca-sidebar-width, 72px) - 24px));
+  --max-width: min(1280px, calc(100vw - var(--ieca-sidebar-width, 72px) - 24px));
+  --height: fit-content;
+  --max-height: 92vh;
+  --border-radius: 20px;
+  --box-shadow: 0 24px 48px rgba(15, 23, 42, 0.16);
+}
+
+ion-modal.kardex-modal::part(content) {
+  border-radius: 20px;
+}

@@ -9,3 +9,4 @@ export * from './reporte.model';
 export * from './administracion.model';
 export * from './notificacion.model';
 export * from './api.model';
+export * from './kardex.model';

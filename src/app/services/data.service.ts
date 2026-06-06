@@ -1,8 +1,10 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, merge } from 'rxjs';
 import {
-  Ingreso, Gasto, Ministerio, Usuario, Movimiento, KPIs, MesData
+  Ingreso, Gasto, Ministerio, Usuario, Movimiento, KPIs, MesData, KardexLinea
 } from '../core/models';
+import { formatearISOaDDMMYYYY } from '../shared/utils/date.util';
+import { etiquetaCuentaReporte } from '../shared/utils/reportes-cuenta.util';
 import { IngresosService } from './ingresos.service';
 import { GastosService } from './gastos.service';
 import { MinisteriosService } from './ministerios.service';
@@ -12,7 +14,7 @@ import { ingresoAprobado, ingresoPendiente } from '../shared/utils/ingreso.util'
 import { mesCortoEs } from '../shared/utils/month.util';
 
 export type {
-  Ingreso, Gasto, Ministerio, Usuario, Movimiento, KPIs, MesData
+  Ingreso, Gasto, Ministerio, Usuario, Movimiento, KPIs, MesData, KardexLinea
 } from '../core/models';
 
 @Injectable({ providedIn: 'root' })
@@ -274,6 +276,60 @@ export class DataService {
         porcentaje: total > 0 ? Math.round((entry[1] / total) * 100) : 0
       }))
       .sort((a, b) => b.porcentaje - a.porcentaje);
+  }
+
+  calcularSaldoMinisterio(ministerioId: number): number {
+    const kardex = this.getKardexMinisterio(ministerioId);
+    return kardex.length ? kardex[kardex.length - 1].saldo : 0;
+  }
+
+  getKardexMinisterio(ministerioId: number): KardexLinea[] {
+    const ingresos = this.ingresosAprobadosParaBalance(
+      this.getIngresosActuales().filter(i => Number(i.ministerioId) === ministerioId)
+    );
+    const gastos = this.gastosAprobadosParaBalance(
+      this.getGastosActuales().filter(g => Number(g.ministerioId) === ministerioId)
+    );
+
+    const movimientos = [
+      ...ingresos.map(i => ({
+        fecha: i.fecha,
+        descripcion: i.descripcion,
+        cuentaCodigo: i.cuentaCodigo,
+        cuentaNombre: i.cuentaNombre || i.tipo,
+        tipo: 'ingreso' as const,
+        monto: i.monto || 0
+      })),
+      ...gastos.map(g => ({
+        fecha: g.fecha,
+        descripcion: g.descripcion,
+        cuentaCodigo: g.cuentaCodigo,
+        cuentaNombre: g.cuentaNombre || g.categoria,
+        tipo: 'gasto' as const,
+        monto: g.monto || 0
+      }))
+    ].sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+
+    let saldo = 0;
+    return movimientos.map(m => {
+      const ingreso = m.tipo === 'ingreso' ? m.monto : 0;
+      const gasto = m.tipo === 'gasto' ? m.monto : 0;
+      saldo += ingreso - gasto;
+      return {
+        fecha: m.fecha,
+        fechaFormateada: formatearISOaDDMMYYYY(m.fecha),
+        descripcion: m.descripcion,
+        cuentaEtiqueta: etiquetaCuentaReporte({
+          cuentaCodigo: m.cuentaCodigo,
+          cuentaNombre: m.cuentaNombre,
+          tipo: m.tipo === 'ingreso' ? 'Ingreso' : 'Gasto'
+        }),
+        tipo: m.tipo,
+        ingreso,
+        gasto,
+        saldo
+      };
+    });
   }
 
   getConteoPendientes(ministerioId?: number): { ingresos: number; gastos: number; total: number } {

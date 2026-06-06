@@ -1,6 +1,12 @@
 import { Injectable } from '@angular/core';
 import * as XLSX from 'xlsx-js-style';
-import { DesgloseReporte, Ministerio, Reporte } from '../core/models';
+import {
+  DesgloseMinisterioReporte,
+  DesgloseReporte,
+  KardexLinea,
+  Ministerio,
+  Reporte
+} from '../core/models';
 import { DataService } from './data.service';
 import { gastoAprobado } from '../shared/utils/gasto.util';
 import { ingresoAprobado } from '../shared/utils/ingreso.util';
@@ -19,10 +25,19 @@ import {
   ExcelCellStyle
 } from '../shared/utils/excel-ieca.styles';
 
+export interface SaldoMinisterioExport {
+  ministerioId: number;
+  nombre: string;
+  saldo: number;
+}
+
 export interface ExportarExcelOpciones {
   reportes: Reporte[];
   desglose: DesgloseReporte[];
   totales: { ingresos: number; gastos: number; saldo: number };
+  saldosMinisterio: SaldoMinisterioExport[];
+  kardex?: KardexLinea[];
+  nombreMinisterioKardex?: string;
   etiquetaFiltro: string;
   nombreArchivo: string;
 }
@@ -96,6 +111,42 @@ export class ReportesService {
       if (m) return m.nombre;
     }
     return 'General';
+  }
+
+  calcularDesglosePorMinisterio(
+    reportes: Reporte[],
+    ministerios: Pick<Ministerio, 'id' | 'nombre'>[],
+    ministerioScopeId?: number | null
+  ): DesgloseMinisterioReporte[] {
+    const lista = ministerioScopeId != null
+      ? ministerios.filter(m => m.id === ministerioScopeId)
+      : ministerios;
+
+    const porId = new Map<number, { ingresos: number; gastos: number }>();
+    lista.forEach(m => porId.set(m.id, { ingresos: 0, gastos: 0 }));
+
+    reportes.forEach(r => {
+      const id = r.ministerioId;
+      if (id == null) return;
+      const bucket = porId.get(id);
+      if (!bucket) return;
+      bucket.ingresos += r.ingresos || 0;
+      bucket.gastos += r.gastos || 0;
+    });
+
+    return lista
+      .map(m => {
+        const bucket = porId.get(m.id) ?? { ingresos: 0, gastos: 0 };
+        return {
+          ministerioId: m.id,
+          nombre: m.nombre,
+          ingresos: bucket.ingresos,
+          gastos: bucket.gastos,
+          saldo: bucket.ingresos - bucket.gastos,
+          saldoDisponible: this.dataService.calcularSaldoMinisterio(m.id)
+        };
+      })
+      .sort((a, b) => b.saldoDisponible - a.saldoDisponible);
   }
 
   calcularDesglose(reportes: Reporte[]): DesgloseReporte[] {
@@ -178,6 +229,28 @@ export class ReportesService {
     filas[r] = [];
     r++;
 
+    if (opciones.saldosMinisterio.length > 0) {
+      filas[r] = ['Saldo disponible por ministerio (acumulado)'];
+      marcar(r, 0, estiloSeccion(), COLS);
+      r++;
+
+      filas[r] = ['Ministerio', 'Saldo disponible', '', '', '', '', ''];
+      marcar(r, 0, estiloEncabezadoTabla());
+      marcar(r, 1, estiloEncabezadoTabla());
+      r++;
+
+      opciones.saldosMinisterio.forEach((item, idx) => {
+        filas[r] = [item.nombre, item.saldo, '', '', '', '', ''];
+        const par = idx % 2 === 1;
+        marcar(r, 0, estiloFilaDatos(par));
+        marcar(r, 1, estiloMoneda(item.saldo < 0 ? 'red' : 'default', par));
+        r++;
+      });
+
+      filas[r] = [];
+      r++;
+    }
+
     filas[r] = ['Detalle de movimientos'];
     marcar(r, 0, estiloSeccion(), COLS);
     r++;
@@ -234,6 +307,45 @@ export class ReportesService {
       });
     }
 
+    if (opciones.kardex && opciones.kardex.length > 0) {
+      filas[r] = [];
+      r++;
+
+      const tituloKardex = opciones.nombreMinisterioKardex
+        ? `Kardex de saldo — ${opciones.nombreMinisterioKardex}`
+        : 'Kardex de saldo';
+      filas[r] = [tituloKardex];
+      marcar(r, 0, estiloSeccion(), COLS);
+      r++;
+
+      filas[r] = ['Fecha', 'Descripción', 'Cuenta', 'Tipo', 'Ingreso', 'Gasto', 'Saldo'];
+      for (let c = 0; c < COLS; c++) {
+        marcar(r, c, estiloEncabezadoTabla());
+      }
+      r++;
+
+      [...opciones.kardex].reverse().forEach((linea, idx) => {
+        filas[r] = [
+          linea.fechaFormateada,
+          linea.descripcion,
+          linea.cuentaEtiqueta,
+          linea.tipo === 'ingreso' ? 'Ingreso' : 'Gasto',
+          linea.ingreso > 0 ? linea.ingreso : '',
+          linea.gasto > 0 ? linea.gasto : '',
+          linea.saldo
+        ];
+        const par = idx % 2 === 1;
+        marcar(r, 0, estiloFilaDatos(par));
+        marcar(r, 1, estiloFilaDatos(par));
+        marcar(r, 2, estiloFilaDatos(par));
+        marcar(r, 3, estiloFilaDatos(par));
+        marcar(r, 4, estiloMoneda('green', par));
+        marcar(r, 5, estiloMoneda('red', par));
+        marcar(r, 6, estiloMoneda(linea.saldo < 0 ? 'red' : 'default', par));
+        r++;
+      });
+    }
+
     const ws = XLSX.utils.aoa_to_sheet(filas);
     ws['!merges'] = merges;
     ws['!cols'] = [
@@ -265,5 +377,22 @@ export class ReportesService {
     const ingresos = reportes.reduce((sum, r) => sum + (r.ingresos || 0), 0);
     const gastos   = reportes.reduce((sum, r) => sum + (r.gastos || 0), 0);
     return { ingresos, gastos, saldo: ingresos - gastos };
+  }
+
+  construirSaldosMinisterio(
+    ministerios: Pick<Ministerio, 'id' | 'nombre'>[],
+    ministerioScopeId?: number | null
+  ): SaldoMinisterioExport[] {
+    const lista = ministerioScopeId != null
+      ? ministerios.filter(m => m.id === ministerioScopeId)
+      : ministerios;
+
+    return lista
+      .map(m => ({
+        ministerioId: m.id,
+        nombre: m.nombre,
+        saldo: this.dataService.calcularSaldoMinisterio(m.id)
+      }))
+      .sort((a, b) => b.saldo - a.saldo);
   }
 }

@@ -201,6 +201,15 @@ app-tabla-general {
   }
 }
 
+.btn-ledger {
+  background: #6366f1;
+  box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);
+
+  &:hover:not(:disabled) {
+    background: #4f46e5;
+  }
+}
+
 .pdf-thumb {
   display: flex;
   flex-direction: column;
