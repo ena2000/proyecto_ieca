@@ -51,19 +51,23 @@ export class CierreService {
       return;
     }
 
-    const cfg = await firstValueFrom(
-      this.api.get<ConfigCierre>(API.admin.config)
-    );
-    this.ultimoCierre = cfg.ultimoCierre;
-    this.periodosCerrados = cfg.periodosCerrados ?? [];
-    if (!this.periodosCerrados.length && cfg.ultimoCierre) {
-      const key = labelToPeriodoKey(cfg.ultimoCierre);
-      if (key) this.periodosCerrados = [key];
+    try {
+      const cfg = await firstValueFrom(
+        this.api.get<ConfigCierre>(API.admin.config)
+      );
+      this.ultimoCierre = cfg.ultimoCierre;
+      this.periodosCerrados = cfg.periodosCerrados ?? [];
+      if (!this.periodosCerrados.length && cfg.ultimoCierre) {
+        const key = labelToPeriodoKey(cfg.ultimoCierre);
+        if (key) this.periodosCerrados = [key];
+      }
+      this.mesActualCerrado = cfg.mesActualCerrado ?? estaPeriodoCerrado(
+        new Date().toISOString(),
+        this.periodosCerrados
+      );
+    } catch (err) {
+      console.error('[CierreService] cargar:', err);
     }
-    this.mesActualCerrado = cfg.mesActualCerrado ?? estaPeriodoCerrado(
-      new Date().toISOString(),
-      this.periodosCerrados
-    );
   }
 
   getPeriodoActualLabel(): string {

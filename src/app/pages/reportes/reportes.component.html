@@ -128,7 +128,8 @@
               <ion-icon slot="start" name="business-outline" class="text-blue"></ion-icon>
               <ion-select
                 interface="popover"
-                [(ngModel)]="filtroMinisterioId"
+                    [(ngModel)]="filtroMinisterioId"
+                    (ngModelChange)="onFiltroMinisterioChange()"
                 name="filtroMinisterioId"
                 [disabled]="filtroMinisterioBloqueado"
                 placeholder="Todos los ministerios">

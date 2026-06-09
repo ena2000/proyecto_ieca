@@ -365,7 +365,7 @@
             Historial Financiero de Gastos
           </h2>
           <span class="badge-count">
-            {{ listaFiltrada.length }} registros encontrados
+            {{ listaFiltradaVista.length }} registros encontrados
           </span>
           <span class="badge-count badge-count--warn" *ngIf="puedeAprobar && pendientesCount > 0">
             {{ pendientesCount }} pendiente(s)
@@ -389,7 +389,8 @@
               debounce="300"
               class="professional-search"
               placeholder="Buscar por descripción..."
-              [(ngModel)]="searchTerm">
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="onFiltrosChange()">
             </ion-searchbar>
           </div>
         </div>
@@ -476,6 +477,7 @@
                 inputmode="decimal"
                 class="custom-amount-filter"
                 [(ngModel)]="filtroMontoMin"
+                (ngModelChange)="onFiltrosChange()"
                 placeholder="0.00">
             </div>
           </div>
@@ -492,6 +494,7 @@
                 inputmode="decimal"
                 class="custom-amount-filter"
                 [(ngModel)]="filtroMontoMax"
+                (ngModelChange)="onFiltrosChange()"
                 placeholder="Sin límite">
             </div>
           </div>
@@ -501,7 +504,7 @@
 
       <app-tabla-general
         [columns]="columnsGastos"
-        [data]="listaFiltrada"
+        [data]="listaFiltradaVista"
         [actions]="acciones"
         [allowEditApproved]="authService.isAdministrador()"
         [allowDeleteApproved]="authService.isAdministrador()"

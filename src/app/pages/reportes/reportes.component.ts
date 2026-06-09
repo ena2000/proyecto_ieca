@@ -1,4 +1,5 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, OnDestroy } from '@angular/core';
+import { ViewWillEnter } from '@ionic/angular';
 import { CommonModule, registerLocaleData } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import localeEs from '@angular/common/locales/es';
@@ -8,10 +9,12 @@ import {
   IonSelect, IonSelectOption
 } from '@ionic/angular/standalone';
 import { Subject, combineLatest } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { debounceTime, takeUntil } from 'rxjs/operators';
 
 import { NotificacionesBellComponent } from 'src/app/components/notificaciones-bell/notificaciones-bell.component';
-import { KardexLinea, Ministerio, Reporte } from '../../core/models';
+import {
+  DesgloseMinisterioReporte, DesgloseReporte, KardexLinea, Ministerio, Reporte
+} from '../../core/models';
 import { DataService } from '../../services/data.service';
 import { ReportesService } from '../../services/reportes.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -49,13 +52,26 @@ registerReportesPageIcons();
     IonIcon, IonButton, IonLabel, IonItem, IonSelect, IonSelectOption,
     NotificacionesBellComponent
   ],
-  providers: [ToastController]
+  providers: [ToastController],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ReportesComponent implements OnInit, OnDestroy {
+export class ReportesComponent implements OnInit, OnDestroy, ViewWillEnter {
   readonly formatearMoneda = formatearMoneda;
 
   listaReportes: Reporte[] = [];
   listaMinisterios: Pick<Ministerio, 'id' | 'nombre'>[] = [];
+  listaFiltradaVista: Reporte[] = [];
+  mesesDisponibles: { value: string; label: string }[] = [];
+  desgloseAgregado: DesgloseReporte[] = [];
+  desgloseMinisterioVista: DesgloseMinisterioReporte[] = [];
+  lineasKardexVista: KardexLinea[] = [];
+  nombreMinisterioKardex = '';
+  saldoDisponibleMinisterio = 0;
+  totalIngresosFiltrado = 0;
+  totalGastosFiltrado = 0;
+  totalSaldoFiltrado = 0;
+  mostrarDesgloseMinisterio = false;
+
   searchTerm = '';
   filtroMes = '';
   filtroMinisterioId: number | null = null;
@@ -70,7 +86,8 @@ export class ReportesComponent implements OnInit, OnDestroy {
     private toastController: ToastController,
     private dataService: DataService,
     private reportesService: ReportesService,
-    private authService: AuthService
+    private authService: AuthService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -79,11 +96,22 @@ export class ReportesComponent implements OnInit, OnDestroy {
       this.filtroMinisterioId = this.ministerioScopeId;
       this.filtroMinisterioBloqueado = true;
     }
-    this.actualizarDatos();
     this.setPeriodo('este_mes');
     combineLatest([this.dataService.ingresos$, this.dataService.gastos$])
+      .pipe(debounceTime(100), takeUntil(this.destroy$))
+      .subscribe(() => this.actualizarVista());
+    this.dataService.dataRevision$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(() => this.actualizarDatos());
+      .subscribe(() => this.actualizarVista());
+    this.actualizarVista();
+  }
+
+  ionViewWillEnter(): void {
+    if (!this.dataService.hasRemoteData()) {
+      void this.dataService.bootstrapRemote().then(() => this.actualizarVista());
+      return;
+    }
+    this.actualizarVista();
   }
 
   ngOnDestroy(): void {
@@ -91,12 +119,44 @@ export class ReportesComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  private actualizarDatos(): void {
+  private actualizarVista(): void {
     this.listaMinisterios = this.dataService.getMinisteriosActuales().map(m => ({
       id: m.id,
       nombre: m.nombre
     }));
     this.listaReportes = this.reportesService.generarReportes();
+    this.mesesDisponibles = mesesDisponiblesDesdeReportes(this.listaReportes);
+    this.listaFiltradaVista = filtrarReportes(this.listaReportes, this.filtrosReporte);
+    this.totalIngresosFiltrado = this.listaFiltradaVista.reduce(
+      (sum, r) => sum + (r.ingresos || 0), 0
+    );
+    this.totalGastosFiltrado = this.listaFiltradaVista.reduce(
+      (sum, r) => sum + (r.gastos || 0), 0
+    );
+    this.totalSaldoFiltrado = this.totalIngresosFiltrado - this.totalGastosFiltrado;
+    this.desgloseAgregado = this.reportesService.calcularDesglose(this.listaFiltradaVista);
+    this.desgloseMinisterioVista = this.reportesService.calcularDesglosePorMinisterio(
+      this.listaFiltradaVista,
+      this.listaMinisterios,
+      this.ministerioScopeId
+    );
+    this.mostrarDesgloseMinisterio = this.desgloseMinisterioVista.length > 0;
+    if (this.filtroMinisterioId != null) {
+      this.nombreMinisterioKardex = this.listaMinisterios.find(
+        m => m.id === this.filtroMinisterioId
+      )?.nombre ?? 'Ministerio';
+      this.lineasKardexVista = [
+        ...this.dataService.getKardexMinisterio(this.filtroMinisterioId)
+      ].reverse();
+      this.saldoDisponibleMinisterio = this.dataService.calcularSaldoMinisterio(
+        this.filtroMinisterioId
+      );
+    } else {
+      this.nombreMinisterioKardex = '';
+      this.lineasKardexVista = [];
+      this.saldoDisponibleMinisterio = 0;
+    }
+    this.cdr.markForCheck();
   }
 
   private get filtrosReporte() {
@@ -112,6 +172,7 @@ export class ReportesComponent implements OnInit, OnDestroy {
 
   setFiltroMovimiento(tipo: FiltroMovimientoReporte): void {
     this.filtroMovimiento = tipo;
+    this.actualizarVista();
   }
 
   get etiquetaMesActivo(): string {
@@ -121,10 +182,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
   /** Etiqueta corta para títulos y totales del bloque “período”. */
   get etiquetaPeriodoResumen(): string {
     return this.etiquetaMesActivo;
-  }
-
-  get mesesDisponibles(): { value: string; label: string }[] {
-    return mesesDisponiblesDesdeReportes(this.listaReportes);
   }
 
   get puedeAvanzarMes(): boolean {
@@ -142,21 +199,25 @@ export class ReportesComponent implements OnInit, OnDestroy {
   setPeriodo(preset: PeriodoPresetReporte): void {
     this.periodoPreset = preset;
     this.filtroMes = resolverFiltroMesPorPreset(preset);
+    this.actualizarVista();
   }
 
   onMesCambio(): void {
     this.periodoPreset = 'custom';
+    this.actualizarVista();
   }
 
   mesAnterior(): void {
     this.filtroMes = mesAnteriorReporte(this.filtroMes);
     this.periodoPreset = 'custom';
+    this.actualizarVista();
   }
 
   mesSiguiente(): void {
     if (!this.puedeAvanzarMes) return;
     this.filtroMes = mesSiguienteReporte(this.filtroMes);
     this.periodoPreset = 'custom';
+    this.actualizarVista();
   }
 
   limpiarFiltros(): void {
@@ -165,80 +226,37 @@ export class ReportesComponent implements OnInit, OnDestroy {
     if (!this.filtroMinisterioBloqueado) {
       this.filtroMinisterioId = null;
     }
-    this.setPeriodo('este_mes');
+    this.periodoPreset = 'este_mes';
+    this.filtroMes = resolverFiltroMesPorPreset('este_mes');
+    this.actualizarVista();
   }
 
-  get listaFiltrada(): Reporte[] {
-    return filtrarReportes(this.listaReportes, this.filtrosReporte);
+  onFiltroMinisterioChange(): void {
+    this.actualizarVista();
   }
 
   get etiquetaFiltroMovimiento(): string {
     return etiquetaFiltroMovimientoReporte(this.filtroMovimiento);
   }
 
-  get totalIngresosFiltrado(): number {
-    return this.listaFiltrada.reduce((sum, r) => sum + (r.ingresos || 0), 0);
-  }
-
-  get totalGastosFiltrado(): number {
-    return this.listaFiltrada.reduce((sum, r) => sum + (r.gastos || 0), 0);
-  }
-
-  get totalSaldoFiltrado(): number {
-    return this.totalIngresosFiltrado - this.totalGastosFiltrado;
-  }
-
-  get desgloseAgregado() {
-    return this.reportesService.calcularDesglose(this.listaFiltrada);
-  }
-
-  get desgloseMinisterioVista() {
-    return this.reportesService.calcularDesglosePorMinisterio(
-      this.listaFiltrada,
-      this.listaMinisterios,
-      this.ministerioScopeId
-    );
-  }
-
-  get mostrarDesgloseMinisterio(): boolean {
-    return this.desgloseMinisterioVista.length > 0;
-  }
-
   get mostrarKardexMinisterio(): boolean {
     return this.filtroMinisterioId != null;
-  }
-
-  get nombreMinisterioKardex(): string {
-    if (this.filtroMinisterioId == null) return '';
-    return this.listaMinisterios.find(m => m.id === this.filtroMinisterioId)?.nombre ?? 'Ministerio';
-  }
-
-  get lineasKardex(): KardexLinea[] {
-    if (this.filtroMinisterioId == null) return [];
-    return this.dataService.getKardexMinisterio(this.filtroMinisterioId);
-  }
-
-  get lineasKardexVista(): KardexLinea[] {
-    return [...this.lineasKardex].reverse();
-  }
-
-  get saldoDisponibleMinisterio(): number {
-    if (this.filtroMinisterioId == null) return 0;
-    return this.dataService.calcularSaldoMinisterio(this.filtroMinisterioId);
   }
 
   seleccionarMinisterioParaKardex(ministerioId: number): void {
     if (this.filtroMinisterioBloqueado) return;
     this.filtroMinisterioId = ministerioId;
+    this.actualizarVista();
   }
 
   limpiarSeleccionMinisterio(): void {
     if (this.filtroMinisterioBloqueado) return;
     this.filtroMinisterioId = null;
+    this.actualizarVista();
   }
 
   exportarExcel(): void {
-    const reportes = this.listaFiltrada;
+    const reportes = this.listaFiltradaVista;
     if (reportes.length === 0) {
       void this.mostrarToast('No hay registros para exportar.', 'warning');
       return;

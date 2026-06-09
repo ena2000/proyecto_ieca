@@ -1,4 +1,7 @@
-import { Component, OnInit, OnDestroy, HostListener, ViewChild, ElementRef } from '@angular/core';
+import {
+  ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, OnDestroy,
+  HostListener, ViewChild, ElementRef
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule, registerLocaleData } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -88,7 +91,8 @@ const INGRESO_VACIO = (): Ingreso => {
     IonSelectOption, IonSelect,
     TablaGeneralComponent, NotificacionesBellComponent
   ],
-  providers: [AlertController, ToastController, LoadingController]
+  providers: [AlertController, ToastController, LoadingController],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
   readonly isoToDateInputValue = isoToDateInputValue;
@@ -105,6 +109,8 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
   modoEdicion = false;
   idEditando: number | null = null;
   listaIngresos: Ingreso[] = [];
+  listaFiltradaVista: Ingreso[] = [];
+  pendientesCount = 0;
 
   private destroy$ = new Subject<void>();
 
@@ -146,7 +152,8 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
     readonly authService: AuthService,
     private cierreService: CierreService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {
     registerMovimientoPageIcons();
   }
@@ -157,8 +164,15 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
     this.fechaManualForm = formatearISOaDDMMYYYY(this.nuevoIngreso.fecha);
     this.ingresosService.ingresos$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(list => { this.listaIngresos = list; });
+      .subscribe(list => {
+        this.listaIngresos = list;
+        this.actualizarVista();
+      });
+    this.dataService.dataRevision$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.actualizarVista());
     this.cargarRelaciones();
+    this.actualizarVista();
   }
 
   ngOnDestroy(): void {
@@ -172,9 +186,13 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
       this.route.snapshot.queryParamMap.get('pendientes')
     );
     if (!this.dataService.hasRemoteData()) {
-      void this.dataService.bootstrapRemote().then(() => this.cargarRelaciones());
+      void this.dataService.bootstrapRemote().then(() => {
+        this.cargarRelaciones();
+        this.actualizarVista();
+      });
     } else {
       this.cargarRelaciones();
+      this.actualizarVista();
     }
   }
 
@@ -215,8 +233,8 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
     return this.cierreService.estaCerrado(item.fecha, item.cerrado);
   }
 
-  get pendientesCount(): number {
-    return this.listaIngresos.filter(i => ingresoPendiente(i)).length;
+  onFiltrosChange(): void {
+    this.actualizarVista();
   }
 
   @HostListener('document:keydown.escape')
@@ -266,6 +284,9 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
     if (upd.fechaManualHasta != null) this.fechaManualHasta = upd.fechaManualHasta;
     if (upd.filtroFechaInicio != null) this.filtroFechaInicio = upd.filtroFechaInicio;
     if (upd.filtroFechaFin != null) this.filtroFechaFin = upd.filtroFechaFin;
+    if (upd.filtroFechaInicio != null || upd.filtroFechaFin != null) {
+      this.actualizarVista();
+    }
   }
 
   validarFechaManual(event: Event, tipo: 'desde' | 'hasta'): void {
@@ -276,6 +297,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
     if (!iso) return;
     if (tipo === 'desde') this.filtroFechaInicio = iso;
     else this.filtroFechaFin = iso;
+    this.actualizarVista();
   }
 
   get ministerioBloqueado(): boolean {
@@ -308,10 +330,11 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
     this.filtroMontoMax = null;
     this.filtroSoloPendientes = false;
     limpiarQueryPendientes(this.route, this.router);
+    this.actualizarVista();
   }
 
-  get listaFiltrada(): Ingreso[] {
-    return filtrarMovimientos({
+  private actualizarVista(): void {
+    this.listaFiltradaVista = filtrarMovimientos({
       items: this.listaIngresos,
       ministerioScopeId: this.ministerioScopeId,
       filtros: this.filtros,
@@ -328,6 +351,8 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
         estadoEtiqueta: etiquetaEstadoIngreso(estadoIngreso(i))
       })
     });
+    this.pendientesCount = this.listaIngresos.filter(i => ingresoPendiente(i)).length;
+    this.cdr.markForCheck();
   }
 
   private normalizarIngreso(): Ingreso {
