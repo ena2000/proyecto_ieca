@@ -61,6 +61,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit, Vie
   private destroy$ = new Subject<void>();
   private chartUpdateTimer: ReturnType<typeof setTimeout> | undefined;
   private chartsReady = false;
+  private chartUpdating = false;
   private lastChartFingerprint = '';
   private lastRemoteRefresh = 0;
   private readonly remoteRefreshMs = 120_000;
@@ -246,31 +247,37 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit, Vie
   }
 
   private async updateBarChart(): Promise<void> {
+    if (this.chartUpdating) return;
+
     const canvas = this.barChartCanvas?.nativeElement;
     if (!canvas || !this.chartTieneDatos) {
       this.destroyBarChart();
       return;
     }
 
-    const { Chart, registerables } = await import('chart.js');
-    if (!this.chartJsLoaded) {
-      Chart.register(...registerables);
-      this.chartJsLoaded = true;
-    }
+    this.chartUpdating = true;
+    try {
+      const { Chart, registerables } = await import('chart.js');
+      if (!this.chartJsLoaded) {
+        Chart.register(...registerables);
+        this.chartJsLoaded = true;
+      }
 
-    const labels = this.chartData.map(d => d.mes);
-    const ingresos = this.chartData.map(d => d.ingresos);
-    const gastos = this.chartData.map(d => d.gastos);
+      this.syncChartCanvasSize(canvas);
 
-    if (this.barChart) {
-      this.barChart.data.labels = labels;
-      this.barChart.data.datasets[0].data = ingresos;
-      this.barChart.data.datasets[1].data = gastos;
-      this.barChart.update('none');
-      return;
-    }
+      const labels = this.chartData.map(d => d.mes);
+      const ingresos = this.chartData.map(d => d.ingresos);
+      const gastos = this.chartData.map(d => d.gastos);
 
-    this.barChart = new Chart(canvas, {
+      if (this.barChart) {
+        this.barChart.data.labels = labels;
+        this.barChart.data.datasets[0].data = ingresos;
+        this.barChart.data.datasets[1].data = gastos;
+        this.barChart.update('none');
+        return;
+      }
+
+      this.barChart = new Chart(canvas, {
       type: 'bar',
       data: {
         labels,
@@ -298,15 +305,29 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit, Vie
         ]
       },
       options: this.barChartOptions()
-    });
+      });
+    } finally {
+      this.chartUpdating = false;
+    }
+  }
+
+  /** Tamaño fijo del canvas: evita el bucle ResizeObserver ↔ change detection de Chart.js. */
+  private syncChartCanvasSize(canvas: HTMLCanvasElement): void {
+    const wrap = canvas.parentElement;
+    if (!wrap) return;
+    const w = Math.max(1, wrap.clientWidth);
+    const h = Math.max(1, wrap.clientHeight);
+    canvas.width = w;
+    canvas.height = h;
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
   }
 
   private barChartOptions(): import('chart.js').ChartConfiguration<'bar'>['options'] {
     return {
-      responsive: true,
+      responsive: false,
       maintainAspectRatio: false,
       animation: false,
-      resizeDelay: 250,
       interaction: {
         mode: 'index',
         intersect: false
