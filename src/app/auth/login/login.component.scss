@@ -153,6 +153,14 @@
   box-shadow: 0 8px 15px rgba(46, 53, 143, 0.2);
 }
 
+.login-wait-hint {
+  margin: 12px 4px 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--ieca-text-secondary);
+  text-align: center;
+}
+
 .footer-info {
   text-align: center;
   margin-top: 25px;

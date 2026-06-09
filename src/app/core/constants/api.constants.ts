@@ -1,4 +1,5 @@
 export const API = {
+  bootstrap: '/bootstrap',
   auth: {
     login:  '/auth/login',
     logout: '/auth/logout',

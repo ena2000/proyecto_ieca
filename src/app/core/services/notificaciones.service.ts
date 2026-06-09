@@ -56,9 +56,13 @@ export class NotificacionesService {
       return;
     }
     this.api.get<Notificacion[]>(API.notificaciones.base).subscribe({
-      next: lista => this.listaSubject.next(lista.map(n => this.normalizar(n))),
+      next: lista => this.hydrate(lista),
       error: err => console.error('[NotificacionesService] recargar:', err)
     });
+  }
+
+  hydrate(lista: Notificacion[]): void {
+    this.listaSubject.next(lista.map(n => this.normalizar(n)));
   }
 
   getLista(): Notificacion[] {

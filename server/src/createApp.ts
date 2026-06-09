@@ -1,4 +1,5 @@
 const express = require('express');
+const compression = require('compression');
 
 const { createCorsMiddleware } = require('./middleware/cors');
 const { createHelmetMiddleware } = require('./middleware/helmet');
@@ -13,6 +14,7 @@ const {
   gastosRouter
 } = require('./routes/crud.routes');
 const notificacionesRouter = require('./routes/notificaciones.routes');
+const bootstrapRouter = require('./routes/bootstrap.routes');
 const adminRouter = require('./routes/admin.routes');
 const pkg = require('../package.json');
 
@@ -39,6 +41,7 @@ function createApp(options: { useMemoryDb?: boolean } = {}) {
   app.set('trust proxy', 1);
 
   app.use(createHelmetMiddleware());
+  app.use(compression());
   app.use(createCorsMiddleware());
   app.use(express.json({ limit: '10mb' }));
 
@@ -61,6 +64,7 @@ function createApp(options: { useMemoryDb?: boolean } = {}) {
   });
 
   app.use('/api/auth', authRoutes);
+  app.use('/api/bootstrap', authRequired, bootstrapRouter);
   app.use('/api/ministerios', authRequired, requireRoles([ROLES.ADMIN]), ministeriosRouter);
   app.use('/api/usuarios', authRequired, requireRoles([ROLES.ADMIN]), usuariosRouter);
   app.use('/api/ingresos', authRequired, ingresosRouter);

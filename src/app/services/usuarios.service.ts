@@ -17,7 +17,13 @@ export class UsuariosService {
   readonly usuarios$: Observable<Usuario[]> = this.usuariosSubject.asObservable();
 
   constructor(private api: ApiService) {
-    this.reload();
+    if (environment.useLocalFallback) {
+      this.loadFromStorage();
+    }
+  }
+
+  hydrate(lista: Usuario[]): void {
+    this.usuariosSubject.next(lista);
   }
 
   getAll(): Usuario[] {

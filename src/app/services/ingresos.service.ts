@@ -23,7 +23,13 @@ export class IngresosService {
     private api: ApiService,
     private authService: AuthService
   ) {
-    this.reload();
+    if (environment.useLocalFallback) {
+      this.loadFromStorage();
+    }
+  }
+
+  hydrate(lista: Ingreso[]): void {
+    this.ingresosSubject.next(lista);
   }
 
   getAll(): Ingreso[] {

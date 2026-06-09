@@ -1,8 +1,15 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, merge } from 'rxjs';
+import { BehaviorSubject, Observable, firstValueFrom, merge } from 'rxjs';
+import { distinctUntilChanged } from 'rxjs/operators';
 import {
-  Ingreso, Gasto, Ministerio, Usuario, Movimiento, KPIs, MesData, KardexLinea
+  Ingreso, Gasto, Ministerio, Usuario, Movimiento, KPIs, MesData, KardexLinea,
+  BootstrapResponse
 } from '../core/models';
+import { AuthService } from '../core/services/auth.service';
+import { ApiService } from '../core/services/api.service';
+import { NotificacionesService } from '../core/services/notificaciones.service';
+import { API } from '../core/constants/api.constants';
+import { environment } from '../../environments/environment';
 import { formatearISOaDDMMYYYY } from '../shared/utils/date.util';
 import { etiquetaCuentaReporte } from '../shared/utils/reportes-cuenta.util';
 import { IngresosService } from './ingresos.service';
@@ -33,12 +40,18 @@ export class DataService {
   readonly dataRevision$ = this.dataRevisionSubject.asObservable();
 
   private syncTimer: ReturnType<typeof setTimeout> | undefined;
+  private bootstrapInFlight: Promise<void> | null = null;
+  private lastBootstrapAt = 0;
+  private readonly bootstrapTtlMs = 45_000;
 
   constructor(
     private ingresosService: IngresosService,
     private gastosService: GastosService,
     private ministeriosService: MinisteriosService,
-    private usuariosService: UsuariosService
+    private usuariosService: UsuariosService,
+    private authService: AuthService,
+    private api: ApiService,
+    private notificacionesService: NotificacionesService
   ) {
     merge(
       this.ingresosService.ingresos$,
@@ -47,6 +60,16 @@ export class DataService {
       this.usuariosService.usuarios$
     ).subscribe(() => this.scheduleSync());
     this.syncFromEntityServices();
+
+    this.authService.session$
+      .pipe(distinctUntilChanged((a, b) => (a?.id ?? null) === (b?.id ?? null)))
+      .subscribe(session => {
+        if (session) {
+          void this.bootstrapRemote();
+          return;
+        }
+        this.clearRemoteCache();
+      });
   }
 
   private scheduleSync(): void {
@@ -62,10 +85,72 @@ export class DataService {
   }
 
   refreshAllData(): void {
+    if (environment.useLocalFallback) {
+      this.ingresosService.reload();
+      this.gastosService.reload();
+      this.ministeriosService.reload();
+      this.usuariosService.reload();
+      return;
+    }
+    void this.bootstrapRemote(true);
+  }
+
+  /** Una sola petición HTTP para ingresos, gastos, notificaciones, etc. */
+  bootstrapRemote(force = false): Promise<void> {
+    if (environment.useLocalFallback || !this.authService.isAuthenticated()) {
+      return Promise.resolve();
+    }
+
+    const freshEnough = !force && Date.now() - this.lastBootstrapAt < this.bootstrapTtlMs;
+    if (freshEnough) {
+      return Promise.resolve();
+    }
+
+    if (this.bootstrapInFlight && !force) {
+      return this.bootstrapInFlight;
+    }
+
+    this.bootstrapInFlight = firstValueFrom(
+      this.api.get<BootstrapResponse>(API.bootstrap)
+    )
+      .then(payload => this.applyBootstrap(payload))
+      .catch(err => {
+        console.error('[DataService] bootstrapRemote:', err);
+        this.fallbackReload();
+      })
+      .finally(() => {
+        this.bootstrapInFlight = null;
+      });
+
+    return this.bootstrapInFlight;
+  }
+
+  private applyBootstrap(payload: BootstrapResponse): void {
+    if (payload.ingresos) this.ingresosService.hydrate(payload.ingresos);
+    if (payload.gastos) this.gastosService.hydrate(payload.gastos);
+    if (payload.ministerios) this.ministeriosService.hydrate(payload.ministerios);
+    if (payload.usuarios) this.usuariosService.hydrate(payload.usuarios);
+    if (payload.notificaciones) this.notificacionesService.hydrate(payload.notificaciones);
+    this.lastBootstrapAt = Date.now();
+    this.syncFromEntityServices();
+  }
+
+  private fallbackReload(): void {
     this.ingresosService.reload();
     this.gastosService.reload();
     this.ministeriosService.reload();
     this.usuariosService.reload();
+    this.notificacionesService.recargar();
+  }
+
+  private clearRemoteCache(): void {
+    this.lastBootstrapAt = 0;
+    this.ingresosService.hydrate([]);
+    this.gastosService.hydrate([]);
+    this.ministeriosService.hydrate([]);
+    this.usuariosService.hydrate([]);
+    this.notificacionesService.hydrate([]);
+    this.syncFromEntityServices();
   }
 
   private syncFromEntityServices(): void {

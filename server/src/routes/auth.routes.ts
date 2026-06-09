@@ -65,7 +65,7 @@ router.post('/login', loginLimiter, validate(loginSchema), async (req, res) => {
       mustChangePassword: !!data.mustChangePassword
     });
 
-    await recordLoginAttempt({ ip, usuario, success: true, reason: 'login_ok' });
+    void recordLoginAttempt({ ip, usuario, success: true, reason: 'login_ok' });
     const { token, refreshToken } = signTokenPair(user);
     return res.json({ token, refreshToken, user });
   } catch (err) {

@@ -23,7 +23,13 @@ export class GastosService {
     private api: ApiService,
     private authService: AuthService
   ) {
-    this.reload();
+    if (environment.useLocalFallback) {
+      this.loadFromStorage();
+    }
+  }
+
+  hydrate(lista: Gasto[]): void {
+    this.gastosSubject.next(lista);
   }
 
   getAll(): Gasto[] {

@@ -66,7 +66,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit, Vie
   private chartsReady = false;
   private lastChartFingerprint = '';
   private lastRemoteRefresh = 0;
-  private readonly remoteRefreshMs = 8000;
+  private readonly remoteRefreshMs = 120_000;
 
   constructor(
     private dataService: DataService,

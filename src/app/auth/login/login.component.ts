@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule, LoadingController, ToastController } from '@ionic/angular';
+import { IonicModule, ToastController } from '@ionic/angular';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { DataService } from '../../services/data.service';
 import { getHttpErrorMessage } from '../../shared/utils/error-message.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
 import { environment } from '../../../environments/environment';
@@ -23,10 +24,10 @@ export class LoginComponent implements OnInit {
   submitted = false;
 
   constructor(
-    private loadingCtrl: LoadingController,
     private toastCtrl: ToastController,
     private router: Router,
-    private authService: AuthService
+    private authService: AuthService,
+    private dataService: DataService
   ) {}
 
   ngOnInit() {
@@ -56,21 +57,14 @@ export class LoginComponent implements OnInit {
     }
 
     this.isLoading = true;
-    let loading: HTMLIonLoadingElement | null = null;
 
     try {
-      loading = await this.loadingCtrl.create({
-        message: 'Conectando con el servidor… La primera vez puede tardar hasta 1 minuto.',
-        spinner: 'circles',
-        cssClass: 'ieca-loading'
-      });
-      await loading.present();
-
       const result = await this.authService.login(u, p);
 
       if (result.success) {
         const destino = this.authService.getRutaPorDefecto();
         const user = this.authService.getSession();
+        void this.dataService.bootstrapRemote(true);
         void this.router.navigateByUrl(destino, { replaceUrl: true });
         void this.presentToast(`¡Bienvenido ${user?.usuario}!`, 'success');
       } else {
@@ -79,9 +73,6 @@ export class LoginComponent implements OnInit {
     } catch (error) {
       await this.presentToast(getHttpErrorMessage(error, 'Error en la autenticación. Intenta de nuevo.'), 'danger');
     } finally {
-      if (loading) {
-        await loading.dismiss().catch(() => undefined);
-      }
       this.isLoading = false;
     }
   }

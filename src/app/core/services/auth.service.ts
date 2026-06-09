@@ -9,7 +9,6 @@ import {
   puedeAccederRuta,
   rutaPorDefecto
 } from '../constants/roles.constants';
-import { NotificacionesService } from './notificaciones.service';
 import { ApiService } from './api.service';
 import { API } from '../constants/api.constants';
 import { environment } from '../../../environments/environment';
@@ -40,10 +39,7 @@ export class AuthService {
   private sessionSubject = new BehaviorSubject<SessionUser | null>(this.loadSession());
   readonly session$: Observable<SessionUser | null> = this.sessionSubject.asObservable();
 
-  constructor(
-    private notificacionesService: NotificacionesService,
-    private api: ApiService
-  ) {}
+  constructor(private api: ApiService) {}
 
   isAuthenticated(): boolean {
     return !!localStorage.getItem(this.TOKEN_KEY) && !!this.sessionSubject.getValue();
@@ -182,7 +178,6 @@ export class AuthService {
     localStorage.setItem(this.REFRESH_KEY, refreshToken);
     localStorage.setItem(this.USER_KEY, JSON.stringify(session));
     this.sessionSubject.next(session);
-    this.notificacionesService.recargar();
   }
 
   private loadSession(): SessionUser | null {

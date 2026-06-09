@@ -15,7 +15,13 @@ export class MinisteriosService {
   readonly ministerios$: Observable<Ministerio[]> = this.ministeriosSubject.asObservable();
 
   constructor(private api: ApiService) {
-    this.reload();
+    if (environment.useLocalFallback) {
+      this.loadFromStorage();
+    }
+  }
+
+  hydrate(lista: Ministerio[]): void {
+    this.ministeriosSubject.next(lista);
   }
 
   getAll(): Ministerio[] {
