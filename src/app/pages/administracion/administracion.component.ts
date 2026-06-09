@@ -90,7 +90,7 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
   }
 
   ionViewWillEnter(): void {
-    this.dataService.refreshAllData();
+    void this.dataService.bootstrapRemote();
     void this.cargarDatos();
   }
 

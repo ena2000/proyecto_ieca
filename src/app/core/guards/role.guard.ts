@@ -29,7 +29,7 @@ export const roleGuard: CanActivateFn = async (_route, state) => {
   const rol = auth.getRol();
   if (!rol) {
     auth.logout();
-    await presentIecaToast(
+    void presentIecaToast(
       toastCtrl,
       'Tu cuenta no tiene un rol válido. Contacta al administrador.',
       'danger',
@@ -45,7 +45,7 @@ export const roleGuard: CanActivateFn = async (_route, state) => {
   const fallback = auth.getRutaPorDefecto() || rutaPorDefecto(rol);
   if (fallback === path) {
     auth.logout();
-    await presentIecaToast(
+    void presentIecaToast(
       toastCtrl,
       'No tienes permiso para acceder a esta sección.',
       'warning',
@@ -54,7 +54,7 @@ export const roleGuard: CanActivateFn = async (_route, state) => {
     return router.createUrlTree(['/login']);
   }
 
-  await presentIecaToast(
+  void presentIecaToast(
     toastCtrl,
     'No tienes permiso para acceder a esta sección.',
     'warning',

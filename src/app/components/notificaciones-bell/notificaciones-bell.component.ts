@@ -2,8 +2,9 @@ import { Component, ElementRef, HostBinding, OnDestroy, OnInit, ViewChild } from
 import { CommonModule } from '@angular/common';
 import {
   IonButton, IonButtons, IonIcon, IonPopover,
-  IonList, IonItem, IonLabel, NavController
+  IonList, IonItem, IonLabel
 } from '@ionic/angular/standalone';
+import { Router } from '@angular/router';
 import { addIcons } from 'ionicons';
 import {
   notificationsOutline, cashOutline, trendingDownOutline,
@@ -53,7 +54,7 @@ export class NotificacionesBellComponent implements OnInit, OnDestroy {
   constructor(
     private readonly authService: AuthService,
     private readonly notificacionesService: NotificacionesService,
-    private readonly navCtrl: NavController
+    private readonly router: Router
   ) {
     addIcons({
       'notifications-outline': notificationsOutline,
@@ -161,7 +162,7 @@ export class NotificacionesBellComponent implements OnInit, OnDestroy {
     await this.popoverRef?.dismiss();
 
     if (n.ruta) {
-      await this.navCtrl.navigateRoot(n.ruta, { animated: false });
+      void this.router.navigateByUrl(n.ruta);
     }
   }
 

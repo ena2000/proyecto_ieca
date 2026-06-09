@@ -1,5 +1,5 @@
 import { Component, HostBinding, HostListener, OnDestroy, OnInit } from '@angular/core';
-import { IonIcon, NavController } from '@ionic/angular/standalone';
+import { IonIcon } from '@ionic/angular/standalone';
 import { Router } from '@angular/router';
 import { addIcons } from 'ionicons';
 import {
@@ -58,7 +58,6 @@ export class SlidebarComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   constructor(
-    private readonly navCtrl: NavController,
     private readonly router: Router,
     private readonly authService: AuthService,
     private readonly notificacionesService: NotificacionesService
@@ -161,18 +160,18 @@ export class SlidebarComponent implements OnInit, OnDestroy {
     return path === route || path.startsWith(`${route}/`);
   }
 
-  async navigateTo(event: Event, route: string): Promise<void> {
+  navigateTo(event: Event, route: string): void {
     event.preventDefault();
     if (this.isRouteActive(route)) {
       return;
     }
-    await this.navCtrl.navigateRoot(route, { animated: false });
+    void this.router.navigateByUrl(route);
   }
 
-  async logout(event: Event): Promise<void> {
+  logout(event: Event): void {
     event.preventDefault();
     this.authService.logout();
-    await this.navCtrl.navigateRoot('/login', { animated: false });
+    void this.router.navigateByUrl('/login', { replaceUrl: true });
   }
 
   onSidebarEnter(): void {

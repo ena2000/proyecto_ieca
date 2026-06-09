@@ -171,8 +171,11 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
     this.filtroSoloPendientes = leerFiltroPendientesDesdeRuta(
       this.route.snapshot.queryParamMap.get('pendientes')
     );
-    this.dataService.refreshAllData();
-    this.cargarRelaciones();
+    if (!this.dataService.hasRemoteData()) {
+      void this.dataService.bootstrapRemote().then(() => this.cargarRelaciones());
+    } else {
+      this.cargarRelaciones();
+    }
   }
 
   private inicializarPermisos(): void {
