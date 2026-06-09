@@ -62,9 +62,6 @@ export class LoginComponent implements OnInit {
       if (result.success) {
         const destino = this.authService.getRutaPorDefecto();
         const user = this.authService.getSession();
-        void import('../../pages/dashboard/dashboard.component');
-        void import('../../pages/ingresos/ingresos.component');
-        void import('../../pages/gastos/gastos.component');
         void this.router.navigateByUrl(destino, { replaceUrl: true });
         void this.presentToast(`¡Bienvenido ${user?.usuario}!`, 'success');
       } else {
