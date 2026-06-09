@@ -1,10 +1,14 @@
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { BehaviorSubject } from 'rxjs';
 import { DataService } from './data.service';
 import { IngresosService } from './ingresos.service';
 import { GastosService } from './gastos.service';
 import { MinisteriosService } from './ministerios.service';
 import { UsuariosService } from './usuarios.service';
+import { AuthService } from '../core/services/auth.service';
+import { NotificacionesService } from '../core/services/notificaciones.service';
 import { Ingreso, Gasto, Ministerio } from '../core/models';
 
 function isoEnMesActual(dia: number): string {
@@ -25,22 +29,35 @@ function crearMocks() {
   const ingresosService = {
     ingresos$: ingresosSubject.asObservable(),
     getAll: () => ingresos,
-    reload: jasmine.createSpy('reloadIngresos')
+    reload: jasmine.createSpy('reloadIngresos'),
+    hydrate: (lista: Ingreso[]) => {
+      ingresos = lista;
+      ingresosSubject.next(ingresos);
+    }
   };
   const gastosService = {
     gastos$: gastosSubject.asObservable(),
     getAll: () => gastos,
-    reload: jasmine.createSpy('reloadGastos')
+    reload: jasmine.createSpy('reloadGastos'),
+    hydrate: (lista: Gasto[]) => {
+      gastos = lista;
+      gastosSubject.next(gastos);
+    }
   };
   const ministeriosService = {
     ministerios$: ministeriosSubject.asObservable(),
     getAll: () => ministerios,
-    reload: jasmine.createSpy('reloadMinisterios')
+    reload: jasmine.createSpy('reloadMinisterios'),
+    hydrate: (lista: Ministerio[]) => {
+      ministerios = lista;
+      ministeriosSubject.next(ministerios);
+    }
   };
   const usuariosService = {
     usuarios$: usuariosSubject.asObservable(),
     getAll: () => [],
-    reload: jasmine.createSpy('reloadUsuarios')
+    reload: jasmine.createSpy('reloadUsuarios'),
+    hydrate: jasmine.createSpy('hydrateUsuarios')
   };
 
   return {
@@ -73,11 +90,25 @@ describe('DataService', () => {
     mocks = crearMocks();
     TestBed.configureTestingModule({
       providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
         DataService,
         { provide: IngresosService, useValue: mocks.ingresosService },
         { provide: GastosService, useValue: mocks.gastosService },
         { provide: MinisteriosService, useValue: mocks.ministeriosService },
-        { provide: UsuariosService, useValue: mocks.usuariosService }
+        { provide: UsuariosService, useValue: mocks.usuariosService },
+        {
+          provide: AuthService,
+          useValue: { session$: new BehaviorSubject(null).asObservable() }
+        },
+        {
+          provide: NotificacionesService,
+          useValue: {
+            lista$: new BehaviorSubject([]).asObservable(),
+            hydrate: jasmine.createSpy('hydrateNotificaciones'),
+            recargar: jasmine.createSpy('recargarNotificaciones')
+          }
+        }
       ]
     });
     service = TestBed.inject(DataService);

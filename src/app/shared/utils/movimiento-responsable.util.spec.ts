@@ -25,7 +25,7 @@ describe('movimiento-responsable.util', () => {
 
   it('asigna el usuario de sesión en un alta', () => {
     const result = aplicarResponsableSesion(
-      { descripcion: 'Ofrenda' },
+      {} as { usuarioId?: number; registradoPor?: string },
       sessionLider,
       usuarios,
       false
@@ -36,7 +36,7 @@ describe('movimiento-responsable.util', () => {
 
   it('conserva el responsable original en edición', () => {
     const result = aplicarResponsableSesion(
-      { usuarioId: 5, registradoPor: 'Líder Niños', descripcion: 'Gasto' },
+      { usuarioId: 5, registradoPor: 'Líder Niños' },
       sessionAdmin,
       usuarios,
       true
