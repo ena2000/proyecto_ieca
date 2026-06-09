@@ -43,6 +43,7 @@
             <ion-input
               type="text"
               [(ngModel)]="nuevoMinisterio.nombre"
+              (ngModelChange)="onFormularioChange()"
               name="nombre"
               placeholder="Ej. Alabanza y Adoración...">
             </ion-input>
@@ -60,6 +61,7 @@
             <ion-select
               interface="popover"
               [(ngModel)]="nuevoMinisterio.estado"
+              (ngModelChange)="onFormularioChange()"
               name="estado"
               class="ieca-select"
               placeholder="Seleccione estado">
@@ -76,16 +78,17 @@
             <ion-select
               interface="popover"
               [(ngModel)]="nuevoMinisterio.hldrId"
+              (ngModelChange)="onFormularioChange()"
               name="hldrId"
               class="ieca-select"
               placeholder="Seleccione líder">
               <ion-select-option [value]="null">Sin asignar</ion-select-option>
-              <ion-select-option *ngFor="let user of lideresParaHldr" [value]="user.id">
+              <ion-select-option *ngFor="let user of lideresHldr" [value]="user.id">
                 {{ user.nombre }}
               </ion-select-option>
             </ion-select>
           </ion-item>
-          <small class="hint-text" *ngIf="lideresParaHldr.length === 0">
+          <small class="hint-text" *ngIf="lideresHldr.length === 0">
             Crea usuarios con rol Líder/CoLíder en Usuarios; luego podrás elegirlos aquí.
           </small>
         </div>
@@ -98,11 +101,12 @@
             <ion-select
               interface="popover"
               [(ngModel)]="nuevoMinisterio.coLiderId"
+              (ngModelChange)="onFormularioChange()"
               name="coLiderId"
               class="ieca-select"
               placeholder="Seleccione co-líder">
               <ion-select-option [value]="null">Sin asignar</ion-select-option>
-              <ion-select-option *ngFor="let user of lideresParaCo" [value]="user.id">
+              <ion-select-option *ngFor="let user of lideresCo" [value]="user.id">
                 {{ user.nombre }}
               </ion-select-option>
             </ion-select>
@@ -116,7 +120,7 @@
               expand="block"
               type="button"
               class="ieca-button-primary btn-main"
-              [class.button-disabled]="intentoEnvio && !esFormularioValido"
+              [class.button-disabled]="intentoEnvio && !formularioValido"
               (click)="registrarMinisterio()">
               <ion-icon [name]="modoEdicion ? 'save-outline' : 'add-circle-outline'"></ion-icon>
               <span>{{ modoEdicion ? 'Guardar Cambios' : 'Registrar Ministerio' }}</span>
@@ -144,7 +148,7 @@
       <div class="list-section-header">
         <div class="title-box">
           <h2 class="text-blue">Historial de Ministerios</h2>
-          <span class="badge-count">{{ listaFiltrada.length }} registros encontrados</span>
+          <span class="badge-count">{{ vistaMinisterios.length }} registros encontrados</span>
         </div>
         <div class="list-header-actions">
           <button
@@ -161,7 +165,8 @@
               debounce="300"
               class="professional-search"
               placeholder="Buscar por nombre..."
-              [(ngModel)]="searchTerm">
+              [(ngModel)]="searchTerm"
+              (ionInput)="onFiltrosChange()">
             </ion-searchbar>
           </div>
         </div>
@@ -176,6 +181,7 @@
               <ion-select
                 interface="popover"
                 [(ngModel)]="filtroLiderId"
+                (ionChange)="onFiltrosChange()"
                 class="ieca-select"
                 placeholder="Todos los líderes">
                 <ion-select-option [value]="null">Todos</ion-select-option>
@@ -190,7 +196,7 @@
 
       <app-tabla-general
         [columns]="columnsMinisterios"
-        [data]="listaFiltrada"
+        [data]="vistaMinisterios"
         [actions]="acciones"
         (rowEdit)="editarMinisterio($event)"
         (rowDelete)="eliminarMinisterio($event)"

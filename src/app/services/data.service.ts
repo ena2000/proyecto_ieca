@@ -44,6 +44,12 @@ export class DataService {
   private lastBootstrapAt = 0;
   private readonly bootstrapTtlMs = 300_000;
   private readonly bootstrapStorageTtlMs = 600_000;
+  private hydratingBootstrap = false;
+  private readonly saldoMinisterioCache = new Map<number, number>();
+  private lastIngresosRef: Ingreso[] | null = null;
+  private lastGastosRef: Gasto[] | null = null;
+  private lastMinisteriosRef: Ministerio[] | null = null;
+  private lastUsuariosRef: Usuario[] | null = null;
 
   constructor(
     private ingresosService: IngresosService,
@@ -74,6 +80,7 @@ export class DataService {
   }
 
   private scheduleSync(): void {
+    if (this.hydratingBootstrap) return;
     if (this.syncTimer != null) clearTimeout(this.syncTimer);
     this.syncTimer = setTimeout(() => {
       this.syncTimer = undefined;
@@ -191,13 +198,18 @@ export class DataService {
   }
 
   private applyBootstrap(payload: BootstrapResponse): void {
-    if (payload.ingresos) this.ingresosService.hydrate(payload.ingresos);
-    if (payload.gastos) this.gastosService.hydrate(payload.gastos);
-    if (payload.ministerios) this.ministeriosService.hydrate(payload.ministerios);
-    if (payload.usuarios) this.usuariosService.hydrate(payload.usuarios);
-    if (payload.notificaciones) this.notificacionesService.hydrate(payload.notificaciones);
-    this.lastBootstrapAt = Date.now();
-    this.syncFromEntityServices();
+    this.hydratingBootstrap = true;
+    try {
+      if (payload.ingresos) this.ingresosService.hydrate(payload.ingresos);
+      if (payload.gastos) this.gastosService.hydrate(payload.gastos);
+      if (payload.ministerios) this.ministeriosService.hydrate(payload.ministerios);
+      if (payload.usuarios) this.usuariosService.hydrate(payload.usuarios);
+      if (payload.notificaciones) this.notificacionesService.hydrate(payload.notificaciones);
+      this.lastBootstrapAt = Date.now();
+      this.syncFromEntityServices();
+    } finally {
+      this.hydratingBootstrap = false;
+    }
   }
 
   private fallbackReload(): void {
@@ -210,6 +222,11 @@ export class DataService {
 
   private clearRemoteCache(): void {
     this.lastBootstrapAt = 0;
+    this.lastIngresosRef = null;
+    this.lastGastosRef = null;
+    this.lastMinisteriosRef = null;
+    this.lastUsuariosRef = null;
+    this.saldoMinisterioCache.clear();
     this.clearBootstrapStorage();
     this.ingresosService.hydrate([]);
     this.gastosService.hydrate([]);
@@ -220,10 +237,30 @@ export class DataService {
   }
 
   private syncFromEntityServices(): void {
-    this.ingresosSubject.next([...this.ingresosService.getAll()]);
-    this.gastosSubject.next([...this.gastosService.getAll()]);
-    this.ministeriosSubject.next([...this.ministeriosService.getAll()]);
-    this.usuariosSubject.next([...this.usuariosService.getAll()]);
+    const ingresos = this.ingresosService.getAll();
+    const gastos = this.gastosService.getAll();
+    const ministerios = this.ministeriosService.getAll();
+    const usuarios = this.usuariosService.getAll();
+
+    if (
+      ingresos === this.lastIngresosRef &&
+      gastos === this.lastGastosRef &&
+      ministerios === this.lastMinisteriosRef &&
+      usuarios === this.lastUsuariosRef
+    ) {
+      return;
+    }
+
+    this.lastIngresosRef = ingresos;
+    this.lastGastosRef = gastos;
+    this.lastMinisteriosRef = ministerios;
+    this.lastUsuariosRef = usuarios;
+    this.saldoMinisterioCache.clear();
+
+    this.ingresosSubject.next([...ingresos]);
+    this.gastosSubject.next([...gastos]);
+    this.ministeriosSubject.next([...ministerios]);
+    this.usuariosSubject.next([...usuarios]);
     this.dataRevisionSubject.next(this.dataRevisionSubject.getValue() + 1);
   }
 
@@ -430,8 +467,13 @@ export class DataService {
   }
 
   calcularSaldoMinisterio(ministerioId: number): number {
+    const cached = this.saldoMinisterioCache.get(ministerioId);
+    if (cached !== undefined) return cached;
+
     const kardex = this.getKardexMinisterio(ministerioId);
-    return kardex.length ? kardex[kardex.length - 1].saldo : 0;
+    const saldo = kardex.length ? kardex[kardex.length - 1].saldo : 0;
+    this.saldoMinisterioCache.set(ministerioId, saldo);
+    return saldo;
   }
 
   getKardexMinisterio(ministerioId: number): KardexLinea[] {
