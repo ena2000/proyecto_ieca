@@ -2,6 +2,7 @@ const express = require('express');
 const { listCollection, listCollectionByField, stripInternalFields } = require('../utils/firestore');
 const { ROLES } = require('../middleware/auth');
 const { listNotificacionesForUser, userPuedeNotificaciones } = require('../utils/notificaciones');
+const { getCachedBootstrap, setCachedBootstrap } = require('../utils/bootstrapCache');
 
 const router = express.Router();
 
@@ -21,6 +22,13 @@ async function listScoped(collection, scope) {
 router.get('/', async (req, res) => {
   try {
     const user = req.user;
+    const cached = getCachedBootstrap(user);
+    if (cached) {
+      res.set('X-Bootstrap-Cache', 'HIT');
+      res.set('Cache-Control', 'private, max-age=30');
+      return res.json(cached);
+    }
+
     const rol = user?.rol;
     const scope = scopeForUser(user);
     const isAdmin = rol === ROLES.ADMIN;
@@ -49,7 +57,9 @@ router.get('/', async (req, res) => {
     const values = await Promise.all(Object.values(tasks));
     const payload = Object.fromEntries(keys.map((key, i) => [key, values[i]]));
 
-    res.set('Cache-Control', 'private, no-cache');
+    setCachedBootstrap(user, payload);
+    res.set('X-Bootstrap-Cache', 'MISS');
+    res.set('Cache-Control', 'private, max-age=30');
     res.json(payload);
   } catch (err) {
     console.error('[bootstrap GET]', err);

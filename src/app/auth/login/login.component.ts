@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule, ToastController } from '@ionic/angular';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
-import { DataService } from '../../services/data.service';
 import { getHttpErrorMessage } from '../../shared/utils/error-message.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
 import { environment } from '../../../environments/environment';
@@ -26,8 +25,7 @@ export class LoginComponent implements OnInit {
   constructor(
     private toastCtrl: ToastController,
     private router: Router,
-    private authService: AuthService,
-    private dataService: DataService
+    private authService: AuthService
   ) {}
 
   ngOnInit() {
@@ -64,7 +62,7 @@ export class LoginComponent implements OnInit {
       if (result.success) {
         const destino = this.authService.getRutaPorDefecto();
         const user = this.authService.getSession();
-        void this.dataService.bootstrapRemote(true);
+        void import('../../pages/dashboard/dashboard.component');
         void this.router.navigateByUrl(destino, { replaceUrl: true });
         void this.presentToast(`¡Bienvenido ${user?.usuario}!`, 'success');
       } else {

@@ -9,8 +9,6 @@ import {
 } from '@ionic/angular/standalone';
 import { Subject } from 'rxjs';
 import { debounceTime, takeUntil } from 'rxjs/operators';
-import { Chart, ChartConfiguration, registerables } from 'chart.js';
-
 import { DataService, KPIs, MesData, Movimiento } from '../../services/data.service';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificacionesBellComponent } from '../../components/notificaciones-bell/notificaciones-bell.component';
@@ -18,8 +16,6 @@ import {
   porcentajeTendenciaDisplay,
   verboTendenciaDisplay
 } from '../../shared/utils/tendencia-display.util';
-
-Chart.register(...registerables);
 
 @Component({
   selector: 'app-dashboard',
@@ -38,7 +34,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit, Vie
 
   @ViewChild('ingresosGastosChart') barChartCanvas?: ElementRef<HTMLCanvasElement>;
 
-  private barChart?: Chart;
+  private barChart?: import('chart.js').Chart;
+  private chartJsLoaded = false;
 
   kpis: KPIs = {
     balance:            0,
@@ -101,13 +98,17 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit, Vie
   }
 
   ionViewWillEnter() {
+    if (!this.dataService.hasRemoteData()) {
+      void this.dataService.bootstrapRemote().then(() => this.cargarDatos(false));
+      return;
+    }
+
     const now = Date.now();
     if (now - this.lastRemoteRefresh >= this.remoteRefreshMs) {
       this.lastRemoteRefresh = now;
-      this.dataService.refreshAllData();
-    } else {
-      this.cargarDatos(false);
+      void this.dataService.bootstrapRemote();
     }
+    this.cargarDatos(false);
   }
 
   ionViewWillLeave() {
@@ -244,11 +245,17 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit, Vie
     });
   }
 
-  private updateBarChart(): void {
+  private async updateBarChart(): Promise<void> {
     const canvas = this.barChartCanvas?.nativeElement;
     if (!canvas || !this.chartTieneDatos) {
       this.destroyBarChart();
       return;
+    }
+
+    const { Chart, registerables } = await import('chart.js');
+    if (!this.chartJsLoaded) {
+      Chart.register(...registerables);
+      this.chartJsLoaded = true;
     }
 
     const labels = this.chartData.map(d => d.mes);
@@ -290,51 +297,54 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit, Vie
           }
         ]
       },
-      options: this.barChartOptions
+      options: this.barChartOptions()
     });
   }
 
-  private readonly barChartOptions: ChartConfiguration<'bar'>['options'] = {
-    responsive: true,
-    maintainAspectRatio: false,
-    animation: false,
-    resizeDelay: 250,
-    interaction: {
-      mode: 'index',
-      intersect: false
-    },
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: '#1e293b',
-        titleFont: { family: 'Inter, sans-serif', size: 12, weight: 'bold' },
-        bodyFont: { family: 'Inter, sans-serif', size: 12 },
-        padding: 10,
-        cornerRadius: 8,
-        callbacks: {
-          label: ctx => `${ctx.dataset.label}: ${this.formatCurrency(Number(ctx.parsed.y ?? 0))}`
-        }
-      }
-    },
-    scales: {
-      x: {
-        grid: { display: false },
-        ticks: {
-          color: '#64748b',
-          font: { family: 'Inter, sans-serif', size: 11, weight: 'bold' }
+  private barChartOptions(): import('chart.js').ChartConfiguration<'bar'>['options'] {
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      resizeDelay: 250,
+      interaction: {
+        mode: 'index',
+        intersect: false
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1e293b',
+          titleFont: { family: 'Inter, sans-serif', size: 12, weight: 'bold' },
+          bodyFont: { family: 'Inter, sans-serif', size: 12 },
+          padding: 10,
+          cornerRadius: 8,
+          callbacks: {
+            label: (ctx) =>
+              `${ctx.dataset.label}: ${this.formatCurrency(Number(ctx.parsed.y ?? 0))}`
+          }
         }
       },
-      y: {
-        beginAtZero: true,
-        grid: { color: 'rgba(226, 232, 240, 0.8)' },
-        ticks: {
-          color: '#94a3b8',
-          font: { family: 'Inter, sans-serif', size: 11 },
-          callback: value => this.formatAxis(Number(value))
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: {
+            color: '#64748b',
+            font: { family: 'Inter, sans-serif', size: 11, weight: 'bold' }
+          }
+        },
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(226, 232, 240, 0.8)' },
+          ticks: {
+            color: '#94a3b8',
+            font: { family: 'Inter, sans-serif', size: 11 },
+            callback: (value) => this.formatAxis(Number(value))
+          }
         }
       }
-    }
-  };
+    };
+  }
 
   formatAxis(value: number): string {
     if (value >= 1_000_000) return '$' + (value / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';

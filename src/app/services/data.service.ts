@@ -42,7 +42,8 @@ export class DataService {
   private syncTimer: ReturnType<typeof setTimeout> | undefined;
   private bootstrapInFlight: Promise<void> | null = null;
   private lastBootstrapAt = 0;
-  private readonly bootstrapTtlMs = 45_000;
+  private readonly bootstrapTtlMs = 300_000;
+  private readonly bootstrapStorageTtlMs = 600_000;
 
   constructor(
     private ingresosService: IngresosService,
@@ -84,7 +85,7 @@ export class DataService {
     this.syncFromEntityServices();
   }
 
-  refreshAllData(): void {
+  refreshAllData(force = false): void {
     if (environment.useLocalFallback) {
       this.ingresosService.reload();
       this.gastosService.reload();
@@ -92,7 +93,11 @@ export class DataService {
       this.usuariosService.reload();
       return;
     }
-    void this.bootstrapRemote(true);
+    void this.bootstrapRemote(force);
+  }
+
+  hasRemoteData(): boolean {
+    return this.getIngresosActuales().length > 0 || this.getGastosActuales().length > 0;
   }
 
   /** Una sola petición HTTP para ingresos, gastos, notificaciones, etc. */
@@ -101,28 +106,88 @@ export class DataService {
       return Promise.resolve();
     }
 
-    const freshEnough = !force && Date.now() - this.lastBootstrapAt < this.bootstrapTtlMs;
-    if (freshEnough) {
+    const memoryFresh = !force && Date.now() - this.lastBootstrapAt < this.bootstrapTtlMs;
+    if (memoryFresh) {
       return Promise.resolve();
     }
 
-    if (this.bootstrapInFlight && !force) {
+    if (!force) {
+      const stored = this.readBootstrapStorage();
+      if (stored) {
+        this.applyBootstrap(stored);
+        void this.fetchBootstrapFromApi();
+        return Promise.resolve();
+      }
+    }
+
+    return this.fetchBootstrapFromApi();
+  }
+
+  private fetchBootstrapFromApi(): Promise<void> {
+    if (this.bootstrapInFlight) {
       return this.bootstrapInFlight;
     }
 
     this.bootstrapInFlight = firstValueFrom(
       this.api.get<BootstrapResponse>(API.bootstrap)
     )
-      .then(payload => this.applyBootstrap(payload))
+      .then(payload => {
+        this.applyBootstrap(payload);
+        this.writeBootstrapStorage(payload);
+      })
       .catch(err => {
         console.error('[DataService] bootstrapRemote:', err);
-        this.fallbackReload();
+        if (!this.hasRemoteData()) {
+          this.fallbackReload();
+        }
       })
       .finally(() => {
         this.bootstrapInFlight = null;
       });
 
     return this.bootstrapInFlight;
+  }
+
+  private bootstrapStorageKey(): string {
+    const id = this.authService.getSession()?.id ?? '0';
+    return `ieca_bootstrap_${id}`;
+  }
+
+  private readBootstrapStorage(): BootstrapResponse | null {
+    try {
+      const raw = sessionStorage.getItem(this.bootstrapStorageKey());
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as { at: number; payload: BootstrapResponse };
+      if (Date.now() - parsed.at > this.bootstrapStorageTtlMs) {
+        sessionStorage.removeItem(this.bootstrapStorageKey());
+        return null;
+      }
+      return parsed.payload;
+    } catch {
+      return null;
+    }
+  }
+
+  private writeBootstrapStorage(payload: BootstrapResponse): void {
+    try {
+      sessionStorage.setItem(
+        this.bootstrapStorageKey(),
+        JSON.stringify({ at: Date.now(), payload })
+      );
+    } catch {
+      /* quota de sessionStorage */
+    }
+  }
+
+  private clearBootstrapStorage(): void {
+    try {
+      for (let i = sessionStorage.length - 1; i >= 0; i--) {
+        const key = sessionStorage.key(i);
+        if (key?.startsWith('ieca_bootstrap_')) {
+          sessionStorage.removeItem(key);
+        }
+      }
+    } catch { /* ignore */ }
   }
 
   private applyBootstrap(payload: BootstrapResponse): void {
@@ -145,6 +210,7 @@ export class DataService {
 
   private clearRemoteCache(): void {
     this.lastBootstrapAt = 0;
+    this.clearBootstrapStorage();
     this.ingresosService.hydrate([]);
     this.gastosService.hydrate([]);
     this.ministeriosService.hydrate([]);

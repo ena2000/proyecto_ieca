@@ -71,7 +71,6 @@ export class NotificacionesBellComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
         this.actualizarVisibilidad();
-        this.notificacionesService.recargar();
         this.actualizarLista();
       });
 

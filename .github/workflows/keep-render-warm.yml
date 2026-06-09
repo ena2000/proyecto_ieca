@@ -1,0 +1,16 @@
+# Evita cold start de Render (plan Free): ping cada 10 minutos.
+name: Keep Render warm
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    name: Ping ieca-api health
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Health check
+        run: curl -fsS -m 45 "https://ieca-api.onrender.com/api/health"
