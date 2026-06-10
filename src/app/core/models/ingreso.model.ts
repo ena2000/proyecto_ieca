@@ -23,4 +23,15 @@ export interface Ingreso extends AuditoriaMovimiento {
   /** Periodo contable cerrado (cierre mensual). */
   cerrado?: boolean;
   periodoCierre?: string;
+  /** Movimiento generado automáticamente por la aportación del 33% a la iglesia. */
+  esAportacionIglesia?: boolean;
+  ingresoOrigenId?: number;
+  /** Ingreso de ministerio con aportación ya generada. */
+  aportacionGenerada?: boolean;
+  /** @deprecated Ya no se generan gastos; solo para limpiar datos antiguos. */
+  gastoAportacionId?: number;
+  ingresoIglesiaId?: number;
+  montoAportacionIglesia?: number;
+  /** Parte del ingreso que permanece en el fondo del ministerio (67%). */
+  montoNetoMinisterio?: number;
 }

@@ -12,6 +12,10 @@ export interface DesgloseMinisterioReporte {
   gastos: number;
   saldo: number;
   saldoDisponible: number;
+  /** Aportación del 33% a la iglesia (ingresos de talento) en el período filtrado. */
+  aportacionPeriodo?: number;
+  /** Aportación acumulada histórica a la iglesia por ingresos de talento. */
+  aportacionHistorica?: number;
 }
 
 export interface Reporte {

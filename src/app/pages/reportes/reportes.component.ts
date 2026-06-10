@@ -71,6 +71,9 @@ export class ReportesComponent implements OnInit, OnDestroy, ViewWillEnter {
   totalGastosFiltrado = 0;
   totalSaldoFiltrado = 0;
   mostrarDesgloseMinisterio = false;
+  esAdministrador = false;
+  totalAportacionPeriodo = 0;
+  totalAportacionHistorica = 0;
 
   searchTerm = '';
   filtroMes = '';
@@ -91,6 +94,7 @@ export class ReportesComponent implements OnInit, OnDestroy, ViewWillEnter {
   ) {}
 
   ngOnInit(): void {
+    this.esAdministrador = this.authService.isAdministrador();
     this.ministerioScopeId = this.authService.getMinisterioScopeId();
     if (this.ministerioScopeId != null) {
       this.filtroMinisterioId = this.ministerioScopeId;
@@ -138,9 +142,19 @@ export class ReportesComponent implements OnInit, OnDestroy, ViewWillEnter {
     this.desgloseMinisterioVista = this.reportesService.calcularDesglosePorMinisterio(
       this.listaFiltradaVista,
       this.listaMinisterios,
-      this.ministerioScopeId
+      this.ministerioScopeId,
+      {
+        mesPeriodo: this.filtroMes || null,
+        incluirAportacion: this.esAdministrador
+      }
     );
     this.mostrarDesgloseMinisterio = this.desgloseMinisterioVista.length > 0;
+    this.totalAportacionPeriodo = this.desgloseMinisterioVista.reduce(
+      (sum, row) => sum + (row.aportacionPeriodo || 0), 0
+    );
+    this.totalAportacionHistorica = this.desgloseMinisterioVista.reduce(
+      (sum, row) => sum + (row.aportacionHistorica || 0), 0
+    );
     if (this.filtroMinisterioId != null) {
       this.nombreMinisterioKardex = this.listaMinisterios.find(
         m => m.id === this.filtroMinisterioId

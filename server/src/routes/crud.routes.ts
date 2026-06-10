@@ -30,7 +30,7 @@ const {
   beforeCreateIngreso,
   beforeUpdateIngreso,
   assertIngresoModificable,
-  notificarIngresoCreado,
+  afterCreateIngreso,
   afterUpdateIngreso,
   afterDeleteIngreso,
   aprobarIngreso,
@@ -393,7 +393,7 @@ const ingresosRouter = createCrudRouter('ingresos', {
   beforeCreate: beforeCreateIngreso,
   beforeUpdate: beforeUpdateIngreso,
   canModify: assertIngresoModificable,
-  afterCreate: (created, req) => notificarIngresoCreado(created, req),
+  afterCreate: afterCreateIngreso,
   afterUpdate: afterUpdateIngreso,
   afterDelete: afterDeleteIngreso,
   audit: true

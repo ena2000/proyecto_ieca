@@ -240,16 +240,25 @@
           <p class="kardex-card__hint">
             Las tres primeras columnas de montos son del período
             <strong>{{ etiquetaPeriodoResumen }}</strong>.
+            @if (esAdministrador) {
+              <strong>Aportación iglesia</strong> es el 33% de ingresos de talento (período y acumulado).
+            }
             <strong>Disponible</strong> es el acumulado histórico.
             Haz clic en una fila para abrir el kardex.
           </p>
         </div>
-        <div class="desglose-ministerio-table">
+        <div
+          class="desglose-ministerio-table"
+          [class.desglose-ministerio-table--aportacion]="esAdministrador">
           <div class="desglose-ministerio-header">
             <div class="col-ministerio">Ministerio</div>
             <div class="col-cantidad" title="Ingresos aprobados en el período">Ing. período</div>
             <div class="col-cantidad" title="Gastos aprobados en el período">Gastos período</div>
             <div class="col-cantidad" title="Ingresos − gastos del período">Resultado</div>
+            @if (esAdministrador) {
+              <div class="col-cantidad col-cantidad--aportacion" title="33% de ingresos de talento del período">Aport. período</div>
+              <div class="col-cantidad col-cantidad--aportacion col-cantidad--historico" title="33% acumulado histórico de talento">Aport. acum.</div>
+            }
             <div class="col-cantidad col-cantidad--historico" title="Saldo acumulado de todos los tiempos">Disponible</div>
           </div>
           <button
@@ -263,10 +272,25 @@
             <div class="col-cantidad ingresos">{{ formatearMoneda(item.ingresos) }}</div>
             <div class="col-cantidad gastos">{{ formatearMoneda(item.gastos) }}</div>
             <div class="col-cantidad" [class.negative]="item.saldo < 0">{{ formatearMoneda(item.saldo) }}</div>
+            @if (esAdministrador) {
+              <div class="col-cantidad aportacion">{{ formatearMoneda(item.aportacionPeriodo || 0) }}</div>
+              <div class="col-cantidad aportacion aportacion--historica">{{ formatearMoneda(item.aportacionHistorica || 0) }}</div>
+            }
             <div class="col-cantidad saldo-disponible" [class.negative]="item.saldoDisponible < 0">
               {{ formatearMoneda(item.saldoDisponible) }}
             </div>
           </button>
+          @if (esAdministrador && totalAportacionPeriodo > 0) {
+            <div class="desglose-ministerio-footer">
+              <div class="col-ministerio">Total aportación iglesia (33% talento)</div>
+              <div class="col-cantidad"></div>
+              <div class="col-cantidad"></div>
+              <div class="col-cantidad"></div>
+              <div class="col-cantidad aportacion">{{ formatearMoneda(totalAportacionPeriodo) }}</div>
+              <div class="col-cantidad aportacion aportacion--historica">{{ formatearMoneda(totalAportacionHistorica) }}</div>
+              <div class="col-cantidad"></div>
+            </div>
+          }
         </div>
       </div>
 

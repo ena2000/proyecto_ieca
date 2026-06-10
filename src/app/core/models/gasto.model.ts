@@ -24,4 +24,7 @@ export interface Gasto extends AuditoriaMovimiento {
   comprobanteTipo?: 'imagen' | 'pdf';
   cerrado?: boolean;
   periodoCierre?: string;
+  /** Movimiento generado automáticamente por la aportación del 33% a la iglesia. */
+  esAportacionIglesia?: boolean;
+  ingresoOrigenId?: number;
 }

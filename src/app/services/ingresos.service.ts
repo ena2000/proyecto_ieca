@@ -10,6 +10,14 @@ import { estadoIngreso } from '../shared/utils/ingreso.util';
 import { stampAuditoriaLocal, stampAuditoriaActualizacionLocal } from '../shared/utils/audit.util';
 import { AuthService } from '../core/services/auth.service';
 import { ROLES } from '../core/constants/roles.constants';
+import { formatearISOaDDMMYYYY } from '../shared/utils/date.util';
+import {
+  crearIngresoIglesiaPorAportacion,
+  ingresoEstaAprobadoParaAportacion,
+  ingresoRequiereAportacion,
+  marcarIngresoConAportacion,
+  assertMovimientoAportacionModificable
+} from '../shared/utils/aportacion-iglesia.util';
 
 @Injectable({ providedIn: 'root' })
 export class IngresosService {
@@ -133,11 +141,12 @@ export class IngresosService {
     const nuevo: Ingreso = { ...ingreso, id: this.nextId(), fechaFormateada, ...audit };
     this.persist([nuevo, ...this.getAll()]);
     this.notifyCreate(nuevo);
-    return nuevo;
+    return this.aplicarAportacionIglesiaLocal(nuevo);
   }
 
   private updateLocal(id: number, ingreso: Omit<Ingreso, 'id'>, fechaFormateada: string): Ingreso {
     const current = this.getAll().find(i => i.id === id);
+    assertMovimientoAportacionModificable(current);
     const estado: IngresoEstado =
       current && estadoIngreso(current) !== 'aprobado' ? 'pendiente' : (ingreso.estado ?? 'pendiente');
     const audit = stampAuditoriaActualizacionLocal(current ?? {}, this.authService.getSession());
@@ -165,7 +174,7 @@ export class IngresosService {
     this.persist(lista);
     const updated = lista.find(i => i.id === id)!;
     this.notificarResolucionLiderLocal(updated, 'aprobado');
-    return updated;
+    return this.aplicarAportacionIglesiaLocal(updated);
   }
 
   private rechazarLocal(id: number, motivo?: string): Ingreso {
@@ -188,6 +197,8 @@ export class IngresosService {
   private deleteLocal(id: number): void {
     const current = this.getAll().find(i => i.id === id);
     if (current) {
+      assertMovimientoAportacionModificable(current);
+      this.revertirAportacionIglesiaLocal(current);
       this.notifyEliminado(current);
     }
     this.persist(this.getAll().filter(i => i.id !== id));
@@ -320,6 +331,31 @@ export class IngresosService {
   private nextId(): number {
     const ids = this.getAll().map(i => i.id || 0);
     return ids.length ? Math.max(...ids) + 1 : 1;
+  }
+
+  private aplicarAportacionIglesiaLocal(ingreso: Ingreso): Ingreso {
+    if (!ingresoRequiereAportacion(ingreso) || !ingresoEstaAprobadoParaAportacion(ingreso)) {
+      return ingreso;
+    }
+
+    const fechaFormateada = ingreso.fechaFormateada || formatearISOaDDMMYYYY(ingreso.fecha);
+    const ingresoIglesia = crearIngresoIglesiaPorAportacion(
+      ingreso,
+      this.nextId(),
+      fechaFormateada
+    );
+
+    this.persist([ingresoIglesia, ...this.getAll()]);
+
+    const marcado = marcarIngresoConAportacion(ingreso, ingresoIglesia.id);
+    this.persist(this.getAll().map(i => (i.id === ingreso.id ? marcado : i)));
+    return marcado;
+  }
+
+  private revertirAportacionIglesiaLocal(ingreso: Ingreso): void {
+    if (ingreso.ingresoIglesiaId != null) {
+      this.persist(this.getAll().filter(i => i.id !== ingreso.ingresoIglesiaId));
+    }
   }
 
   private persist(lista: Ingreso[]): void {

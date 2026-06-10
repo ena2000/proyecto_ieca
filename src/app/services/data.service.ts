@@ -19,6 +19,11 @@ import { UsuariosService } from './usuarios.service';
 import { gastoAprobado, gastoPendiente } from '../shared/utils/gasto.util';
 import { ingresoAprobado, ingresoPendiente } from '../shared/utils/ingreso.util';
 import { mesCortoEs } from '../shared/utils/month.util';
+import {
+  AportacionMinisterioResumen,
+  calcularMontoAportacionIngreso,
+  calcularMontoNetoMinisterio
+} from '../shared/utils/aportacion-iglesia.util';
 
 export type {
   Ingreso, Gasto, Ministerio, Usuario, Movimiento, KPIs, MesData, KardexLinea
@@ -290,6 +295,13 @@ export class DataService {
     return items.filter(i => Number(i.ministerioId) === ministerioId);
   }
 
+  /** Ingreso efectivo para balances: ministerio neto (67%) o aportación iglesia (33%). */
+  private montoIngresoParaBalance(ingreso: Ingreso): number {
+    if (ingreso.esAportacionIglesia) return ingreso.monto || 0;
+    if (ingreso.ministerioId != null) return calcularMontoNetoMinisterio(ingreso);
+    return ingreso.monto || 0;
+  }
+
   calcularKPIs(ministerioId?: number): KPIs {
     const ingresos = this.ingresosAprobadosParaBalance(
       this.filterPorMinisterio(this.getIngresosActuales(), ministerioId)
@@ -313,7 +325,7 @@ export class DataService {
       return fecha.getMonth() === mesActual && fecha.getFullYear() === anioActual;
     });
 
-    const totalIngresos = ingresosDelMes.reduce((sum, i) => sum + (i.monto || 0), 0);
+    const totalIngresos = ingresosDelMes.reduce((sum, i) => sum + this.montoIngresoParaBalance(i), 0);
     const totalGastos = gastosDelMes.reduce((sum, g) => sum + (g.monto || 0), 0);
     const balance = totalIngresos - totalGastos;
 
@@ -330,7 +342,7 @@ export class DataService {
         const fecha = new Date(i.fecha);
         return fecha.getMonth() === mesAnteriorNum && fecha.getFullYear() === anioAnterior;
       })
-      .reduce((sum, i) => sum + (i.monto || 0), 0);
+      .reduce((sum, i) => sum + this.montoIngresoParaBalance(i), 0);
 
     const gastosAnterior = gastos
       .filter(g => {
@@ -368,7 +380,7 @@ export class DataService {
         tipo: 'ingreso' as const,
         titulo: i.descripcion,
         ministerio: i.ministerio || 'General',
-        monto: i.monto || 0,
+        monto: this.montoIngresoParaBalance(i),
         fecha: this.formatearFecha(i.fecha),
         fechaOrden: new Date(i.fecha).getTime()
       })),
@@ -408,7 +420,7 @@ export class DataService {
           const f = new Date(ing.fecha);
           return f.getMonth() === mes && f.getFullYear() === anio;
         })
-        .reduce((sum, ing) => sum + (ing.monto || 0), 0);
+        .reduce((sum, ing) => sum + this.montoIngresoParaBalance(ing), 0);
 
       const gastosDelMes = gastos
         .filter(g => {
@@ -451,7 +463,7 @@ export class DataService {
 
     ingresos.forEach(i => {
       const min = i.ministerio || 'General';
-      distribucion.set(min, (distribucion.get(min) || 0) + (i.monto || 0));
+      distribucion.set(min, (distribucion.get(min) || 0) + this.montoIngresoParaBalance(i));
     });
 
     const total = Array.from(distribucion.values()).reduce((a, b) => a + b, 0);
@@ -476,6 +488,44 @@ export class DataService {
     return saldo;
   }
 
+  /**
+   * Suma la aportación del 33% (ingresos de talento aprobados) por ministerio.
+   * @param mes Clave `YYYY-MM` para acotar al período; omitir para histórico acumulado.
+   */
+  getAportacionIglesiaPorMinisterio(
+    mes?: string | null,
+    ministerioScopeId?: number | null
+  ): AportacionMinisterioResumen[] {
+    const ministerios = ministerioScopeId != null
+      ? this.getMinisteriosActuales().filter(m => m.id === ministerioScopeId)
+      : this.getMinisteriosActuales();
+
+    const porId = new Map<number, number>();
+    ministerios.forEach(m => porId.set(m.id, 0));
+
+    this.ingresosAprobadosParaBalance(this.getIngresosActuales())
+      .filter(i => i.ministerioId != null && !i.esAportacionIglesia)
+      .filter(i => mes == null || mes === '' || i.fecha.startsWith(mes))
+      .forEach(i => {
+        const id = Number(i.ministerioId);
+        if (!porId.has(id)) return;
+        porId.set(id, (porId.get(id) || 0) + calcularMontoAportacionIngreso(i));
+      });
+
+    return ministerios
+      .map(m => ({
+        ministerioId: m.id,
+        nombre: m.nombre,
+        aportacion: porId.get(m.id) || 0
+      }))
+      .sort((a, b) => b.aportacion - a.aportacion);
+  }
+
+  getTotalAportacionIglesia(mes?: string | null, ministerioScopeId?: number | null): number {
+    return this.getAportacionIglesiaPorMinisterio(mes, ministerioScopeId)
+      .reduce((sum, row) => sum + row.aportacion, 0);
+  }
+
   getKardexMinisterio(ministerioId: number): KardexLinea[] {
     const ingresos = this.ingresosAprobadosParaBalance(
       this.getIngresosActuales().filter(i => Number(i.ministerioId) === ministerioId)
@@ -491,7 +541,7 @@ export class DataService {
         cuentaCodigo: i.cuentaCodigo,
         cuentaNombre: i.cuentaNombre || i.tipo,
         tipo: 'ingreso' as const,
-        monto: i.monto || 0
+        monto: calcularMontoNetoMinisterio(i)
       })),
       ...gastos.map(g => ({
         fecha: g.fecha,

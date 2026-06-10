@@ -8,6 +8,11 @@ const {
 } = require('./notificacion-movimiento');
 const { stampActualizacion, resolveActor } = require('./auditoria');
 const { assertPeriodoAbierto, assertMovimientoModificable } = require('./cierre');
+const {
+  generarAportacionIglesiaPorIngreso,
+  revertirAportacionIglesiaPorIngreso,
+  bloquearEdicionAportacionIglesia
+} = require('./aportacion-iglesia');
 
 const COLLECTION = 'ingresos';
 const ESTADOS = new Set(['pendiente', 'aprobado', 'rechazado']);
@@ -58,6 +63,9 @@ function onUpdateIngreso(body, req, current) {
 }
 
 async function assertIngresoModificable(req, entity) {
+  const bloqueoAportacion = bloquearEdicionAportacionIglesia(entity);
+  if (bloqueoAportacion) return bloqueoAportacion;
+
   try {
     await assertMovimientoModificable(entity);
   } catch (err) {
@@ -125,7 +133,12 @@ async function aprobarIngreso(id, req) {
     req
   });
 
-  return updated;
+  return generarAportacionIglesiaPorIngreso(updated, req);
+}
+
+async function afterCreateIngreso(created, req) {
+  await notificarIngresoCreado(created, req);
+  return generarAportacionIglesiaPorIngreso(created, req);
 }
 
 async function rechazarIngreso(id, req, motivo) {
@@ -179,6 +192,7 @@ async function afterUpdateIngreso(updated, req, current) {
 }
 
 async function afterDeleteIngreso(deleted, req) {
+  await revertirAportacionIglesiaPorIngreso(deleted);
   await notificarMovimientoEliminado({
     tipo: 'ingreso',
     movimiento: deleted,
@@ -193,6 +207,7 @@ module.exports = {
   beforeUpdateIngreso,
   assertIngresoModificable,
   notificarIngresoCreado,
+  afterCreateIngreso,
   afterUpdateIngreso,
   afterDeleteIngreso,
   aprobarIngreso,

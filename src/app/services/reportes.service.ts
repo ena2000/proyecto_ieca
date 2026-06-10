@@ -116,7 +116,8 @@ export class ReportesService {
   calcularDesglosePorMinisterio(
     reportes: Reporte[],
     ministerios: Pick<Ministerio, 'id' | 'nombre'>[],
-    ministerioScopeId?: number | null
+    ministerioScopeId?: number | null,
+    opciones?: { mesPeriodo?: string | null; incluirAportacion?: boolean }
   ): DesgloseMinisterioReporte[] {
     const lista = ministerioScopeId != null
       ? ministerios.filter(m => m.id === ministerioScopeId)
@@ -134,6 +135,15 @@ export class ReportesService {
       bucket.gastos += r.gastos || 0;
     });
 
+    const aportacionPeriodoMap = new Map<number, number>();
+    const aportacionHistoricaMap = new Map<number, number>();
+    if (opciones?.incluirAportacion) {
+      this.dataService.getAportacionIglesiaPorMinisterio(opciones.mesPeriodo, ministerioScopeId)
+        .forEach(row => aportacionPeriodoMap.set(row.ministerioId, row.aportacion));
+      this.dataService.getAportacionIglesiaPorMinisterio(null, ministerioScopeId)
+        .forEach(row => aportacionHistoricaMap.set(row.ministerioId, row.aportacion));
+    }
+
     return lista
       .map(m => {
         const bucket = porId.get(m.id) ?? { ingresos: 0, gastos: 0 };
@@ -143,7 +153,9 @@ export class ReportesService {
           ingresos: bucket.ingresos,
           gastos: bucket.gastos,
           saldo: bucket.ingresos - bucket.gastos,
-          saldoDisponible: this.dataService.calcularSaldoMinisterio(m.id)
+          saldoDisponible: this.dataService.calcularSaldoMinisterio(m.id),
+          aportacionPeriodo: aportacionPeriodoMap.get(m.id) ?? 0,
+          aportacionHistorica: aportacionHistoricaMap.get(m.id) ?? 0
         };
       })
       .sort((a, b) => b.saldoDisponible - a.saldoDisponible);

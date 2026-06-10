@@ -27,8 +27,17 @@ import {
   aplicarFechaNativaAuditoria
 } from '../../shared/utils/audit-fecha.util';
 import { ACCESOS_RAPIDOS_ADMIN } from './administracion-accesos.constants';
+import { formatearMoneda } from '../../shared/utils/currency.util';
+import { getMesActualLabel, periodoKeyFromFecha } from '../../shared/utils/month.util';
 
 registerAdministracionPageIcons();
+
+interface AportacionMinisterioVista {
+  ministerioId: number;
+  nombre: string;
+  aportacionMes: number;
+  aportacionHistorica: number;
+}
 
 @Component({
   selector: 'app-administracion',
@@ -47,6 +56,11 @@ registerAdministracionPageIcons();
 export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter {
   resumen: ResumenAdmin[] = [];
   actividad: ActividadAdmin[] = [];
+  aportacionVista: AportacionMinisterioVista[] = [];
+  totalAportacionMes = 0;
+  totalAportacionHistorica = 0;
+  readonly formatearMoneda = formatearMoneda;
+  readonly etiquetaMesAportacion = getMesActualLabel();
   configIglesia: ConfigIglesia = { nombre: '', periodoActual: '', version: '' };
   mesActualCerrado = false;
 
@@ -104,6 +118,23 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
     this.actividad = this.administracionService.getActividadReciente();
     this.configIglesia = this.administracionService.getConfigIglesia();
     this.mesActualCerrado = this.administracionService.isMesActualCerrado();
+    const mesActual = periodoKeyFromFecha(new Date().toISOString());
+    const delMes = this.dataService.getAportacionIglesiaPorMinisterio(mesActual);
+    const historicas = this.dataService.getAportacionIglesiaPorMinisterio();
+    const porIdMes = new Map(delMes.map(row => [row.ministerioId, row.aportacion]));
+    const porIdHistorico = new Map(historicas.map(row => [row.ministerioId, row.aportacion]));
+
+    this.aportacionVista = this.dataService.getMinisteriosActuales()
+      .map(m => ({
+        ministerioId: m.id,
+        nombre: m.nombre,
+        aportacionMes: porIdMes.get(m.id) ?? 0,
+        aportacionHistorica: porIdHistorico.get(m.id) ?? 0
+      }))
+      .sort((a, b) => b.aportacionHistorica - a.aportacionHistorica);
+
+    this.totalAportacionMes = this.dataService.getTotalAportacionIglesia(mesActual);
+    this.totalAportacionHistorica = this.dataService.getTotalAportacionIglesia();
   }
 
   async ejecutarCierreMes(): Promise<void> {

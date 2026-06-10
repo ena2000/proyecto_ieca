@@ -54,6 +54,7 @@ import {
 } from '../../shared/constants/contabilidad-cuentas.constants';
 import { aplicarResponsableSesion, etiquetaResponsableMovimiento } from '../../shared/utils/movimiento-responsable.util';
 import { aplicarCuentaEnIngreso, inicializarCuentaIngreso } from '../../shared/utils/contabilidad-cuenta-form.util';
+import { ingresoEsTalento } from '../../shared/utils/aportacion-iglesia.util';
 import { Ingreso, Ministerio, Usuario } from '../../core/models';
 import { DataService } from '../../services/data.service';
 import { IngresosService } from '../../services/ingresos.service';
@@ -412,7 +413,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
           await this.mostrarToast(msg, 'success');
         }
       });
-      this.dataService.notifyChanges();
+      this.dataService.refreshAllData(true);
       this.resetFormulario();
     } catch (error) {
       await this.mostrarToast(
@@ -432,8 +433,13 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
       await withLoading(this.loadingController, 'Aprobando ingreso...', async () => {
         await firstValueFrom(this.ingresosService.aprobar(item.id));
       });
-      this.dataService.notifyChanges();
-      await this.mostrarToast('Ingreso aprobado', 'success');
+      this.dataService.refreshAllData(true);
+      await this.mostrarToast(
+        ingresoEsTalento(item)
+          ? 'Ingreso de talento aprobado. Se transfirió el 33% al fondo de la iglesia.'
+          : 'Ingreso aprobado',
+        'success'
+      );
     } catch (error) {
       await this.mostrarToast(error instanceof Error ? error.message : 'No se pudo aprobar', 'danger');
     }
@@ -526,7 +532,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
               await withLoading(this.loadingController, 'Eliminando registro...', async () => {
                 await firstValueFrom(this.ingresosService.delete(item.id));
               });
-              this.dataService.notifyChanges();
+              this.dataService.refreshAllData(true);
               await this.mostrarToast('Registro eliminado', 'warning');
             } catch (error) {
               await this.mostrarToast(error instanceof Error ? error.message : 'Error al eliminar', 'danger');

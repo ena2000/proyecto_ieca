@@ -40,6 +40,38 @@
       </div>
     </section>
 
+    <!-- Aportación iglesia por ministerio (33% talento) -->
+    <section class="section-block">
+      <h2 class="section-title text-blue">Aportación a la iglesia por ministerio</h2>
+      <p class="section-sub">
+        33% de los ingresos de <strong>Talento y eventos</strong> aprobados. Mes actual:
+        <strong>{{ etiquetaMesAportacion }}</strong>.
+      </p>
+      <div class="aportacion-admin-card">
+        <div class="aportacion-admin-header">
+          <div class="col-nombre">Ministerio</div>
+          <div class="col-monto" title="Aportación del mes actual">Este mes</div>
+          <div class="col-monto" title="Aportación acumulada histórica">Acumulado</div>
+        </div>
+        @if (aportacionVista.length > 0) {
+          @for (row of aportacionVista; track row.ministerioId) {
+            <div class="aportacion-admin-row" [class.aportacion-admin-row--empty]="row.aportacionMes === 0 && row.aportacionHistorica === 0">
+              <div class="col-nombre">{{ row.nombre }}</div>
+              <div class="col-monto">{{ formatearMoneda(row.aportacionMes) }}</div>
+              <div class="col-monto col-monto--historico">{{ formatearMoneda(row.aportacionHistorica) }}</div>
+            </div>
+          }
+          <div class="aportacion-admin-footer">
+            <div class="col-nombre">Total iglesia</div>
+            <div class="col-monto">{{ formatearMoneda(totalAportacionMes) }}</div>
+            <div class="col-monto col-monto--historico">{{ formatearMoneda(totalAportacionHistorica) }}</div>
+          </div>
+        } @else {
+          <p class="aportacion-admin-empty">Sin ministerios registrados.</p>
+        }
+      </div>
+    </section>
+
     <!-- Módulos del Sistema -->
     <section class="section-block">
       <h2 class="section-title text-blue">Módulos del Sistema</h2>
