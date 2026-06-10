@@ -15,7 +15,7 @@ El proyecto consiste en un **sistema web de gestión financiera** para uso inter
 | **Producto** | Panel administrativo web (navegador de escritorio). |
 | **Usuarios finales** | Administrador, contable y líderes/co-líderes de ministerio. |
 | **Stack tecnológico** | Angular 20 + Ionic 8 (frontend) · Node.js + Express 5 (API) · Firebase Firestore (datos). |
-| **Alcance** | Aplicación web institucional; despliegue móvil fuera del alcance de esta fase. |
+| **Alcance** | Aplicación web institucional (escritorio principal); vista estrecha en navegador soportada; app móvil nativa fuera del alcance. |
 | **Equipo** | Desarrollo académico e institucional (equipo reducido). |
 
 ### 1.2 Metodología adoptada: **Modelo en cascada (Waterfall)**
@@ -103,10 +103,11 @@ Recopilar, analizar y documentar las necesidades de IECA para transformarlas en 
 | RF-05 | Ministerios | CRUD de departamentos con líder y co-líder (solo admin). |
 | RF-06 | Usuarios | CRUD con roles, contraseña temporal en alta. |
 | RF-07 | Dashboard | KPIs, gráficos y últimos movimientos (solo aprobados). |
-| RF-08 | Reportes | Filtros por período, ministerio y tipo; resumen del período; desglose por ministerio (saldo disponible histórico) y por cuenta; kardex por ministerio; exportación Excel enriquecida (agregación client-side). |
+| RF-08 | Reportes | Filtros por período, ministerio y tipo; resumen del período; desglose por ministerio (saldo disponible histórico, **aportación período/acum.** para admin) y por cuenta; kardex por ministerio; exportación Excel enriquecida (agregación client-side). |
 | RF-09 | Cierre mensual | Bloqueo de periodos; movimientos del mes marcados como cerrados. |
-| RF-10 | Administración | Backup/restauración JSON, auditoría CSV, alertas por email. |
+| RF-10 | Administración | Backup/restauración JSON, auditoría CSV, alertas por email, **resumen de aportación iglesia por ministerio**. |
 | RF-11 | Notificaciones | Alertas de pendientes y eventos del sistema por usuario. |
+| RF-12 | Aportación iglesia | Al aprobar ingreso de **talento** (`4105`) con ministerio: **33%** automático a `General`; ministerio retiene **67%**; movimiento automático no editable. |
 
 ### 3.5 Reglas de negocio clave
 
@@ -118,6 +119,7 @@ Recopilar, analizar y documentar las necesidades de IECA para transformarlas en 
 - Los **líderes** solo ven y operan sobre su `ministerioId`.
 - El **cierre mensual** procesa movimientos por lotes (hasta 500 operaciones por lote en Firestore).
 - El **kardex** es una vista derivada calculada en el cliente: ledger cronológico de ingresos/gastos aprobados por ministerio; no existe colección ni endpoint dedicado.
+- La **aportación iglesia (33%)** aplica solo a ingresos de cuenta **4105** (talento) con ministerio asignado; genera un ingreso en `General` al aprobar; no crea gastos automáticos; al borrar el origen se elimina el ingreso vinculado.
 
 ### 3.6 Requisitos no funcionales
 
@@ -125,7 +127,7 @@ Recopilar, analizar y documentar las necesidades de IECA para transformarlas en 
 |----|-----------|----------|
 | RNF-01 | Seguridad | Contraseñas con bcrypt; JWT access/refresh; Helmet; rate limiting. |
 | RNF-02 | Validación | Esquemas Zod en API; guards e interceptors en frontend. |
-| RNF-03 | Usabilidad | Interfaz de escritorio en navegador; sidebar fijo; toasts consistentes. |
+| RNF-03 | Usabilidad | Interfaz de escritorio en navegador; sidebar fijo; toasts consistentes; **vista estrecha** (≤768px) con menú ☰ y layout adaptable sin afectar escritorio. |
 | RNF-04 | Disponibilidad | API en Render; frontend en Firebase Hosting. |
 | RNF-05 | Mantenibilidad | Código modular por capas; utilidades puras testeables. |
 | RNF-06 | Trazabilidad | Auditoría de login y movimientos; exportación CSV. |
@@ -186,7 +188,7 @@ flowchart LR
 | **Presentación** | `src/app/pages/`, `components/` | UI Ionic; componente `tabla-general` reutilizable; lógica en utilidades |
 | **Servicios** | `src/app/services/` | Cache, HTTP, agregación (`DataService`), reportes y Excel (`ReportesService`) |
 | **Core** | `src/app/core/` | Guards, interceptors, modelos (`KardexLinea`, `Reporte`, …), auth |
-| **Theme** | `src/theme/` | Layouts por pantalla (`_reportes-layout`, `_tabla-general`, …) |
+| **Theme** | `src/theme/` | Layouts por pantalla (`_reportes-layout`, `_tabla-general`, `_mobile-narrow`, …) |
 | **API** | `server/src/routes/`, `utils/` | Reglas de negocio, validación, Firestore Admin |
 | **Utilidades** | `shared/utils/`, `server/src/utils/` | Lógica pura reutilizable y testeable |
 
@@ -196,7 +198,7 @@ flowchart LR
 |-----------|-------------------|
 | `usuarios` | `usuario`, `email`, `rol`, `passwordHash`, `ministerioId`, `estado` |
 | `ministerios` | `nombre`, `estado`, líderes asignados |
-| `ingresos` | Monto, fecha, ministerio, cuenta, estado, comprobante, auditoría |
+| `ingresos` | Monto, fecha, ministerio, cuenta, estado, comprobante, auditoría; campos de aportación (`esAportacionIglesia`, `aportacionGenerada`, `ingresoIglesiaId`, `montoAportacionIglesia`, `montoNetoMinisterio`) |
 | `gastos` | Monto, fecha, ministerio, categoría, estado, comprobante, auditoría |
 | `notificaciones` | Usuario destino, tipo, ruta, leída |
 | `config/sistema` | Periodos cerrados, último cierre |
@@ -208,6 +210,7 @@ flowchart LR
 |----------|--------|-----|
 | **Kardex de ministerio** | Ingresos/gastos aprobados por `ministerioId` | Ledger cronológico con saldo acumulado; modal en Ministerios e inline en Reportes |
 | **Saldo disponible** | Última línea del kardex | Columna en desglose de Reportes y tabla de Ministerios |
+| **Aportación por ministerio** | Ingresos automáticos `esAportacionIglesia` + cálculo 33% en talento | Tabla en Administración; columnas en Reportes (admin) |
 
 ### 4.6 Diseño de módulos funcionales
 
@@ -454,7 +457,7 @@ Garantizar la operación continua del sistema, corregir incidencias y aplicar me
 |------|-------------|-----------------|
 | **Correctivo** | Reparar fallos | Error en filtro de auditoría, CI roto |
 | **Adaptativo** | Ajustar a cambios del entorno | Nueva URL de API, credenciales Firebase |
-| **Perfectivo** | Mejorar funcionalidad existente | Kardex por ministerio, reportes con distinción período/histórico, toasts unificados |
+| **Perfectivo** | Mejorar funcionalidad existente | Kardex por ministerio, aportación iglesia 33% (talento), reportes con aportación acumulada, vista estrecha (menú ☰, login centrado), toasts unificados |
 | **Preventivo** | Evitar fallos futuros | Tests de cierre mensual, backup antes de cierre |
 
 ### 8.4 Gestión de incidencias y cambios
@@ -527,8 +530,8 @@ flowchart LR
 
 | Requisito | Diseño | Implementación | Prueba |
 |-----------|--------|----------------|--------|
-| RF-02 Ingresos | `pages/ingresos`, CRUD API | `ingresos.component`, `ingresos.routes` | `movimiento-filtros.util.spec.ts`, manual por rol |
-| RF-08 Reportes | `pages/reportes`, `ReportesService`, kardex en `DataService` | `reportes.component`, `reportes-filtros.util` | `reportes-filtros.util.spec.ts`, manual kardex/Excel |
+| RF-02 Ingresos | `pages/ingresos`, CRUD API, aportación 33% | `ingresos.component`, `aportacion-iglesia.util`, `server/utils/ingresos.ts` | `movimiento-filtros.util.spec.ts`, `aportacion-iglesia.util.spec.ts`, manual por rol |
+| RF-08 Reportes | `pages/reportes`, `ReportesService`, kardex y aportación en `DataService` | `reportes.component`, `reportes-filtros.util` | `reportes-filtros.util.spec.ts`, manual kardex/Excel/aportación |
 | RF-09 Cierre | `admin.routes`, `cierre-mensual.ts` | Panel administración | `cierre-mensual.test.js`, `http.integration.test.js` |
 | RF-01 Auth | JWT, guards | `auth.routes`, `authGuard` | `auth.test.js`, login manual |
 
@@ -538,6 +541,7 @@ flowchart LR
 
 - [README.md](../README.md) — Visión general, API, roles, scripts, kardex y datos demo.
 - [DEPLOY.md](./DEPLOY.md) — Despliegue y checklist de producción.
+- [CHANGELOG.md](./CHANGELOG.md) — Historial resumido de entregas recientes.
 - [backup-demo-ieca.json](./backup-demo-ieca.json) — Respaldo JSON de ejemplo para restauración y pruebas de kardex.
 - [.github/workflows/ci.yml](../.github/workflows/ci.yml) — Integración continua.
 - [.github/workflows/release.yml](../.github/workflows/release.yml) — Artefactos de release.

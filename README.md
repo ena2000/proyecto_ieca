@@ -8,10 +8,11 @@ Sistema web para la administración financiera de la **Iglesia Evangélica La Al
 
 | Ámbito | Estado |
 |--------|--------|
-| **Web (navegador)** | Uso previsto y despliegue actual: la aplicación se opera desde el **navegador en escritorio** (hosting estático + API). |
-| **Móvil** | **Implementación futura** — no está previsto desplegar ni dar soporte oficial en teléfono en esta fase. |
+| **Web (escritorio)** | Uso principal y despliegue actual: panel administrativo en **navegador de escritorio** (Firebase Hosting + API en Render). |
+| **Vista estrecha (≤768px)** | **Soportada** en navegador (ventana reducida o teléfono vía web): sidebar off-canvas, botón ☰ en la barra superior, tablas con scroll horizontal y login centrado. No es app nativa ni PWA oficial. |
+| **App móvil nativa** | **Fuera de alcance** — Capacitor 8 está en el proyecto como base técnica futura; no hay builds Android/iOS en el flujo de release. |
 
-A nivel técnico, el frontend **ya está orientado a móvil**: **Ionic 8**, estilos **responsive**, metaetiquetas en `index.html` para pantallas pequeñas y **Capacitor 8** en el proyecto (`capacitor.config.ts`). Eso facilitará una fase posterior (PWA, navegador móvil o app nativa), pero hoy no hay proyectos Android/iOS generados ni builds móviles en el flujo de release.
+Los estilos responsive (`src/theme/_mobile-narrow.scss`, media queries `max-width: 768px`) **no alteran** el layout de escritorio (`min-width: 769px`).
 
 ---
 
@@ -47,8 +48,8 @@ A nivel técnico, el frontend **ya está orientado a móvil**: **Ionic 8**, esti
 | **Ingresos / Gastos** | CRUD, comprobantes (imagen/PDF), filtros, aprobación/rechazo (**solo administrador**), alcance por ministerio para líderes |
 | **Ministerios** | CRUD de departamentos con líder y co-líder; columna **saldo disponible**; modal **kardex** por ministerio (solo administrador) |
 | **Usuarios** | Roles, contraseña temporal en alta, cambio obligatorio al primer acceso |
-| **Reportes** | Filtros por período (mes actual, anterior, historial, mes concreto), ministerio y tipo; resumen del período; desglose por ministerio (incluye **saldo disponible histórico**) y por cuenta contable; **kardex** al seleccionar ministerio; exportación Excel con totales, saldos, detalle y kardex |
-| **Administración** | Resumen ejecutivo, accesos rápidos, cierre mensual, backup/restauración JSON, auditoría CSV, **alertas por email**, limpieza de datos |
+| **Reportes** | Filtros por período (mes actual, anterior, historial, mes concreto), ministerio y tipo; resumen del período; desglose por ministerio (incluye **saldo disponible histórico** y columnas **aport. período / aport. acum.** solo admin) y por cuenta contable; **kardex** al seleccionar ministerio; exportación Excel con totales, saldos, detalle y kardex |
+| **Administración** | Resumen ejecutivo, accesos rápidos, cierre mensual, backup/restauración JSON, auditoría CSV, **alertas por email**, limpieza de datos, **aportación iglesia por ministerio** (mes actual y acumulado) |
 | **Notificaciones** | Pendientes y eventos del sistema |
 | **Auth** | Login JWT, recuperación por código de 6 dígitos, cambio de contraseña |
 
@@ -59,6 +60,19 @@ A nivel técnico, el frontend **ya está orientado a móvil**: **Ionic 8**, esti
 - Los totales **del período** en Reportes respetan el filtro de mes/ministerio/tipo; el **saldo disponible** y el **kardex** son **históricos** (todos los movimientos aprobados del ministerio, sin filtro de mes).
 - Los **periodos cerrados** bloquean altas, ediciones y borrados en ese mes.
 - El **cierre mensual** marca movimientos del periodo y actualiza la configuración del sistema (por lotes de hasta 500 operaciones en Firestore).
+- **Aportación iglesia (33%):** solo en ingresos de **talento** (cuenta `4105` — «Talento y eventos») con **ministerio asignado** (no `General`). Al aprobar (o crear ya aprobado como admin), se genera un **ingreso automático** en ministerio `General` por el 33%; el ministerio conserva el **67%** en saldo, kardex y KPIs. Los movimientos automáticos de aportación **no son editables ni borrables**; al eliminar el ingreso origen se elimina el ingreso de iglesia vinculado.
+
+### Vista estrecha (navegador ≤768px)
+
+| Pieza | Ubicación | Comportamiento |
+|-------|-----------|----------------|
+| `SidebarUiService` | `src/app/core/services/sidebar-ui.service.ts` | Estado del menú lateral en vista estrecha |
+| `ToolbarMenuButtonComponent` | `src/app/components/toolbar-menu-button/` | Botón ☰ en la barra superior (reemplaza `ion-menu-button`, que no funciona sin `ion-menu` de Ionic) |
+| Sidebar off-canvas | `global.scss`, `app-slidebar` | Menú deslizable; backdrop en `app.component.html` |
+| Estilos estrechos | `src/theme/_mobile-narrow.scss` | Tablas con scroll, botones más altos, modales casi a ancho completo |
+| Login centrado | `auth/login/login.component.scss` | Tarjeta centrada verticalmente con `100dvh` y flex en `ion-content` |
+
+En escritorio el sidebar permanece fijo y el botón ☰ está oculto.
 
 ---
 
@@ -91,10 +105,10 @@ flowchart LR
 | Capa | Responsabilidad |
 |------|-----------------|
 | **Páginas** (`src/app/pages/`) | UI Ionic; lógica de presentación delegada a utilidades compartidas |
-| **Componentes** (`src/app/components/`) | `tabla-general`, sidebar, notificaciones, modales reutilizables |
+| **Componentes** (`src/app/components/`) | `tabla-general`, `slidebar`, `toolbar-menu-button`, notificaciones, modales reutilizables |
 | **Servicios** (`src/app/services/`) | Cache local, HTTP, agregación (`DataService`), reportes y Excel (`ReportesService`) |
-| **Core** (`src/app/core/`) | Guards, interceptors, modelos, `AuthService`, `ApiService` |
-| **Theme** (`src/theme/`) | Layouts SCSS por pantalla (`_reportes-layout`, `_tabla-general`, …) |
+| **Core** (`src/app/core/`) | Guards, interceptors, modelos, `AuthService`, `ApiService`, `SidebarUiService` |
+| **Theme** (`src/theme/`) | Layouts SCSS por pantalla (`_reportes-layout`, `_tabla-general`, `_mobile-narrow`, …) |
 | **API** (`server/src/`) | Autenticación, validación, reglas de negocio, Firestore Admin |
 | **Utilidades** (`shared/utils/`, `server/src/utils/`) | Lógica pura reutilizable y testeable |
 
@@ -145,16 +159,17 @@ proyecto_ieca/
 ├── docs/
 │   ├── DEPLOY.md                # Guía de despliegue (Firebase Hosting + Render)
 │   ├── METODOLOGIA.md           # Metodología en cascada y trazabilidad del proyecto
+│   ├── CHANGELOG.md             # Historial resumido de entregas
 │   └── backup-demo-ieca.json    # Respaldo demo para pruebas de restauración y kardex
 ├── src/                         # Frontend
 │   ├── app/
 │   │   ├── auth/                # Login, recuperar y cambiar contraseña
-│   │   ├── components/          # tabla-general, sidebar, notificaciones-bell, modal-form
-│   │   ├── core/                # Guards, interceptors, modelos, API, auth
+│   │   ├── components/          # tabla-general, slidebar, toolbar-menu-button, notificaciones-bell
+│   │   ├── core/                # Guards, interceptors, modelos, API, auth, SidebarUiService
 │   │   ├── pages/               # dashboard, ingresos, gastos, reportes, ministerios…
 │   │   ├── services/            # data, ingresos, gastos, reportes, ministerios, usuarios
 │   │   ├── shared/
-│   │   │   ├── constants/       # Cuentas contables (contabilidad-cuentas.constants.ts)
+│   │   │   ├── constants/       # Cuentas contables, aportación iglesia (33%)
 │   │   │   └── utils/           # Utilidades compartidas (ver tabla abajo)
 │   │   ├── testing/             # Helpers para specs de componentes
 │   │   └── app.routes.ts        # Rutas con lazy loading
@@ -170,7 +185,8 @@ proyecto_ieca/
 │   │   ├── types/               # Tipos TypeScript (auth, Firestore, Express)
 │   │   ├── routes/              # auth, crud, notificaciones, admin
 │   │   ├── schemas/             # Validación Zod
-│   │   ├── utils/               # cierre, backup, ingresos, gastos, email, auditoría…
+│   │   ├── constants/           # aportacion-iglesia.ts (33%, cuenta 4105)
+│   │   ├── utils/               # cierre, backup, ingresos, gastos, aportacion-iglesia, email…
 │   │   ├── createApp.ts
 │   │   └── index.ts
 │   ├── dist/                    # Salida compilada (`npm run build`) — no versionar
@@ -222,8 +238,13 @@ proyecto_ieca/
 | `loading.util.ts`, `error-message.util.ts` | UX y errores HTTP |
 | `excel-ieca.styles.ts` | Estilos de exportación Excel |
 | `contabilidad-cuenta-form.util.ts` | Validación de cuenta en formularios |
+| **Aportación iglesia** | |
+| `aportacion-iglesia.util.ts` | Talento, 33%, ingreso automático en General, montos netos |
+| `aportacion-iglesia.util.spec.ts` | Tests unitarios de la lógica de aportación |
 
-Constantes en `src/app/shared/constants/`: `contabilidad-cuentas.constants.ts` (catálogo de cuentas contables).
+Constantes en `src/app/shared/constants/`: `contabilidad-cuentas.constants.ts` (catálogo de cuentas), `aportacion-iglesia.constants.ts` (33%, cuenta `4105`).
+
+Backend equivalente: `server/src/constants/aportacion-iglesia.ts`, `server/src/utils/aportacion-iglesia.ts` (hooks en `ingresos.ts`).
 
 Constantes en páginas: `administracion-accesos.constants.ts` (accesos rápidos del panel admin).
 
@@ -232,6 +253,8 @@ Constantes en páginas: `administracion-accesos.constants.ts` (accesos rápidos 
 | Componente | Uso |
 |------------|-----|
 | `tabla-general` | Tabla reutilizable con paginación, badges, comprobantes y acciones (editar, eliminar, aprobar/rechazar, **kardex** vía botón `ledger`) |
+| `toolbar-menu-button` | Botón ☰ en toolbars; visible solo en vista estrecha (≤768px) |
+| `slidebar` | Menú lateral fijo (escritorio) u off-canvas (estrecho) |
 | `ReportesService` | Agregación client-side, desglose por ministerio/cuenta y exportación Excel (`descargarExcel`) |
 | `DataService` | Cache de ingresos/gastos; `getKardexMinisterio()`, `calcularSaldoMinisterio()`, `dataRevision$` para refrescar vistas derivadas |
 
@@ -245,7 +268,7 @@ Estilos de layout en `src/theme/_reportes-layout.scss` y `src/theme/_tabla-gener
 |-----------|-------------|
 | `usuarios` | Login, rol, `passwordHash`, `ministerioId` (líderes) |
 | `ministerios` | Nombre, estado, líderes |
-| `ingresos` | Movimientos de entrada, estado, comprobante, `cuentaCodigo`, `cuentaNombre` |
+| `ingresos` | Movimientos de entrada, estado, comprobante, `cuentaCodigo`, `cuentaNombre`; campos de aportación: `esAportacionIglesia`, `aportacionGenerada`, `ingresoIglesiaId`, `montoAportacionIglesia`, `montoNetoMinisterio` |
 | `gastos` | Movimientos de salida, categoría, estado, cuenta contable |
 | `notificaciones` | Alertas por usuario |
 | `config` / doc `sistema` | Periodos cerrados, último cierre |
@@ -653,7 +676,7 @@ En el servidor de producción:
 
 | Ámbito | Cantidad | Herramienta |
 |--------|----------|-------------|
-| Frontend | **35** casos (`16` archivos `.spec.ts`) | Karma + Jasmine + ChromeHeadless |
+| Frontend | **40+** casos (`17+` archivos `.spec.ts`) | Karma + Jasmine + ChromeHeadless |
 | Backend | **49** casos (`8` archivos `.test.js`) | Node.js test runner + Supertest |
 | **Total** | **84** | Replicado en GitHub Actions |
 
@@ -675,6 +698,7 @@ Con `CI=true`, `karma.conf.js` usa `ChromeHeadless` y una sola ejecución.
 | `movimiento-filtros.util.spec.ts` | Filtros ingresos/gastos |
 | `movimiento-validacion.util.spec.ts` | Validación de formularios |
 | `reportes-filtros.util.spec.ts` | Filtros y periodos en reportes |
+| `aportacion-iglesia.util.spec.ts` | Cálculo 33%, talento, ingreso automático en General |
 | `*.component.spec.ts`, `app.component.spec.ts` | Smoke y creación de componentes (12 archivos) |
 
 ### Backend
@@ -767,12 +791,23 @@ Resumen rápido:
 4. Despliega `www/` en Firebase Hosting (`npm run deploy:hosting` si tienes Firebase CLI).
 5. Apunta `environment.prod.ts` → `apiUrl` a la URL del API en Render.
 
+**Solo frontend** (cambios en `src/` sin tocar `server/`):
+
+```bash
+npm run deploy:hosting
+```
+
+**Solo backend** (cambios en `server/`): push a la rama conectada en Render (auto-deploy) o deploy manual.
+
+**Ambos:** push del API + `npm run deploy:hosting` para el panel.
+
 ### Documentación adicional
 
 | Documento | Contenido |
 |-----------|-----------|
 | [docs/DEPLOY.md](docs/DEPLOY.md) | Checklist y pasos de despliegue |
 | [docs/METODOLOGIA.md](docs/METODOLOGIA.md) | Metodología en cascada, requisitos y trazabilidad |
+| [docs/CHANGELOG.md](docs/CHANGELOG.md) | Historial resumido de entregas (aportación, vista estrecha, etc.) |
 | [docs/backup-demo-ieca.json](docs/backup-demo-ieca.json) | Dataset demo para restauración y pruebas de kardex |
 
 ---
@@ -809,6 +844,9 @@ Resumen: metodología **en cascada (Waterfall)** con seis fases secuenciales —
 | Release manual | CI aún en curso | Usa **workflow_dispatch** o espera a que CI termine |
 | Saldo o kardex desactualizado tras aprobar | Cache local sin refrescar | Navega de nuevo a Reportes/Ministerios; `DataService` expone `dataRevision$` |
 | Probar sin datos reales | Entorno vacío | Restaura `docs/backup-demo-ieca.json` desde Administración |
+| No aparece el botón ☰ en móvil | Versión antigua o caché del hosting | Despliega con `npm run deploy:hosting`; recarga forzada en el navegador |
+| Login descentrado en teléfono | `ion-content` sin altura completa | Corregido en `login.component.scss`; requiere redeploy del frontend |
+| No se puede editar un ingreso | Es aportación automática (`esAportacionIglesia`) | Elimina el ingreso de talento origen si corresponde; no edites el movimiento generado |
 
 ---
 

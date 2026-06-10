@@ -11,10 +11,11 @@ Guía para publicar el frontend (Angular/Ionic) y la API (Node.js + TypeScript) 
 
 | Ámbito | Estado |
 |--------|--------|
-| **Web (navegador)** | Uso previsto y despliegue actual: la aplicación se opera desde el **navegador en escritorio** (hosting estático + API). |
-| **Móvil** | **Implementación futura** — no está previsto desplegar ni dar soporte oficial en teléfono en esta fase. |
+| **Web (escritorio)** | Uso principal: panel en **navegador de escritorio** (Firebase Hosting + API en Render). |
+| **Vista estrecha (≤768px)** | **Soportada** vía navegador (ventana reducida o teléfono): mismo deploy de hosting; menú ☰, sidebar off-canvas y login centrado. |
+| **App móvil nativa** | **Fuera de alcance** — sin builds Android/iOS en este flujo de release. |
 
-A nivel técnico, el frontend **ya está orientado a móvil**: **Ionic 8**, estilos **responsive**, metaetiquetas en `index.html` para pantallas pequeñas y **Capacitor 8** en el proyecto (`capacitor.config.ts`). Eso facilitará una fase posterior (PWA, navegador móvil o app nativa), pero **esta guía y los flujos de release cubren solo web**: no hay proyectos Android/iOS generados ni builds móviles documentados aquí.
+Los cambios responsive viven en el frontend (`src/theme/_mobile-narrow.scss`, `ToolbarMenuButtonComponent`). **No requieren** pasos extra en Render; solo `npm run deploy:hosting` tras modificar `src/`.
 
 ---
 
@@ -208,25 +209,49 @@ curl -X POST https://ieca-api.onrender.com/api/auth/login \
   -d '{"usuario":"admin","password":"***"}'
 ```
 
-En el navegador:
+En el navegador (escritorio):
 
 1. Abre el frontend por HTTPS (Firebase Hosting)
 2. Inicia sesión
 3. Comprueba dashboard, ingreso, aprobación (**administrador**) y reportes
-4. Admin: verifica panel de administración y backup
+4. Admin: verifica panel de administración, **aportación por ministerio** y backup
+5. Aprueba un ingreso de **talento** (`4105`) con ministerio → debe generarse aportación 33% en `General`
+
+En **vista estrecha** (DevTools responsive o teléfono):
+
+1. Login: tarjeta **centrada** verticalmente
+2. Tras login: botón **☰** visible arriba a la izquierda en dashboard e ingresos/gastos
+3. Clic en ☰ abre el sidebar; clic fuera o en enlace lo cierra
+4. Tablas y reportes con scroll horizontal si hace falta
 
 ---
 
 ## Actualizar versión desplegada
 
-**Frontend**
+### Qué desplegar según el cambio
+
+| Cambió | Acción |
+|--------|--------|
+| Solo `src/` (UI, estilos, lógica cliente) | `npm run deploy:hosting` |
+| Solo `server/` (API, reglas de negocio backend) | Push a GitHub → Render auto-deploy (o deploy manual) |
+| Frontend + backend | Push del API **y** `npm run deploy:hosting` |
+
+No hace falta ejecutar **cierre mensual** para desplegar.
+
+### Frontend
 
 ```bash
 npm run build:ci
 firebase deploy --only hosting
 ```
 
-**Backend (Render)**
+Atajo (build + deploy):
+
+```bash
+npm run deploy:hosting
+```
+
+### Backend (Render)
 
 - Push a la rama conectada → deploy automático, o
 - Render → **Manual Deploy** → **Deploy latest commit**
@@ -245,5 +270,8 @@ firebase deploy --only hosting
 | 500 genérico en prod | Normal — detalles solo en logs de Render |
 | Pantalla en blanco | Rewrite SPA a `index.html` en Firebase Hosting |
 | API no arranca | Logs en Render: `[PRODUCCIÓN]` indica qué falta |
+| No se ve el ☰ en el teléfono | Frontend sin actualizar o caché | `npm run deploy:hosting`; vacía caché del navegador |
+| Login pegado arriba en móvil | Versión anterior del CSS | Redeploy frontend; ver `auth/login/login.component.scss` |
+| Aportación no se genera | Ingreso no es talento o sin ministerio | Solo cuenta `4105` con ministerio asignado; revisar logs Render al aprobar |
 
 Más detalle: [README principal](../README.md).
