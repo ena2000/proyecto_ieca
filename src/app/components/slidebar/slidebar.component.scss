@@ -410,17 +410,20 @@ $ease-sidebar:      cubic-bezier(0.4, 0, 0.2, 1);
    ========================================================================== */
 @media (max-width: 768px) {
   .sidebar {
-    width: $sidebar-collapsed;
+    width: min($sidebar-expanded, 88vw);
+    transform: translateX(-105%);
+    transition:
+      transform 0.28s $ease-sidebar,
+      box-shadow 0.28s $ease-sidebar;
+    z-index: 1001;
+  }
 
-    &.expanded {
-      width: min($sidebar-expanded, 85vw);
-    }
+  :host(.mobile-drawer-open) .sidebar {
+    transform: translateX(0);
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.28);
   }
 
   .pin-btn {
-    .sidebar.expanded & {
-      opacity: 1;
-      pointer-events: auto;
-    }
+    display: none;
   }
 }

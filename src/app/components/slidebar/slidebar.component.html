@@ -1,6 +1,6 @@
 <div
   class="sidebar"
-  [class.expanded]="sidebarOpen"
+  [class.expanded]="sidebarOpen || mobileDrawerOpen"
   (mouseenter)="onSidebarEnter()"
   (mouseleave)="onSidebarLeave()">
 

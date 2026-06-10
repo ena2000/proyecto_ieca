@@ -447,14 +447,45 @@ ion-app .app-main .ion-page > ion-content {
    ========================================================================== */
 @media (max-width: 768px) {
   :root {
-    --input-height: 40px;
-    --button-height: 40px;
-    --ieca-sidebar-expanded: min(260px, 85vw);
+    --input-height: 44px;
+    --button-height: 44px;
+    --ieca-sidebar-width: 0px;
+  }
+
+  ion-app.ieca-has-sidebar .app-main {
+    margin-left: 0 !important;
+    width: 100% !important;
   }
 
   ion-app.ieca-has-sidebar:has(app-slidebar.sidebar-open) .app-main {
-    margin-left: min(var(--ieca-sidebar-expanded), 85vw);
-    width: calc(100% - min(var(--ieca-sidebar-expanded), 85vw));
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  .ieca-mobile-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: rgba(15, 23, 42, 0.45);
+    cursor: pointer;
+  }
+
+  ion-app.ieca-mobile-menu-open {
+    overflow: hidden;
+  }
+
+  ion-modal.kardex-modal {
+    --width: calc(100vw - 16px);
+    --max-width: calc(100vw - 16px);
+    --border-radius: 14px;
+  }
+
+  ion-modal {
+    --width: calc(100vw - 20px);
+    --max-width: calc(100vw - 20px);
   }
 }
 

@@ -1,0 +1,114 @@
+/* Vista estrecha (navegador móvil o ventana reducida) — no altera escritorio (min-width: 769px) */
+
+@media (max-width: 768px) {
+  .container-wrapper {
+    padding-inline: var(--space-3);
+    max-width: 100%;
+  }
+
+  ion-content.ion-padding {
+    --padding-start: var(--space-3);
+    --padding-end: var(--space-3);
+    --padding-top: var(--space-3);
+    --padding-bottom: var(--space-4);
+  }
+
+  .ieca-toolbar {
+    --min-height: 48px;
+
+    ion-title.main-title {
+      font-size: 0.82rem;
+      padding-inline: 0;
+    }
+
+    ion-menu-button {
+      margin-inline-end: 4px;
+      min-width: 44px;
+      min-height: 44px;
+    }
+  }
+
+  .form-card,
+  .list-card,
+  .desglose-card,
+  .aportacion-admin-card {
+    border-radius: var(--radius-lg);
+  }
+
+  .list-section-header {
+    gap: var(--space-3);
+  }
+
+  .filter-chips,
+  .periodo-presets {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .btn-main,
+  .btn-cancel,
+  .ieca-btn-primary,
+  ion-button.ieca-btn-primary {
+    min-height: 44px;
+  }
+
+  app-tabla-general .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-inline: calc(-1 * var(--space-3));
+    padding-inline: var(--space-3);
+  }
+
+  app-tabla-general .ieca-table {
+    min-width: 560px;
+  }
+
+  app-tabla-general .action-btn,
+  app-tabla-general .btn-icon {
+    min-width: 40px;
+    min-height: 40px;
+  }
+
+  .desglose-ministerio-table,
+  .desglose-table {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-inline: calc(-1 * var(--space-2));
+    padding-inline: var(--space-2);
+  }
+
+  .desglose-ministerio-table .desglose-ministerio-header,
+  .desglose-ministerio-table .desglose-ministerio-row,
+  .desglose-ministerio-table .desglose-ministerio-footer {
+    min-width: 580px;
+  }
+
+  .desglose-ministerio-table--aportacion .desglose-ministerio-header,
+  .desglose-ministerio-table--aportacion .desglose-ministerio-row,
+  .desglose-ministerio-table--aportacion .desglose-ministerio-footer {
+    min-width: 720px;
+  }
+
+  .kardex-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .resumen-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .quick-access-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-bottom-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 400px) {
+  .resumen-grid {
+    grid-template-columns: 1fr;
+  }
+}

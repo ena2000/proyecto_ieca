@@ -1,9 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
 import { IonApp, IonRouterOutlet } from '@ionic/angular/standalone';
 import { SlidebarComponent } from './components/slidebar/slidebar.component';
-import { CommonModule } from '@angular/common'; 
-import { Router, NavigationEnd } from '@angular/router'; 
+import { CommonModule } from '@angular/common';
+import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
+import { SidebarUiService } from './core/services/sidebar-ui.service';
 import { addIcons } from 'ionicons';
 import { 
   gridOutline, businessOutline, cashOutline, 
@@ -39,8 +40,12 @@ import {
 })
 export class AppComponent {
   public mostrarMenu = true;
+  readonly mobileMenuOpen$ = this.sidebarUi.mobileOpen$;
 
-  constructor(private router: Router) {
+  constructor(
+    private router: Router,
+    readonly sidebarUi: SidebarUiService
+  ) {
     // 1. Registro de Iconos (Dentro del constructor)
     addIcons({ 
       'grid-outline': gridOutline,
@@ -83,5 +88,28 @@ export class AppComponent {
   private actualizarVisibilidadMenu(url: string) {
     const path = (url.split('?')[0] || '').toLowerCase();
     this.mostrarMenu = !this.rutasSinMenu.includes(path);
+    if (!this.mostrarMenu) {
+      this.sidebarUi.closeMobile();
+    }
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event): void {
+    if (!this.mostrarMenu || !this.sidebarUi.isMobileViewport()) return;
+    const path = event.composedPath?.() as EventTarget[] | undefined;
+    const menuBtn = path?.find(
+      node => node instanceof HTMLElement && node.tagName === 'ION-MENU-BUTTON'
+    );
+    if (!menuBtn) return;
+    event.preventDefault();
+    event.stopPropagation();
+    this.sidebarUi.toggleMobile();
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    if (!this.sidebarUi.isMobileViewport()) {
+      this.sidebarUi.closeMobile();
+    }
   }
 }

@@ -1,4 +1,12 @@
-<ion-app [class.ieca-has-sidebar]="mostrarMenu">
+<ion-app [class.ieca-has-sidebar]="mostrarMenu" [class.ieca-mobile-menu-open]="mobileMenuOpen$ | async">
+  @if (mostrarMenu && (mobileMenuOpen$ | async)) {
+    <button
+      type="button"
+      class="ieca-mobile-backdrop"
+      aria-label="Cerrar menú"
+      (click)="sidebarUi.closeMobile()">
+    </button>
+  }
   @if (mostrarMenu) {
     <app-slidebar></app-slidebar>
   }

@@ -574,11 +574,15 @@ app-tabla-general {
    RESPONSIVE — ventana estrecha (web)
 ========================================================= */
 @media (max-width: 768px) {
+  .table-container {
+    border-radius: var(--radius-lg, 11px);
+  }
+
   .ieca-table {
     th,
     td {
-      padding: 14px 16px;
-      font-size: 0.85rem;
+      padding: 12px 10px;
+      font-size: 0.8rem;
     }
   }
 

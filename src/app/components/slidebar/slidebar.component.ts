@@ -11,6 +11,7 @@ import { Subject, combineLatest } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificacionesService } from '../../core/services/notificaciones.service';
+import { SidebarUiService } from '../../core/services/sidebar-ui.service';
 
 export interface MenuItem {
   label: string;
@@ -37,6 +38,9 @@ export class SlidebarComponent implements OnInit, OnDestroy {
     return this.isOpen || this.isPinned;
   }
 
+  @HostBinding('class.mobile-drawer-open')
+  mobileDrawerOpen = false;
+
   private readonly menuPrincipalBase: MenuItem[] = [
     { label: 'Dashboard',   route: '/dashboard',   icon: 'grid-outline',          color: 'dashboard'   },
     { label: 'Ministerios', route: '/ministerios', icon: 'business-outline',      color: 'ministerios' },
@@ -60,7 +64,8 @@ export class SlidebarComponent implements OnInit, OnDestroy {
   constructor(
     private readonly router: Router,
     private readonly authService: AuthService,
-    private readonly notificacionesService: NotificacionesService
+    private readonly notificacionesService: NotificacionesService,
+    private readonly sidebarUi: SidebarUiService
   ) {
     addIcons({
       'grid-outline': gridOutline,
@@ -98,6 +103,12 @@ export class SlidebarComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.actualizarMenusPorRol();
+
+    this.sidebarUi.mobileOpen$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(open => {
+        this.mobileDrawerOpen = open;
+      });
 
     combineLatest([
       this.notificacionesService.lista$,
@@ -165,6 +176,7 @@ export class SlidebarComponent implements OnInit, OnDestroy {
     if (this.isRouteActive(route)) {
       return;
     }
+    this.sidebarUi.closeMobile();
     void this.router.navigateByUrl(route);
   }
 
@@ -175,10 +187,12 @@ export class SlidebarComponent implements OnInit, OnDestroy {
   }
 
   onSidebarEnter(): void {
+    if (this.sidebarUi.isMobileViewport()) return;
     this.isOpen = true;
   }
 
   onSidebarLeave(): void {
+    if (this.sidebarUi.isMobileViewport()) return;
     if (!this.isPinned) {
       this.isOpen = false;
     }
@@ -191,7 +205,12 @@ export class SlidebarComponent implements OnInit, OnDestroy {
 
   @HostListener('window:keydown', ['$event'])
   onKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Escape' && this.isOpen && !this.isPinned) {
+    if (event.key !== 'Escape') return;
+    if (this.sidebarUi.isMobileViewport() && this.mobileDrawerOpen) {
+      this.sidebarUi.closeMobile();
+      return;
+    }
+    if (this.isOpen && !this.isPinned) {
       this.isOpen = false;
     }
   }

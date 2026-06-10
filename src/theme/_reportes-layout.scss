@@ -875,16 +875,14 @@
     grid-template-columns: 1fr;
   }
 
-  .desglose-header,
-  .desglose-row {
-    grid-template-columns: 1fr 1fr !important;
-    font-size: 0.75rem;
+  .reportes-filters-row,
+  .filters-section {
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .desglose-ministerio-header,
-  .desglose-ministerio-row {
-    grid-template-columns: 1fr 1fr !important;
-    font-size: 0.75rem;
+  .periodo-nav {
+    justify-content: center;
   }
 }
 
