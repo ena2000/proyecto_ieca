@@ -3,7 +3,7 @@ import { ViewWillEnter, ViewWillLeave } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import {
-  IonHeader, IonToolbar, IonButtons, IonMenuButton,
+  IonHeader, IonToolbar, IonButtons,
   IonTitle, IonContent, IonIcon, IonButton,
   IonMenuToggle, IonRouterLink
 } from '@ionic/angular/standalone';
@@ -12,6 +12,7 @@ import { debounceTime, takeUntil } from 'rxjs/operators';
 import { DataService, KPIs, MesData, Movimiento } from '../../services/data.service';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificacionesBellComponent } from '../../components/notificaciones-bell/notificaciones-bell.component';
+import { ToolbarMenuButtonComponent } from '../../components/toolbar-menu-button/toolbar-menu-button.component';
 import {
   porcentajeTendenciaDisplay,
   verboTendenciaDisplay
@@ -24,10 +25,11 @@ import {
   standalone: true,
   imports: [
     CommonModule, RouterLink,
-    IonHeader, IonToolbar, IonButtons, IonMenuButton,
+    IonHeader, IonToolbar, IonButtons,
     IonTitle, IonContent, IonIcon, IonButton,
     IonMenuToggle, IonRouterLink,
-    NotificacionesBellComponent
+    NotificacionesBellComponent,
+    ToolbarMenuButtonComponent
   ]
 })
 export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit, ViewWillEnter, ViewWillLeave {

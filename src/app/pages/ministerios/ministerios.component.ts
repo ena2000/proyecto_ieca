@@ -7,7 +7,7 @@ import { Subject, firstValueFrom } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 import {
-  IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent,
+  IonHeader, IonToolbar, IonButtons, IonTitle, IonContent,
   IonIcon, IonItem, IonLabel, IonInput, IonButton,
   IonSearchbar, IonSelect, IonSelectOption,
   IonModal,
@@ -24,6 +24,7 @@ import {
 
 import { TablaGeneralComponent, TableColumn } from 'src/app/components/tabla-general/tabla-general.component';
 import { NotificacionesBellComponent } from 'src/app/components/notificaciones-bell/notificaciones-bell.component';
+import { ToolbarMenuButtonComponent } from 'src/app/components/toolbar-menu-button/toolbar-menu-button.component';
 import { Ministerio, Usuario, KardexLinea } from '../../core/models';
 import { DataService } from '../../services/data.service';
 import { MinisteriosService } from '../../services/ministerios.service';
@@ -44,11 +45,11 @@ registerLocaleData(localeEs);
   imports: [
     CommonModule,
     FormsModule,
-    IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent,
+    IonHeader, IonToolbar, IonButtons, IonTitle, IonContent,
     IonIcon, IonItem, IonLabel, IonInput, IonButton,
     IonSearchbar, IonSelect, IonSelectOption, IonModal,
     TablaGeneralComponent,
-    NotificacionesBellComponent
+    NotificacionesBellComponent, ToolbarMenuButtonComponent
   ],
   providers: [AlertController, ToastController, LoadingController],
   changeDetection: ChangeDetectionStrategy.OnPush

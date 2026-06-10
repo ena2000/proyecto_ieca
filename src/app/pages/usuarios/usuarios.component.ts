@@ -6,7 +6,7 @@ import { Subject, firstValueFrom } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 import {
-  IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent,
+  IonHeader, IonToolbar, IonButtons, IonTitle, IonContent,
   IonIcon, IonItem, IonLabel, IonInput, IonButton, IonSearchbar,
   ToastController, AlertController, IonSelect, IonSelectOption
 } from '@ionic/angular/standalone';
@@ -20,6 +20,7 @@ import {
 
 import { TablaGeneralComponent, TableColumn } from 'src/app/components/tabla-general/tabla-general.component';
 import { NotificacionesBellComponent } from 'src/app/components/notificaciones-bell/notificaciones-bell.component';
+import { ToolbarMenuButtonComponent } from 'src/app/components/toolbar-menu-button/toolbar-menu-button.component';
 import { Usuario, Ministerio } from '../../core/models';
 import { DataService } from '../../services/data.service';
 import { UsuariosService, UsuarioPayload, UsuarioCreateResponse } from '../../services/usuarios.service';
@@ -46,7 +47,6 @@ registerLocaleData(localeEs);
     IonHeader,
     IonToolbar,
     IonButtons,
-    IonMenuButton,
     IonTitle,
     IonContent,
     IonIcon,
@@ -58,7 +58,8 @@ registerLocaleData(localeEs);
     IonSelect,
     IonSelectOption,
     TablaGeneralComponent,
-    NotificacionesBellComponent
+    NotificacionesBellComponent,
+    ToolbarMenuButtonComponent
   ],
   providers: [ToastController, AlertController, LoadingController]
 })

@@ -8,7 +8,7 @@ import { CommonModule, registerLocaleData } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import localeEs from '@angular/common/locales/es';
 import {
-  IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent,
+  IonHeader, IonToolbar, IonButtons, IonTitle, IonContent,
   IonIcon, IonItem, IonLabel, IonInput, IonButton,
   IonSearchbar, ToastController, IonSelect, IonSelectOption
 } from '@ionic/angular/standalone';
@@ -18,6 +18,7 @@ import { takeUntil } from 'rxjs/operators';
 
 import { TablaGeneralComponent, TableColumn, TableActions } from 'src/app/components/tabla-general/tabla-general.component';
 import { NotificacionesBellComponent } from 'src/app/components/notificaciones-bell/notificaciones-bell.component';
+import { ToolbarMenuButtonComponent } from 'src/app/components/toolbar-menu-button/toolbar-menu-button.component';
 import { formatearISOaDDMMYYYY } from '../../shared/utils/date.util';
 import { abrirSelectorFechaNativo, isoToDateInputValue } from '../../shared/utils/date-picker.util';
 import { procesarComprobante, esComprobantePdf } from '../../shared/utils/comprobante-upload.util';
@@ -86,10 +87,10 @@ const GASTO_VACIO = (): Gasto => {
   standalone: true,
   imports: [
     CommonModule, FormsModule,
-    IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent,
+    IonHeader, IonToolbar, IonButtons, IonTitle, IonContent,
     IonIcon, IonItem, IonLabel, IonInput, IonButton, IonSearchbar,
     IonSelectOption, IonSelect,
-    TablaGeneralComponent, NotificacionesBellComponent
+    TablaGeneralComponent, NotificacionesBellComponent, ToolbarMenuButtonComponent
   ],
   providers: [AlertController, ToastController, LoadingController],
   changeDetection: ChangeDetectionStrategy.OnPush

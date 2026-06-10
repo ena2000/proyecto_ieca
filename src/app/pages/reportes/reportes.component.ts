@@ -4,7 +4,7 @@ import { CommonModule, registerLocaleData } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import localeEs from '@angular/common/locales/es';
 import {
-  IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent,
+  IonHeader, IonToolbar, IonButtons, IonTitle, IonContent,
   IonIcon, IonButton, ToastController, IonLabel, IonItem,
   IonSelect, IonSelectOption
 } from '@ionic/angular/standalone';
@@ -12,6 +12,7 @@ import { Subject, combineLatest } from 'rxjs';
 import { debounceTime, takeUntil } from 'rxjs/operators';
 
 import { NotificacionesBellComponent } from 'src/app/components/notificaciones-bell/notificaciones-bell.component';
+import { ToolbarMenuButtonComponent } from 'src/app/components/toolbar-menu-button/toolbar-menu-button.component';
 import {
   DesgloseMinisterioReporte, DesgloseReporte, KardexLinea, Ministerio, Reporte
 } from '../../core/models';
@@ -48,9 +49,9 @@ registerReportesPageIcons();
   standalone: true,
   imports: [
     CommonModule, FormsModule,
-    IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent,
+    IonHeader, IonToolbar, IonButtons, IonTitle, IonContent,
     IonIcon, IonButton, IonLabel, IonItem, IonSelect, IonSelectOption,
-    NotificacionesBellComponent
+    NotificacionesBellComponent, ToolbarMenuButtonComponent
   ],
   providers: [ToastController],
   changeDetection: ChangeDetectionStrategy.OnPush

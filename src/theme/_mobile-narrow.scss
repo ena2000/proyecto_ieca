@@ -21,10 +21,23 @@
       padding-inline: 0;
     }
 
-    ion-menu-button {
-      margin-inline-end: 4px;
+    app-toolbar-menu-button,
+    .ieca-toolbar-menu-btn {
+      display: inline-flex;
+      margin-inline-end: 2px;
+      vertical-align: middle;
+    }
+
+    .ieca-toolbar-menu-btn {
+      --padding-start: 6px;
+      --padding-end: 6px;
       min-width: 44px;
       min-height: 44px;
+      margin: 0;
+
+      ion-icon {
+        font-size: 1.65rem;
+      }
     }
   }
 

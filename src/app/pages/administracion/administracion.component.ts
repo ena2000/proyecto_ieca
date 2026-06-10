@@ -3,7 +3,7 @@ import { ViewWillEnter } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
-  IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle,
+  IonHeader, IonToolbar, IonButtons, IonTitle,
   IonContent, IonButton, IonIcon, IonMenuToggle, IonRouterLink,
   IonInput, IonItem, IonLabel, IonSelect, IonSelectOption,
   ToastController, LoadingController
@@ -18,6 +18,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { DataService } from '../../services/data.service';
 import { AdministracionService } from '../../services/administracion.service';
 import { NotificacionesBellComponent } from '../../components/notificaciones-bell/notificaciones-bell.component';
+import { ToolbarMenuButtonComponent } from '../../components/toolbar-menu-button/toolbar-menu-button.component';
 import { abrirSelectorFechaNativo } from '../../shared/utils/date-picker.util';
 import { withLoadingResult, getHttpErrorMessage } from '../../shared/utils/loading.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
@@ -46,10 +47,10 @@ interface AportacionMinisterioVista {
   standalone: true,
   imports: [
     CommonModule, FormsModule, RouterLink,
-    IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle,
+    IonHeader, IonToolbar, IonButtons, IonTitle,
     IonContent, IonButton, IonIcon, IonMenuToggle, IonRouterLink,
     IonInput, IonItem, IonLabel, IonSelect, IonSelectOption,
-    NotificacionesBellComponent
+    NotificacionesBellComponent, ToolbarMenuButtonComponent
   ],
   providers: [AlertController, ToastController, LoadingController]
 })

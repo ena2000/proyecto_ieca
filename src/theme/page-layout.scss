@@ -1010,9 +1010,9 @@ ion-select {
    FIX SIDEBAR — clicks no bloqueados
    ===================================================== */
 
-/* Con sidebar fijo, el ion-menu-button sobra y empuja el título a la derecha */
+/* En escritorio el menú móvil no se usa (sidebar fijo) */
 @media (min-width: 769px) {
-  ion-app.ieca-has-sidebar .ieca-toolbar ion-menu-button {
+  ion-app.ieca-has-sidebar .ieca-toolbar app-toolbar-menu-button {
     display: none;
   }
 }
