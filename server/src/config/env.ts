@@ -48,7 +48,10 @@ function parseCorsOrigins() {
   if (!raw?.trim()) {
     return ['http://localhost:4200', 'http://127.0.0.1:4200'];
   }
-  return raw.split(',').map((s) => s.trim()).filter(Boolean);
+  return raw
+    .split(',')
+    .map((s) => s.trim().replace(/\/$/, ''))
+    .filter(Boolean);
 }
 
 function isLocalOrigin(origin) {

@@ -6,9 +6,10 @@ import { IonicModule, NavController, ToastController } from '@ionic/angular';
 import { AuthService } from '../../core/services/auth.service';
 import { getHttpErrorMessage } from '../../shared/utils/error-message.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
-import { environment } from '../../../environments/environment';
+import { despertarApiEnSegundoPlano, esperarApiDisponible } from '../../shared/utils/api-wake.util';
 
 type Paso = 'solicitar' | 'restablecer';
+type LoadingFase = 'conectando' | 'enviando' | 'actualizando';
 
 @Component({
   selector: 'app-recuperar-password',
@@ -29,6 +30,7 @@ export class RecuperarPasswordComponent implements OnInit {
   showConfirm = false;
   isLoading = false;
   loadingAccion: 'solicitar' | 'restablecer' | null = null;
+  loadingFase: LoadingFase | null = null;
 
   constructor(
     private readonly fb: FormBuilder,
@@ -48,10 +50,7 @@ export class RecuperarPasswordComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    if (environment.production && !environment.useLocalFallback) {
-      const base = environment.apiUrl.replace(/\/$/, '');
-      void fetch(`${base}/health`, { mode: 'cors' }).catch(() => undefined);
-    }
+    despertarApiEnSegundoPlano();
   }
 
   get mismatch(): boolean {
@@ -70,9 +69,20 @@ export class RecuperarPasswordComponent implements OnInit {
 
     this.isLoading = true;
     this.loadingAccion = 'solicitar';
+    this.loadingFase = 'conectando';
 
     try {
       const usuario = String(this.solicitarForm.value.usuario).trim();
+      const apiListo = await esperarApiDisponible(55_000);
+      if (!apiListo) {
+        await this.toast(
+          'El servidor no respondió a tiempo. Espera un momento y vuelve a intentar.',
+          'danger'
+        );
+        return;
+      }
+
+      this.loadingFase = 'enviando';
       const res = await this.auth.forgotPassword(usuario);
       if (!res.codeDispatched) {
         await this.toast(res.message, 'warning');
@@ -88,6 +98,7 @@ export class RecuperarPasswordComponent implements OnInit {
     } finally {
       this.isLoading = false;
       this.loadingAccion = null;
+      this.loadingFase = null;
     }
   }
 
@@ -104,8 +115,19 @@ export class RecuperarPasswordComponent implements OnInit {
 
     this.isLoading = true;
     this.loadingAccion = 'restablecer';
+    this.loadingFase = 'conectando';
 
     try {
+      const apiListo = await esperarApiDisponible(55_000);
+      if (!apiListo) {
+        await this.toast(
+          'El servidor no respondió a tiempo. Espera un momento y vuelve a intentar.',
+          'danger'
+        );
+        return;
+      }
+
+      this.loadingFase = 'actualizando';
       const { code, newPassword } = this.restablecerForm.value;
       const res = await this.auth.resetPassword(this.usuarioSolicitado, code, newPassword);
       await this.toast(res.message, 'success');
@@ -115,7 +137,21 @@ export class RecuperarPasswordComponent implements OnInit {
     } finally {
       this.isLoading = false;
       this.loadingAccion = null;
+      this.loadingFase = null;
     }
+  }
+
+  get mensajeEspera(): string {
+    if (this.loadingFase === 'conectando') {
+      return 'Conectando con el servidor (puede tardar hasta 1 minuto si Render estaba en reposo)…';
+    }
+    if (this.loadingFase === 'enviando') {
+      return 'Enviando el código a tu correo…';
+    }
+    if (this.loadingFase === 'actualizando') {
+      return 'Guardando tu nueva contraseña…';
+    }
+    return '';
   }
 
   volverASolicitar(): void {

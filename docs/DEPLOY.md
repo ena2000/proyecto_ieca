@@ -118,7 +118,7 @@ En el panel del servicio → **Environment**:
 |----------|-------------|-----------------|
 | `NODE_ENV` | Sí | `production` (si el build falla con `tsc not found`, usa el Build Command con `--include=dev` abajo) |
 | `JWT_SECRET` | Sí | Genera con `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"` |
-| `CORS_ORIGINS` | Sí | `https://tu-proyecto.web.app` o dominio Firebase custom |
+| `CORS_ORIGINS` | Sí | `https://gestion-ieca.web.app,https://gestion-ieca.firebaseapp.com` (sin espacios, sin `/` final) |
 | `FIREBASE_SERVICE_ACCOUNT_JSON` | Sí | Contenido **completo** del JSON de Firebase (una sola línea) |
 | `JWT_ACCESS_EXPIRES` | No | `15m` (por defecto) |
 | `JWT_REFRESH_EXPIRES` | No | `7d` (por defecto) |
@@ -265,7 +265,8 @@ npm run deploy:hosting
 | Primera carga muy lenta | Plan Free en Render: cold start; sube a Starter o espera |
 | Deploy falla en build | Revisa logs; ejecuta `npm run build` en local |
 | `verify:prod` falla | Revisa variables en Render; Firebase JSON en una sola línea |
-| CORS en navegador | Origen exacto (con `https://`) en `CORS_ORIGINS` |
+| CORS en navegador con código **(null)** en Firefox | Suele ser **Render dormido** o sin red, no CORS mal configurado. Espera 1 min o usa plan Starter. |
+| CORS 403 «origen no permitido» | Añade **ambas** URLs de Firebase en `CORS_ORIGINS` (ver abajo) |
 | 401 en todo el API | Unifica `JWT_SECRET`; verifica `passwordHash` en Firestore |
 | 500 genérico en prod | Normal — detalles solo en logs de Render |
 | Pantalla en blanco | Rewrite SPA a `index.html` en Firebase Hosting |

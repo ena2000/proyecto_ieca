@@ -13,7 +13,11 @@ const AUTH_PUBLIC_PATHS = [
 export function getHttpErrorMessage(error: unknown, fallback = 'Ocurrió un error inesperado'): string {
   if (error instanceof HttpErrorResponse) {
     if (error.status === 0) {
-      return 'Sin conexión con el servidor. Verifica tu internet o que el API esté activo.';
+      return (
+        'No se pudo contactar el API (Render puede estar despertando o sin conexión). ' +
+        'Espera hasta 1 minuto y vuelve a intentar. En Firefox a veces aparece como «CORS» con código (null), ' +
+        'aunque el origen esté bien configurado.'
+      );
     }
     if (error.status === 429) {
       return (
@@ -25,7 +29,14 @@ export function getHttpErrorMessage(error: unknown, fallback = 'Ocurrió un erro
       return extractBodyMessage(error) || 'Sesión expirada o credenciales incorrectas.';
     }
     if (error.status === 403) {
-      return extractBodyMessage(error) || 'No tienes permiso para esta acción.';
+      const body = extractBodyMessage(error);
+      if (body?.includes('CORS:')) {
+        return (
+          'El servidor rechazó el origen del navegador. En Render, CORS_ORIGINS debe incluir la URL exacta ' +
+          'del frontend (p. ej. https://gestion-ieca.web.app y https://gestion-ieca.firebaseapp.com).'
+        );
+      }
+      return body || 'No tienes permiso para esta acción.';
     }
     if (error.status >= 500) {
       return 'Error en el servidor. Intenta más tarde o contacta al administrador.';

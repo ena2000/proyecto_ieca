@@ -6,7 +6,7 @@ import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { getHttpErrorMessage } from '../../shared/utils/error-message.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
-import { environment } from '../../../environments/environment';
+import { despertarApiEnSegundoPlano, esperarApiDisponible } from '../../shared/utils/api-wake.util';
 
 @Component({
   selector: 'app-login',
@@ -20,6 +20,7 @@ export class LoginComponent implements OnInit {
   password = '';
   showPassword = false;
   isLoading = false;
+  conectandoServidor = false;
   submitted = false;
 
   constructor(
@@ -34,11 +35,7 @@ export class LoginComponent implements OnInit {
       return;
     }
 
-    // En producción, despierta Render antes del primer login (cold start).
-    if (environment.production && !environment.useLocalFallback) {
-      const base = environment.apiUrl.replace(/\/$/, '');
-      void fetch(`${base}/health`, { mode: 'cors' }).catch(() => undefined);
-    }
+    despertarApiEnSegundoPlano();
   }
 
   async onLogin(): Promise<void> {
@@ -55,8 +52,19 @@ export class LoginComponent implements OnInit {
     }
 
     this.isLoading = true;
+    this.conectandoServidor = true;
 
     try {
+      const apiListo = await esperarApiDisponible(55_000);
+      if (!apiListo) {
+        await this.presentToast(
+          'El servidor no respondió a tiempo. Espera un momento y vuelve a intentar.',
+          'danger'
+        );
+        return;
+      }
+
+      this.conectandoServidor = false;
       const result = await this.authService.login(u, p);
 
       if (result.success) {
@@ -71,6 +79,7 @@ export class LoginComponent implements OnInit {
       await this.presentToast(getHttpErrorMessage(error, 'Error en la autenticación. Intenta de nuevo.'), 'danger');
     } finally {
       this.isLoading = false;
+      this.conectandoServidor = false;
     }
   }
 

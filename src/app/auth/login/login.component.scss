@@ -221,6 +221,16 @@
     padding: max(16px, env(safe-area-inset-top, 0px)) 14px max(20px, env(safe-area-inset-bottom, 0px));
   }
 
+  .bg-circle {
+    filter: none;
+    opacity: 0.12;
+  }
+
+  .login-card {
+    backdrop-filter: none;
+    background: #fff;
+  }
+
   .login-card {
     padding: 28px 22px;
     border-radius: 28px;

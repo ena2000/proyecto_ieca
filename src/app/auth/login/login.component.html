@@ -64,14 +64,18 @@
           <ion-button expand="block" type="button" class="submit-btn" [disabled]="isLoading" (click)="onLogin()">
             @if (isLoading) {
               <ion-spinner name="crescent" slot="start"></ion-spinner>
-              Conectando con el servidor…
+              {{ conectandoServidor ? 'Conectando con el servidor…' : 'Iniciando sesión…' }}
             } @else {
               Iniciar Sesión
               <ion-icon slot="end" name="arrow-forward-circle"></ion-icon>
             }
           </ion-button>
           @if (isLoading) {
-            <p class="login-wait-hint">Por favor, espere...</p>
+            <p class="login-wait-hint">
+              {{ conectandoServidor
+                ? 'Despertando el API en Render (hasta 1 minuto la primera vez)…'
+                : 'Verificando credenciales…' }}
+            </p>
           }
         </form>
 
