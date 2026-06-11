@@ -46,11 +46,13 @@ function createApp(options: { useMemoryDb?: boolean } = {}) {
   app.use(express.json({ limit: '10mb' }));
 
   app.get('/api/health', (_req, res) => {
+    const { smtpConfigured } = require('./config/env');
     res.json({
       ok: true,
       service: 'ieca-server',
       version: pkg.version,
-      uptimeSeconds: Math.floor(process.uptime())
+      uptimeSeconds: Math.floor(process.uptime()),
+      smtpConfigured: Boolean(smtpConfigured)
     });
   });
 

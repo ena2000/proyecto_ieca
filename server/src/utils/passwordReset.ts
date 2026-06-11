@@ -4,6 +4,7 @@ const { db } = require('../config/firebase');
 const { listCollection } = require('./firestore');
 const { sendPasswordResetEmail } = require('./email');
 const { normalizeEmail } = require('./email-normalize');
+const { smtpConfigured, isProduction } = require('../config/env');
 
 const COLLECTION = 'password_resets';
 const CODE_TTL_MS = 15 * 60 * 1000;
@@ -93,6 +94,15 @@ async function requestPasswordReset(login) {
       channel: 'none',
       devCode: undefined
     };
+  }
+
+  if (isProduction && !smtpConfigured) {
+    const err = new Error(
+      'La recuperación por correo no está activa. El administrador debe configurar SMTP en Render ' +
+      '(SMTP_HOST, SMTP_USER, SMTP_PASS y opcional SMTP_FROM).'
+    );
+    err.status = 503;
+    throw err;
   }
 
   const code = generateCode();

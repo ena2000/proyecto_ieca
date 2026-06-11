@@ -28,6 +28,12 @@ export function getHttpErrorMessage(error: unknown, fallback = 'Ocurrió un erro
     if (error.status === 401) {
       return extractBodyMessage(error) || 'Sesión expirada o credenciales incorrectas.';
     }
+    if (error.status === 503) {
+      return (
+        extractBodyMessage(error) ||
+        'Servicio de correo no disponible. Contacta al administrador para configurar SMTP en Render.'
+      );
+    }
     if (error.status === 403) {
       const body = extractBodyMessage(error);
       if (body?.includes('CORS:')) {

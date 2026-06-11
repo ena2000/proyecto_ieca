@@ -9,6 +9,12 @@ const {
 let transporter = null;
 let transporterVerified = false;
 
+function crearErrorEmail(message, status = 503) {
+  const err = new Error(message);
+  err.status = status;
+  return err;
+}
+
 function smtpErrorMessage(err) {
   const code = err?.code || '';
   if (code === 'EAUTH') {
@@ -81,7 +87,7 @@ function mailAttachments() {
 async function deliverEmail({ to, subject, text, html }) {
   const recipients = Array.isArray(to) ? to.filter(Boolean) : [to].filter(Boolean);
   if (!recipients.length) {
-    throw new Error('No hay destinatarios para el correo.');
+    throw crearErrorEmail('No hay destinatarios para el correo.', 400);
   }
 
   const payload = {
@@ -100,7 +106,7 @@ async function deliverEmail({ to, subject, text, html }) {
       return { sent: true, channel: 'email', recipients: recipients.length };
     } catch (err) {
       console.error('[email] Error SMTP:', err);
-      throw new Error(smtpErrorMessage(err));
+      throw crearErrorEmail(smtpErrorMessage(err));
     }
   }
 
@@ -113,8 +119,8 @@ async function deliverEmail({ to, subject, text, html }) {
     return { sent: false, channel: 'console', recipients: recipients.length };
   }
 
-  throw new Error(
-    'El envío de correo no está configurado. Configura SMTP en server/.env o contacta al administrador.'
+  throw crearErrorEmail(
+    'La recuperación por correo no está activa. Configura SMTP_HOST, SMTP_USER y SMTP_PASS en Render.'
   );
 }
 
@@ -134,8 +140,8 @@ async function sendPasswordResetEmail({ to, usuario, code }) {
     return { sent: false, channel: 'console', devCode: code };
   }
 
-  throw new Error(
-    'El envío de correo no está configurado. Configura SMTP_HOST, SMTP_USER y SMTP_PASS en server/.env.'
+  throw crearErrorEmail(
+    'La recuperación por correo no está activa. Configura SMTP_HOST, SMTP_USER y SMTP_PASS en Render.'
   );
 }
 

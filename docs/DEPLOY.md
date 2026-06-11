@@ -122,7 +122,7 @@ En el panel del servicio → **Environment**:
 | `FIREBASE_SERVICE_ACCOUNT_JSON` | Sí | Contenido **completo** del JSON de Firebase (una sola línea) |
 | `JWT_ACCESS_EXPIRES` | No | `15m` (por defecto) |
 | `JWT_REFRESH_EXPIRES` | No | `7d` (por defecto) |
-| `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` | Recomendado | Para recuperación de contraseña y alertas |
+| `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` | **Sí** (producción) | Sin esto, **recuperar contraseña devuelve 503**. Ver [SMTP en Render](#smtp-en-render-recuperación-y-alertas) |
 | `ALERTAS_CRON_ENABLED` | No | `true` si quieres cron de alertas en el mismo proceso |
 
 Render asigna `PORT` automáticamente; no lo configures manualmente.
@@ -143,6 +143,23 @@ Get-Content server\firebase-service-account.json -Raw | ConvertFrom-Json | Conve
 ```
 
 > **Nunca** subas el JSON a Git. Usa solo variables secretas en Render.
+
+#### SMTP en Render (recuperación y alertas)
+
+Sin SMTP, `POST /api/auth/forgot-password` responde **503** (no envía códigos). Comprueba en `/api/health` el campo `smtpConfigured: true`.
+
+Ejemplo con **Gmail** (contraseña de aplicación de Google, no la contraseña normal):
+
+| Variable | Valor ejemplo |
+|----------|----------------|
+| `SMTP_HOST` | `smtp.gmail.com` |
+| `SMTP_PORT` | `587` |
+| `SMTP_SECURE` | `false` |
+| `SMTP_USER` | `tu-cuenta@gmail.com` |
+| `SMTP_PASS` | contraseña de aplicación (16 caracteres) |
+| `SMTP_FROM` | `IECA Finanzas <tu-cuenta@gmail.com>` |
+
+Tras guardar en Render → **Manual Deploy**. Prueba de nuevo «Olvidaste tu contraseña».
 
 ### 4. Dominio personalizado (opcional)
 
@@ -274,5 +291,6 @@ npm run deploy:hosting
 | No se ve el ☰ en el teléfono | Frontend sin actualizar o caché | `npm run deploy:hosting`; vacía caché del navegador |
 | Login pegado arriba en móvil | Versión anterior del CSS | Redeploy frontend; ver `auth/login/login.component.scss` |
 | Aportación no se genera | Ingreso no es talento o sin ministerio | Solo cuenta `4105` con ministerio asignado; revisar logs Render al aprobar |
+| **500/503** en forgot-password | SMTP no configurado o credenciales incorrectas | Render → Environment: `SMTP_*`; `/api/health` debe mostrar `smtpConfigured: true` |
 
 Más detalle: [README principal](../README.md).
