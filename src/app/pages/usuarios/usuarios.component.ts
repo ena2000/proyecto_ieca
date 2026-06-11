@@ -24,7 +24,7 @@ import { ToolbarMenuButtonComponent } from 'src/app/components/toolbar-menu-butt
 import { Usuario, Ministerio } from '../../core/models';
 import { DataService } from '../../services/data.service';
 import { UsuariosService, UsuarioPayload, UsuarioCreateResponse } from '../../services/usuarios.service';
-import { withLoading } from '../../shared/utils/loading.util';
+import { withLoading, getHttpErrorMessage } from '../../shared/utils/loading.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
 import {
   isRolSinMinisterio,
@@ -33,6 +33,10 @@ import {
   validarUsuarioForm
 } from '../../shared/utils/liderazgo.util';
 import { ROLES } from '../../core/constants/roles.constants';
+import {
+  mensajeUsuarioEmailDuplicado,
+  usuarioEmailDuplicado
+} from '../../shared/utils/unicidad.util';
 
 registerLocaleData(localeEs);
 
@@ -251,8 +255,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
 
       this.resetFormulario();
     } catch (error) {
-      const msg = error instanceof Error ? error.message : 'Error al guardar';
-      this.mostrarToast(msg, 'danger');
+      this.mostrarToast(getHttpErrorMessage(error, 'Error al guardar'), 'danger');
     }
   }
 
@@ -346,6 +349,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
       (this.password.trim() ? this.password.trim().length >= 6 : true);
 
     if (!base) return false;
+    if (this.emailUsuarioDuplicado) return false;
     return validarUsuarioForm(
       this.nuevoUsuario,
       this.listaMinisterios,
@@ -354,7 +358,18 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     ) == null;
   }
 
+  private get emailUsuarioDuplicado() {
+    return usuarioEmailDuplicado(
+      this.nuevoUsuario.email,
+      this.listaUsuarios,
+      this.modoEdicion ? this.idEditando : null
+    );
+  }
+
   get mensajeValidacion(): string {
+    if (this.emailUsuarioDuplicado) {
+      return mensajeUsuarioEmailDuplicado(this.emailUsuarioDuplicado);
+    }
     return validarUsuarioForm(
       this.nuevoUsuario,
       this.listaMinisterios,

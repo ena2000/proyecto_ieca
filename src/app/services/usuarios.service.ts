@@ -5,6 +5,7 @@ import { Usuario } from '../core/models';
 import { ApiService } from '../core/services/api.service';
 import { API } from '../core/constants/api.constants';
 import { environment } from '../../environments/environment';
+import { mensajeUsuarioEmailDuplicado, usuarioEmailDuplicado } from '../shared/utils/unicidad.util';
 
 export type UsuarioPayload = Omit<Usuario, 'id'> & { password?: string };
 export type UsuarioCreateResponse = Usuario & { tempPassword?: string };
@@ -75,6 +76,10 @@ export class UsuariosService {
   }
 
   private createLocal(usuario: UsuarioPayload): Usuario {
+    const duplicado = usuarioEmailDuplicado(usuario.email, this.getAll());
+    if (duplicado) {
+      throw new Error(mensajeUsuarioEmailDuplicado(duplicado));
+    }
     const { password: _ignored, ...data } = usuario;
     const nuevo: Usuario = { ...data, id: this.nextId() };
     this.persist([nuevo, ...this.getAll()]);
@@ -82,6 +87,10 @@ export class UsuariosService {
   }
 
   private updateLocal(id: number, usuario: UsuarioPayload): Usuario {
+    const duplicado = usuarioEmailDuplicado(usuario.email, this.getAll(), id);
+    if (duplicado) {
+      throw new Error(mensajeUsuarioEmailDuplicado(duplicado));
+    }
     const { password: _ignored, ...data } = usuario;
     const actualizado: Usuario = { ...data, id };
     this.persist(this.getAll().map(u => (u.id === id ? actualizado : u)));

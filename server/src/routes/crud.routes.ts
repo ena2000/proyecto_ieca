@@ -43,6 +43,11 @@ const {
   sincronizarLideresMinisterio
 } = require('../utils/liderazgo');
 const { normalizeEmail } = require('../utils/email-normalize');
+const {
+  assertMinisterioNombreUnico,
+  assertUsuarioEmailUnico,
+  assertUsuarioLoginUnico
+} = require('../utils/unicidad');
 const { validate } = require('../middleware/validate');
 const { idParamSchema, motivoRechazoSchema } = require('../schemas/common.schema');
 const {
@@ -203,6 +208,9 @@ function createCrudRouter(collection, options: {
         if (!provided) {
           const base = slugifyUsuario(body.nombre);
           body.usuario = await ensureUniqueUsuario(base);
+        } else {
+          body.usuario = provided;
+          await assertUsuarioLoginUnico(body.usuario, null);
         }
       }
 
@@ -331,10 +339,18 @@ function createCrudRouter(collection, options: {
 }
 
 async function beforeCreateMinisterio(body) {
+  if (body.nombre != null) {
+    body.nombre = String(body.nombre).trim();
+  }
+  await assertMinisterioNombreUnico(body.nombre, null);
   await validarMinisterioLiderazgo(body, null);
 }
 
 async function beforeUpdateMinisterio(body, _req, current) {
+  if (body.nombre != null) {
+    body.nombre = String(body.nombre).trim();
+    await assertMinisterioNombreUnico(body.nombre, current?.id ?? null);
+  }
   await validarMinisterioLiderazgo(body, current?.id ?? null);
 }
 
@@ -347,15 +363,26 @@ async function afterSaveMinisterio(ministerio) {
 async function beforeCreateUsuario(body) {
   if (body.email != null) {
     body.email = normalizeEmail(body.email) ?? body.email;
+    await assertUsuarioEmailUnico(body.email, null);
+  }
+  if (body.usuario != null && String(body.usuario).trim()) {
+    body.usuario = String(body.usuario).trim();
+    await assertUsuarioLoginUnico(body.usuario, null);
   }
   await normalizarYValidarUsuario(body, null);
 }
 
 async function beforeUpdateUsuario(body, _req, current) {
+  const excludeId = current?.id ?? null;
   if (body.email != null) {
     body.email = normalizeEmail(body.email) ?? body.email;
+    await assertUsuarioEmailUnico(body.email, excludeId);
   }
-  await normalizarYValidarUsuario(body, current?.id ?? null);
+  if (body.usuario != null && String(body.usuario).trim()) {
+    body.usuario = String(body.usuario).trim();
+    await assertUsuarioLoginUnico(body.usuario, excludeId);
+  }
+  await normalizarYValidarUsuario(body, excludeId);
 }
 
 const ministeriosRouter = createCrudRouter('ministerios', {

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, firstValueFrom, of, timeout, TimeoutError } from 'rxjs';
+import { BehaviorSubject, Observable, firstValueFrom, of, timeout, TimeoutError, throwError } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
+import { getHttpErrorMessage } from '../../shared/utils/error-message.util';
 import { SessionUser, LoginResponse, RefreshTokenResponse } from '../models';
 import {
   AppRole,
@@ -26,6 +27,10 @@ export interface ForgotPasswordResponse {
   channel?: 'email' | 'console' | 'none';
   devCode?: string;
 }
+
+const AUTH_REQUEST_TIMEOUT_MS = 90_000;
+const AUTH_TIMEOUT_MESSAGE =
+  'El servidor tarda en responder (arranque en Render). Espera un momento e inténtalo de nuevo.';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -91,14 +96,12 @@ export class AuthService {
     }
     return firstValueFrom(
       this.api.post<LoginResponse>(API.auth.login, { usuario, password }).pipe(
-        timeout(90_000),
+        this.withAuthTimeout(),
         tap(res => this.persistSession(res.token, res.refreshToken, res.user)),
         map(() => ({ success: true } as LoginResult)),
         catchError(err => of({
           success: false,
-          mensaje: err instanceof TimeoutError
-            ? 'El servidor tarda en responder (arranque en Render). Espera un momento e inténtalo de nuevo.'
-            : (err?.message ?? 'Usuario o contraseña incorrectos')
+          mensaje: this.mensajeErrorAuth(err, 'Usuario o contraseña incorrectos')
         } as LoginResult))
       )
     );
@@ -160,14 +163,41 @@ export class AuthService {
 
   forgotPassword(usuario: string): Promise<ForgotPasswordResponse> {
     return firstValueFrom(
-      this.api.post<ForgotPasswordResponse>(API.auth.forgotPassword, { usuario })
+      this.api.post<ForgotPasswordResponse>(API.auth.forgotPassword, { usuario }).pipe(
+        this.withAuthTimeout()
+      )
     );
   }
 
   resetPassword(usuario: string, code: string, newPassword: string): Promise<{ message: string }> {
     return firstValueFrom(
-      this.api.post<{ message: string }>(API.auth.resetPassword, { usuario, code, newPassword })
+      this.api.post<{ message: string }>(API.auth.resetPassword, { usuario, code, newPassword }).pipe(
+        this.withAuthTimeout()
+      )
     );
+  }
+
+  private withAuthTimeout<T>() {
+    return (source: Observable<T>) =>
+      source.pipe(
+        timeout(AUTH_REQUEST_TIMEOUT_MS),
+        catchError(err => {
+          if (err instanceof TimeoutError) {
+            return throwError(() => new Error(AUTH_TIMEOUT_MESSAGE));
+          }
+          return throwError(() => err);
+        })
+      );
+  }
+
+  private mensajeErrorAuth(error: unknown, fallback: string): string {
+    if (error instanceof TimeoutError) {
+      return AUTH_TIMEOUT_MESSAGE;
+    }
+    if (error instanceof Error && error.message) {
+      return error.message;
+    }
+    return getHttpErrorMessage(error, fallback);
   }
 
   private persistSession(token: string, refreshToken: string, user: SessionUser): void {

@@ -36,6 +36,9 @@ function getTransporter() {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS
       },
+      connectionTimeout: Number(process.env.SMTP_CONNECTION_TIMEOUT_MS) || 12_000,
+      greetingTimeout: Number(process.env.SMTP_GREETING_TIMEOUT_MS) || 12_000,
+      socketTimeout: Number(process.env.SMTP_SOCKET_TIMEOUT_MS) || 20_000,
       tls: {
         minVersion: 'TLSv1.2'
       }
@@ -49,8 +52,14 @@ async function ensureTransporterReady() {
   const transport = getTransporter();
   if (!transport) return null;
   if (!transporterVerified) {
+    const verifyTimeoutMs = Number(process.env.SMTP_VERIFY_TIMEOUT_MS) || 8_000;
     try {
-      await transport.verify();
+      await Promise.race([
+        transport.verify(),
+        new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('SMTP verify timeout')), verifyTimeoutMs);
+        })
+      ]);
     } catch (err) {
       console.warn('[email] Verificación SMTP falló (se intentará enviar igual):', err?.message || err);
     }

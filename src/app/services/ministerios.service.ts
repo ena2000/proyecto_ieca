@@ -6,6 +6,7 @@ import { formatearISOaDDMMYYYY } from '../shared/utils/date.util';
 import { ApiService } from '../core/services/api.service';
 import { API } from '../core/constants/api.constants';
 import { environment } from '../../environments/environment';
+import { ministerioNombreDuplicado, mensajeMinisterioDuplicado } from '../shared/utils/unicidad.util';
 
 @Injectable({ providedIn: 'root' })
 export class MinisteriosService {
@@ -70,6 +71,10 @@ export class MinisteriosService {
   }
 
   private createLocal(ministerio: Omit<Ministerio, 'id' | 'fecha' | 'fechaFormateada'>): Ministerio {
+    const duplicado = ministerioNombreDuplicado(ministerio.nombre, this.getAll());
+    if (duplicado) {
+      throw new Error(mensajeMinisterioDuplicado(duplicado));
+    }
     const ahora = new Date().toISOString();
     const nuevo: Ministerio = {
       ...ministerio,
@@ -82,6 +87,10 @@ export class MinisteriosService {
   }
 
   private updateLocal(id: number, ministerio: Ministerio): Ministerio {
+    const duplicado = ministerioNombreDuplicado(ministerio.nombre, this.getAll(), id);
+    if (duplicado) {
+      throw new Error(mensajeMinisterioDuplicado(duplicado));
+    }
     const actualizado = { ...ministerio, id };
     this.persist(this.getAll().map(m => (m.id === id ? actualizado : m)));
     return actualizado;

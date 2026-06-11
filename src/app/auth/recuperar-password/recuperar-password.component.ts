@@ -1,11 +1,12 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { IonicModule, LoadingController, NavController, ToastController } from '@ionic/angular';
+import { IonicModule, NavController, ToastController } from '@ionic/angular';
 import { AuthService } from '../../core/services/auth.service';
 import { getHttpErrorMessage } from '../../shared/utils/error-message.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
+import { environment } from '../../../environments/environment';
 
 type Paso = 'solicitar' | 'restablecer';
 
@@ -16,7 +17,7 @@ type Paso = 'solicitar' | 'restablecer';
   templateUrl: './recuperar-password.component.html',
   styleUrls: ['./recuperar-password.component.scss']
 })
-export class RecuperarPasswordComponent {
+export class RecuperarPasswordComponent implements OnInit {
   paso: Paso = 'solicitar';
   usuarioSolicitado = '';
   devCodeHint: string | null = null;
@@ -27,11 +28,11 @@ export class RecuperarPasswordComponent {
   showNew = false;
   showConfirm = false;
   isLoading = false;
+  loadingAccion: 'solicitar' | 'restablecer' | null = null;
 
   constructor(
     private readonly fb: FormBuilder,
     private readonly auth: AuthService,
-    private readonly loadingCtrl: LoadingController,
     private readonly toastCtrl: ToastController,
     private readonly navCtrl: NavController
   ) {
@@ -46,6 +47,13 @@ export class RecuperarPasswordComponent {
     });
   }
 
+  ngOnInit(): void {
+    if (environment.production && !environment.useLocalFallback) {
+      const base = environment.apiUrl.replace(/\/$/, '');
+      void fetch(`${base}/health`, { mode: 'cors' }).catch(() => undefined);
+    }
+  }
+
   get mismatch(): boolean {
     const n = String(this.restablecerForm.value.newPassword ?? '');
     const c = String(this.restablecerForm.value.confirmPassword ?? '');
@@ -53,18 +61,15 @@ export class RecuperarPasswordComponent {
   }
 
   async solicitarCodigo(): Promise<void> {
+    if (this.isLoading) return;
+
     if (this.solicitarForm.invalid) {
       this.solicitarForm.markAllAsTouched();
       return;
     }
 
     this.isLoading = true;
-    const loading = await this.loadingCtrl.create({
-      message: 'Enviando código...',
-      spinner: 'circles',
-      cssClass: 'ieca-loading'
-    });
-    await loading.present();
+    this.loadingAccion = 'solicitar';
 
     try {
       const usuario = String(this.solicitarForm.value.usuario).trim();
@@ -81,12 +86,14 @@ export class RecuperarPasswordComponent {
     } catch (err) {
       await this.toast(getHttpErrorMessage(err, 'No se pudo enviar el código'), 'danger');
     } finally {
-      await loading.dismiss().catch(() => undefined);
       this.isLoading = false;
+      this.loadingAccion = null;
     }
   }
 
   async restablecer(): Promise<void> {
+    if (this.isLoading) return;
+
     if (this.restablecerForm.invalid || this.mismatch) {
       this.restablecerForm.markAllAsTouched();
       if (this.mismatch) {
@@ -96,12 +103,7 @@ export class RecuperarPasswordComponent {
     }
 
     this.isLoading = true;
-    const loading = await this.loadingCtrl.create({
-      message: 'Actualizando contraseña...',
-      spinner: 'circles',
-      cssClass: 'ieca-loading'
-    });
-    await loading.present();
+    this.loadingAccion = 'restablecer';
 
     try {
       const { code, newPassword } = this.restablecerForm.value;
@@ -111,12 +113,13 @@ export class RecuperarPasswordComponent {
     } catch (err) {
       await this.toast(getHttpErrorMessage(err, 'No se pudo restablecer la contraseña'), 'danger');
     } finally {
-      await loading.dismiss().catch(() => undefined);
       this.isLoading = false;
+      this.loadingAccion = null;
     }
   }
 
   volverASolicitar(): void {
+    if (this.isLoading) return;
     this.paso = 'solicitar';
     this.devCodeHint = null;
     this.emailEnviado = false;

@@ -28,12 +28,16 @@ import { ToolbarMenuButtonComponent } from 'src/app/components/toolbar-menu-butt
 import { Ministerio, Usuario, KardexLinea } from '../../core/models';
 import { DataService } from '../../services/data.service';
 import { MinisteriosService } from '../../services/ministerios.service';
-import { withLoading } from '../../shared/utils/loading.util';
+import { withLoading, getHttpErrorMessage } from '../../shared/utils/loading.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
 import {
   usuariosElegiblesParaMinisterio,
   validarMinisterioForm
 } from '../../shared/utils/liderazgo.util';
+import {
+  mensajeMinisterioDuplicado,
+  ministerioNombreDuplicado
+} from '../../shared/utils/unicidad.util';
 
 registerLocaleData(localeEs);
 
@@ -290,8 +294,7 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
       this.actualizarVista();
       this.resetFormulario();
     } catch (error) {
-      const msg = error instanceof Error ? error.message : 'Error al guardar';
-      this.mostrarToast(msg, 'danger');
+      this.mostrarToast(getHttpErrorMessage(error, 'Error al guardar'), 'danger');
     }
   }
 
@@ -357,6 +360,7 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
   get esFormularioValido(): boolean {
     if (this.nuevoMinisterio.nombre?.trim().length < 3) return false;
+    if (this.nombreMinisterioDuplicado) return false;
     return validarMinisterioForm(
       this.nuevoMinisterio,
       this.listaUsuarios,
@@ -365,9 +369,20 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
     ) == null;
   }
 
+  private get nombreMinisterioDuplicado() {
+    return ministerioNombreDuplicado(
+      this.nuevoMinisterio.nombre,
+      this.listaMinisterios,
+      this.modoEdicion ? this.idEditando : null
+    );
+  }
+
   get mensajeValidacion(): string {
     if (this.nuevoMinisterio.nombre?.trim().length < 3) {
       return 'El nombre del ministerio debe tener al menos 3 caracteres.';
+    }
+    if (this.nombreMinisterioDuplicado) {
+      return mensajeMinisterioDuplicado(this.nombreMinisterioDuplicado);
     }
     return validarMinisterioForm(
       this.nuevoMinisterio,

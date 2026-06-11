@@ -1,6 +1,7 @@
 const crypto = require('node:crypto');
 const bcrypt = require('bcryptjs');
 const { db } = require('../config/firebase');
+const { listCollection } = require('./firestore');
 const { sendPasswordResetEmail } = require('./email');
 const { normalizeEmail } = require('./email-normalize');
 
@@ -54,6 +55,12 @@ async function findUserByLogin(login) {
       .get();
     if (!byEmail.empty) {
       return { id: byEmail.docs[0].id, ...byEmail.docs[0].data() };
+    }
+
+    const usuarios = await listCollection('usuarios');
+    const porEmail = usuarios.find(u => normalizeEmail(u.email) === emailNorm);
+    if (porEmail) {
+      return { id: String(porEmail.id), ...porEmail };
     }
   }
 
