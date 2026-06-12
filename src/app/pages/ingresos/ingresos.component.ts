@@ -173,6 +173,13 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
     this.dataService.dataRevision$
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => this.actualizarVista());
+    void this.inicializarDatos();
+  }
+
+  private async inicializarDatos(): Promise<void> {
+    if (!this.dataService.hasRemoteData()) {
+      await this.dataService.bootstrapRemote();
+    }
     this.cargarRelaciones();
     this.actualizarVista();
   }
@@ -598,6 +605,19 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
   async mostrarToast(mensaje: string, color: string): Promise<void> {
     await presentIecaToast(this.toastController, mensaje, color);
+  }
+
+  onMinisterioIngresoChange(ministerioId: number | string | null | undefined): void {
+    if (ministerioId == null || ministerioId === '') {
+      this.nuevoIngreso.ministerioId = undefined;
+      return;
+    }
+    const id = Number(ministerioId);
+    const min = this.listaMinisterios.find(m => Number(m.id) === id);
+    this.nuevoIngreso.ministerioId = id;
+    if (min?.nombre) {
+      this.nuevoIngreso.ministerio = min.nombre;
+    }
   }
 
   onCuentaIngresoChange(codigo: string): void {

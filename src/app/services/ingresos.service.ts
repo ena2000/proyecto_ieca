@@ -111,11 +111,19 @@ export class IngresosService {
     ministerios: Ministerio[],
     usuarios: Usuario[]
   ): Ingreso {
-    const ministerio = ministerios.find(m => m.id === ingreso.ministerioId);
-    const usuario    = usuarios.find(u => u.id === ingreso.usuarioId);
+    const ministerioId = ingreso.ministerioId != null ? Number(ingreso.ministerioId) : undefined;
+    const usuarioId    = ingreso.usuarioId != null ? Number(ingreso.usuarioId) : undefined;
+    const ministerio   = ministerioId != null
+      ? ministerios.find(m => Number(m.id) === ministerioId)
+      : undefined;
+    const usuario      = usuarioId != null
+      ? usuarios.find(u => Number(u.id) === usuarioId)
+      : undefined;
     return {
       ...ingreso,
-      ministerio:    ministerio?.nombre ?? 'General',
+      ministerioId,
+      usuarioId,
+      ministerio:    ministerio?.nombre ?? ingreso.ministerio ?? 'General',
       registradoPor: usuario?.nombre ?? 'Sistema'
     };
   }

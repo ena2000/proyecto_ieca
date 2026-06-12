@@ -134,6 +134,16 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     this.dataService.ministerios$
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => this.cargarMinisterios());
+    this.dataService.dataRevision$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.cargarMinisterios());
+    void this.inicializarDatos();
+  }
+
+  private async inicializarDatos(): Promise<void> {
+    if (!this.dataService.hasRemoteData()) {
+      await this.dataService.bootstrapRemote();
+    }
     this.cargarMinisterios();
   }
 

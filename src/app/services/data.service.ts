@@ -19,6 +19,7 @@ import { UsuariosService } from './usuarios.service';
 import { gastoAprobado, gastoPendiente } from '../shared/utils/gasto.util';
 import { ingresoAprobado, ingresoPendiente } from '../shared/utils/ingreso.util';
 import { mesCortoEs } from '../shared/utils/month.util';
+import { resolverNombreMinisterio } from '../shared/utils/movimiento-ministerio.util';
 import {
   AportacionMinisterioResumen,
   calcularMontoAportacionIngreso,
@@ -46,6 +47,7 @@ export class DataService {
 
   private syncTimer: ReturnType<typeof setTimeout> | undefined;
   private bootstrapInFlight: Promise<void> | null = null;
+  private bootstrapComplete = false;
   private lastBootstrapAt = 0;
   private readonly bootstrapTtlMs = 300_000;
   private readonly bootstrapStorageTtlMs = 600_000;
@@ -109,7 +111,15 @@ export class DataService {
   }
 
   hasRemoteData(): boolean {
-    return this.getIngresosActuales().length > 0 || this.getGastosActuales().length > 0;
+    if (this.bootstrapComplete) {
+      return true;
+    }
+    return (
+      this.getIngresosActuales().length > 0 ||
+      this.getGastosActuales().length > 0 ||
+      this.getMinisteriosActuales().length > 0 ||
+      this.getUsuariosActuales().length > 0
+    );
   }
 
   /** Una sola petición HTTP para ingresos, gastos, notificaciones, etc. */
@@ -118,8 +128,10 @@ export class DataService {
       return Promise.resolve();
     }
 
-    const memoryFresh = !force && Date.now() - this.lastBootstrapAt < this.bootstrapTtlMs;
+    const memoryFresh = !force && this.bootstrapComplete &&
+      Date.now() - this.lastBootstrapAt < this.bootstrapTtlMs;
     if (memoryFresh) {
+      this.syncFromEntityServices();
       return Promise.resolve();
     }
 
@@ -127,15 +139,15 @@ export class DataService {
       const stored = this.readBootstrapStorage();
       if (stored) {
         this.applyBootstrap(stored);
-        void this.fetchBootstrapFromApi();
+        void this.fetchBootstrapFromApi(force);
         return Promise.resolve();
       }
     }
 
-    return this.fetchBootstrapFromApi();
+    return this.fetchBootstrapFromApi(force);
   }
 
-  private fetchBootstrapFromApi(): Promise<void> {
+  private fetchBootstrapFromApi(force = false): Promise<void> {
     if (this.bootstrapInFlight) {
       return this.bootstrapInFlight;
     }
@@ -210,6 +222,7 @@ export class DataService {
       if (payload.ministerios) this.ministeriosService.hydrate(payload.ministerios);
       if (payload.usuarios) this.usuariosService.hydrate(payload.usuarios);
       if (payload.notificaciones) this.notificacionesService.hydrate(payload.notificaciones);
+      this.bootstrapComplete = true;
       this.lastBootstrapAt = Date.now();
       this.syncFromEntityServices();
     } finally {
@@ -226,6 +239,7 @@ export class DataService {
   }
 
   private clearRemoteCache(): void {
+    this.bootstrapComplete = false;
     this.lastBootstrapAt = 0;
     this.lastIngresosRef = null;
     this.lastGastosRef = null;
@@ -379,7 +393,9 @@ export class DataService {
       ...ingresos.map(i => ({
         tipo: 'ingreso' as const,
         titulo: i.descripcion,
-        ministerio: i.ministerio || 'General',
+        ministerio: resolverNombreMinisterio(i.ministerioId, i.ministerio, ministerios, {
+          esAportacionIglesia: i.esAportacionIglesia
+        }),
         monto: this.montoIngresoParaBalance(i),
         fecha: this.formatearFecha(i.fecha),
         fechaOrden: new Date(i.fecha).getTime()
@@ -387,7 +403,7 @@ export class DataService {
       ...gastos.map(g => ({
         tipo: 'gasto' as const,
         titulo: g.descripcion,
-        ministerio: g.ministerio || ministerios.find(m => m.id === g.ministerioId)?.nombre || 'General',
+        ministerio: resolverNombreMinisterio(g.ministerioId, g.ministerio, ministerios),
         monto: g.monto || 0,
         fecha: this.formatearFecha(g.fecha),
         fechaOrden: new Date(g.fecha).getTime()
@@ -462,7 +478,9 @@ export class DataService {
     if (!distribucion.has('General')) distribucion.set('General', 0);
 
     ingresos.forEach(i => {
-      const min = i.ministerio || 'General';
+      const min = resolverNombreMinisterio(i.ministerioId, i.ministerio, ministerios, {
+        esAportacionIglesia: i.esAportacionIglesia
+      });
       distribucion.set(min, (distribucion.get(min) || 0) + this.montoIngresoParaBalance(i));
     });
 

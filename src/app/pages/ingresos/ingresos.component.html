@@ -164,7 +164,8 @@
               name="ministerioId"
               class="ieca-select"
               [disabled]="ministerioBloqueado"
-              placeholder="Seleccione un ministerio">
+              placeholder="Seleccione un ministerio"
+              (ionChange)="onMinisterioIngresoChange($any($event.detail.value))">
               <ion-select-option *ngFor="let min of ministeriosFormulario" [value]="min.id">{{ min.nombre }}</ion-select-option>
             </ion-select>
           </ion-item>

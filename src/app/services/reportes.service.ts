@@ -12,6 +12,7 @@ import { gastoAprobado } from '../shared/utils/gasto.util';
 import { ingresoAprobado } from '../shared/utils/ingreso.util';
 import { formatearISOaDDMMYYYY } from '../shared/utils/date.util';
 import { etiquetaCuentaReporte } from '../shared/utils/reportes-cuenta.util';
+import { resolverNombreMinisterio as resolverNombreMinisterioMovimiento } from '../shared/utils/movimiento-ministerio.util';
 import {
   estiloEncabezadoTabla,
   estiloFilaDatos,
@@ -66,7 +67,9 @@ export class ReportesService {
         tipo:            i.cuentaNombre || i.tipo || 'Ingreso',
         cuentaCodigo:    i.cuentaCodigo,
         cuentaNombre:    i.cuentaNombre || i.tipo,
-        ministerio:      i.ministerio || 'General',
+        ministerio:      resolverNombreMinisterioMovimiento(i.ministerioId, i.ministerio, ministerios, {
+          esAportacionIglesia: i.esAportacionIglesia
+        }),
         ministerioId:    i.ministerioId,
         ingresos:        i.monto || 0,
         gastos:          0,
@@ -103,14 +106,10 @@ export class ReportesService {
   resolverNombreMinisterio(
     ministerioId: number | undefined,
     ministerioGuardado: string | undefined,
-    ministerios: Pick<Ministerio, 'id' | 'nombre'>[]
+    ministerios: Pick<Ministerio, 'id' | 'nombre'>[],
+    opciones?: { esAportacionIglesia?: boolean }
   ): string {
-    if (ministerioGuardado) return ministerioGuardado;
-    if (ministerioId != null) {
-      const m = ministerios.find(x => x.id === ministerioId);
-      if (m) return m.nombre;
-    }
-    return 'General';
+    return resolverNombreMinisterioMovimiento(ministerioId, ministerioGuardado, ministerios, opciones);
   }
 
   calcularDesglosePorMinisterio(

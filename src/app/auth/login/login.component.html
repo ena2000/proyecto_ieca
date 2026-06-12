@@ -64,7 +64,7 @@
           <ion-button expand="block" type="button" class="submit-btn" [disabled]="isLoading" (click)="onLogin()">
             @if (isLoading) {
               <ion-spinner name="crescent" slot="start"></ion-spinner>
-              {{ conectandoServidor ? 'Conectando con el servidor…' : 'Iniciando sesión…' }}
+              {{ conectandoServidor ? 'Conectando con el servidor…' : (cargandoDatos ? 'Cargando datos…' : 'Iniciando sesión…') }}
             } @else {
               Iniciar Sesión
               <ion-icon slot="end" name="arrow-forward-circle"></ion-icon>
@@ -74,7 +74,7 @@
             <p class="login-wait-hint">
               {{ conectandoServidor
                 ? 'Despertando el API en Render (hasta 1 minuto la primera vez)…'
-                : 'Verificando credenciales…' }}
+                : (cargandoDatos ? 'Preparando el panel con ingresos, gastos y reportes…' : 'Verificando credenciales…') }}
             </p>
           }
         </form>

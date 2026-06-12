@@ -108,6 +108,13 @@ export class ReportesComponent implements OnInit, OnDestroy, ViewWillEnter {
     this.dataService.dataRevision$
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => this.actualizarVista());
+    void this.inicializarDatos();
+  }
+
+  private async inicializarDatos(): Promise<void> {
+    if (!this.dataService.hasRemoteData()) {
+      await this.dataService.bootstrapRemote();
+    }
     this.actualizarVista();
   }
 

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule, ToastController } from '@ionic/angular';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { DataService } from '../../services/data.service';
 import { getHttpErrorMessage } from '../../shared/utils/error-message.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
 import { despertarApiEnSegundoPlano, esperarApiDisponible } from '../../shared/utils/api-wake.util';
@@ -21,16 +22,19 @@ export class LoginComponent implements OnInit {
   showPassword = false;
   isLoading = false;
   conectandoServidor = false;
+  cargandoDatos = false;
   submitted = false;
 
   constructor(
     private toastCtrl: ToastController,
     private router: Router,
-    private authService: AuthService
+    private authService: AuthService,
+    private dataService: DataService
   ) {}
 
-  ngOnInit() {
+  async ngOnInit(): Promise<void> {
     if (this.authService.isAuthenticated()) {
+      await this.dataService.bootstrapRemote();
       void this.router.navigateByUrl(this.authService.getRutaPorDefecto(), { replaceUrl: true });
       return;
     }
@@ -70,6 +74,9 @@ export class LoginComponent implements OnInit {
       if (result.success) {
         const destino = this.authService.getRutaPorDefecto();
         const user = this.authService.getSession();
+        this.cargandoDatos = true;
+        await this.dataService.bootstrapRemote(true);
+        this.cargandoDatos = false;
         void this.router.navigateByUrl(destino, { replaceUrl: true });
         void this.presentToast(`¡Bienvenido ${user?.usuario}!`, 'success');
       } else {

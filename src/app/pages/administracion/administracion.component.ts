@@ -88,7 +88,6 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
   ) {}
 
   ngOnInit(): void {
-    void this.cargarDatos();
     combineLatest([
       this.dataService.ingresos$,
       this.dataService.gastos$,
@@ -97,6 +96,12 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
     ])
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => void this.cargarDatos());
+    void this.inicializarDatos();
+  }
+
+  private async inicializarDatos(): Promise<void> {
+    await this.dataService.bootstrapRemote();
+    await this.cargarDatos();
   }
 
   ngOnDestroy(): void {

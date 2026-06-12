@@ -140,6 +140,14 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
         }
         this.actualizarVista();
       });
+    void this.inicializarDatos();
+  }
+
+  private async inicializarDatos(): Promise<void> {
+    await this.dataService.bootstrapRemote();
+    if (!this.ministeriosService.getAll().length) {
+      this.ministeriosService.reload();
+    }
     this.actualizarVista();
   }
 

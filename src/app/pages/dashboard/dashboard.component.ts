@@ -79,11 +79,18 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit, Vie
   }
 
   ngOnInit() {
-    this.cargarDatos(true);
-
     this.dataService.dataRevision$
       .pipe(debounceTime(150), takeUntil(this.destroy$))
       .subscribe(() => this.cargarDatos(false));
+
+    void this.inicializarDatos();
+  }
+
+  private async inicializarDatos(): Promise<void> {
+    if (!this.dataService.hasRemoteData()) {
+      await this.dataService.bootstrapRemote();
+    }
+    this.cargarDatos(true);
   }
 
   ngOnDestroy() {
