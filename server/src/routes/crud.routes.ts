@@ -136,7 +136,8 @@ function createCrudRouter(collection, options: {
   function getUserScope(req) {
     if (!scopeField) return null;
     const rol = req.user?.rol;
-    if (rol !== ROLES.LIDER) return null;
+    const { esColaboradorMinisterio } = require('../middleware/auth');
+    if (!esColaboradorMinisterio(rol)) return null;
     const ministerioId = req.user?.ministerioId;
     if (ministerioId == null) return null;
     return { field: scopeField, value: Number(ministerioId) };

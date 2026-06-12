@@ -1,6 +1,6 @@
 const { z } = require('zod');
 
-const ROLES = z.enum(['Administrador', 'Contable', 'Lider/CoLider']);
+const ROLES = z.enum(['Administrador', 'Contable', 'Colaborador', 'Lider/CoLider']);
 const ESTADOS_USUARIO = z.enum(['Activo', 'Inactivo']).optional();
 const COMPROBANTE = z.enum(['imagen', 'pdf']).optional();
 

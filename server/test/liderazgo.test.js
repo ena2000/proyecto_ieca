@@ -1,25 +1,25 @@
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
-const { idsLideresEnMinisterio, ministerioTieneCupo } = require('../src/utils/liderazgo.ts');
+const {
+  colaboradoresEnMinisterio,
+  esColaboradorMinisterio
+} = require('../src/utils/liderazgo.ts');
+const { normalizarRol } = require('../src/middleware/auth');
 
-describe('liderazgo cupo ministerio', () => {
-  const min = { id: 1, nombre: 'Alabanza', hldrId: 10, coLiderId: 11 };
+describe('colaboradores de ministerio', () => {
   const usuarios = [
-    { id: 10, rol: 'Lider/CoLider', ministerioId: 1 },
-    { id: 11, rol: 'Lider/CoLider', ministerioId: 1 },
-    { id: 12, rol: 'Lider/CoLider', ministerioId: 2 }
+    { id: 10, rol: 'Colaborador', ministerioId: 1, estado: 'Activo' },
+    { id: 11, rol: 'Colaborador', ministerioId: 1, estado: 'Activo' },
+    { id: 12, rol: 'Lider/CoLider', ministerioId: 2, estado: 'Activo' }
   ];
 
-  it('cuenta líder y co-líder del registro', () => {
-    assert.equal(idsLideresEnMinisterio(min, usuarios).size, 2);
+  it('lista colaboradores activos de un ministerio', () => {
+    const lista = colaboradoresEnMinisterio(1, usuarios);
+    assert.equal(lista.length, 2);
   });
 
-  it('sin cupo para un tercero', () => {
-    assert.equal(ministerioTieneCupo(min, usuarios), false);
-  });
-
-  it('permite al líder actual al editar sin contar cupo extra', () => {
-    const ids = idsLideresEnMinisterio(min, usuarios, 10);
-    assert.equal(ids.has(10) || ids.size < 2, true);
+  it('normaliza rol legacy a Colaborador', () => {
+    assert.equal(normalizarRol('Lider/CoLider'), 'Colaborador');
+    assert.equal(esColaboradorMinisterio('Lider/CoLider'), true);
   });
 });

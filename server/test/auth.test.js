@@ -55,10 +55,11 @@ describe('signToken / JWT', () => {
     assert.equal(payload.type, 'access');
   });
 
-  it('incluye ministerioId para líder', () => {
-    const user = { id: 3, rol: ROLES.LIDER, ministerioId: 2 };
+  it('incluye ministerioId para colaborador', () => {
+    const user = { id: 3, rol: ROLES.COLABORADOR, ministerioId: 2 };
     const token = signToken(user);
     const payload = verifyAccessToken(token);
+    assert.equal(payload.rol, ROLES.COLABORADOR);
     assert.equal(payload.ministerioId, 2);
   });
 
@@ -94,7 +95,7 @@ describe('requireRoles', () => {
 
   it('responde 403 si el rol no está permitido', () => {
     const middleware = requireRoles([ROLES.ADMIN]);
-    const req = { user: { rol: ROLES.LIDER } };
+    const req = { user: { rol: ROLES.COLABORADOR } };
     const res = {
       statusCode: 0,
       body: null,

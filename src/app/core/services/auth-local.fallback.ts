@@ -10,7 +10,7 @@ interface HardcodedUser {
   usuario: string;
   password: string;
   id: string;
-  rol: typeof ROLES.ADMIN | typeof ROLES.CONTABLE | typeof ROLES.LIDER;
+  rol: typeof ROLES.ADMIN | typeof ROLES.CONTABLE | typeof ROLES.COLABORADOR;
   email: string;
   ministerioId?: number;
 }
@@ -32,11 +32,11 @@ const HARDCODED_USERS: HardcodedUser[] = [
     email: 'contable@ieca.com'
   },
   {
-    usuario: 'lider',
+    usuario: 'colaborador',
     password: '123456',
     id: '3',
-    rol: ROLES.LIDER,
-    email: 'lider@ieca.com',
+    rol: ROLES.COLABORADOR,
+    email: 'colaborador@ieca.com',
     ministerioId: 1
   }
 ];

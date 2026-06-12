@@ -212,7 +212,7 @@ export class GastosService {
     const prev = estadoGasto(current);
     const next = estadoGasto(gasto);
 
-    if (rol === ROLES.LIDER) {
+    if (rol === ROLES.COLABORADOR) {
       if (prev === 'rechazado' && next === 'pendiente') {
         this.notifyReenvioStaff(gasto);
         return;
@@ -220,7 +220,7 @@ export class GastosService {
       this.notificacionesService.registrar({
         tipo: 'gasto',
         audiencia: 'staff',
-        origenRol: ROLES.LIDER,
+        origenRol: ROLES.COLABORADOR,
         actorUserId: actor,
         titulo: 'Gasto actualizado (pendiente de aprobación)',
         mensaje:
@@ -253,14 +253,14 @@ export class GastosService {
       `${gasto.ministerio || 'General'} · ${gasto.descripcion || 'Sin descripción'} · ` +
       `$ ${(gasto.monto || 0).toFixed(2)}`;
 
-    if (rol === ROLES.LIDER) {
+    if (rol === ROLES.COLABORADOR) {
       this.notificacionesService.registrar({
         tipo: 'gasto',
         audiencia: 'staff',
-        origenRol: ROLES.LIDER,
+        origenRol: ROLES.COLABORADOR,
         actorUserId: actor,
         titulo: 'Gasto eliminado',
-        mensaje: `${base} — fue eliminado por el líder del ministerio.`,
+        mensaje: `${base} — fue eliminado por un colaborador del ministerio.`,
         ruta: '/gastos'
       });
       return;
@@ -283,7 +283,7 @@ export class GastosService {
     this.notificacionesService.registrar({
       tipo: 'gasto',
       audiencia: 'staff',
-      origenRol: ROLES.LIDER,
+      origenRol: ROLES.COLABORADOR,
       actorUserId: this.actorId(),
       titulo: 'Gasto corregido (pendiente de aprobación)',
       mensaje:
@@ -298,11 +298,11 @@ export class GastosService {
     const actor = this.actorId();
     const base = `${nuevo.ministerio || 'General'} · ${nuevo.descripcion} · $ ${(nuevo.monto || 0).toFixed(2)}`;
 
-    if (rol === ROLES.LIDER && estadoGasto(nuevo) === 'pendiente') {
+    if (rol === ROLES.COLABORADOR && estadoGasto(nuevo) === 'pendiente') {
       this.notificacionesService.registrar({
         tipo: 'gasto',
         audiencia: 'staff',
-        origenRol: ROLES.LIDER,
+        origenRol: ROLES.COLABORADOR,
         actorUserId: actor,
         titulo: 'Gasto pendiente de aprobación',
         mensaje: base,

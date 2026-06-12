@@ -1,4 +1,4 @@
-const { ROLES } = require('../middleware/auth');
+const { ROLES, esColaboradorMinisterio } = require('../middleware/auth');
 const { getById, updateInCollection } = require('./firestore');
 const {
   notificarResolucionMovimientoLider,
@@ -24,7 +24,7 @@ function normalizarEstado(estado) {
 }
 
 function estadoInicialPorRol(rol): import('../types/firestore.types').MovimientoEstado {
-  if (rol === ROLES.LIDER) return 'pendiente';
+  if (esColaboradorMinisterio(rol)) return 'pendiente';
   if (rol === ROLES.ADMIN) return 'aprobado';
   return 'pendiente';
 }
@@ -41,7 +41,7 @@ function onCreateIngreso(body, req) {
 
 function onUpdateIngreso(body, req, current) {
   const rol = req.user?.rol;
-  if (rol === ROLES.LIDER) {
+  if (esColaboradorMinisterio(rol)) {
     const estadoActual = normalizarEstado(current?.estado);
     if (estadoActual === 'aprobado') {
       const err = new Error('No puedes modificar un ingreso ya aprobado');
@@ -74,7 +74,7 @@ async function assertIngresoModificable(req, entity) {
   if (req.user?.rol === ROLES.CONTABLE) {
     return { ok: false, message: 'El contable solo puede consultar ingresos' };
   }
-  if (req.user?.rol === ROLES.LIDER && normalizarEstado(entity?.estado) === 'aprobado') {
+  if (esColaboradorMinisterio(req.user?.rol) && normalizarEstado(entity?.estado) === 'aprobado') {
     return { ok: false, message: 'No puedes modificar un ingreso ya aprobado' };
   }
   return { ok: true };

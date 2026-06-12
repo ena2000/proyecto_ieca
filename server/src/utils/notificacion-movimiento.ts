@@ -1,4 +1,4 @@
-const { ROLES } = require('../middleware/auth');
+const { ROLES, esColaboradorMinisterio } = require('../middleware/auth');
 const { createNotificacion } = require('./notificaciones');
 
 function mensajeMovimiento(movimiento, sufijo) {
@@ -64,7 +64,7 @@ async function notificarMovimientoReenviadoStaff({ tipo, movimiento, req }) {
   return createNotificacion({
     tipo,
     audiencia: 'staff',
-    origenRol: ROLES.LIDER,
+    origenRol: ROLES.COLABORADOR,
     actorUserId: actorUserId(req),
     titulo: `${etiqueta} corregido (pendiente de aprobación)`,
     mensaje: mensajeMovimiento(
@@ -82,14 +82,14 @@ async function notificarMovimientoModificado({ tipo, movimiento, req, current })
   const prev = current?.estado;
   const next = movimiento?.estado;
 
-  if (rol === ROLES.LIDER) {
+  if (esColaboradorMinisterio(rol)) {
     if (prev === 'rechazado' && next === 'pendiente') {
       return notificarMovimientoReenviadoStaff({ tipo, movimiento, req });
     }
     return createNotificacion({
       tipo,
       audiencia: 'staff',
-      origenRol: ROLES.LIDER,
+      origenRol: ROLES.COLABORADOR,
       actorUserId: actor,
       titulo: `${etiquetaTipo(tipo)} actualizado (pendiente de aprobación)`,
       mensaje: mensajeMovimiento(
@@ -125,14 +125,14 @@ async function notificarMovimientoEliminado({ tipo, movimiento, req }) {
   const rol = req?.user?.rol;
   const actor = actorUserId(req);
 
-  if (rol === ROLES.LIDER) {
+  if (esColaboradorMinisterio(rol)) {
     return createNotificacion({
       tipo,
       audiencia: 'staff',
-      origenRol: ROLES.LIDER,
+      origenRol: ROLES.COLABORADOR,
       actorUserId: actor,
       titulo: `${etiquetaTipo(tipo)} eliminado`,
-      mensaje: mensajeMovimiento(movimiento, 'fue eliminado por el líder del ministerio.'),
+      mensaje: mensajeMovimiento(movimiento, 'fue eliminado por un colaborador del ministerio.'),
       ruta: rutaTipo(tipo)
     });
   }
@@ -164,11 +164,11 @@ async function notificarMovimientoCreado({ tipo, movimiento, req }) {
   const etiqueta = etiquetaTipo(tipo);
   const base = mensajeMovimiento(movimiento, '');
 
-  if (rol === ROLES.LIDER && movimiento.estado === 'pendiente') {
+  if (esColaboradorMinisterio(rol) && movimiento.estado === 'pendiente') {
     return createNotificacion({
       tipo,
       audiencia: 'staff',
-      origenRol: ROLES.LIDER,
+      origenRol: ROLES.COLABORADOR,
       actorUserId: actor,
       titulo: `${etiqueta} pendiente de aprobación`,
       mensaje: base.replace(/ — $/, ''),

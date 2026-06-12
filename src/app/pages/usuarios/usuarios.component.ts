@@ -28,11 +28,11 @@ import { withLoading, getHttpErrorMessage } from '../../shared/utils/loading.uti
 import { presentIecaToast } from '../../shared/utils/toast.util';
 import {
   isRolSinMinisterio,
-  ministeriosConCupoParaLider,
-  ROL_LIDER,
+  ministeriosParaColaborador,
+  ROL_COLABORADOR,
   validarUsuarioForm
 } from '../../shared/utils/liderazgo.util';
-import { ROLES } from '../../core/constants/roles.constants';
+import { ROLES, normalizarRol } from '../../core/constants/roles.constants';
 import {
   mensajeUsuarioEmailDuplicado,
   usuarioEmailDuplicado
@@ -102,9 +102,9 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   ];
 
   acciones = { edit: true, delete: true };
-  rolesUsuario:   string[] = [ROLES.ADMIN, ROLES.CONTABLE, ROLES.LIDER];
+  rolesUsuario:   string[] = [ROLES.ADMIN, ROLES.CONTABLE, ROLES.COLABORADOR];
   estadosUsuario: string[] = ['Activo', 'Inactivo'];
-  readonly ROL_LIDER = ROLES.LIDER;
+  readonly ROL_COLABORADOR = ROLES.COLABORADOR;
   readonly isRolSinMinisterio = isRolSinMinisterio;
 
   constructor(
@@ -201,8 +201,8 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     }
   }
 
-  get ministeriosParaLider(): Ministerio[] {
-    return ministeriosConCupoParaLider(
+  get ministeriosParaColaborador(): Ministerio[] {
+    return ministeriosParaColaborador(
       this.listaMinisterios,
       this.listaUsuarios,
       this.modoEdicion ? this.idEditando : null,
@@ -218,7 +218,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     };
     if (isRolSinMinisterio(payload.rol)) {
       payload.ministerioId = undefined;
-    } else if (payload.rol === this.ROL_LIDER && payload.ministerioId == null) {
+    } else if (payload.rol === this.ROL_COLABORADOR && payload.ministerioId == null) {
       payload.ministerioId = null;
     }
     return payload;
@@ -271,7 +271,8 @@ export class UsuariosComponent implements OnInit, OnDestroy {
 
   editarUsuario(item: Usuario) {
     setTimeout(() => {
-      this.nuevoUsuario = { ...item };
+      const rol = normalizarRol(item.rol) ?? item.rol;
+      this.nuevoUsuario = { ...item, rol };
       this.modoEdicion  = true;
       this.idEditando   = item.id;
       this.intentoEnvio = false;

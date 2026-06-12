@@ -9,8 +9,34 @@ const { JWT_SECRET } = require('../config/env');
 const ROLES = {
   ADMIN: 'Administrador',
   CONTABLE: 'Contable',
-  LIDER: 'Lider/CoLider'
+  COLABORADOR: 'Colaborador'
 };
+
+const ROL_LIDER_LEGACY = 'Lider/CoLider';
+
+function normalizarRol(rol) {
+  if (!rol) return null;
+  const r = String(rol).trim().toLowerCase();
+  if (r === 'administrador' || r === 'admin') return ROLES.ADMIN;
+  if (r === 'contable') return ROLES.CONTABLE;
+  if (
+    r === 'colaborador' ||
+    r === 'lider/colider' ||
+    r === 'lider' ||
+    r === 'colider' ||
+    r === 'co-lider'
+  ) {
+    return ROLES.COLABORADOR;
+  }
+  if (rol === ROLES.ADMIN || rol === ROLES.CONTABLE || rol === ROLES.COLABORADOR) {
+    return rol;
+  }
+  return null;
+}
+
+function esColaboradorMinisterio(rol) {
+  return normalizarRol(rol) === ROLES.COLABORADOR;
+}
 
 const ACCESS_TOKEN_EXPIRES = process.env.JWT_ACCESS_EXPIRES || '15m';
 const REFRESH_TOKEN_EXPIRES = process.env.JWT_REFRESH_EXPIRES || '7d';
@@ -23,7 +49,7 @@ function signAccessToken(user) {
   /** @type {Omit<AccessTokenPayload, 'iat' | 'exp'>} */
   const payload = {
     sub: String(user.id),
-    rol: user.rol,
+    rol: normalizarRol(user.rol) ?? user.rol,
     ministerioId: user.ministerioId ?? null,
     type: 'access',
     jti: crypto.randomUUID()
@@ -107,8 +133,11 @@ function authRequired(req, res, next) {
  */
 function requireRoles(allowedRoles) {
   const allow = new Set(allowedRoles);
+  if (allow.has(ROLES.COLABORADOR)) {
+    allow.add(ROL_LIDER_LEGACY);
+  }
   return (req, res, next) => {
-    const rol = req.user?.rol;
+    const rol = normalizarRol(req.user?.rol) ?? req.user?.rol;
     if (!rol || !allow.has(rol)) {
       return res.status(403).json({ message: 'No tienes permisos para esta acción' });
     }
@@ -125,8 +154,11 @@ module.exports = {
   verifyRefreshToken,
   authRequired,
   requireRoles,
+  normalizarRol,
+  esColaboradorMinisterio,
   JWT_SECRET,
   ROLES,
+  ROL_LIDER_LEGACY,
   ACCESS_TOKEN_EXPIRES,
   REFRESH_TOKEN_EXPIRES
 };

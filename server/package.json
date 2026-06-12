@@ -8,6 +8,7 @@
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "seed": "tsx scripts/seed-passwords.js",
+    "seed:random": "tsx scripts/reset-y-seed-random.js",
     "alertas": "tsx scripts/enviar-alertas.js",
     "alertas:force": "tsx scripts/enviar-alertas.js --force",
     "email:prueba": "tsx scripts/enviar-email-prueba.js",

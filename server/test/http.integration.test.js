@@ -303,14 +303,14 @@ describe('API HTTP (integración en memoria)', () => {
       .post('/api/usuarios')
       .set('Authorization', `Bearer ${login.body.token}`)
       .send({
-        nombre: 'Ana Líder',
+        nombre: 'Ana Colaboradora',
         email: 'ana@ieca.com',
-        rol: 'Lider/CoLider',
+        rol: 'Colaborador',
         estado: 'Activo'
       });
 
     assert.equal(res.status, 201);
-    assert.equal(res.body.rol, 'Lider/CoLider');
+    assert.equal(res.body.rol, 'Colaborador');
     assert.equal(res.body.ministerioId, null);
   });
 });

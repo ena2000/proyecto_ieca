@@ -3,10 +3,15 @@ export interface Ministerio {
   fecha?: string;
   nombre: string;
   estado: string;
-  hldrId?: number;
-  coLiderId?: number;
   fechaFormateada?: string;
   /** Etiquetas para tabla (resueltas desde usuarios). */
+  colaboradoresNombre?: string;
+  /** @deprecated Datos legacy; ya no se usan en el formulario. */
+  hldrId?: number;
+  /** @deprecated Datos legacy; ya no se usan en el formulario. */
+  coLiderId?: number;
+  /** @deprecated */
   liderNombre?: string;
+  /** @deprecated */
   coLiderNombre?: string;
 }

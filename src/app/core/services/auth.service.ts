@@ -6,6 +6,7 @@ import { SessionUser, LoginResponse, RefreshTokenResponse } from '../models';
 import {
   AppRole,
   ROLES,
+  esColaboradorMinisterio,
   normalizarRol,
   puedeAccederRuta,
   rutaPorDefecto
@@ -66,8 +67,13 @@ export class AuthService {
     return this.getRol() === ROLES.CONTABLE;
   }
 
+  isColaborador(): boolean {
+    return esColaboradorMinisterio(this.getRol());
+  }
+
+  /** @deprecated Use isColaborador */
   isLider(): boolean {
-    return this.getRol() === ROLES.LIDER;
+    return this.isColaborador();
   }
 
   isSoloLecturaFinanzas(): boolean {
@@ -76,7 +82,7 @@ export class AuthService {
 
   getMinisterioScopeId(): number | null {
     const id = this.getSession()?.ministerioId;
-    return this.isLider() && id != null ? Number(id) : null;
+    return this.isColaborador() && id != null ? Number(id) : null;
   }
 
   puedeAccederRuta(ruta: string): boolean {

@@ -5,7 +5,7 @@ const {
   updateInCollection
 } = require('./firestore');
 
-const { ROLES } = require('../middleware/auth');
+const { ROLES, esColaboradorMinisterio, ROL_LIDER_LEGACY } = require('../middleware/auth');
 
 const COLLECTION = 'notificaciones';
 const MAX_ITEMS = 40;
@@ -39,7 +39,11 @@ function toNotificacion(entity) {
   };
 }
 
-/** Admin: staff completo. Contable: solo movimientos del líder. Líder: su ministerio. */
+function esOrigenColaborador(origenRol) {
+  return origenRol === ROLES.COLABORADOR || origenRol === ROL_LIDER_LEGACY;
+}
+
+/** Admin: staff completo. Contable: movimientos de colaboradores. Colaborador: su ministerio. */
 function filterNotificacionesForUser(lista, user) {
   const rol = user?.rol;
   const ministerioId = user?.ministerioId;
@@ -50,7 +54,7 @@ function filterNotificacionesForUser(lista, user) {
       return false;
     }
     const aud = n.audiencia || 'staff';
-    if (rol === ROLES.LIDER) {
+    if (esColaboradorMinisterio(rol)) {
       if (aud !== 'lider') return false;
       if (n.ministerioId == null || ministerioId == null) return false;
       return Number(n.ministerioId) === Number(ministerioId);
@@ -59,7 +63,7 @@ function filterNotificacionesForUser(lista, user) {
       return aud === 'staff';
     }
     if (rol === ROLES.CONTABLE) {
-      return aud === 'staff' && n.origenRol === ROLES.LIDER;
+      return aud === 'staff' && esOrigenColaborador(n.origenRol);
     }
     return false;
   });
@@ -67,7 +71,7 @@ function filterNotificacionesForUser(lista, user) {
 
 function userPuedeNotificaciones(user) {
   const rol = user?.rol;
-  return rol === ROLES.ADMIN || rol === ROLES.CONTABLE || rol === ROLES.LIDER;
+  return rol === ROLES.ADMIN || rol === ROLES.CONTABLE || esColaboradorMinisterio(rol);
 }
 
 async function trimNotificaciones() {

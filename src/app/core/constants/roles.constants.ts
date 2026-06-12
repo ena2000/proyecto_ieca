@@ -1,7 +1,7 @@
 export const ROLES = {
   ADMIN: 'Administrador',
   CONTABLE: 'Contable',
-  LIDER: 'Lider/CoLider'
+  COLABORADOR: 'Colaborador'
 } as const;
 
 export type AppRole = (typeof ROLES)[keyof typeof ROLES];
@@ -18,18 +18,31 @@ export const RUTAS_POR_ROL: Record<AppRole, string[]> = {
     '/administracion'
   ],
   [ROLES.CONTABLE]: ['/dashboard', '/ingresos', '/gastos', '/reportes'],
-  [ROLES.LIDER]: ['/dashboard', '/ingresos', '/gastos', '/reportes']
+  [ROLES.COLABORADOR]: ['/dashboard', '/ingresos', '/gastos', '/reportes']
 };
+
+/** Rol almacenado en BD antes del cambio a Colaborador. */
+export const ROL_LIDER_LEGACY = 'Lider/CoLider';
+
+export function esColaboradorMinisterio(rol?: string | null): boolean {
+  return normalizarRol(rol) === ROLES.COLABORADOR;
+}
 
 export function normalizarRol(rol?: string | null): AppRole | null {
   if (!rol) return null;
   const r = rol.trim().toLowerCase();
   if (r === 'administrador' || r === 'admin') return ROLES.ADMIN;
   if (r === 'contable') return ROLES.CONTABLE;
-  if (r === 'lider/colider' || r === 'lider' || r === 'colider' || r === 'co-lider') {
-    return ROLES.LIDER;
+  if (
+    r === 'colaborador' ||
+    r === 'lider/colider' ||
+    r === 'lider' ||
+    r === 'colider' ||
+    r === 'co-lider'
+  ) {
+    return ROLES.COLABORADOR;
   }
-  if (rol === ROLES.ADMIN || rol === ROLES.CONTABLE || rol === ROLES.LIDER) {
+  if (rol === ROLES.ADMIN || rol === ROLES.CONTABLE || rol === ROLES.COLABORADOR) {
     return rol as AppRole;
   }
   return null;

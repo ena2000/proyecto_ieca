@@ -237,7 +237,7 @@ export class IngresosService {
     const prev = estadoIngreso(current);
     const next = estadoIngreso(ingreso);
 
-    if (rol === ROLES.LIDER) {
+    if (rol === ROLES.COLABORADOR) {
       if (prev === 'rechazado' && next === 'pendiente') {
         this.notifyReenvioStaff(ingreso);
         return;
@@ -245,7 +245,7 @@ export class IngresosService {
       this.notificacionesService.registrar({
         tipo: 'ingreso',
         audiencia: 'staff',
-        origenRol: ROLES.LIDER,
+        origenRol: ROLES.COLABORADOR,
         actorUserId: actor,
         titulo: 'Ingreso actualizado (pendiente de aprobación)',
         mensaje:
@@ -278,14 +278,14 @@ export class IngresosService {
       `${ingreso.ministerio || 'General'} · ${ingreso.descripcion || 'Sin descripción'} · ` +
       `$ ${(ingreso.monto || 0).toFixed(2)}`;
 
-    if (rol === ROLES.LIDER) {
+    if (rol === ROLES.COLABORADOR) {
       this.notificacionesService.registrar({
         tipo: 'ingreso',
         audiencia: 'staff',
-        origenRol: ROLES.LIDER,
+        origenRol: ROLES.COLABORADOR,
         actorUserId: actor,
         titulo: 'Ingreso eliminado',
-        mensaje: `${base} — fue eliminado por el líder del ministerio.`,
+        mensaje: `${base} — fue eliminado por un colaborador del ministerio.`,
         ruta: '/ingresos'
       });
       return;
@@ -308,7 +308,7 @@ export class IngresosService {
     this.notificacionesService.registrar({
       tipo: 'ingreso',
       audiencia: 'staff',
-      origenRol: ROLES.LIDER,
+      origenRol: ROLES.COLABORADOR,
       actorUserId: this.actorId(),
       titulo: 'Ingreso corregido (pendiente de aprobación)',
       mensaje:
@@ -319,11 +319,11 @@ export class IngresosService {
   }
 
   private notifyCreate(nuevo: Ingreso): void {
-    if (this.authService.getRol() === ROLES.LIDER && estadoIngreso(nuevo) === 'pendiente') {
+    if (this.authService.getRol() === ROLES.COLABORADOR && estadoIngreso(nuevo) === 'pendiente') {
       this.notificacionesService.registrar({
         tipo: 'ingreso',
         audiencia: 'staff',
-        origenRol: ROLES.LIDER,
+        origenRol: ROLES.COLABORADOR,
         actorUserId: this.actorId(),
         titulo: 'Ingreso pendiente de aprobación',
         mensaje: `${nuevo.ministerio || 'General'} · ${nuevo.descripcion} · $ ${(nuevo.monto || 0).toFixed(2)}`,

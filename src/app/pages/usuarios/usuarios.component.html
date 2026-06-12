@@ -36,7 +36,7 @@
       </div>
 
       <p *ngIf="!modoEdicion">
-        Crea usuarios y administra el acceso. Los Líder/CoLíder pueden crearse sin ministerio; asígnalos después en Ministerios.
+        Crea usuarios y administra el acceso. Los colaboradores de ministerio pueden crearse sin ministerio y asignarse después.
       </p>
       <p *ngIf="modoEdicion">
         Modifica la información y permisos del usuario.
@@ -134,12 +134,12 @@
 
         <div class="input-group">
           <ion-label class="ieca-label">
-            Ministerio<span *ngIf="nuevoUsuario.rol === ROL_LIDER"> (opcional)</span>
+            Ministerio<span *ngIf="nuevoUsuario.rol === ROL_COLABORADOR"> (opcional)</span>
           </ion-label>
           <ion-item
             lines="none"
             class="ieca-input-item ieca-input"
-            [disabled]="nuevoUsuario.rol !== ROL_LIDER">
+            [disabled]="nuevoUsuario.rol !== ROL_COLABORADOR">
             <ion-icon
               slot="start"
               name="options-outline"
@@ -152,14 +152,14 @@
               class="ieca-select"
               placeholder="Seleccione un ministerio">
               <ion-select-option [value]="null">Sin asignar</ion-select-option>
-              <ion-select-option *ngFor="let min of ministeriosParaLider" [value]="min.id">{{ min.nombre }}</ion-select-option>
+              <ion-select-option *ngFor="let min of ministeriosParaColaborador" [value]="min.id">{{ min.nombre }}</ion-select-option>
             </ion-select>
           </ion-item>
           <small class="error-text" *ngIf="isRolSinMinisterio(nuevoUsuario.rol)">
             Administrador y Contable no llevan ministerio asignado.
           </small>
-          <small class="hint-text" *ngIf="nuevoUsuario.rol === ROL_LIDER">
-            Puedes dejarlo sin asignar y vincular al líder o co-líder después en Ministerios.
+          <small class="hint-text" *ngIf="nuevoUsuario.rol === ROL_COLABORADOR">
+            Puedes dejarlo sin asignar y vincular al colaborador cuando lo necesites.
           </small>
         </div>
 

@@ -20,7 +20,7 @@
         <span>Editando ministerio <strong>#{{ idEditando }}</strong></span>
       </div>
       <p *ngIf="!modoEdicion">
-        Registra los ministerios de tu iglesia. Puedes crear el ministerio primero y asignar líder y co-líder después.
+        Registra los ministerios de tu iglesia. Asigna colaboradores desde la pantalla Usuarios.
       </p>
       <p *ngIf="modoEdicion">Modifica la información y guarda los cambios del ministerio.</p>
     </div>
@@ -66,49 +66,6 @@
               class="ieca-select"
               placeholder="Seleccione estado">
               <ion-select-option *ngFor="let e of estadosMinisterio" [value]="e">{{ e }}</ion-select-option>
-            </ion-select>
-          </ion-item>
-        </div>
-
-        <!-- Líder -->
-        <div class="input-group">
-          <ion-label class="ieca-label">Líder del ministerio</ion-label>
-          <ion-item lines="none" class="ieca-input-item ieca-input">
-            <ion-icon slot="start" name="options-outline" class="text-blue"></ion-icon>
-            <ion-select
-              interface="popover"
-              [(ngModel)]="nuevoMinisterio.hldrId"
-              (ngModelChange)="onFormularioChange()"
-              name="hldrId"
-              class="ieca-select"
-              placeholder="Seleccione líder">
-              <ion-select-option [value]="null">Sin asignar</ion-select-option>
-              <ion-select-option *ngFor="let user of lideresHldr" [value]="user.id">
-                {{ user.nombre }}
-              </ion-select-option>
-            </ion-select>
-          </ion-item>
-          <small class="hint-text" *ngIf="lideresHldr.length === 0">
-            Crea usuarios con rol Líder/CoLíder en Usuarios; luego podrás elegirlos aquí.
-          </small>
-        </div>
-
-        <!-- Co-Líder -->
-        <div class="input-group">
-          <ion-label class="ieca-label">Co-Líder del ministerio</ion-label>
-          <ion-item lines="none" class="ieca-input-item ieca-input">
-            <ion-icon slot="start" name="options-outline" class="text-blue"></ion-icon>
-            <ion-select
-              interface="popover"
-              [(ngModel)]="nuevoMinisterio.coLiderId"
-              (ngModelChange)="onFormularioChange()"
-              name="coLiderId"
-              class="ieca-select"
-              placeholder="Seleccione co-líder">
-              <ion-select-option [value]="null">Sin asignar</ion-select-option>
-              <ion-select-option *ngFor="let user of lideresCo" [value]="user.id">
-                {{ user.nombre }}
-              </ion-select-option>
             </ion-select>
           </ion-item>
         </div>
@@ -175,17 +132,17 @@
       <div class="advanced-filters">
         <div class="filter-row">
           <div class="filter-item">
-            <ion-label>Filtrar por líder</ion-label>
+            <ion-label>Filtrar por colaborador</ion-label>
             <ion-item lines="none" class="ieca-input-item ieca-input filter-select-item">
               <ion-icon slot="start" name="options-outline" class="text-blue"></ion-icon>
               <ion-select
                 interface="popover"
-                [(ngModel)]="filtroLiderId"
+                [(ngModel)]="filtroColaboradorId"
                 (ionChange)="onFiltrosChange()"
                 class="ieca-select"
-                placeholder="Todos los líderes">
+                placeholder="Todos los colaboradores">
                 <ion-select-option [value]="null">Todos</ion-select-option>
-                <ion-select-option *ngFor="let user of listaUsuarios" [value]="user.id">
+                <ion-select-option *ngFor="let user of colaboradoresParaFiltro" [value]="user.id">
                   {{ user.nombre }}
                 </ion-select-option>
               </ion-select>

@@ -1,13 +1,13 @@
 const express = require('express');
 const { listCollection, listCollectionByField, stripInternalFields } = require('../utils/firestore');
-const { ROLES } = require('../middleware/auth');
+const { ROLES, esColaboradorMinisterio } = require('../middleware/auth');
 const { listNotificacionesForUser, userPuedeNotificaciones } = require('../utils/notificaciones');
 const { getCachedBootstrap, setCachedBootstrap } = require('../utils/bootstrapCache');
 
 const router = express.Router();
 
 function scopeForUser(user) {
-  if (user?.rol !== ROLES.LIDER || user?.ministerioId == null) return null;
+  if (!esColaboradorMinisterio(user?.rol) || user?.ministerioId == null) return null;
   return { field: 'ministerioId', value: Number(user.ministerioId) };
 }
 

@@ -31,8 +31,9 @@ import { MinisteriosService } from '../../services/ministerios.service';
 import { withLoading, getHttpErrorMessage } from '../../shared/utils/loading.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
 import {
-  usuariosElegiblesParaMinisterio,
-  validarMinisterioForm
+  colaboradoresEnMinisterio,
+  esRolColaborador,
+  nombresColaboradoresMinisterio
 } from '../../shared/utils/liderazgo.util';
 import {
   mensajeMinisterioDuplicado,
@@ -66,31 +67,26 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
     id:         0,
     nombre:     '',
     estado:     'Activo',
-    fecha:      '',
-    hldrId:     undefined,
-    coLiderId:  undefined
+    fecha:      ''
   };
 
   intentoEnvio = false;
   modoEdicion  = false;
   idEditando: number | null = null;
   listaMinisterios: Ministerio[] = [];
-  vistaMinisterios: Array<Ministerio & { liderNombre: string; coLiderNombre: string; saldo: number }> = [];
-  lideresHldr: Usuario[] = [];
-  lideresCo: Usuario[] = [];
+  vistaMinisterios: Array<Ministerio & { colaboradoresNombre: string; saldo: number }> = [];
   formularioValido = false;
 
-  searchTerm:    string = '';
-  filtroLiderId: number | null = null;
+  searchTerm:           string = '';
+  filtroColaboradorId: number | null = null;
 
   private destroy$ = new Subject<void>();
 
   columnsMinisterios: TableColumn[] = [
-    { field: 'nombre',        header: 'Nombre'                },
-    { field: 'liderNombre',   header: 'Líder'                 },
-    { field: 'coLiderNombre', header: 'Co-líder'              },
-    { field: 'saldo',         header: 'Saldo disponible', type: 'currency' },
-    { field: 'estado',        header: 'Estado', type: 'badge' }
+    { field: 'nombre',               header: 'Nombre'                },
+    { field: 'colaboradoresNombre',  header: 'Colaboradores'         },
+    { field: 'saldo',                header: 'Saldo disponible', type: 'currency' },
+    { field: 'estado',               header: 'Estado', type: 'badge' }
   ];
 
   acciones = { edit: true, delete: true, ledger: true };
@@ -165,13 +161,17 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
     this.destroy$.complete();
   }
 
+  get colaboradoresParaFiltro(): Usuario[] {
+    return this.listaUsuarios.filter(u => esRolColaborador(u.rol) && u.estado !== 'Inactivo');
+  }
+
   get hayFiltrosActivos(): boolean {
-    return !!this.searchTerm || this.filtroLiderId !== null;
+    return !!this.searchTerm || this.filtroColaboradorId !== null;
   }
 
   limpiarFiltros(): void {
     this.searchTerm = '';
-    this.filtroLiderId = null;
+    this.filtroColaboradorId = null;
     this.actualizarVista();
   }
 
@@ -192,35 +192,18 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
       const search = this.searchTerm.toLowerCase();
       filtrados = filtrados.filter(m => m.nombre?.toLowerCase().includes(search));
     }
-    if (this.filtroLiderId !== null) {
-      filtrados = filtrados.filter(m => m.hldrId === this.filtroLiderId);
+    if (this.filtroColaboradorId !== null) {
+      const uid = this.filtroColaboradorId;
+      filtrados = filtrados.filter(m =>
+        colaboradoresEnMinisterio(m.id, this.listaUsuarios).some(u => Number(u.id) === uid)
+      );
     }
 
     this.vistaMinisterios = filtrados.map(m => ({
       ...m,
-      liderNombre: this.nombreUsuario(m.hldrId),
-      coLiderNombre: this.nombreUsuario(m.coLiderId),
+      colaboradoresNombre: nombresColaboradoresMinisterio(m.id, this.listaUsuarios, m),
       saldo: this.dataService.calcularSaldoMinisterio(m.id)
     }));
-
-    this.lideresHldr = usuariosElegiblesParaMinisterio(
-      this.listaUsuarios,
-      this.listaMinisterios,
-      this.ministerioIdForm,
-      {
-        mantenerUserIds: [this.nuevoMinisterio.hldrId],
-        excluirUserIds: [this.nuevoMinisterio.coLiderId]
-      }
-    );
-    this.lideresCo = usuariosElegiblesParaMinisterio(
-      this.listaUsuarios,
-      this.listaMinisterios,
-      this.ministerioIdForm,
-      {
-        mantenerUserIds: [this.nuevoMinisterio.coLiderId],
-        excluirUserIds: [this.nuevoMinisterio.hldrId]
-      }
-    );
 
     this.actualizarValidacionFormulario();
     this.cdr.markForCheck();
@@ -235,7 +218,6 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
     return this.lineasKardex[this.lineasKardex.length - 1].saldo;
   }
 
-  /** Movimientos del más reciente al más antiguo. */
   get lineasKardexVista(): KardexLinea[] {
     return [...this.lineasKardex].reverse();
   }
@@ -252,31 +234,10 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
     this.lineasKardex = [];
   }
 
-  private nombreUsuario(userId?: number): string {
-    if (userId == null) return '—';
-    const user = this.listaUsuarios.find(u => Number(u.id) === Number(userId));
-    return user?.nombre?.trim() || '—';
-  }
-
-  private get ministerioIdForm(): number | null {
-    return this.modoEdicion ? this.idEditando : null;
-  }
-
   async registrarMinisterio() {
     this.intentoEnvio = true;
     if (!this.esFormularioValido) {
       this.mostrarToast(this.mensajeValidacion, 'danger');
-      return;
-    }
-
-    const errorLiderazgo = validarMinisterioForm(
-      this.nuevoMinisterio,
-      this.listaUsuarios,
-      this.listaMinisterios,
-      this.modoEdicion ? this.idEditando : null
-    );
-    if (errorLiderazgo) {
-      this.mostrarToast(errorLiderazgo, 'danger');
       return;
     }
 
@@ -286,14 +247,15 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
       await withLoading(this.loadingController, guardando, async () => {
         if (this.modoEdicion && this.idEditando !== null) {
           const existente = this.listaMinisterios.find(m => m.id === this.idEditando);
+          const { hldrId, coLiderId, liderNombre, coLiderNombre, ...datos } = this.nuevoMinisterio;
           await firstValueFrom(this.ministeriosService.update(this.idEditando, {
-            ...this.nuevoMinisterio,
+            ...datos,
             id: this.idEditando,
             fechaFormateada: existente?.fechaFormateada
           }));
           await this.mostrarToast('Registro actualizado exitosamente', 'success');
         } else {
-          const { id, fecha, fechaFormateada, ...datos } = this.nuevoMinisterio;
+          const { id, fecha, fechaFormateada, hldrId, coLiderId, liderNombre, coLiderNombre, ...datos } = this.nuevoMinisterio;
           await firstValueFrom(this.ministeriosService.create(datos));
           await this.mostrarToast('Registro creado exitosamente', 'success');
         }
@@ -309,7 +271,8 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
   editarMinisterio(item: Ministerio) {
     setTimeout(() => {
-      this.nuevoMinisterio = { ...item };
+      const { hldrId, coLiderId, liderNombre, coLiderNombre, ...datos } = item;
+      this.nuevoMinisterio = { ...datos };
       this.modoEdicion     = true;
       this.idEditando      = item.id;
       this.intentoEnvio    = false;
@@ -349,9 +312,7 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
       id:        0,
       nombre:    '',
       estado:    'Activo',
-      fecha:     '',
-      hldrId:    undefined,
-      coLiderId: undefined
+      fecha:     ''
     };
     this.modoEdicion  = false;
     this.idEditando   = null;
@@ -370,12 +331,7 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
   get esFormularioValido(): boolean {
     if (this.nuevoMinisterio.nombre?.trim().length < 3) return false;
     if (this.nombreMinisterioDuplicado) return false;
-    return validarMinisterioForm(
-      this.nuevoMinisterio,
-      this.listaUsuarios,
-      this.listaMinisterios,
-      this.modoEdicion ? this.idEditando : null
-    ) == null;
+    return true;
   }
 
   private get nombreMinisterioDuplicado() {
@@ -393,11 +349,6 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
     if (this.nombreMinisterioDuplicado) {
       return mensajeMinisterioDuplicado(this.nombreMinisterioDuplicado);
     }
-    return validarMinisterioForm(
-      this.nuevoMinisterio,
-      this.listaUsuarios,
-      this.listaMinisterios,
-      this.modoEdicion ? this.idEditando : null
-    ) ?? 'Revisa los datos del ministerio.';
+    return 'Revisa los datos del ministerio.';
   }
 }

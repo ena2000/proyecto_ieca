@@ -1,5 +1,14 @@
 import { Notificacion } from '../../core/models/notificacion.model';
-import { AppRole, ROLES } from '../../core/constants/roles.constants';
+import {
+  AppRole,
+  ROLES,
+  ROL_LIDER_LEGACY,
+  esColaboradorMinisterio
+} from '../../core/constants/roles.constants';
+
+function esOrigenColaborador(origenRol?: string | null): boolean {
+  return origenRol === ROLES.COLABORADOR || origenRol === ROL_LIDER_LEGACY;
+}
 
 /** Filtra notificaciones según rol (app web). */
 export function filtrarNotificacionesParaSesion(
@@ -13,7 +22,7 @@ export function filtrarNotificacionesParaSesion(
       return false;
     }
     const aud = n.audiencia ?? 'staff';
-    if (rol === ROLES.LIDER) {
+    if (rol === ROLES.COLABORADOR) {
       if (aud !== 'lider') return false;
       if (n.ministerioId == null || ministerioId == null) return false;
       return Number(n.ministerioId) === Number(ministerioId);
@@ -22,12 +31,12 @@ export function filtrarNotificacionesParaSesion(
       return aud === 'staff';
     }
     if (rol === ROLES.CONTABLE) {
-      return aud === 'staff' && n.origenRol === ROLES.LIDER;
+      return aud === 'staff' && esOrigenColaborador(n.origenRol);
     }
     return false;
   });
 }
 
 export function puedeVerNotificaciones(rol: AppRole | null | undefined): boolean {
-  return rol === ROLES.ADMIN || rol === ROLES.CONTABLE || rol === ROLES.LIDER;
+  return rol === ROLES.ADMIN || rol === ROLES.CONTABLE || esColaboradorMinisterio(rol);
 }
