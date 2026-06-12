@@ -107,7 +107,7 @@ router.post('/refresh', validate(refreshSchema), async (req, res) => {
     });
 
     const tokens = signTokenPair(user);
-    return res.json({ token: tokens.token, refreshToken: tokens.refreshToken });
+    return res.json({ token: tokens.token, refreshToken: tokens.refreshToken, user });
   } catch (err) {
     console.error('[auth/refresh]', err);
     return res.status(401).json({ message: 'Sesión expirada. Inicia sesión de nuevo.' });

@@ -18,6 +18,7 @@ const { enviarResumenOperativo } = require('../utils/alertas-email');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { listCollection } = require('../utils/firestore');
 const { db } = require('../config/firebase');
+const { invalidateBootstrapCache } = require('../utils/bootstrapCache');
 
 const router = express.Router();
 
@@ -156,6 +157,7 @@ router.post('/cierre', validate(cierreSchema), asyncHandler(async (req, res) => 
   const periodoLabel = String(req.body?.periodo ?? getMesActualLabel()).trim();
   const periodoKey = labelToPeriodoKey(periodoLabel) || getMesActualKey();
   const result = await ejecutarCierreMensual(periodoKey);
+  invalidateBootstrapCache();
   res.json(result);
 }));
 
@@ -169,6 +171,7 @@ router.delete('/datos', async (_req, res) => {
       { ultimoCierre: null, periodosCerrados: [] },
       { merge: true }
     );
+    invalidateBootstrapCache();
     res.json({ message: 'Datos eliminados correctamente' });
   } catch (err) {
     console.error('[admin DELETE datos]', err);

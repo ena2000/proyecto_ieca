@@ -19,6 +19,7 @@ export interface LoginResponse {
 export interface RefreshTokenResponse {
   token: string;
   refreshToken: string;
+  user?: SessionUser;
 }
 
 export interface ApiErrorBody {

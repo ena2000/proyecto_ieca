@@ -465,6 +465,7 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
       this.idEditando = item.id;
       this.intentoEnvio = false;
       this.aplicarResponsableAlFormulario();
+      this.cdr.markForCheck();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }, 50);
   }
@@ -613,6 +614,20 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
   onCuentaGastoChange(codigo: string): void {
     aplicarCuentaEnGasto(this.nuevoGasto, codigo);
+  }
+
+  onMinisterioGastoChange(ministerioId: number | string | null | undefined): void {
+    if (ministerioId == null || ministerioId === '') {
+      this.nuevoGasto.ministerioId = undefined;
+      this.nuevoGasto.ministerio = 'General';
+      return;
+    }
+    const id = Number(ministerioId);
+    const min = this.listaMinisterios.find(m => Number(m.id) === id);
+    this.nuevoGasto.ministerioId = id;
+    if (min?.nombre) {
+      this.nuevoGasto.ministerio = min.nombre;
+    }
   }
 
   get esFormularioValido(): boolean {

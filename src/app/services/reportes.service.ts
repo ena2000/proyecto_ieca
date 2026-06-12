@@ -13,6 +13,8 @@ import { ingresoAprobado } from '../shared/utils/ingreso.util';
 import { formatearISOaDDMMYYYY } from '../shared/utils/date.util';
 import { etiquetaCuentaReporte } from '../shared/utils/reportes-cuenta.util';
 import { resolverNombreMinisterio as resolverNombreMinisterioMovimiento } from '../shared/utils/movimiento-ministerio.util';
+import { calcularMontoNetoMinisterio } from '../shared/utils/aportacion-iglesia.util';
+import { Ingreso } from '../core/models';
 import {
   estiloEncabezadoTabla,
   estiloFilaDatos,
@@ -59,6 +61,7 @@ export class ReportesService {
     let idCounter = 1;
 
     ingresos.forEach(i => {
+      const monto = this.montoIngresoReporte(i);
       reportes.push({
         id:              idCounter++,
         fecha:           i.fecha,
@@ -71,9 +74,9 @@ export class ReportesService {
           esAportacionIglesia: i.esAportacionIglesia
         }),
         ministerioId:    i.ministerioId,
-        ingresos:        i.monto || 0,
+        ingresos:        monto,
         gastos:          0,
-        saldo:           i.monto || 0,
+        saldo:           monto,
         archivo:         i.foto || '',
         mes:             new Date(i.fecha).toISOString().substring(0, 7)
       });
@@ -110,6 +113,13 @@ export class ReportesService {
     opciones?: { esAportacionIglesia?: boolean }
   ): string {
     return resolverNombreMinisterioMovimiento(ministerioId, ministerioGuardado, ministerios, opciones);
+  }
+
+  /** Monto efectivo del ingreso en reportes (neto 67% para talento de ministerio). */
+  private montoIngresoReporte(ingreso: Ingreso): number {
+    if (ingreso.esAportacionIglesia) return ingreso.monto || 0;
+    if (ingreso.ministerioId != null) return calcularMontoNetoMinisterio(ingreso);
+    return ingreso.monto || 0;
   }
 
   calcularDesglosePorMinisterio(

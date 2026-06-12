@@ -67,7 +67,8 @@ export function filtrarReportes(
   }
 
   if (f.filtroMinisterioId !== null) {
-    filtrados = filtrados.filter(r => r.ministerioId === f.filtroMinisterioId);
+    const filtroId = Number(f.filtroMinisterioId);
+    filtrados = filtrados.filter(r => Number(r.ministerioId) === filtroId);
   }
 
   if (f.filtroMovimiento === 'ingresos') {

@@ -16,6 +16,7 @@ const {
 const notificacionesRouter = require('./routes/notificaciones.routes');
 const bootstrapRouter = require('./routes/bootstrap.routes');
 const adminRouter = require('./routes/admin.routes');
+const cierresRouter = require('./routes/cierres.routes');
 const pkg = require('../package.json');
 
 /**
@@ -72,6 +73,7 @@ function createApp(options: { useMemoryDb?: boolean } = {}) {
   app.use('/api/ingresos', authRequired, ingresosRouter);
   app.use('/api/gastos', authRequired, gastosRouter);
   app.use('/api/notificaciones', authRequired, notificacionesRouter);
+  app.use('/api/cierres', authRequired, cierresRouter);
   app.use('/api/admin', authRequired, requireRoles([ROLES.ADMIN]), adminRouter);
 
   app.use((_req, res) => {

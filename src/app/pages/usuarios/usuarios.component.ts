@@ -75,7 +75,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     id:           0,
     nombre:       '',
     email:        '',
-    rol:          'Miembro',
+    rol:          ROLES.CONTABLE,
     estado:       'Activo',
     ministerioId: undefined
   };
@@ -103,7 +103,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
 
   acciones = { edit: true, delete: true };
   rolesUsuario:   string[] = [ROLES.ADMIN, ROLES.CONTABLE, ROLES.LIDER];
-  estadosUsuario: string[] = ['Activo', 'Inactivo', 'Suspendido'];
+  estadosUsuario: string[] = ['Activo', 'Inactivo'];
   readonly ROL_LIDER = ROLES.LIDER;
   readonly isRolSinMinisterio = isRolSinMinisterio;
 
@@ -311,7 +311,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
       id:           0,
       nombre:       '',
       email:        '',
-      rol:          'Miembro',
+      rol:          ROLES.CONTABLE,
       estado:       'Activo',
       ministerioId: undefined
     };
@@ -359,6 +359,8 @@ export class UsuariosComponent implements OnInit, OnDestroy {
       (this.password.trim() ? this.password.trim().length >= 6 : true);
 
     if (!base) return false;
+    if (!this.nuevoUsuario.rol || !this.rolesUsuario.includes(this.nuevoUsuario.rol)) return false;
+    if (!this.nuevoUsuario.estado || !this.estadosUsuario.includes(this.nuevoUsuario.estado)) return false;
     if (this.emailUsuarioDuplicado) return false;
     return validarUsuarioForm(
       this.nuevoUsuario,

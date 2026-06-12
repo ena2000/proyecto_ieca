@@ -45,6 +45,11 @@ router.get('/', async (req, res) => {
           lista.map((row) => stripInternalFields(row))
         )
       });
+    } else {
+      // Contable y líder necesitan nombres de ministerios para reportes y filtros.
+      Object.assign(tasks, {
+        ministerios: listCollection('ministerios')
+      });
     }
 
     if (userPuedeNotificaciones(user)) {

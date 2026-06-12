@@ -111,7 +111,7 @@ export class GastosService {
       ...gasto,
       ministerioId,
       usuarioId,
-      ministerio:    ministerio?.nombre ?? 'General',
+      ministerio:    ministerio?.nombre ?? gasto.ministerio ?? 'General',
       registradoPor: usuario?.nombre ?? 'Sistema'
     };
   }

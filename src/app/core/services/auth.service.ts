@@ -135,6 +135,10 @@ export class AuthService {
     this.refreshInFlight = firstValueFrom(
       this.api.post<RefreshTokenResponse>(API.auth.refresh, { refreshToken }).pipe(
         tap(res => {
+          if (res.user) {
+            this.persistSession(res.token, res.refreshToken, res.user);
+            return;
+          }
           localStorage.setItem(this.TOKEN_KEY, res.token);
           localStorage.setItem(this.REFRESH_KEY, res.refreshToken);
         }),

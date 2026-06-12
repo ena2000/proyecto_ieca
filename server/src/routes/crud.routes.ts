@@ -49,6 +49,7 @@ const {
   assertUsuarioLoginUnico
 } = require('../utils/unicidad');
 const { validate } = require('../middleware/validate');
+const { invalidateBootstrapCache } = require('../utils/bootstrapCache');
 const { idParamSchema, motivoRechazoSchema } = require('../schemas/common.schema');
 const {
   ingresoCreateSchema,
@@ -242,6 +243,8 @@ function createCrudRouter(collection, options: {
         }
       }
 
+      invalidateBootstrapCache();
+
       // Devolver la contraseña temporal SOLO en la creación, una vez.
       res.status(201).json(tempPassword ? { ...created, tempPassword } : created);
     } catch (err) {
@@ -297,6 +300,7 @@ function createCrudRouter(collection, options: {
           console.error(`[${collection} afterUpdate]`, hookErr);
         }
       }
+      invalidateBootstrapCache();
       res.json(updated);
     } catch (err) {
       console.error(`[${collection} PUT]`, err);
@@ -328,6 +332,7 @@ function createCrudRouter(collection, options: {
 
       const deleted = await deleteFromCollection(collection, req.params.id);
       if (!deleted) return res.status(404).json({ message: 'No encontrado' });
+      invalidateBootstrapCache();
       res.status(204).send();
     } catch (err) {
       console.error(`[${collection} DELETE]`, err);
@@ -430,6 +435,7 @@ ingresosRouter.patch('/:id/aprobar', validate(idParamSchema, 'params'), async (r
   try {
     const updated = await aprobarIngreso(req.params.id, req);
     if (!updated) return res.status(404).json({ message: 'Ingreso no encontrado' });
+    invalidateBootstrapCache();
     res.json(updated);
   } catch (err) {
     console.error('[ingresos PATCH aprobar]', err);
@@ -442,6 +448,7 @@ ingresosRouter.patch('/:id/rechazar', validate(idParamSchema, 'params'), validat
     const { motivo } = req.body;
     const updated = await rechazarIngreso(req.params.id, req, motivo);
     if (!updated) return res.status(404).json({ message: 'Ingreso no encontrado' });
+    invalidateBootstrapCache();
     res.json(updated);
   } catch (err) {
     console.error('[ingresos PATCH rechazar]', err);
@@ -467,6 +474,7 @@ gastosRouter.patch('/:id/aprobar', validate(idParamSchema, 'params'), async (req
   try {
     const updated = await aprobarGasto(req.params.id, req);
     if (!updated) return res.status(404).json({ message: 'Gasto no encontrado' });
+    invalidateBootstrapCache();
     res.json(updated);
   } catch (err) {
     console.error('[gastos PATCH aprobar]', err);
@@ -479,6 +487,7 @@ gastosRouter.patch('/:id/rechazar', validate(idParamSchema, 'params'), validate(
     const { motivo } = req.body;
     const updated = await rechazarGasto(req.params.id, req, motivo);
     if (!updated) return res.status(404).json({ message: 'Gasto no encontrado' });
+    invalidateBootstrapCache();
     res.json(updated);
   } catch (err) {
     console.error('[gastos PATCH rechazar]', err);

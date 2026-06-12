@@ -53,7 +53,7 @@ export class CierreService {
 
     try {
       const cfg = await firstValueFrom(
-        this.api.get<ConfigCierre>(API.admin.config)
+        this.api.get<ConfigCierre>(API.cierresEstado)
       );
       this.ultimoCierre = cfg.ultimoCierre;
       this.periodosCerrados = cfg.periodosCerrados ?? [];

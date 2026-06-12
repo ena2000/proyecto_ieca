@@ -69,6 +69,10 @@ export function validarUsuarioForm(
   usuarios: Usuario[],
   usuarioId?: number | null
 ): string | null {
+  const rolesValidos: string[] = [ROLES.ADMIN, ROLES.CONTABLE, ROLES.LIDER];
+  if (!usuario.rol || !rolesValidos.includes(usuario.rol)) {
+    return 'Selecciona un rol válido.';
+  }
   if (isRolSinMinisterio(usuario.rol)) {
     return null;
   }

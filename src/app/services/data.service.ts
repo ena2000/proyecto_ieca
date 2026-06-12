@@ -107,6 +107,11 @@ export class DataService {
       this.usuariosService.reload();
       return;
     }
+    if (force) {
+      this.bootstrapComplete = false;
+      this.lastBootstrapAt = 0;
+      this.clearBootstrapStorage();
+    }
     void this.bootstrapRemote(force);
   }
 

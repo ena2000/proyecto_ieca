@@ -116,7 +116,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit, Vie
     const now = Date.now();
     if (now - this.lastRemoteRefresh >= this.remoteRefreshMs) {
       this.lastRemoteRefresh = now;
-      void this.dataService.bootstrapRemote();
+      void this.dataService.bootstrapRemote(true);
     }
     this.cargarDatos(false);
   }

@@ -510,6 +510,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
       this.idEditando = item.id;
       this.intentoEnvio = false;
       this.aplicarResponsableAlFormulario();
+      this.cdr.markForCheck();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }, 50);
   }
@@ -610,6 +611,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
   onMinisterioIngresoChange(ministerioId: number | string | null | undefined): void {
     if (ministerioId == null || ministerioId === '') {
       this.nuevoIngreso.ministerioId = undefined;
+      this.nuevoIngreso.ministerio = 'General';
       return;
     }
     const id = Number(ministerioId);

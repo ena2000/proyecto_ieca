@@ -30,6 +30,7 @@ export const API = {
   },
   reportes:     '/reportes',
   cierres:      '/cierres',
+  cierresEstado: '/cierres/estado',
   admin: {
     config:  '/admin/config',
     backup:  '/admin/backup',
