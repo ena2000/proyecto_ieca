@@ -165,7 +165,7 @@ export class ReportesComponent implements OnInit, OnDestroy, ViewWillEnter {
     );
     if (this.filtroMinisterioId != null) {
       this.nombreMinisterioKardex = this.listaMinisterios.find(
-        m => m.id === this.filtroMinisterioId
+        m => Number(m.id) === Number(this.filtroMinisterioId)
       )?.nombre ?? 'Ministerio';
       this.lineasKardexVista = [
         ...this.dataService.getKardexMinisterio(this.filtroMinisterioId)
@@ -299,7 +299,7 @@ export class ReportesComponent implements OnInit, OnDestroy, ViewWillEnter {
     if (this.filtroMinisterioId != null) {
       kardex = this.dataService.getKardexMinisterio(this.filtroMinisterioId);
       nombreMinisterioKardex = this.listaMinisterios.find(
-        m => m.id === this.filtroMinisterioId
+        m => Number(m.id) === Number(this.filtroMinisterioId)
       )?.nombre;
     }
 

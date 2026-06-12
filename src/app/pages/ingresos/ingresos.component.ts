@@ -421,7 +421,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
           await this.mostrarToast(msg, 'success');
         }
       });
-      this.dataService.refreshAllData(true);
+      this.dataService.notifyChanges();
       this.resetFormulario();
     } catch (error) {
       await this.mostrarToast(
@@ -441,7 +441,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
       await withLoading(this.loadingController, 'Aprobando ingreso...', async () => {
         await firstValueFrom(this.ingresosService.aprobar(item.id));
       });
-      this.dataService.refreshAllData(true);
+      this.dataService.notifyChanges();
       await this.mostrarToast(
         ingresoEsTalento(item)
           ? 'Ingreso de talento aprobado. Se transfirió el 33% al fondo de la iglesia.'
@@ -541,7 +541,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
               await withLoading(this.loadingController, 'Eliminando registro...', async () => {
                 await firstValueFrom(this.ingresosService.delete(item.id));
               });
-              this.dataService.refreshAllData(true);
+              this.dataService.notifyChanges();
               await this.mostrarToast('Registro eliminado', 'warning');
             } catch (error) {
               await this.mostrarToast(error instanceof Error ? error.message : 'Error al eliminar', 'danger');

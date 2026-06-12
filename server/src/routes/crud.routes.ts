@@ -235,9 +235,11 @@ function createCrudRouter(collection, options: {
       }
       const created = await createInCollection(collection, body);
 
+      let responseBody = created;
       if (afterCreate) {
         try {
-          await afterCreate(created, req);
+          const result = await afterCreate(created, req);
+          if (result) responseBody = result;
         } catch (notifErr) {
           console.error(`[${collection} afterCreate notificación]`, notifErr);
         }
@@ -246,7 +248,7 @@ function createCrudRouter(collection, options: {
       invalidateBootstrapCache();
 
       // Devolver la contraseña temporal SOLO en la creación, una vez.
-      res.status(201).json(tempPassword ? { ...created, tempPassword } : created);
+      res.status(201).json(tempPassword ? { ...responseBody, tempPassword } : responseBody);
     } catch (err) {
       console.error(`[${collection} POST]`, err);
       res.status(500).json({ message: 'Error al crear registro' });

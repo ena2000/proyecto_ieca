@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of } from 'rxjs';
+import { BehaviorSubject, Observable, firstValueFrom, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Ingreso, IngresoEstado, Ministerio, Usuario } from '../core/models';
 import { NotificacionesService } from '../core/services/notificaciones.service';
@@ -52,6 +52,7 @@ export class IngresosService {
       tap(nuevo => {
         this.persist([nuevo, ...this.getAll()]);
         this.notificacionesService.recargar();
+        this.syncListaEnSegundoPlano();
       })
     );
   }
@@ -65,6 +66,7 @@ export class IngresosService {
         const lista = this.getAll().map(i => (i.id === id ? actualizado : i));
         this.persist(lista);
         this.notificacionesService.recargar();
+        this.syncListaEnSegundoPlano();
       })
     );
   }
@@ -78,6 +80,7 @@ export class IngresosService {
       tap(() => {
         this.persist(this.getAll().filter(i => i.id !== id));
         this.notificacionesService.recargar();
+        this.syncListaEnSegundoPlano();
       })
     );
   }
@@ -90,6 +93,7 @@ export class IngresosService {
       tap(actualizado => {
         this.persist(this.getAll().map(i => (i.id === id ? actualizado : i)));
         this.notificacionesService.recargar();
+        this.syncListaEnSegundoPlano();
       })
     );
   }
@@ -102,6 +106,7 @@ export class IngresosService {
       tap(actualizado => {
         this.persist(this.getAll().map(i => (i.id === id ? actualizado : i)));
         this.notificacionesService.recargar();
+        this.syncListaEnSegundoPlano();
       })
     );
   }
@@ -133,10 +138,24 @@ export class IngresosService {
       this.loadFromStorage();
       return;
     }
-    this.api.get<Ingreso[]>(API.ingresos.base).subscribe({
-      next: lista => this.ingresosSubject.next(lista),
-      error: err => console.error('[IngresosService] reload:', err)
-    });
+    void this.reloadAsync().catch(err => console.error('[IngresosService] reload:', err));
+  }
+
+  reloadAsync(): Promise<Ingreso[]> {
+    if (environment.useLocalFallback) {
+      this.loadFromStorage();
+      return Promise.resolve(this.getAll());
+    }
+    return firstValueFrom(
+      this.api.get<Ingreso[]>(API.ingresos.base).pipe(
+        tap(lista => this.ingresosSubject.next(lista))
+      )
+    );
+  }
+
+  /** Sincroniza la lista completa en segundo plano (p. ej. aportación 33% tras aprobar). */
+  private syncListaEnSegundoPlano(): void {
+    void this.reloadAsync().catch(() => undefined);
   }
 
   private actorId(): string | undefined {

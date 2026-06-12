@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of } from 'rxjs';
+import { BehaviorSubject, Observable, firstValueFrom, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Gasto, GastoEstado, Ministerio, Usuario } from '../core/models';
 import { NotificacionesService } from '../core/services/notificaciones.service';
@@ -121,10 +121,19 @@ export class GastosService {
       this.loadFromStorage();
       return;
     }
-    this.api.get<Gasto[]>(API.gastos.base).subscribe({
-      next: lista => this.gastosSubject.next(lista),
-      error: err => console.error('[GastosService] reload:', err)
-    });
+    void this.reloadAsync().catch(err => console.error('[GastosService] reload:', err));
+  }
+
+  reloadAsync(): Promise<Gasto[]> {
+    if (environment.useLocalFallback) {
+      this.loadFromStorage();
+      return Promise.resolve(this.getAll());
+    }
+    return firstValueFrom(
+      this.api.get<Gasto[]>(API.gastos.base).pipe(
+        tap(lista => this.gastosSubject.next(lista))
+      )
+    );
   }
 
   private actorId(): string | undefined {

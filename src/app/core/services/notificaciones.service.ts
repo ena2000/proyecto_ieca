@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, firstValueFrom } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import {
   Notificacion,
@@ -55,10 +55,20 @@ export class NotificacionesService {
       this.listaSubject.next(this.cargarLocal());
       return;
     }
-    this.api.get<Notificacion[]>(API.notificaciones.base).subscribe({
-      next: lista => this.hydrate(lista),
-      error: err => console.error('[NotificacionesService] recargar:', err)
-    });
+    void this.recargarAsync().catch(err => console.error('[NotificacionesService] recargar:', err));
+  }
+
+  recargarAsync(): Promise<Notificacion[]> {
+    if (environment.useLocalFallback) {
+      const lista = this.cargarLocal();
+      this.hydrate(lista);
+      return Promise.resolve(lista);
+    }
+    return firstValueFrom(
+      this.api.get<Notificacion[]>(API.notificaciones.base).pipe(
+        tap(lista => this.hydrate(lista))
+      )
+    );
   }
 
   hydrate(lista: Notificacion[]): void {

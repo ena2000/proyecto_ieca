@@ -300,6 +300,7 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
       });
 
       this.actualizarVista();
+      this.dataService.notifyChanges();
       this.resetFormulario();
     } catch (error) {
       this.mostrarToast(getHttpErrorMessage(error, 'Error al guardar'), 'danger');

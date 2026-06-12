@@ -79,7 +79,9 @@ export class DataService {
       .pipe(distinctUntilChanged((a, b) => (a?.id ?? null) === (b?.id ?? null)))
       .subscribe(session => {
         if (session) {
-          void this.bootstrapRemote();
+          if (!this.bootstrapComplete) {
+            void this.bootstrapRemote();
+          }
           return;
         }
         this.clearRemoteCache();
@@ -115,6 +117,24 @@ export class DataService {
     void this.bootstrapRemote(force);
   }
 
+  /** Recarga movimientos y notificaciones en paralelo (sin bootstrap completo). */
+  refreshFinanzas(): Promise<void> {
+    if (environment.useLocalFallback) {
+      this.ingresosService.reload();
+      this.gastosService.reload();
+      this.notificacionesService.recargar();
+      this.syncFromEntityServices();
+      return Promise.resolve();
+    }
+    return Promise.all([
+      this.ingresosService.reloadAsync(),
+      this.gastosService.reloadAsync(),
+      this.notificacionesService.recargarAsync()
+    ])
+      .then(() => this.syncFromEntityServices())
+      .catch(err => console.error('[DataService] refreshFinanzas:', err));
+  }
+
   hasRemoteData(): boolean {
     if (this.bootstrapComplete) {
       return true;
@@ -143,8 +163,10 @@ export class DataService {
     if (!force) {
       const stored = this.readBootstrapStorage();
       if (stored) {
-        this.applyBootstrap(stored);
-        void this.fetchBootstrapFromApi(force);
+        this.applyBootstrap(stored.payload);
+        if (Date.now() - stored.at > 90_000) {
+          void this.fetchBootstrapFromApi(force);
+        }
         return Promise.resolve();
       }
     }
@@ -182,7 +204,7 @@ export class DataService {
     return `ieca_bootstrap_${id}`;
   }
 
-  private readBootstrapStorage(): BootstrapResponse | null {
+  private readBootstrapStorage(): { payload: BootstrapResponse; at: number } | null {
     try {
       const raw = sessionStorage.getItem(this.bootstrapStorageKey());
       if (!raw) return null;
@@ -191,7 +213,7 @@ export class DataService {
         sessionStorage.removeItem(this.bootstrapStorageKey());
         return null;
       }
-      return parsed.payload;
+      return { payload: parsed.payload, at: parsed.at };
     } catch {
       return null;
     }
@@ -349,7 +371,7 @@ export class DataService {
     const balance = totalIngresos - totalGastos;
 
     const ministeriosActivos = ministerioId != null
-      ? (ministerios.some(m => m.id === ministerioId && m.estado === 'Activo') ? 1 : 0)
+      ? (ministerios.some(m => Number(m.id) === ministerioId && m.estado === 'Activo') ? 1 : 0)
       : ministerios.filter(m => m.estado === 'Activo').length;
 
     const mesAnterior = new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1);
@@ -473,7 +495,7 @@ export class DataService {
     });
 
     const ministerios = ministerioId != null
-      ? this.getMinisteriosActuales().filter(m => m.id === ministerioId)
+      ? this.getMinisteriosActuales().filter(m => Number(m.id) === ministerioId)
       : this.getMinisteriosActuales();
 
     const coloresDefault = ['#1e3a8a', '#7c3aed', '#0891b2', '#059669', '#dc2626', '#ea580c'];
@@ -520,7 +542,7 @@ export class DataService {
     ministerioScopeId?: number | null
   ): AportacionMinisterioResumen[] {
     const ministerios = ministerioScopeId != null
-      ? this.getMinisteriosActuales().filter(m => m.id === ministerioScopeId)
+      ? this.getMinisteriosActuales().filter(m => Number(m.id) === ministerioScopeId)
       : this.getMinisteriosActuales();
 
     const porId = new Map<number, number>();

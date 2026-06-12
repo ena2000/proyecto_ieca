@@ -116,7 +116,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit, Vie
     const now = Date.now();
     if (now - this.lastRemoteRefresh >= this.remoteRefreshMs) {
       this.lastRemoteRefresh = now;
-      void this.dataService.bootstrapRemote(true);
+      void this.dataService.refreshFinanzas();
     }
     this.cargarDatos(false);
   }
@@ -238,7 +238,9 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit, Vie
       return;
     }
 
-    const min = this.dataService.getMinisteriosActuales().find(m => m.id === this.ministerioScopeId);
+    const min = this.dataService.getMinisteriosActuales().find(
+      m => Number(m.id) === this.ministerioScopeId
+    );
     this.nombreMinisterioScope = min?.nombre ?? 'Tu ministerio';
     this.tituloAlcance = `Ministerio: ${this.nombreMinisterioScope}`;
   }

@@ -129,7 +129,7 @@ export class ReportesService {
     opciones?: { mesPeriodo?: string | null; incluirAportacion?: boolean }
   ): DesgloseMinisterioReporte[] {
     const lista = ministerioScopeId != null
-      ? ministerios.filter(m => m.id === ministerioScopeId)
+      ? ministerios.filter(m => Number(m.id) === Number(ministerioScopeId))
       : ministerios;
 
     const porId = new Map<number, { ingresos: number; gastos: number }>();
@@ -405,7 +405,7 @@ export class ReportesService {
     ministerioScopeId?: number | null
   ): SaldoMinisterioExport[] {
     const lista = ministerioScopeId != null
-      ? ministerios.filter(m => m.id === ministerioScopeId)
+      ? ministerios.filter(m => Number(m.id) === Number(ministerioScopeId))
       : ministerios;
 
     return lista
