@@ -4,6 +4,45 @@ Registro resumido de entregas relevantes para el repositorio. Detalle técnico e
 
 ---
 
+## 2026-06 — Rendimiento, roles y validaciones
+
+### Backend
+
+- **`GET /api/bootstrap`:** carga inicial agregada por rol (ingresos, gastos, ministerios, usuarios admin, notificaciones) con caché en servidor (`bootstrapCache.ts`, TTL 60 s).
+- **`GET /api/cierres/estado`:** lectura de periodos cerrados para todos los roles autenticados (antes solo vía `/admin/config`).
+- **`GET /api/health` ampliado:** incluye `version`, `uptimeSeconds` y `smtpConfigured`.
+- **Compresión HTTP:** middleware `compression` en Express.
+- **Unicidad:** utilidad `server/src/utils/unicidad.ts` y tests.
+
+### Frontend
+
+- **`DataService.bootstrapRemote`:** una petición tras login; caché en memoria (5 min) y `sessionStorage` (10 min).
+- **`CierreService`:** consume `/api/cierres/estado` en producción.
+- **`api-wake.util.ts`:** despierta el API en login y recuperación de contraseña (cold start Render).
+- **Rol `Colaborador`:** reemplaza `Lider/CoLider` como valor en Firestore (legacy aún aceptado). Ministerio opcional al crear colaborador.
+- **Ministerios:** columna **Colaboradores** derivada de usuarios; ya no se asignan líder/co-líder en el formulario de ministerio.
+- **`unicidad.util.ts`:** validación client-side de nombres de ministerio y emails duplicados.
+- **`movimiento-responsable.util.ts`:** asigna `usuarioId` y `registradoPor` en altas de ingresos/gastos.
+- **`notificacion-filtro.util.ts`:** filtrado de notificaciones por rol y audiencia.
+
+### DevOps
+
+- **`.github/workflows/keep-render-warm.yml`:** ping a `/api/health` cada 10 min (plan Free Render).
+- Scripts nuevos en `server/`: `usuario:inicial`, `seed:random`, `email:prueba`, `render:setup`.
+- `npm run start:render` en frontend (proxy a API en Render).
+
+### Pruebas
+
+- Frontend: **46** casos en **19** archivos `.spec.ts`.
+- Backend: **49** casos en **9** archivos `.test.js`.
+- **Total: 95** (CI en GitHub Actions).
+
+### Documentación
+
+- README, DEPLOY, METODOLOGIA y CHANGELOG actualizados con bootstrap, Colaborador, cold start y conteos de prueba.
+
+---
+
 ## 2026-06 — Vista estrecha y correcciones móvil web
 
 ### Frontend (solo requiere `npm run deploy:hosting`)
@@ -50,5 +89,6 @@ Registro resumido de entregas relevantes para el repositorio. Detalle técnico e
 |------------|------------|-----------------|
 | Frontend | Firebase Hosting | `npm run deploy:hosting` |
 | API | Render | Push a rama conectada (auto-deploy) |
+| Cold start (Free) | GitHub Actions | Workflow `keep-render-warm.yml` |
 
 Ver [DEPLOY.md](./DEPLOY.md) para checklist completo.

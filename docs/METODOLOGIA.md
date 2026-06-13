@@ -13,7 +13,7 @@ El proyecto consiste en un **sistema web de gestión financiera** para uso inter
 | Aspecto | Descripción |
 |---------|-------------|
 | **Producto** | Panel administrativo web (navegador de escritorio). |
-| **Usuarios finales** | Administrador, contable y líderes/co-líderes de ministerio. |
+| **Usuarios finales** | Administrador, contable y colaboradores de ministerio. |
 | **Stack tecnológico** | Angular 20 + Ionic 8 (frontend) · Node.js + Express 5 (API) · Firebase Firestore (datos). |
 | **Alcance** | Aplicación web institucional (escritorio principal); vista estrecha en navegador soportada; app móvil nativa fuera del alcance. |
 | **Equipo** | Desarrollo académico e institucional (equipo reducido). |
@@ -78,7 +78,7 @@ Recopilar, analizar y documentar las necesidades de IECA para transformarlas en 
 
 ### 3.2 Actividades
 
-1. Entrevistas y consultas con administración, contabilidad y líderes de ministerio.
+1. Entrevistas y consultas con administración, contabilidad y colaboradores de ministerio.
 2. Identificación de actores y casos de uso del sistema.
 3. Definición de reglas de negocio contables.
 4. Delimitación del alcance (incluido / excluido).
@@ -90,7 +90,7 @@ Recopilar, analizar y documentar las necesidades de IECA para transformarlas en 
 |-------|-------------|
 | **Administrador** | Acceso total: usuarios, ministerios, **aprobación/rechazo de movimientos**, cierre, backup, auditoría. |
 | **Contable** | Consulta ingresos/gastos y reportes; recibe alertas por correo; **no** aprueba movimientos ni gestiona usuarios/ministerios. |
-| **Líder / co-líder** | Registra ingresos/gastos de su ministerio en estado pendiente. |
+| **Colaborador** | Registra ingresos/gastos de su ministerio (si tiene `ministerioId`) en estado pendiente. |
 
 ### 3.4 Requisitos funcionales principales
 
@@ -99,8 +99,8 @@ Recopilar, analizar y documentar las necesidades de IECA para transformarlas en 
 | RF-01 | Autenticación | Login con JWT, recuperación de contraseña, cambio obligatorio en primer acceso. |
 | RF-02 | Gestión de ingresos | CRUD, comprobantes, filtros, estados pendiente/aprobado/rechazado; aprobación/rechazo **solo administrador**. |
 | RF-03 | Gestión de gastos | CRUD, categorías, comprobantes; aprobación/rechazo **solo administrador**. |
-| RF-04 | Flujo de aprobación | Líder crea pendiente; **solo el administrador** aprueba o rechaza. |
-| RF-05 | Ministerios | CRUD de departamentos con líder y co-líder (solo admin). |
+| RF-04 | Flujo de aprobación | Colaborador crea pendiente; **solo el administrador** aprueba o rechaza. |
+| RF-05 | Ministerios | CRUD de departamentos; colaboradores asignados vía usuarios con `ministerioId` (solo admin). |
 | RF-06 | Usuarios | CRUD con roles, contraseña temporal en alta. |
 | RF-07 | Dashboard | KPIs, gráficos y últimos movimientos (solo aprobados). |
 | RF-08 | Reportes | Filtros por período, ministerio y tipo; resumen del período; desglose por ministerio (saldo disponible histórico, **aportación período/acum.** para admin) y por cuenta; kardex por ministerio; exportación Excel enriquecida (agregación client-side). |
@@ -108,15 +108,18 @@ Recopilar, analizar y documentar las necesidades de IECA para transformarlas en 
 | RF-10 | Administración | Backup/restauración JSON, auditoría CSV, alertas por email, **resumen de aportación iglesia por ministerio**. |
 | RF-11 | Notificaciones | Alertas de pendientes y eventos del sistema por usuario. |
 | RF-12 | Aportación iglesia | Al aprobar ingreso de **talento** (`4105`) con ministerio: **33%** automático a `General`; ministerio retiene **67%**; movimiento automático no editable. |
+| RF-13 | Carga inicial (bootstrap) | `GET /api/bootstrap` agrega datos por rol en una petición; caché servidor y cliente para reducir latencia. |
+| RF-14 | Unicidad | Nombres de ministerio y emails de usuario sin duplicados (normalización sin tildes). |
 
 ### 3.5 Reglas de negocio clave
 
 - Solo los movimientos en estado **aprobado** cuentan en balance, gráficos, reportes consolidados, **kardex** y **saldo disponible**.
-- Los **líderes** registran en `pendiente`; **solo el administrador** aprueba o rechaza (`PATCH …/aprobar`, `PATCH …/rechazar`).
+- Los **colaboradores** registran en `pendiente`; **solo el administrador** aprueba o rechaza (`PATCH …/aprobar`, `PATCH …/rechazar`).
 - El **contable** consulta movimientos y reportes y recibe alertas por correo, pero **no** ejecuta aprobaciones.
 - Los totales **del período** en Reportes respetan el filtro de mes, ministerio y tipo; el **saldo disponible** y el **kardex** son **históricos** (todos los aprobados del ministerio, sin filtro de mes).
 - Los **periodos cerrados** impiden altas, ediciones y borrados en ese mes.
-- Los **líderes** solo ven y operan sobre su `ministerioId`.
+- Los **colaboradores** solo ven y operan sobre su `ministerioId` (cuando está asignado).
+- El rol en Firestore es **`Colaborador`**; el valor legacy `Lider/CoLider` sigue aceptándose en login y API.
 - El **cierre mensual** procesa movimientos por lotes (hasta 500 operaciones por lote en Firestore).
 - El **kardex** es una vista derivada calculada en el cliente: ledger cronológico de ingresos/gastos aprobados por ministerio; no existe colección ni endpoint dedicado.
 - La **aportación iglesia (33%)** aplica solo a ingresos de cuenta **4105** (talento) con ministerio asignado; genera un ingreso en `General` al aprobar; no crea gastos automáticos; al borrar el origen se elimina el ingreso vinculado.
@@ -128,7 +131,7 @@ Recopilar, analizar y documentar las necesidades de IECA para transformarlas en 
 | RNF-01 | Seguridad | Contraseñas con bcrypt; JWT access/refresh; Helmet; rate limiting. |
 | RNF-02 | Validación | Esquemas Zod en API; guards e interceptors en frontend. |
 | RNF-03 | Usabilidad | Interfaz de escritorio en navegador; sidebar fijo; toasts consistentes; **vista estrecha** (≤768px) con menú ☰ y layout adaptable sin afectar escritorio. |
-| RNF-04 | Disponibilidad | API en Render; frontend en Firebase Hosting. |
+| RNF-04 | Disponibilidad | API en Render; frontend en Firebase Hosting; mitigación de cold start (ping periódico + `api-wake` en auth). |
 | RNF-05 | Mantenibilidad | Código modular por capas; utilidades puras testeables. |
 | RNF-06 | Trazabilidad | Auditoría de login y movimientos; exportación CSV. |
 
@@ -187,7 +190,7 @@ flowchart LR
 |------|-----------|-----------------|
 | **Presentación** | `src/app/pages/`, `components/` | UI Ionic; componente `tabla-general` reutilizable; lógica en utilidades |
 | **Servicios** | `src/app/services/` | Cache, HTTP, agregación (`DataService`), reportes y Excel (`ReportesService`) |
-| **Core** | `src/app/core/` | Guards, interceptors, modelos (`KardexLinea`, `Reporte`, …), auth |
+| **Core** | `src/app/core/` | Guards, interceptors, modelos (`KardexLinea`, `Reporte`, …), auth, `CierreService` |
 | **Theme** | `src/theme/` | Layouts por pantalla (`_reportes-layout`, `_tabla-general`, `_mobile-narrow`, …) |
 | **API** | `server/src/routes/`, `utils/` | Reglas de negocio, validación, Firestore Admin |
 | **Utilidades** | `shared/utils/`, `server/src/utils/` | Lógica pura reutilizable y testeable |
@@ -197,7 +200,7 @@ flowchart LR
 | Colección | Campos principales |
 |-----------|-------------------|
 | `usuarios` | `usuario`, `email`, `rol`, `passwordHash`, `ministerioId`, `estado` |
-| `ministerios` | `nombre`, `estado`, líderes asignados |
+| `ministerios` | `nombre`, `estado` (colaboradores derivados de `usuarios.ministerioId`) |
 | `ingresos` | Monto, fecha, ministerio, cuenta, estado, comprobante, auditoría; campos de aportación (`esAportacionIglesia`, `aportacionGenerada`, `ingresoIglesiaId`, `montoAportacionIglesia`, `montoNetoMinisterio`) |
 | `gastos` | Monto, fecha, ministerio, categoría, estado, comprobante, auditoría |
 | `notificaciones` | Usuario destino, tipo, ruta, leída |
@@ -216,11 +219,13 @@ flowchart LR
 
 | Módulo | Rutas frontend | Endpoints API / origen de datos |
 |--------|----------------|--------------------------------|
-| Auth | `/login`, `/recuperar-password`, `/cambiar-password` | `/auth/*` |
-| Dashboard | `/dashboard` | Agregación vía `DataService` |
+| Auth | `/login`, `/recuperar-password`, `/cambiar-password` | `/auth/*`; `api-wake` en producción |
+| Carga inicial | (tras login) | `GET /api/bootstrap` — datos agregados por rol |
+| Dashboard | `/dashboard` | `DataService.bootstrapRemote` + agregación |
 | Ingresos / Gastos | `/ingresos`, `/gastos` | CRUD + `/aprobar`, `/rechazar` (**solo administrador**) |
 | Reportes | `/reportes` | Agregación **client-side** (`DataService`, `ReportesService`); Excel local con `xlsx-js-style` |
-| Usuarios / Ministerios | `/usuarios`, `/ministerios` | CRUD (solo admin); kardex calculado en cliente |
+| Usuarios / Ministerios | `/usuarios`, `/ministerios` | CRUD (solo admin); unicidad de nombres/emails; kardex en cliente |
+| Cierres | (todas las pantallas) | `GET /api/cierres/estado` vía `CierreService` |
 | Administración | `/administracion` | `/admin/*` |
 
 ### 4.6.1 Flujo del kardex (vista derivada)
@@ -300,7 +305,7 @@ flowchart TD
 | Orden | Módulo | Componentes principales |
 |-------|--------|-------------------------|
 | 1 | Auth | Login, JWT, guards, recuperación de contraseña |
-| 2 | Ministerios / Usuarios | CRUD admin, asignación de líderes, columna saldo disponible, modal kardex |
+| 2 | Ministerios / Usuarios | CRUD admin, colaboradores por `ministerioId`, unicidad, columna saldo disponible, modal kardex |
 | 3 | Ingresos / Gastos | Formularios, tabla, aprobación/rechazo (admin), comprobantes |
 | 4 | Dashboard | KPIs, Chart.js, tendencias, movimientos recientes |
 | 5 | Reportes | Filtros multi-dimensionales, distinción período/histórico, desglose por ministerio y cuenta, kardex inline, Excel enriquecido |
@@ -335,7 +340,7 @@ Verificar que el sistema cumple los requisitos, respeta las reglas de negocio y 
 1. Elaboración del plan de pruebas a partir de requisitos y casos de uso.
 2. Ejecución de pruebas unitarias automatizadas.
 3. Ejecución de pruebas de integración HTTP en la API.
-4. Pruebas manuales por rol (admin, contable, líder).
+4. Pruebas manuales por rol (admin, contable, colaborador).
 5. Registro de incidencias y corrección en implementación.
 6. Validación final con el usuario institucional.
 
@@ -347,13 +352,14 @@ Verificar que el sistema cumple los requisitos, respeta las reglas de negocio y 
 | **Unitarias (backend)** | Node test runner | Lógica pura, schemas | Periodos, cierre mensual, tokens JWT |
 | **Integración HTTP** | Supertest | Endpoints API | Login, refresh, cierre, conflictos 409 |
 | **Smoke** | Karma | Componentes | Creación de pantallas principales |
-| **Manuales** | Navegador escritorio | Flujos E2E por rol | Aprobar, rechazar, periodo cerrado, Excel |
+| **Manuales** | Navegador escritorio | Flujos E2E por rol | Aprobar, rechazar, periodo cerrado, Excel, bootstrap tras login |
 
 ### 6.4 Matriz requisito — prueba
 
 | Requisito | Verificación |
 |-----------|--------------|
-| RF-04 Flujo de aprobación | Líder crea pendiente; administrador aprueba; aparece en dashboard y kardex |
+| RF-04 Flujo de aprobación | Colaborador crea pendiente; administrador aprueba; aparece en dashboard y kardex |
+| RF-13 Bootstrap | Tras login, una petición carga ingresos/gastos según rol; cabecera `X-Bootstrap-Cache` |
 | RF-08 Reportes / kardex | Desglose por ministerio con saldo disponible; kardex coherente con movimientos aprobados; Excel incluye kardex |
 | RF-09 Cierre mensual | Tras cierre, no se puede editar movimiento del periodo |
 | RF-01 Auth | Login, refresh token, cambio de contraseña obligatorio |
@@ -363,9 +369,9 @@ Verificar que el sistema cumple los requisitos, respeta las reglas de negocio y 
 
 | Ámbito | Casos | Herramienta |
 |--------|-------|-------------|
-| Frontend | 35 | Karma + Jasmine + ChromeHeadless |
-| Backend | 42 | Node.js test runner + Supertest |
-| **Total** | **77** | Replicado en GitHub Actions (CI) |
+| Frontend | 46 | Karma + Jasmine + ChromeHeadless (`19` archivos `.spec.ts`) |
+| Backend | 49 | Node.js test runner + Supertest (`9` archivos `.test.js`) |
+| **Total** | **95** | Replicado en GitHub Actions (CI) |
 
 ### 6.6 Integración continua (verificación automática)
 
@@ -457,7 +463,7 @@ Garantizar la operación continua del sistema, corregir incidencias y aplicar me
 |------|-------------|-----------------|
 | **Correctivo** | Reparar fallos | Error en filtro de auditoría, CI roto |
 | **Adaptativo** | Ajustar a cambios del entorno | Nueva URL de API, credenciales Firebase |
-| **Perfectivo** | Mejorar funcionalidad existente | Kardex por ministerio, aportación iglesia 33% (talento), reportes con aportación acumulada, vista estrecha (menú ☰, login centrado), toasts unificados |
+| **Perfectivo** | Mejorar funcionalidad existente | Bootstrap agregado, rol Colaborador, unicidad ministerios/emails, kardex, aportación 33%, vista estrecha (☰), cold start Render, toasts unificados |
 | **Preventivo** | Evitar fallos futuros | Tests de cierre mensual, backup antes de cierre |
 
 ### 8.4 Gestión de incidencias y cambios
@@ -485,7 +491,7 @@ En mantenimiento, todo cambio sigue el flujo:
 |-----|------------------------|
 | **Administrador IECA** | Valida requisitos (F1); prueba administración y cierre (F4–F5); reporta incidencias (F6). |
 | **Contable** | Valida consulta y reportes (F1, F4); recibe alertas; usuario final en producción (F5–F6). |
-| **Líder / co-líder** | Valida registro de movimientos por ministerio (F1, F4). |
+| **Colaborador** | Valida registro de movimientos por ministerio (F1, F4). |
 | **Desarrollador** | Diseño técnico (F2), implementación (F3), pruebas (F4), despliegue (F5), mantenimiento (F6). |
 
 ---
@@ -530,7 +536,9 @@ flowchart LR
 
 | Requisito | Diseño | Implementación | Prueba |
 |-----------|--------|----------------|--------|
-| RF-02 Ingresos | `pages/ingresos`, CRUD API, aportación 33% | `ingresos.component`, `aportacion-iglesia.util`, `server/utils/ingresos.ts` | `movimiento-filtros.util.spec.ts`, `aportacion-iglesia.util.spec.ts`, manual por rol |
+| RF-02 Ingresos | `pages/ingresos`, CRUD API, aportación 33% | `ingresos.component`, `aportacion-iglesia.util`, `movimiento-responsable.util`, `server/utils/ingresos.ts` | `movimiento-filtros.util.spec.ts`, `aportacion-iglesia.util.spec.ts`, `movimiento-responsable.util.spec.ts`, manual por rol |
+| RF-13 Bootstrap | `bootstrap.routes`, `bootstrapCache` | `DataService.bootstrapRemote`, `api.constants` | `http.integration.test.js`, manual tras login |
+| RF-14 Unicidad | Validación en ministerios/usuarios | `unicidad.util`, `server/utils/unicidad.ts` | `unicidad.util.spec.ts`, `unicidad.test.js` |
 | RF-08 Reportes | `pages/reportes`, `ReportesService`, kardex y aportación en `DataService` | `reportes.component`, `reportes-filtros.util` | `reportes-filtros.util.spec.ts`, manual kardex/Excel/aportación |
 | RF-09 Cierre | `admin.routes`, `cierre-mensual.ts` | Panel administración | `cierre-mensual.test.js`, `http.integration.test.js` |
 | RF-01 Auth | JWT, guards | `auth.routes`, `authGuard` | `auth.test.js`, login manual |
@@ -545,6 +553,7 @@ flowchart LR
 - [backup-demo-ieca.json](./backup-demo-ieca.json) — Respaldo JSON de ejemplo para restauración y pruebas de kardex.
 - [.github/workflows/ci.yml](../.github/workflows/ci.yml) — Integración continua.
 - [.github/workflows/release.yml](../.github/workflows/release.yml) — Artefactos de release.
+- [.github/workflows/keep-render-warm.yml](../.github/workflows/keep-render-warm.yml) — Ping periódico al API en Render.
 
 ---
 

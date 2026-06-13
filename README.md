@@ -45,9 +45,9 @@ Los estilos responsive (`src/theme/_mobile-narrow.scss`, media queries `max-widt
 | Módulo | Funcionalidad |
 |--------|----------------|
 | **Dashboard** | KPIs (balance, ingresos, gastos, tendencias), gráficos de 6 meses, distribución por ministerio, últimos movimientos |
-| **Ingresos / Gastos** | CRUD, comprobantes (imagen/PDF), filtros, aprobación/rechazo (**solo administrador**), alcance por ministerio para líderes |
-| **Ministerios** | CRUD de departamentos con líder y co-líder; columna **saldo disponible**; modal **kardex** por ministerio (solo administrador) |
-| **Usuarios** | Roles, contraseña temporal en alta, cambio obligatorio al primer acceso |
+| **Ingresos / Gastos** | CRUD, comprobantes (imagen/PDF), filtros, aprobación/rechazo (**solo administrador**), alcance por ministerio para colaboradores, responsable del movimiento |
+| **Ministerios** | CRUD de departamentos; columna **Colaboradores** (derivada de usuarios con `ministerioId`); **saldo disponible**; modal **kardex** (solo administrador) |
+| **Usuarios** | Roles (`Administrador`, `Contable`, `Colaborador`), asignación de ministerio al colaborador, contraseña temporal en alta, cambio obligatorio al primer acceso |
 | **Reportes** | Filtros por período (mes actual, anterior, historial, mes concreto), ministerio y tipo; resumen del período; desglose por ministerio (incluye **saldo disponible histórico** y columnas **aport. período / aport. acum.** solo admin) y por cuenta contable; **kardex** al seleccionar ministerio; exportación Excel con totales, saldos, detalle y kardex |
 | **Administración** | Resumen ejecutivo, accesos rápidos, cierre mensual, backup/restauración JSON, auditoría CSV, **alertas por email**, limpieza de datos, **aportación iglesia por ministerio** (mes actual y acumulado) |
 | **Notificaciones** | Pendientes y eventos del sistema |
@@ -55,7 +55,7 @@ Los estilos responsive (`src/theme/_mobile-narrow.scss`, media queries `max-widt
 
 ### Reglas de negocio clave
 
-- Los **líderes** crean movimientos en estado `pendiente`; solo el **administrador** aprueba o rechaza.
+- Los **colaboradores** crean movimientos en estado `pendiente`; solo el **administrador** aprueba o rechaza.
 - Solo movimientos **aprobados** cuentan en balance, gráficos, reportes consolidados, **kardex** y **saldo disponible**.
 - Los totales **del período** en Reportes respetan el filtro de mes/ministerio/tipo; el **saldo disponible** y el **kardex** son **históricos** (todos los movimientos aprobados del ministerio, sin filtro de mes).
 - Los **periodos cerrados** bloquean altas, ediciones y borrados en ese mes.
@@ -98,16 +98,18 @@ flowchart LR
     FS[(Firestore)]
   end
 
-  cliente -->|HTTPS /api| api
+  cliente -->|HTTPS /api/bootstrap| api
   api --> FS
 ```
+
+Tras el login, el frontend carga datos iniciales con **`GET /api/bootstrap`** (una sola petición por rol, con caché en servidor y `sessionStorage`). En producción, login y recuperación de contraseña **despiertan el API** (`api-wake.util.ts`) para mitigar el cold start de Render (plan Free).
 
 | Capa | Responsabilidad |
 |------|-----------------|
 | **Páginas** (`src/app/pages/`) | UI Ionic; lógica de presentación delegada a utilidades compartidas |
 | **Componentes** (`src/app/components/`) | `tabla-general`, `slidebar`, `toolbar-menu-button`, notificaciones, modales reutilizables |
 | **Servicios** (`src/app/services/`) | Cache local, HTTP, agregación (`DataService`), reportes y Excel (`ReportesService`) |
-| **Core** (`src/app/core/`) | Guards, interceptors, modelos, `AuthService`, `ApiService`, `SidebarUiService` |
+| **Core** (`src/app/core/`) | Guards, interceptors, modelos, `AuthService`, `ApiService`, `CierreService`, `SidebarUiService` |
 | **Theme** (`src/theme/`) | Layouts SCSS por pantalla (`_reportes-layout`, `_tabla-general`, `_mobile-narrow`, …) |
 | **API** (`server/src/`) | Autenticación, validación, reglas de negocio, Firestore Admin |
 | **Utilidades** (`shared/utils/`, `server/src/utils/`) | Lógica pura reutilizable y testeable |
@@ -129,8 +131,12 @@ En desarrollo, las peticiones a `/api` se redirigen al backend con `src/proxy.co
 | `index.ts` | Punto de entrada; escucha en `PORT` |
 | `middleware/errorHandler.ts` | `asyncHandler` + respuestas JSON unificadas |
 | `middleware/auth.ts` | JWT access/refresh, `requireRoles` |
+| `routes/bootstrap.routes.ts` | Carga inicial agregada por rol (`GET /api/bootstrap`) |
+| `routes/cierres.routes.ts` | Estado de periodos cerrados (`GET /api/cierres/estado`) |
+| `utils/bootstrapCache.ts` | Caché en memoria del bootstrap (TTL 60 s) |
 | `utils/cierre-mensual.ts` | Cierre por lotes Firestore |
 | `utils/periodo.util.ts` | Claves de periodo (lógica pura, testeable) |
+| `utils/unicidad.ts` | Normalización para nombres de ministerio y emails únicos |
 | `config/firebase.memory.ts` | Firestore en memoria para tests (`IECA_USE_MEMORY_DB=true`) |
 
 ---
@@ -140,7 +146,7 @@ En desarrollo, las peticiones a `/api` se redirigen al backend con `src/proxy.co
 | Capa | Tecnología |
 |------|------------|
 | Frontend | Angular 20, Ionic 8, TypeScript, SCSS, Chart.js |
-| Backend | Node.js 20+, **TypeScript**, Express 5, JWT, bcryptjs, Zod, Helmet |
+| Backend | Node.js 20+, **TypeScript**, Express 5, JWT, bcryptjs, Zod, Helmet, compression |
 | Base de datos | Firebase Firestore |
 | Móvil (futuro) | Capacitor 8 + UI responsive; despliegue móvil no activo; base lista para una fase posterior |
 | Exportación | xlsx, xlsx-js-style |
@@ -155,7 +161,8 @@ proyecto_ieca/
 ├── .github/workflows/
 │   ├── ci.yml                   # Lint + tests + build (PR y push)
 │   ├── release.yml              # Artefactos de despliegue
-│   └── alertas-email.yml        # Resumen operativo diario por email
+│   ├── alertas-email.yml        # Resumen operativo diario por email
+│   └── keep-render-warm.yml     # Ping /api/health cada 10 min (plan Free Render)
 ├── docs/
 │   ├── DEPLOY.md                # Guía de despliegue (Firebase Hosting + Render)
 │   ├── METODOLOGIA.md           # Metodología en cascada y trazabilidad del proyecto
@@ -164,8 +171,8 @@ proyecto_ieca/
 ├── src/                         # Frontend
 │   ├── app/
 │   │   ├── auth/                # Login, recuperar y cambiar contraseña
-│   │   ├── components/          # tabla-general, slidebar, toolbar-menu-button, notificaciones-bell
-│   │   ├── core/                # Guards, interceptors, modelos, API, auth, SidebarUiService
+│   │   ├── components/          # tabla-general, slidebar, toolbar-menu-button, modal-form, notificaciones-bell
+│   │   ├── core/                # Guards, interceptors, modelos, API, auth, CierreService, SidebarUiService
 │   │   ├── pages/               # dashboard, ingresos, gastos, reportes, ministerios…
 │   │   ├── services/            # data, ingresos, gastos, reportes, ministerios, usuarios
 │   │   ├── shared/
@@ -183,7 +190,7 @@ proyecto_ieca/
 │   │   ├── config/              # env, firebase, firebase.memory
 │   │   ├── middleware/          # auth, cors, helmet, rateLimit, validate, errorHandler
 │   │   ├── types/               # Tipos TypeScript (auth, Firestore, Express)
-│   │   ├── routes/              # auth, crud, notificaciones, admin
+│   │   ├── routes/              # auth, bootstrap, crud, cierres, notificaciones, admin
 │   │   ├── schemas/             # Validación Zod
 │   │   ├── constants/           # aportacion-iglesia.ts (33%, cuenta 4105)
 │   │   ├── utils/               # cierre, backup, ingresos, gastos, aportacion-iglesia, email…
@@ -194,7 +201,12 @@ proyecto_ieca/
 │   │   └── setup.js             # JWT + Firestore en memoria
 │   ├── tsconfig.json            # Compilación TypeScript → dist/
 │   ├── scripts/
-│   │   └── seed-passwords.js
+│   │   ├── seed-passwords.js
+│   │   ├── crear-usuario-inicial.js
+│   │   ├── enviar-alertas.js
+│   │   ├── enviar-email-prueba.js
+│   │   ├── render-setup-helper.js
+│   │   └── verify-production.js
 │   ├── .env.example
 │   └── firebase-service-account.json   # Local — NO versionar
 ├── render.yaml                  # Blueprint Render (API en producción)
@@ -212,7 +224,7 @@ proyecto_ieca/
 | `movimiento-filtros.util.ts` | Filtros de tabla (fecha, monto, búsqueda, pendientes) |
 | `movimiento-fecha.util.ts` | Máscara DD/MM/AAAA y selector nativo |
 | `movimiento-acciones.util.ts` | Acciones de tabla según rol |
-| `movimiento-ministerio.util.ts` | Alcance por ministerio para líderes |
+| `movimiento-ministerio.util.ts` | Alcance por ministerio para colaboradores |
 | `movimiento-validacion.util.ts` | Validación de formularios |
 | `movimiento-estado.util.ts` | Estado pendiente/aprobado al guardar |
 | `movimiento-comprobante.util.ts` | Visor de comprobantes y errores de guardado |
@@ -231,13 +243,17 @@ proyecto_ieca/
 | `month.util.ts` | Claves y etiquetas de meses |
 | `currency.util.ts` | Formato de moneda |
 | `gasto.util.ts`, `ingreso.util.ts` | Estados y etiquetas |
-| `liderazgo.util.ts` | Etiquetas de líder/co-líder |
+| `liderazgo.util.ts` | Colaboradores por ministerio, filtros y etiquetas |
 | `tendencia-display.util.ts` | Formato de tendencias en dashboard |
 | `toast.util.ts` | Toasts unificados (`presentIecaToast`) |
 | `comprobante-upload.util.ts`, `image-upload.util.ts` | Subida de archivos |
 | `loading.util.ts`, `error-message.util.ts` | UX y errores HTTP |
 | `excel-ieca.styles.ts` | Estilos de exportación Excel |
 | `contabilidad-cuenta-form.util.ts` | Validación de cuenta en formularios |
+| `api-wake.util.ts` | Ping a `/health` antes de login (cold start Render) |
+| `unicidad.util.ts` | Validación de nombres de ministerio y emails duplicados |
+| `movimiento-responsable.util.ts` | `usuarioId` / `registradoPor` en altas de movimientos |
+| `notificacion-filtro.util.ts` | Filtrado de notificaciones por rol y audiencia |
 | **Aportación iglesia** | |
 | `aportacion-iglesia.util.ts` | Talento, 33%, ingreso automático en General, montos netos |
 | `aportacion-iglesia.util.spec.ts` | Tests unitarios de la lógica de aportación |
@@ -253,10 +269,12 @@ Constantes en páginas: `administracion-accesos.constants.ts` (accesos rápidos 
 | Componente | Uso |
 |------------|-----|
 | `tabla-general` | Tabla reutilizable con paginación, badges, comprobantes y acciones (editar, eliminar, aprobar/rechazar, **kardex** vía botón `ledger`) |
+| `modal-form` | Modal reutilizable para formularios de alta/edición |
 | `toolbar-menu-button` | Botón ☰ en toolbars; visible solo en vista estrecha (≤768px) |
 | `slidebar` | Menú lateral fijo (escritorio) u off-canvas (estrecho) |
+| `notificaciones-bell` | Campana de notificaciones en la barra superior |
 | `ReportesService` | Agregación client-side, desglose por ministerio/cuenta y exportación Excel (`descargarExcel`) |
-| `DataService` | Cache de ingresos/gastos; `getKardexMinisterio()`, `calcularSaldoMinisterio()`, `dataRevision$` para refrescar vistas derivadas |
+| `DataService` | Bootstrap remoto (`bootstrapRemote`), cache de ingresos/gastos; `getKardexMinisterio()`, `calcularSaldoMinisterio()`, `dataRevision$` |
 
 Modelos en `core/models/`: `kardex.model.ts` (`KardexLinea`), `reporte.model.ts` (`Reporte`, `DesgloseMinisterioReporte`, `DesgloseReporte`).
 
@@ -266,9 +284,9 @@ Estilos de layout en `src/theme/_reportes-layout.scss` y `src/theme/_tabla-gener
 
 | Colección | Descripción |
 |-----------|-------------|
-| `usuarios` | Login, rol, `passwordHash`, `ministerioId` (líderes) |
-| `ministerios` | Nombre, estado, líderes |
-| `ingresos` | Movimientos de entrada, estado, comprobante, `cuentaCodigo`, `cuentaNombre`; campos de aportación: `esAportacionIglesia`, `aportacionGenerada`, `ingresoIglesiaId`, `montoAportacionIglesia`, `montoNetoMinisterio` |
+| `usuarios` | Login, rol, `passwordHash`, `ministerioId` (colaboradores) |
+| `ministerios` | Nombre, estado (colaboradores derivados de `usuarios.ministerioId`) |
+| `ingresos` | Movimientos de entrada, estado, comprobante, `cuentaCodigo`, `cuentaNombre`, `usuarioId`, `registradoPor`; campos de aportación: `esAportacionIglesia`, `aportacionGenerada`, `ingresoIglesiaId`, `montoAportacionIglesia`, `montoNetoMinisterio` |
 | `gastos` | Movimientos de salida, categoría, estado, cuenta contable |
 | `notificaciones` | Alertas por usuario |
 | `config` / doc `sistema` | Periodos cerrados, último cierre |
@@ -370,13 +388,13 @@ Crea al menos un documento en `usuarios`:
 | `email` | `admin@ieca.com` | |
 | `rol` | `Administrador` | Valores exactos abajo |
 | `estado` | `Activo` | |
-| `ministerioId` | `1` | Solo para `Lider/CoLider` |
+| `ministerioId` | `1` | Opcional para `Colaborador` (asigna el ministerio del colaborador) |
 
-**Roles válidos** (texto exacto en Firestore):
+**Roles válidos** (texto en Firestore):
 
 - `Administrador`
 - `Contable`
-- `Lider/CoLider`
+- `Colaborador` (recomendado; el valor legacy `Lider/CoLider` sigue aceptándose en login y API)
 
 ### 5. Contraseñas iniciales
 
@@ -435,11 +453,11 @@ La app usa `localStorage` y credenciales en `auth-local.fallback.ts`. **No uses 
 |-----|-------|-------------|
 | **Administrador** | Todas | CRUD completo, aprobar/rechazar movimientos, cierre, backup, usuarios, ministerios, kardex |
 | **Contable** | Dashboard, ingresos, gastos, reportes | Consulta y reportes; recibe alertas por email; **no** aprueba movimientos ni gestiona usuarios/ministerios |
-| **Líder/Co-líder** | Dashboard, ingresos, gastos, reportes | Solo su `ministerioId`; crea pendientes; reportes filtrados a su ministerio |
+| **Colaborador** | Dashboard, ingresos, gastos, reportes | Solo su `ministerioId` (si está asignado); crea pendientes; reportes filtrados a su ministerio |
 
 ### Flujo de aprobación
 
-1. **Líder** registra → `pendiente`.
+1. **Colaborador** registra → `pendiente`.
 2. **Administrador** → `PATCH …/aprobar` o `PATCH …/rechazar` (motivo opcional).
 3. Solo **aprobados** en KPIs, gráficos, reportes, kardex y saldo disponible.
 4. **Periodo cerrado** → sin cambios en ese mes.
@@ -469,11 +487,13 @@ Cabecera en rutas protegidas:
 Authorization: Bearer <token>
 ```
 
-### Salud y autenticación
+### Salud, bootstrap y autenticación
 
 | Método | Ruta | Auth | Descripción |
 |--------|------|------|-------------|
-| GET | `/health` | No | `{ ok: true, service: "ieca-server" }` |
+| GET | `/health` | No | `{ ok, service, version, uptimeSeconds, smtpConfigured }` |
+| GET | `/bootstrap` | Sí | Carga inicial agregada por rol (ingresos, gastos, ministerios, usuarios admin, notificaciones) |
+| GET | `/cierres/estado` | Sí | Periodos cerrados, último cierre y si el mes actual está cerrado |
 | POST | `/auth/login` | No | `{ token, refreshToken, user }` |
 | POST | `/auth/refresh` | No | `{ token, refreshToken }` — renueva access token |
 | POST | `/auth/logout` | No | 204 |
@@ -485,7 +505,7 @@ Authorization: Bearer <token>
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
-| GET | `/ingresos`, `/gastos` | Lista (líder: solo su ministerio) |
+| GET | `/ingresos`, `/gastos` | Lista (colaborador: solo su ministerio) |
 | GET | `/ingresos/:id`, `/gastos/:id` | Detalle |
 | POST | `/ingresos`, `/gastos` | Crear |
 | PUT | `/ingresos/:id`, `/gastos/:id` | Actualizar |
@@ -580,6 +600,14 @@ Sin SMTP en desarrollo, el resumen se imprime en la consola del servidor. Máxim
 
 **Secrets en GitHub (workflow de alertas):** `JWT_SECRET`, `FIREBASE_SERVICE_ACCOUNT_JSON`, `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, etc.
 
+### Cold start en Render (plan Free)
+
+| Mecanismo | Uso |
+|-----------|-----|
+| **GitHub Actions** | [`.github/workflows/keep-render-warm.yml`](.github/workflows/keep-render-warm.yml) — ping a `/api/health` cada 10 min |
+| **Frontend** | `api-wake.util.ts` — ping en login/recuperar contraseña y espera hasta 50 s antes de autenticar |
+| **Plan Starter** | Sin cold start (recomendado para uso real) |
+
 ---
 
 ## Seguridad
@@ -599,6 +627,7 @@ Sin SMTP en desarrollo, el resumen se imprime en la consola del servidor. Máxim
 | Arranque prod | Rechaza `CORS_ORIGINS` vacío, memoria DB, reset code en JSON, Firebase ausente |
 | Cierre graceful | SIGTERM / SIGINT cierran conexiones antes de salir |
 | Verificación | `npm run verify:prod` + `prestart` antes de `npm start` |
+| Compresión HTTP | `compression` en Express (respuestas JSON) |
 | Hosting API | **Render** (Web Service); `ecosystem.config.cjs` opcional para VPS |
 | Demo offline | `auth-local.fallback.ts` excluido del build de producción |
 | Secretos | `.env`, `firebase-service-account.json` en `.gitignore` |
@@ -614,6 +643,7 @@ Sin SMTP en desarrollo, el resumen se imprime en la consola del servidor. Máxim
 | Comando | Descripción |
 |---------|-------------|
 | `npm start` | Servidor de desarrollo (`:4200`) |
+| `npm run start:render` | Dev con proxy a API en Render (`proxy.conf.render.json`) |
 | `npm run build` | Build de producción → `www/` |
 | `npm run build:ci` | Igual que build producción (usado en CI) |
 | `npm test` | Tests Karma/Jasmine (watch) |
@@ -630,10 +660,14 @@ Sin SMTP en desarrollo, el resumen se imprime en la consola del servidor. Máxim
 | `npm start` | API en producción (`prestart` verifica `dist/` automáticamente) |
 | `npm run dev` | API con recarga (`tsx watch src/index.ts`) |
 | `npm run seed` | Contraseña `123456` en todos los usuarios |
+| `npm run seed:random` | Reset y datos aleatorios de prueba |
+| `npm run usuario:inicial` | Crea el primer usuario administrador en Firestore |
 | `npm run alertas` | Resumen operativo por email (si hay alertas) |
 | `npm run alertas:force` | Igual, ignorando límite de un envío/día |
+| `npm run email:prueba` | Envía un correo de prueba (SMTP) |
+| `npm run render:setup` | Ayuda para configurar variables en Render |
 | `npm run typecheck` | Comprobación TypeScript sin emitir (`tsc --noEmit`) |
-| `npm test` | 49 tests (unitarios + HTTP en memoria) |
+| `npm test` | 49 tests en 9 archivos (unitarios + HTTP en memoria) |
 | `npm run test:integration` | Solo tests HTTP (Supertest) |
 
 ---
@@ -676,9 +710,9 @@ En el servidor de producción:
 
 | Ámbito | Cantidad | Herramienta |
 |--------|----------|-------------|
-| Frontend | **40+** casos (`17+` archivos `.spec.ts`) | Karma + Jasmine + ChromeHeadless |
-| Backend | **49** casos (`8` archivos `.test.js`) | Node.js test runner + Supertest |
-| **Total** | **84** | Replicado en GitHub Actions |
+| Frontend | **46** casos (`19` archivos `.spec.ts`) | Karma + Jasmine + ChromeHeadless |
+| Backend | **49** casos (`9` archivos `.test.js`) | Node.js test runner + Supertest |
+| **Total** | **95** | Replicado en GitHub Actions |
 
 ### Frontend
 
@@ -699,7 +733,9 @@ Con `CI=true`, `karma.conf.js` usa `ChromeHeadless` y una sola ejecución.
 | `movimiento-validacion.util.spec.ts` | Validación de formularios |
 | `reportes-filtros.util.spec.ts` | Filtros y periodos en reportes |
 | `aportacion-iglesia.util.spec.ts` | Cálculo 33%, talento, ingreso automático en General |
-| `*.component.spec.ts`, `app.component.spec.ts` | Smoke y creación de componentes (12 archivos) |
+| `unicidad.util.spec.ts` | Normalización de nombres y emails duplicados |
+| `movimiento-responsable.util.spec.ts` | Responsable en altas y ediciones de movimientos |
+| `*.component.spec.ts`, `app.component.spec.ts` | Smoke y creación de componentes (13 archivos) |
 
 ### Backend
 
@@ -716,7 +752,8 @@ Usa `test/setup.js`: JWT de prueba + `IECA_USE_MEMORY_DB=true` (sin Firebase rea
 | `periodo.test.js` | Claves de periodo, `entityBloqueadoPorCierre` |
 | `cierre-mensual.test.js` | Lotes de cierre (chunks de 500) |
 | `http.integration.test.js` | Health, login, refresh, cierre + 409 duplicado |
-| `liderazgo.test.js` | Asignación de líderes y co-líderes en ministerios |
+| `liderazgo.test.js` | Colaboradores por ministerio (`ministerioId` en usuarios) |
+| `unicidad.test.js` | Normalización de texto para unicidad |
 | `email-templates.test.js` | Plantillas HTML de correo |
 | `resumen-operativo.test.js` | Alertas operativas (pendientes, cierre) |
 | `env.production.test.js` | Validaciones de config con `NODE_ENV=production` |
@@ -739,6 +776,15 @@ npm test
 ---
 
 ## Integración continua y release
+
+Workflows en [`.github/workflows/`](.github/workflows/):
+
+| Workflow | Disparador | Función |
+|----------|------------|---------|
+| `ci.yml` | Push y PR en `main`/`master`/`develop` | Lint, tests y build |
+| `release.yml` | CI exitoso, tag `v*` o manual | Artefactos `www/` y `server/dist` |
+| `alertas-email.yml` | Cron diario | Resumen operativo por email |
+| `keep-render-warm.yml` | Cron cada 10 min | Ping `/api/health` (cold start Render Free) |
 
 ### CI — cada push y PR
 
@@ -840,8 +886,9 @@ Resumen: metodología **en cascada (Waterfall)** con seis fases secuenciales —
 | Pantalla en blanco tras deploy | SPA sin rewrite | Configura fallback a `index.html` |
 | Avisos Ionicons en tests | Limitación Karma headless | No afecta resultado; tests pasan |
 | Release cancelado — CI no exitoso | CI falló en el mismo push | Corrige el workflow **CI** primero; el release se relanzará solo al completar CI en verde |
-| Release cancelado — CI no exitoso | CI falló en el mismo push | Corrige el workflow **CI** primero; el release se relanzará solo al completar CI en verde |
 | Release manual | CI aún en curso | Usa **workflow_dispatch** o espera a que CI termine |
+| Login muy lento en producción | Cold start de Render (plan Free) | Espera el reintento automático; activa `keep-render-warm.yml` o sube a Starter |
+| `smtpConfigured: false` en `/health` | SMTP no configurado en Render | Añade `SMTP_*` en Environment; sin SMTP, forgot-password responde 503 |
 | Saldo o kardex desactualizado tras aprobar | Cache local sin refrescar | Navega de nuevo a Reportes/Ministerios; `DataService` expone `dataRevision$` |
 | Probar sin datos reales | Entorno vacío | Restaura `docs/backup-demo-ieca.json` desde Administración |
 | No aparece el botón ☰ en móvil | Versión antigua o caché del hosting | Despliega con `npm run deploy:hosting`; recarga forzada en el navegador |

@@ -107,8 +107,18 @@ También puedes usar el blueprint incluido: [`render.yaml`](../render.yaml) → 
 
 | Plan | Comportamiento |
 |------|----------------|
-| **Free** | El servicio **se duerme** tras inactividad; la primera petición puede tardar ~30–60 s (cold start). |
+| **Free** | El servicio **se duerme** tras inactividad; la primera petición puede tardar ~30–60 s (cold start). Mitigaciones incluidas en el proyecto (ver abajo). |
 | **Starter** (recomendado) | Siempre activo, sin cold start. Adecuado para uso real de la iglesia. |
+
+#### Mitigación de cold start (plan Free)
+
+| Mecanismo | Descripción |
+|-----------|-------------|
+| [`.github/workflows/keep-render-warm.yml`](../.github/workflows/keep-render-warm.yml) | Ping automático a `https://ieca-api.onrender.com/api/health` cada **10 minutos** |
+| `api-wake.util.ts` (frontend) | Al abrir login/recuperar contraseña, hace ping a `/health` y espera hasta **50 s** antes de autenticar |
+| Plan **Starter** en Render | Elimina el cold start por completo |
+
+> El workflow `keep-render-warm` debe estar activo en GitHub Actions (rama `main`/`master`). Puedes dispararlo manualmente con **workflow_dispatch**.
 
 ### 3. Variables de entorno en Render
 
@@ -217,8 +227,9 @@ Archivo incluido: [`server/ecosystem.config.cjs`](../server/ecosystem.config.cjs
 ## Verificación post-despliegue
 
 ```bash
-# Health (incluye versión y uptime)
+# Health (incluye versión, uptime y si SMTP está configurado)
 curl https://ieca-api.onrender.com/api/health
+# Respuesta esperada: { "ok": true, "service": "ieca-server", "version": "1.0.0", "uptimeSeconds": ..., "smtpConfigured": true }
 
 # Login
 curl -X POST https://ieca-api.onrender.com/api/auth/login \
@@ -279,7 +290,8 @@ npm run deploy:hosting
 
 | Síntoma | Acción |
 |---------|--------|
-| Primera carga muy lenta | Plan Free en Render: cold start; sube a Starter o espera |
+| Primera carga muy lenta | Plan Free en Render: cold start | Activa `keep-render-warm.yml`, espera reintento en login o sube a Starter |
+| Bootstrap lento tras login | Muchos datos en Firestore | Normal en primer acceso; el servidor cachea 60 s (`X-Bootstrap-Cache: HIT`) |
 | Deploy falla en build | Revisa logs; ejecuta `npm run build` en local |
 | `verify:prod` falla | Revisa variables en Render; Firebase JSON en una sola línea |
 | CORS en navegador con código **(null)** en Firefox | Suele ser **Render dormido** o sin red, no CORS mal configurado. Espera 1 min o usa plan Starter. |
