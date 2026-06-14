@@ -24,7 +24,7 @@ import { abrirSelectorFechaNativo, isoToDateInputValue } from '../../shared/util
 import { procesarComprobante, esComprobantePdf } from '../../shared/utils/comprobante-upload.util';
 import { withLoading } from '../../shared/utils/loading.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
-import { estadoIngreso, etiquetaEstadoIngreso, ingresoPendiente } from '../../shared/utils/ingreso.util';
+import { estadoIngreso, etiquetaEstadoIngreso, ingresoPendiente, categoriaIngreso } from '../../shared/utils/ingreso.util';
 import { registerMovimientoPageIcons } from '../../shared/utils/movimiento-page.icons';
 import { filtrarMovimientos, hayFiltrosMovimientoActivos, FiltrosMovimiento } from '../../shared/utils/movimiento-filtros.util';
 import {
@@ -71,7 +71,7 @@ const INGRESO_VACIO = (): Ingreso => {
     descripcion: '',
     monto: null,
     foto: '',
-    tipo: '',
+    categoria: '',
     ministerio: 'General',
     ministerioId: undefined,
     usuarioId: undefined,
@@ -349,13 +349,13 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
       filtros: this.filtros,
       textoBusqueda: i => [
         i.descripcion ?? '',
-        i.cuentaNombre ?? i.tipo ?? '',
+        i.cuentaNombre ?? categoriaIngreso(i) ?? '',
         i.cuentaCodigo ?? ''
       ],
       esPendiente: ingresoPendiente,
       enriquecer: i => ({
         ...i,
-        cuentaNombre: i.cuentaNombre || i.tipo || '—',
+        cuentaNombre: i.cuentaNombre || categoriaIngreso(i) || '—',
         estado: estadoIngreso(i),
         estadoEtiqueta: etiquetaEstadoIngreso(estadoIngreso(i))
       })
@@ -502,7 +502,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
     setTimeout(() => {
       this.nuevoIngreso = { ...item };
       if (!this.nuevoIngreso.cuentaCodigo) {
-        const legacy = resolverCuentaIngresoLegacy(this.nuevoIngreso.tipo);
+        const legacy = resolverCuentaIngresoLegacy(categoriaIngreso(this.nuevoIngreso));
         aplicarCuentaEnIngreso(this.nuevoIngreso, legacy.codigo);
       }
       this.fechaManualForm = formatearISOaDDMMYYYY(this.nuevoIngreso.fecha);

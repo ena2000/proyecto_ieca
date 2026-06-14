@@ -1,5 +1,5 @@
 export type NotificacionTipo = 'ingreso' | 'gasto' | 'cierre';
-export type NotificacionAudiencia = 'staff' | 'lider';
+export type NotificacionAudiencia = 'staff' | 'colaborador';
 
 export interface Notificacion {
   id: string;
@@ -8,9 +8,9 @@ export interface Notificacion {
   mensaje: string;
   ruta?: string;
   fecha: string;
-  /** staff = admin/contable; lider = resolución de movimientos del ministerio. */
+  /** staff = admin/contable; colaborador = resolución de movimientos del ministerio. */
   audiencia?: NotificacionAudiencia;
-  /** Quién originó la acción (p. ej. Lider/CoLider). El contable solo ve staff con origen del líder. */
+  /** Quién originó la acción (p. ej. Colaborador). El contable solo ve staff con origen del colaborador. */
   origenRol?: string;
   ministerioId?: number;
   /** Usuario que ejecutó la acción; no debe ver esta notificación. */

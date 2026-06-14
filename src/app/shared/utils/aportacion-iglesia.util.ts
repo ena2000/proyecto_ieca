@@ -1,4 +1,5 @@
 import { Gasto, Ingreso } from '../../core/models';
+import { categoriaIngreso } from './ingreso.util';
 import {
   calcularMontoAportacionIglesia,
   CUENTA_INGRESO_TALENTO_CODIGO,
@@ -18,11 +19,11 @@ export function assertMovimientoAportacionModificable(
 }
 
 export function ingresoEsTalento(
-  ingreso: Pick<Ingreso, 'cuentaCodigo' | 'cuentaNombre' | 'tipo'> | null | undefined
+  ingreso: Pick<Ingreso, 'cuentaCodigo' | 'cuentaNombre' | 'categoria'> & { tipo?: string } | null | undefined
 ): boolean {
   if (!ingreso) return false;
   if (ingreso.cuentaCodigo === CUENTA_INGRESO_TALENTO_CODIGO) return true;
-  const texto = `${ingreso.cuentaNombre ?? ''} ${ingreso.tipo ?? ''}`.toLowerCase();
+  const texto = `${ingreso.cuentaNombre ?? ''} ${categoriaIngreso(ingreso)}`.toLowerCase();
   return texto.includes('talento');
 }
 
@@ -87,7 +88,7 @@ export function crearIngresoIglesiaPorAportacion(
     descripcion: `Aportación de ${ministerioNombre} (${pct}) — ${ref}`,
     monto: montoAportacion,
     foto: '',
-    tipo: 'Aportación de ministerio',
+    categoria: 'Aportación de ministerio',
     cuentaCodigo: '4101',
     cuentaNombre: 'Ingresos generales',
     ministerio: MINISTERIO_IGLESIA_NOMBRE,

@@ -4,6 +4,14 @@ const ROLES = z.enum(['Administrador', 'Contable', 'Colaborador', 'Lider/CoLider
 const ESTADOS_USUARIO = z.enum(['Activo', 'Inactivo']).optional();
 const COMPROBANTE = z.enum(['imagen', 'pdf']).optional();
 
+/** Unifica `tipo` legacy de ingresos → `categoria`. */
+function mergeCategoriaLegacy(val) {
+  if (!val || typeof val !== 'object') return val;
+  const categoria = val.categoria ?? val.tipo;
+  const { tipo, ...rest } = val;
+  return { ...rest, categoria };
+}
+
 const movimientoBase = {
   fecha: z.string().min(1).max(40),
   descripcion: z.string().trim().min(1, 'Descripción requerida').max(500),
@@ -22,13 +30,23 @@ const cuentaFields = {
   cuentaNombre: z.string().trim().min(1).max(120).optional()
 };
 
-const ingresoCreateSchema = z.object({
-  ...movimientoBase,
-  ...cuentaFields,
-  tipo: z.string().trim().min(1).max(100)
-});
+const ingresoCreateSchema = z.preprocess(
+  mergeCategoriaLegacy,
+  z.object({
+    ...movimientoBase,
+    ...cuentaFields,
+    categoria: z.string().trim().min(1).max(100)
+  })
+);
 
-const ingresoUpdateSchema = ingresoCreateSchema.partial();
+const ingresoUpdateSchema = z.preprocess(
+  mergeCategoriaLegacy,
+  z.object({
+    ...movimientoBase,
+    ...cuentaFields,
+    categoria: z.string().trim().min(1).max(100)
+  }).partial()
+);
 
 const gastoCreateSchema = z.object({
   ...movimientoBase,

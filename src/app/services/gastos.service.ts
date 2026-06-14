@@ -234,7 +234,7 @@ export class GastosService {
     if ((rol === ROLES.ADMIN || rol === ROLES.CONTABLE) && gasto.ministerioId != null) {
       this.notificacionesService.registrar({
         tipo: 'gasto',
-        audiencia: 'lider',
+        audiencia: 'colaborador',
         ministerioId: Number(gasto.ministerioId),
         actorUserId: actor,
         titulo: 'Tu gasto fue modificado',
@@ -269,7 +269,7 @@ export class GastosService {
     if ((rol === ROLES.ADMIN || rol === ROLES.CONTABLE) && gasto.ministerioId != null) {
       this.notificacionesService.registrar({
         tipo: 'gasto',
-        audiencia: 'lider',
+        audiencia: 'colaborador',
         ministerioId: Number(gasto.ministerioId),
         actorUserId: actor,
         titulo: 'Tu gasto fue eliminado',
@@ -322,7 +322,7 @@ export class GastosService {
     const motivoTxt = motivo?.trim() || 'Sin motivo indicado';
     this.notificacionesService.registrar({
       tipo: 'gasto',
-      audiencia: 'lider',
+      audiencia: 'colaborador',
       ministerioId: Number(gasto.ministerioId),
       actorUserId: this.actorId(),
       titulo: estado === 'aprobado' ? 'Tu gasto fue aprobado' : 'Tu gasto fue rechazado',

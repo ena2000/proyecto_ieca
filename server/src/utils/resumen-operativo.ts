@@ -40,7 +40,7 @@ function mapPendiente(tipo, entity, ministeriosPorId) {
   return {
     tipo,
     id: entity.id,
-    descripcion: entity.descripcion || entity.tipo || entity.categoria || 'Sin descripción',
+    descripcion: entity.descripcion || entity.categoria || entity.tipo || 'Sin descripción',
     monto: Number(entity.monto) || 0,
     ministerio,
     registradoEn: fechaRegistroMovimiento(entity),

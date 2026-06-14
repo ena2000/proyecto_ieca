@@ -1,5 +1,19 @@
 import { Ingreso, IngresoEstado } from '../../core/models/ingreso.model';
 
+type IngresoLegacy = Ingreso & { tipo?: string };
+
+/** Lee categoría contable; acepta registros legacy con campo `tipo`. */
+export function categoriaIngreso(ingreso: Pick<Ingreso, 'categoria'> & { tipo?: string }): string {
+  return ingreso.categoria || ingreso.tipo || '';
+}
+
+/** Unifica `tipo` legacy → `categoria` al cargar desde API o localStorage. */
+export function normalizarIngreso(ingreso: IngresoLegacy): Ingreso {
+  const categoria = categoriaIngreso(ingreso);
+  const { tipo: _tipo, ...rest } = ingreso;
+  return { ...rest, categoria };
+}
+
 export function estadoIngreso(i: Ingreso): IngresoEstado {
   return i.estado ?? 'aprobado';
 }

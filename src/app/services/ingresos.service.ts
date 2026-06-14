@@ -6,7 +6,7 @@ import { NotificacionesService } from '../core/services/notificaciones.service';
 import { ApiService } from '../core/services/api.service';
 import { API } from '../core/constants/api.constants';
 import { environment } from '../../environments/environment';
-import { estadoIngreso } from '../shared/utils/ingreso.util';
+import { estadoIngreso, normalizarIngreso } from '../shared/utils/ingreso.util';
 import { stampAuditoriaLocal, stampAuditoriaActualizacionLocal } from '../shared/utils/audit.util';
 import { AuthService } from '../core/services/auth.service';
 import { ROLES } from '../core/constants/roles.constants';
@@ -37,7 +37,7 @@ export class IngresosService {
   }
 
   hydrate(lista: Ingreso[]): void {
-    this.ingresosSubject.next(lista);
+    this.ingresosSubject.next(lista.map(normalizarIngreso));
   }
 
   getAll(): Ingreso[] {
@@ -259,7 +259,7 @@ export class IngresosService {
     if ((rol === ROLES.ADMIN || rol === ROLES.CONTABLE) && ingreso.ministerioId != null) {
       this.notificacionesService.registrar({
         tipo: 'ingreso',
-        audiencia: 'lider',
+        audiencia: 'colaborador',
         ministerioId: Number(ingreso.ministerioId),
         actorUserId: actor,
         titulo: 'Tu ingreso fue modificado',
@@ -294,7 +294,7 @@ export class IngresosService {
     if ((rol === ROLES.ADMIN || rol === ROLES.CONTABLE) && ingreso.ministerioId != null) {
       this.notificacionesService.registrar({
         tipo: 'ingreso',
-        audiencia: 'lider',
+        audiencia: 'colaborador',
         ministerioId: Number(ingreso.ministerioId),
         actorUserId: actor,
         titulo: 'Tu ingreso fue eliminado',
@@ -343,7 +343,7 @@ export class IngresosService {
     const motivoTxt = motivo?.trim() || 'Sin motivo indicado';
     this.notificacionesService.registrar({
       tipo: 'ingreso',
-      audiencia: 'lider',
+      audiencia: 'colaborador',
       ministerioId: Number(ingreso.ministerioId),
       actorUserId: this.actorId(),
       titulo: estado === 'aprobado' ? 'Tu ingreso fue aprobado' : 'Tu ingreso fue rechazado',
@@ -403,7 +403,8 @@ export class IngresosService {
       return;
     }
     try {
-      this.ingresosSubject.next(JSON.parse(data));
+      const parsed = JSON.parse(data) as Ingreso[];
+      this.ingresosSubject.next(parsed.map(normalizarIngreso));
     } catch {
       this.ingresosSubject.next([]);
     }

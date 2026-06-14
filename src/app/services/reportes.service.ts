@@ -67,9 +67,9 @@ export class ReportesService {
         fecha:           i.fecha,
         fechaFormateada: formatearISOaDDMMYYYY(i.fecha),
         titulo:          i.descripcion,
-        tipo:            i.cuentaNombre || i.tipo || 'Ingreso',
+        tipo:            i.cuentaNombre || i.categoria || 'Ingreso',
         cuentaCodigo:    i.cuentaCodigo,
-        cuentaNombre:    i.cuentaNombre || i.tipo,
+        cuentaNombre:    i.cuentaNombre || i.categoria,
         ministerio:      resolverNombreMinisterioMovimiento(i.ministerioId, i.ministerio, ministerios, {
           esAportacionIglesia: i.esAportacionIglesia
         }),

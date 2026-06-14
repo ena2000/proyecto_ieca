@@ -8,7 +8,8 @@ export interface Ingreso extends AuditoriaMovimiento {
   descripcion: string;
   monto: number | null;
   foto: string;
-  tipo: string;
+  /** Clasificación contable (nombre de la cuenta elegida; mismo campo que en Gasto). */
+  categoria: string;
   /** Cuenta contable elegida en el formulario. */
   cuentaCodigo?: string;
   cuentaNombre?: string;

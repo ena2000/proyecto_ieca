@@ -52,21 +52,21 @@ export function cuentaGastoPorDefecto(): CuentaContable {
   return CUENTAS_GASTO_OPCIONES[2];
 }
 
-/** Registros antiguos sin cuentaCodigo: intenta emparejar por texto de tipo/categoría. */
-export function resolverCuentaIngresoLegacy(tipo?: string): CuentaContable {
-  const key = (tipo || '').toLowerCase();
-  const found = CUENTAS_INGRESO_OPCIONES.find(
+/** Registros antiguos sin cuentaCodigo: intenta emparejar por texto de categoría. */
+function resolverCuentaLegacy(categoria: string | undefined, opciones: CuentaContable[]): CuentaContable {
+  const key = (categoria || '').toLowerCase();
+  const found = opciones.find(
     c => key.includes(c.nombre.toLowerCase()) || key.includes(c.codigo)
   );
-  return found ?? CUENTAS_INGRESO_OPCIONES[0];
+  return found ?? opciones[0];
+}
+
+export function resolverCuentaIngresoLegacy(categoria?: string): CuentaContable {
+  return resolverCuentaLegacy(categoria, CUENTAS_INGRESO_OPCIONES);
 }
 
 export function resolverCuentaGastoLegacy(categoria?: string): CuentaContable {
-  const key = (categoria || '').toLowerCase();
-  const found = CUENTAS_GASTO_OPCIONES.find(
-    c => key.includes(c.nombre.toLowerCase()) || key.includes(c.codigo)
-  );
-  return found ?? CUENTAS_GASTO_OPCIONES[0];
+  return resolverCuentaLegacy(categoria, CUENTAS_GASTO_OPCIONES);
 }
 
 export function resolverCuentaDesdeMovimiento(opts: {

@@ -224,7 +224,7 @@ function generateRandomBackup(opts = {}) {
       descripcion: `${pick(rng, DESCR_INGRESO)} — ${min.nombre}`,
       monto: randInt(rng, 30, 2800),
       foto: '',
-      tipo: pick(rng, TIPOS_INGRESO),
+      categoria: pick(rng, TIPOS_INGRESO),
       cuentaCodigo: cuenta.codigo,
       cuentaNombre: cuenta.nombre,
       ministerio: min.nombre,

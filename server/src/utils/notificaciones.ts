@@ -11,7 +11,20 @@ const COLLECTION = 'notificaciones';
 const MAX_ITEMS = 40;
 
 const TIPOS_VALIDOS = new Set(['ingreso', 'gasto', 'cierre']);
-const AUDIENCIAS_VALIDAS = new Set(['staff', 'lider']);
+const AUDIENCIAS_VALIDAS = new Set(['staff', 'colaborador', 'lider']);
+
+function normalizarAudiencia(aud) {
+  if (aud === 'colaborador' || aud === 'lider') return 'colaborador';
+  return 'staff';
+}
+
+function audienciaParaGuardar(aud) {
+  const raw = String(aud || 'staff');
+  if (!AUDIENCIAS_VALIDAS.has(raw)) {
+    return null;
+  }
+  return normalizarAudiencia(raw);
+}
 
 function toNotificacion(entity) {
   if (!entity) return null;
@@ -22,7 +35,7 @@ function toNotificacion(entity) {
     mensaje: entity.mensaje,
     ruta: entity.ruta || undefined,
     fecha: entity.fecha,
-    audiencia: entity.audiencia || 'staff',
+    audiencia: normalizarAudiencia(entity.audiencia || 'staff'),
     ministerioId:
       entity.ministerioId != null && entity.ministerioId !== ''
         ? Number(entity.ministerioId)
@@ -53,9 +66,9 @@ function filterNotificacionesForUser(lista, user) {
     if (uid && n.actorUserId && String(n.actorUserId) === uid) {
       return false;
     }
-    const aud = n.audiencia || 'staff';
+    const aud = normalizarAudiencia(n.audiencia);
     if (esColaboradorMinisterio(rol)) {
-      if (aud !== 'lider') return false;
+      if (aud !== 'colaborador') return false;
       if (n.ministerioId == null || ministerioId == null) return false;
       return Number(n.ministerioId) === Number(ministerioId);
     }
@@ -102,8 +115,8 @@ async function createNotificacion({
   if (!TIPOS_VALIDOS.has(tipo)) {
     throw new Error('Tipo de notificación inválido');
   }
-  const aud = String(audiencia || 'staff');
-  if (!AUDIENCIAS_VALIDAS.has(aud)) {
+  const aud = audienciaParaGuardar(audiencia);
+  if (!aud) {
     throw new Error('Audiencia de notificación inválida');
   }
   const created = await createInCollection(COLLECTION, {

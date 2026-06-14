@@ -48,7 +48,7 @@ async function generarAportacionIglesiaPorIngreso(ingreso, req) {
     descripcion: `Aportación de ${ministerioNombre} (${pct}) — ${ref}`,
     monto: montoAportacion,
     foto: '',
-    tipo: 'Aportación de ministerio',
+    categoria: 'Aportación de ministerio',
     cuentaCodigo: '4101',
     cuentaNombre: 'Ingresos generales',
     ministerio: MINISTERIO_IGLESIA_NOMBRE,

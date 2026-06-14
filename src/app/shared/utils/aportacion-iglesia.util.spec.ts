@@ -14,7 +14,7 @@ describe('aportacion-iglesia.util', () => {
     descripcion: 'Evento talento',
     monto: 100,
     foto: '',
-    tipo: 'Talento y eventos',
+    categoria: 'Talento y eventos',
     cuentaCodigo: '4105',
     cuentaNombre: 'Talento y eventos',
     ministerio: 'Jóvenes',
@@ -25,7 +25,7 @@ describe('aportacion-iglesia.util', () => {
   const ingresoDiezmo: Ingreso = {
     ...ingresoTalento,
     id: 11,
-    tipo: 'Diezmos y ofrendas',
+    categoria: 'Diezmos y ofrendas',
     cuentaCodigo: '4102',
     cuentaNombre: 'Diezmos y ofrendas',
     descripcion: 'Ofrenda'
@@ -39,7 +39,7 @@ describe('aportacion-iglesia.util', () => {
   it('detecta ingresos de talento por cuenta o texto legacy', () => {
     expect(ingresoEsTalento(ingresoTalento)).toBeTrue();
     expect(ingresoEsTalento(ingresoDiezmo)).toBeFalse();
-    expect(ingresoEsTalento({ ...ingresoDiezmo, cuentaCodigo: undefined, tipo: 'Talento escolar' })).toBeTrue();
+    expect(ingresoEsTalento({ ...ingresoDiezmo, cuentaCodigo: undefined, categoria: 'Talento escolar' })).toBeTrue();
   });
 
   it('solo requiere aportación en ingresos de talento de ministerio', () => {

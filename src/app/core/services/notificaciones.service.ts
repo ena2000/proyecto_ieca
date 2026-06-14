@@ -11,6 +11,7 @@ import { API } from '../constants/api.constants';
 import { environment } from '../../../environments/environment';
 import { AppRole } from '../constants/roles.constants';
 import { filtrarNotificacionesParaSesion } from '../../shared/utils/notificacion-filtro.util';
+import { normalizarAudiencia } from '../../shared/utils/notificacion-audiencia.util';
 
 export interface NuevaNotificacion {
   tipo: NotificacionTipo;
@@ -270,7 +271,7 @@ export class NotificacionesService {
       mensaje: n.mensaje,
       ruta: n.ruta,
       fecha: n.fecha,
-      audiencia: n.audiencia ?? 'staff',
+      audiencia: normalizarAudiencia(n.audiencia),
       ministerioId: n.ministerioId != null ? Number(n.ministerioId) : undefined,
       actorUserId: n.actorUserId != null ? String(n.actorUserId) : undefined,
       origenRol: n.origenRol != null ? String(n.origenRol) : undefined,

@@ -584,7 +584,7 @@ export class DataService {
         fecha: i.fecha,
         descripcion: i.descripcion,
         cuentaCodigo: i.cuentaCodigo,
-        cuentaNombre: i.cuentaNombre || i.tipo,
+        cuentaNombre: i.cuentaNombre || i.categoria,
         tipo: 'ingreso' as const,
         monto: calcularMontoNetoMinisterio(i)
       })),

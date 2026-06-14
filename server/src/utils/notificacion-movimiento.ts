@@ -25,8 +25,8 @@ function etiquetaTipo(tipo, minuscula = false) {
   return minuscula ? e.toLowerCase() : e;
 }
 
-/** Avisa al líder/co-líder (no al administrador que aprobó/rechazó). */
-async function notificarResolucionMovimientoLider({ tipo, estado, movimiento, motivo, req }) {
+/** Avisa al colaborador del ministerio (no al administrador que aprobó/rechazó). */
+async function notificarResolucionMovimientoColaborador({ tipo, estado, movimiento, motivo, req }) {
   const ministerioId = movimiento.ministerioId;
   if (ministerioId == null || ministerioId === '') return null;
 
@@ -37,7 +37,7 @@ async function notificarResolucionMovimientoLider({ tipo, estado, movimiento, mo
   if (estado === 'aprobado') {
     return createNotificacion({
       tipo,
-      audiencia: 'lider',
+      audiencia: 'colaborador',
       ministerioId: Number(ministerioId),
       actorUserId: actor,
       titulo: `Tu ${etiqueta} fue aprobado`,
@@ -49,7 +49,7 @@ async function notificarResolucionMovimientoLider({ tipo, estado, movimiento, mo
   const motivoTxt = motivo ? String(motivo).trim() : 'Sin motivo indicado';
   return createNotificacion({
     tipo,
-    audiencia: 'lider',
+    audiencia: 'colaborador',
     ministerioId: Number(ministerioId),
     actorUserId: actor,
     titulo: `Tu ${etiqueta} fue rechazado`,
@@ -105,7 +105,7 @@ async function notificarMovimientoModificado({ tipo, movimiento, req, current })
     if (ministerioId == null || ministerioId === '') return null;
     return createNotificacion({
       tipo,
-      audiencia: 'lider',
+      audiencia: 'colaborador',
       ministerioId: Number(ministerioId),
       actorUserId: actor,
       titulo: `Tu ${etiquetaTipo(tipo, true)} fue modificado`,
@@ -142,7 +142,7 @@ async function notificarMovimientoEliminado({ tipo, movimiento, req }) {
     if (ministerioId == null || ministerioId === '') return null;
     return createNotificacion({
       tipo,
-      audiencia: 'lider',
+      audiencia: 'colaborador',
       ministerioId: Number(ministerioId),
       actorUserId: actor,
       titulo: `Tu ${etiquetaTipo(tipo, true)} fue eliminado`,
@@ -181,7 +181,7 @@ async function notificarMovimientoCreado({ tipo, movimiento, req }) {
     if (ministerioId != null && ministerioId !== '') {
       return createNotificacion({
         tipo,
-        audiencia: 'lider',
+        audiencia: 'colaborador',
         ministerioId: Number(ministerioId),
         actorUserId: actor,
         titulo: `Nuevo ${etiquetaTipo(tipo, true)} registrado`,
@@ -204,7 +204,9 @@ async function notificarMovimientoCreado({ tipo, movimiento, req }) {
 }
 
 module.exports = {
-  notificarResolucionMovimientoLider,
+  notificarResolucionMovimientoColaborador,
+  /** @deprecated Use notificarResolucionMovimientoColaborador */
+  notificarResolucionMovimientoLider: notificarResolucionMovimientoColaborador,
   notificarMovimientoReenviadoStaff,
   notificarMovimientoModificado,
   notificarMovimientoEliminado,

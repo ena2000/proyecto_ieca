@@ -5,6 +5,7 @@ import {
   ROL_LIDER_LEGACY,
   esColaboradorMinisterio
 } from '../../core/constants/roles.constants';
+import { normalizarAudiencia } from './notificacion-audiencia.util';
 
 function esOrigenColaborador(origenRol?: string | null): boolean {
   return origenRol === ROLES.COLABORADOR || origenRol === ROL_LIDER_LEGACY;
@@ -21,9 +22,9 @@ export function filtrarNotificacionesParaSesion(
     if (usuarioId && n.actorUserId && String(n.actorUserId) === String(usuarioId)) {
       return false;
     }
-    const aud = n.audiencia ?? 'staff';
+    const aud = normalizarAudiencia(n.audiencia);
     if (rol === ROLES.COLABORADOR) {
-      if (aud !== 'lider') return false;
+      if (aud !== 'colaborador') return false;
       if (n.ministerioId == null || ministerioId == null) return false;
       return Number(n.ministerioId) === Number(ministerioId);
     }

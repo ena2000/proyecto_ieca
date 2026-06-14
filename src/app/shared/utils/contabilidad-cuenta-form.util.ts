@@ -10,7 +10,7 @@ export function aplicarCuentaEnIngreso(ingreso: Ingreso, codigo: string): void {
   if (!cuenta) return;
   ingreso.cuentaCodigo = cuenta.codigo;
   ingreso.cuentaNombre = cuenta.nombre;
-  ingreso.tipo = cuenta.nombre;
+  ingreso.categoria = cuenta.nombre;
 }
 
 export function aplicarCuentaEnGasto(gasto: Gasto, codigo: string): void {

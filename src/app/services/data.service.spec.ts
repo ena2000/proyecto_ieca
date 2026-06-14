@@ -121,8 +121,8 @@ describe('DataService', () => {
   it('calcularKPIs solo suma ingresos y gastos aprobados del mes actual', () => {
     mocks.seed({
       ingresos: [
-        { id: 1, fecha: isoEnMesActual(5), descripcion: 'Ofrenda', monto: 1000, foto: '', tipo: 'Ofrenda', ministerio: 'Gen', estado: 'aprobado' },
-        { id: 2, fecha: isoEnMesActual(6), descripcion: 'Pendiente', monto: 500, foto: '', tipo: 'Otro', ministerio: 'Gen', estado: 'pendiente' }
+        { id: 1, fecha: isoEnMesActual(5), descripcion: 'Ofrenda', monto: 1000, foto: '', categoria: 'Ofrenda', ministerio: 'Gen', estado: 'aprobado' },
+        { id: 2, fecha: isoEnMesActual(6), descripcion: 'Pendiente', monto: 500, foto: '', categoria: 'Otro', ministerio: 'Gen', estado: 'pendiente' }
       ],
       gastos: [
         { id: 1, fecha: isoEnMesActual(7), descripcion: 'Gasto ok', monto: 200, foto: '', categoria: 'Servicios', estado: 'aprobado' },
@@ -142,8 +142,8 @@ describe('DataService', () => {
   it('calcularKPIs filtra por ministerioId', () => {
     mocks.seed({
       ingresos: [
-        { id: 1, fecha: isoEnMesActual(3), descripcion: 'A', monto: 100, foto: '', tipo: 'O', ministerio: 'M1', ministerioId: 1, estado: 'aprobado' },
-        { id: 2, fecha: isoEnMesActual(4), descripcion: 'B', monto: 300, foto: '', tipo: 'O', ministerio: 'M2', ministerioId: 2, estado: 'aprobado' }
+        { id: 1, fecha: isoEnMesActual(3), descripcion: 'A', monto: 100, foto: '', categoria: 'O', ministerio: 'M1', ministerioId: 1, estado: 'aprobado' },
+        { id: 2, fecha: isoEnMesActual(4), descripcion: 'B', monto: 300, foto: '', categoria: 'O', ministerio: 'M2', ministerioId: 2, estado: 'aprobado' }
       ],
       gastos: [],
       ministerios: [
@@ -161,8 +161,8 @@ describe('DataService', () => {
   it('getConteoPendientes cuenta ingresos y gastos pendientes', () => {
     mocks.seed({
       ingresos: [
-        { id: 1, fecha: isoEnMesActual(1), descripcion: 'P1', monto: 10, foto: '', tipo: 'O', ministerio: 'G', estado: 'pendiente' },
-        { id: 2, fecha: isoEnMesActual(2), descripcion: 'A1', monto: 10, foto: '', tipo: 'O', ministerio: 'G', estado: 'aprobado' }
+        { id: 1, fecha: isoEnMesActual(1), descripcion: 'P1', monto: 10, foto: '', categoria: 'O', ministerio: 'G', estado: 'pendiente' },
+        { id: 2, fecha: isoEnMesActual(2), descripcion: 'A1', monto: 10, foto: '', categoria: 'O', ministerio: 'G', estado: 'aprobado' }
       ],
       gastos: [
         { id: 1, fecha: isoEnMesActual(3), descripcion: 'P2', monto: 10, foto: '', categoria: 'X', estado: 'pendiente' }
@@ -176,8 +176,8 @@ describe('DataService', () => {
   it('getConteoPendientes respeta alcance de ministerio', () => {
     mocks.seed({
       ingresos: [
-        { id: 1, fecha: isoEnMesActual(1), descripcion: 'P min1', monto: 1, foto: '', tipo: 'O', ministerioId: 1, ministerio: 'M1', estado: 'pendiente' },
-        { id: 2, fecha: isoEnMesActual(2), descripcion: 'P min2', monto: 1, foto: '', tipo: 'O', ministerioId: 2, ministerio: 'M2', estado: 'pendiente' }
+        { id: 1, fecha: isoEnMesActual(1), descripcion: 'P min1', monto: 1, foto: '', categoria: 'O', ministerioId: 1, ministerio: 'M1', estado: 'pendiente' },
+        { id: 2, fecha: isoEnMesActual(2), descripcion: 'P min2', monto: 1, foto: '', categoria: 'O', ministerioId: 2, ministerio: 'M2', estado: 'pendiente' }
       ],
       gastos: []
     });
@@ -190,8 +190,8 @@ describe('DataService', () => {
     const base = isoEnMesActual(10);
     mocks.seed({
       ingresos: [
-        { id: 1, fecha: base, descripcion: 'Reciente', monto: 50, foto: '', tipo: 'O', ministerio: 'G', estado: 'aprobado' },
-        { id: 2, fecha: base, descripcion: 'No debe salir', monto: 1, foto: '', tipo: 'O', ministerio: 'G', estado: 'pendiente' }
+        { id: 1, fecha: base, descripcion: 'Reciente', monto: 50, foto: '', categoria: 'O', ministerio: 'G', estado: 'aprobado' },
+        { id: 2, fecha: base, descripcion: 'No debe salir', monto: 1, foto: '', categoria: 'O', ministerio: 'G', estado: 'pendiente' }
       ],
       gastos: []
     });
@@ -206,7 +206,7 @@ describe('DataService', () => {
   it('getChartData devuelve 6 meses de series', () => {
     mocks.seed({
       ingresos: [
-        { id: 1, fecha: isoEnMesActual(1), descripcion: 'I', monto: 10, foto: '', tipo: 'O', ministerio: 'G', estado: 'aprobado' }
+        { id: 1, fecha: isoEnMesActual(1), descripcion: 'I', monto: 10, foto: '', categoria: 'O', ministerio: 'G', estado: 'aprobado' }
       ],
       gastos: [
         { id: 1, fecha: isoEnMesActual(2), descripcion: 'G', monto: 5, foto: '', categoria: 'X', estado: 'aprobado' }
