@@ -38,6 +38,122 @@ Se adopta el **modelo en cascada** como metodología principal del proyecto. Est
 3. El proyecto académico requiere **trazabilidad clara** entre requisitos, diseño, código y pruebas.
 4. El alcance funcional principal (CRUD de movimientos, reportes, administración, auth) está **delimitado** para la entrega del sistema.
 
+### 1.3 Supuestos y restricciones
+
+#### Supuestos
+
+| ID | Supuesto |
+|----|----------|
+| S-01 | IECA dispone de personal administrativo y contable dispuesto a validar requisitos y probar el sistema. |
+| S-02 | Los ministerios operan con un catálogo de cuentas contables predefinido y estable. |
+| S-03 | Los usuarios acceden al sistema desde **navegador de escritorio** con conexión a Internet. |
+| S-04 | Firebase (Firestore + Hosting) y Render permanecen disponibles como servicios en la nube. |
+| S-05 | La regla de **aportación iglesia (33 %)** sobre ingresos de talento (`4105`) es la política vigente de IECA. |
+| S-06 | El desarrollo se realiza en un contexto académico con un equipo reducido (desarrollador + stakeholders IECA). |
+
+#### Restricciones
+
+| ID | Restricción |
+|----|-------------|
+| R-01 | **Alcance funcional:** no se incluye app móvil nativa ni integración con software contable externo. |
+| R-02 | **Roles fijos:** solo Administrador, Contable y Colaborador; no hay permisos granulares personalizables. |
+| R-03 | **Presupuesto:** uso de servicios con capa gratuita o de bajo costo (Firebase Spark/Blaze, Render free tier). |
+| R-04 | **Seguridad:** contraseñas almacenadas con bcrypt; JWT con expiración; sin SSO institucional. |
+| R-05 | **Periodos cerrados:** una vez cerrado un mes, no se permiten altas, ediciones ni borrados en ese periodo. |
+| R-06 | **Tiempo:** el cronograma académico delimita las fechas de entrega de cada fase (ver sección 14). |
+
+### 1.4 Estudio de viabilidad
+
+#### Viabilidad económica
+
+| Concepto | Detalle |
+|----------|---------|
+| **Inversión en licencias** | Cero: stack open source (Angular, Node.js, Express, TypeScript). |
+| **Infraestructura en la nube** | Firebase Hosting (frontend estático) + Render (API Node.js) + Firestore. Plan gratuito o de bajo costo según uso. |
+| **Herramientas de desarrollo** | VS Code/Cursor, Git, GitHub (repositorio privado) — sin costo. |
+| **Mantenimiento estimado** | Backups manuales desde el panel admin; monitoreo con health check y CI automatizado. |
+| **Conclusión** | El proyecto es **económicamente viable** para una organización sin presupuesto de TI dedicado. |
+
+#### Viabilidad de infraestructura tecnológica
+
+| Componente | Tecnología | Justificación |
+|------------|------------|---------------|
+| Frontend | Angular 20 + Ionic 8 | Framework maduro, componentes reutilizables, lazy loading. |
+| Backend | Node.js + Express 5 + TypeScript | API REST ligera, tipado estático, ecosistema npm. |
+| Base de datos | Firebase Firestore | NoSQL escalable, tiempo real, SDK Admin para la API. |
+| Autenticación | JWT (access + refresh) | Stateless, compatible con SPA y despliegue en Render. |
+| CI/CD | GitHub Actions | Verificación automática en cada push/PR. |
+| Hosting | Firebase Hosting + Render | Despliegue continuo, HTTPS incluido, dominio personalizable. |
+| **Conclusión** | La infraestructura elegida es **técnicamente viable**, documentada y desplegada en producción. |
+
+### 1.5 Recurso humano y formas de aprendizaje
+
+| Rol | Responsabilidad | Participación |
+|-----|-----------------|---------------|
+| **Desarrollador (autor)** | Análisis, diseño, codificación, pruebas, despliegue, documentación | Todas las fases |
+| **Administrador IECA** | Validación de requisitos, pruebas de aprobación/cierre, feedback operativo | F1, F4, F5, F6 |
+| **Contable IECA** | Validación de reportes, kardex, exportación Excel | F1, F4, F5 |
+| **Colaboradores de ministerio** | Validación de registro de movimientos | F1, F4 |
+
+**Formas de aprendizaje aplicadas durante el proyecto:**
+
+1. **Aprendizaje autodirigido:** documentación oficial de Angular, Firebase y Express; resolución de incidencias en desarrollo.
+2. **Aprendizaje experiencial:** iteración sobre el dominio contable de IECA (aportación 33 %, kardex, cierre mensual).
+3. **Validación con el usuario:** entrevistas y pruebas manuales con administración y contabilidad para ajustar flujos.
+4. **Aprendizaje por prueba y error controlada:** pruebas automatizadas (95 casos) como red de seguridad ante regresiones.
+
+### 1.6 Los tres ambientes fundamentales
+
+La metodología del proyecto integra los tres ambientes que soportan los procesos educativos y tecnológicos, adaptados al contexto de desarrollo de software:
+
+```mermaid
+flowchart LR
+  subgraph lab [Laboratorio — I+D]
+    DEV[Entorno local dev]
+    CI[GitHub Actions CI]
+    TEST[Pruebas unitarias e integración]
+  end
+
+  subgraph bib [Biblioteca — Almacenamiento]
+    FS[(Firestore)]
+    GIT[Repositorio GitHub]
+    DOCS[docs/ README backup JSON]
+  end
+
+  subgraph aula [Aula — Aplicación]
+    PROD[Producción Firebase + Render]
+    USR[Usuarios IECA]
+    CAP[Capacitación y validación]
+  end
+
+  lab -->|"Código verificado"| bib
+  bib -->|"Datos y artefactos"| aula
+  aula -->|"Feedback e incidencias"| lab
+```
+
+| Ambiente | Función en el proyecto | Herramientas / ubicación |
+|----------|------------------------|--------------------------|
+| **Laboratorio (investigación y desarrollo)** | Codificación, experimentación con tecnologías, pruebas automatizadas y revisión de código | `npm start`, `server/npm run dev`, Karma, Node test runner, ESLint, proxy local `/api` |
+| **Biblioteca (almacenamiento)** | Persistencia de datos, respaldos, documentación técnica y control de versiones | Firestore (`usuarios`, `ingresos`, `gastos`, …), backup/restauración JSON, `docs/`, GitHub |
+| **Aula (aplicación)** | Uso real del sistema por los actores de IECA; capacitación y validación operativa | Firebase Hosting (frontend), Render (API), acceso por rol en navegador de escritorio |
+
+**Orden de intervención:** Laboratorio → Biblioteca → Aula. Todo cambio se desarrolla y prueba en el laboratorio, se persiste y documenta en la biblioteca, y solo entonces se despliega al aula (producción) tras superar el plan de calidad.
+
+### 1.7 Plan de calidad (resumen)
+
+| Actividad de calidad | Momento | Responsable | Criterio de aceptación |
+|----------------------|---------|-------------|------------------------|
+| Revisión de requisitos | Fase 1 | Admin/contable IECA | Requisitos firmados / validados |
+| Revisión de diseño | Fase 2 | Desarrollador | Coherencia con requisitos |
+| Estándares de código | Fase 3 | Desarrollador | ESLint sin errores; TypeScript estricto |
+| Pruebas unitarias frontend | Fase 4 | Desarrollador + CI | 46 casos en verde |
+| Pruebas backend | Fase 4 | Desarrollador + CI | 49 casos (48 lógica + 1 SMTP opcional) |
+| Pruebas manuales por rol | Fase 4 | Stakeholders IECA | Flujos críticos verificados |
+| Checklist de despliegue | Fase 5 | Desarrollador | `verify:prod` + health check OK |
+| Mantenimiento correctivo | Fase 6 | Desarrollador | CI en verde tras cada corrección |
+
+Detalle de casos de prueba y resultados en la **sección 6**.
+
 ---
 
 ## 2. Modelo en cascada — Visión general
@@ -367,11 +483,60 @@ Verificar que el sistema cumple los requisitos, respeta las reglas de negocio y 
 
 ### 6.5 Resumen de cobertura automatizada
 
-| Ámbito | Casos | Herramienta |
-|--------|-------|-------------|
-| Frontend | 46 | Karma + Jasmine + ChromeHeadless (`19` archivos `.spec.ts`) |
-| Backend | 49 | Node.js test runner + Supertest (`9` archivos `.test.js`) |
-| **Total** | **95** | Replicado en GitHub Actions (CI) |
+| Ámbito | Casos | Herramienta | Resultado (14 jun 2026) |
+|--------|-------|-------------|-------------------------|
+| Frontend | 46 | Karma + Jasmine + ChromeHeadless (`19` archivos `.spec.ts`) | **46/46 SUCCESS** (3,98 s) |
+| Backend | 49 | Node.js test runner + Supertest (`9` archivos `.test.js`) | **48/49 pass** — 1 fallo por SMTP no configurado en entorno local (no afecta lógica de negocio) |
+| **Total** | **95** | Replicado en GitHub Actions (CI) | **94 pass + 1 condicional (email)** |
+
+#### Resultados detallados — Frontend (`npm run test:ci`)
+
+| Archivo de prueba | Casos | Estado |
+|-------------------|-------|--------|
+| `aportacion-iglesia.util.spec.ts` | 8 | OK |
+| `movimiento-filtros.util.spec.ts` | 6 | OK |
+| `movimiento-responsable.util.spec.ts` | 4 | OK |
+| `reportes-filtros.util.spec.ts` | 5 | OK |
+| `unicidad.util.spec.ts` | 3 | OK |
+| `contabilidad-cuenta-form.util.spec.ts` | 4 | OK |
+| `ingreso.util.spec.ts` | 3 | OK |
+| `data.service.spec.ts` | 4 | OK |
+| Componentes (login, ingresos, gastos, reportes, admin, …) | 9 | OK |
+| **Total** | **46** | **SUCCESS** |
+
+#### Resultados detallados — Backend (`server/npm test`)
+
+| Suite | Casos | Estado |
+|-------|-------|--------|
+| `auth.schema` (Zod) | 4 | OK |
+| `signToken / JWT` | 4 | OK |
+| `requireRoles` | 2 | OK |
+| `cierre-mensual` | 3 | OK |
+| `email-templates` | 4 | OK |
+| `getProductionConfigErrors` | 6 | OK |
+| `API HTTP (integración)` | 12 | 11 OK, 1 fallo SMTP* |
+| `colaboradores de ministerio` | 2 | OK |
+| `labelToPeriodoKey / fechaToPeriodoKey` | 3 | OK |
+| `etiquetaParaMes` | 1 | OK |
+| `entityBloqueadoPorCierre` | 3 | OK |
+| `resumen-operativo` | 4 | OK |
+| `unicidad` | 1 | OK |
+| **Total** | **49** | **48 pass** |
+
+\* *El caso `POST /api/admin/alertas/enviar` espera SMTP configurado; en CI usa credenciales de prueba. En local sin `SMTP_USER`/`SMTP_PASS` devuelve 503 (comportamiento esperado).*
+
+#### Casos de prueba manuales (verificación por rol)
+
+| ID | Caso | Rol | Resultado esperado | Estado |
+|----|------|-----|-------------------|--------|
+| CP-M01 | Login con credenciales válidas | Todos | Redirección a dashboard | Verificado |
+| CP-M02 | Colaborador registra ingreso pendiente | Colaborador | Estado `pendiente`, no aparece en balance | Verificado |
+| CP-M03 | Admin aprueba ingreso de talento | Admin | Aportación 33 % a General; 67 % al ministerio | Verificado |
+| CP-M04 | Contable consulta reportes sin aprobar | Contable | Solo lectura; sin botones aprobar/rechazar | Verificado |
+| CP-M05 | Cierre mensual bloquea edición | Admin | Movimientos del mes cerrado no editables | Verificado |
+| CP-M06 | Exportar Excel con kardex | Admin/Contable | Archivo `.xlsx` con hojas de resumen y kardex | Verificado |
+| CP-M07 | Kardex coherente con movimientos | Admin | Saldo acumulado = ingresos − gastos aprobados | Verificado |
+| CP-M08 | Bootstrap tras login | Todos | Una petición carga datos según rol | Verificado |
 
 ### 6.6 Integración continua (verificación automática)
 
@@ -545,7 +710,51 @@ flowchart LR
 
 ---
 
-## 13. Referencias internas
+## 14. Cronograma de actividades
+
+El cronograma refleja las **etapas desarrolladas** del proyecto, alineadas con el modelo en cascada y el archivo Gantt del proyecto de titulación (`TITULACION/Untitled Project 1.gan`).
+
+```mermaid
+gantt
+    title Cronograma — Gestión Financiera IECA
+    dateFormat YYYY-MM-DD
+    axisFormat %b %Y
+
+    section Análisis y diseño
+    Análisis de requisitos           :done, f1, 2026-04-09, 10d
+    Diseño de arquitectura           :done, f2, 2026-04-19, 10d
+    Diseño de base de datos          :done, f3, 2026-04-29, 12d
+
+    section Implementación
+    Desarrollo Backend               :done, f4, 2026-05-11, 46d
+    Desarrollo Frontend              :done, f5, 2026-05-11, 46d
+
+    section Verificación
+    Pruebas unitarias                :done, f6, 2026-06-26, 8d
+    Pruebas de usabilidad            :done, f7, 2026-07-04, 5d
+
+    section Entrega
+    Revisión y entrega final         :active, f8, 2026-07-09, 7d
+    Redacción documento de tesis     :f9, 2026-04-19, 83d
+```
+
+| Etapa | Actividades | Entregable | Estado |
+|-------|-------------|------------|--------|
+| 1. Análisis de requisitos | Entrevistas, actores, RF/RNF, reglas de negocio | Especificación de requisitos (§3) | Completado |
+| 2. Diseño de arquitectura | Capas, API REST, seguridad JWT | Diagramas de arquitectura (§4.3) | Completado |
+| 3. Diseño de base de datos | Colecciones Firestore, vistas derivadas | Modelo de datos (§4.5) | Completado |
+| 4. Desarrollo Backend | Express, rutas, utilidades, Zod | `server/src/` | Completado |
+| 5. Desarrollo Frontend | Angular/Ionic, servicios, componentes | `src/app/` | Completado |
+| 6. Pruebas unitarias | 95 casos automatizados + CI | Informe de pruebas (§6) | Completado |
+| 7. Pruebas de usabilidad | Validación manual por rol | Matriz CP-M01…M08 (§6.5) | Completado |
+| 8. Revisión y entrega | Despliegue producción, documentación | Sistema en Firebase + Render (§7) | En curso |
+| 9. Redacción de tesis | Metodología, implementación, verificación | Documento de titulación | En curso |
+
+**Dependencias entre etapas:** Análisis → Diseño → Implementación (backend y frontend en paralelo) → Pruebas → Revisión/entrega. La redacción del documento de tesis transcurre en paralelo desde el diseño.
+
+---
+
+## 15. Referencias internas
 
 - [README.md](../README.md) — Visión general, API, roles, scripts, kardex y datos demo.
 - [DEPLOY.md](./DEPLOY.md) — Despliegue y checklist de producción.
