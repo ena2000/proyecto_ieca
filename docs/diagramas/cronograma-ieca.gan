@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?><project name="Cronograma de actividades" company="Universidad de Guayaquil " webLink="" view-date="2026-04-06" view-index="0" gantt-divider-location="1" resource-divider-location="300" version="3.3.3322" locale="es_EC">
+    <description><![CDATA[Cronograma de Actividades - Desarrollo de un prototipo de aplicación web utilizando Ionic Framework para la gestión financiera de los ministerios de la Iglesia del Evangelio Cuadrangular “La Alborada”. ]]></description>
+    <view zooming-state="default:6" id="gantt-chart">
+        <field id="tpd3" name="Name" width="166" order="0"/>
+        <field id="tpd4" name="Begin date" width="62" order="1"/>
+        <field id="tpd5" name="End date" width="63" order="2"/>
+        <field id="tpd15" name="Notes" width="20" order="3"/>
+        <option id="filter.completedTasks" value="false"/>
+        <option id="filter.dueTodayTasks" value="false"/>
+        <option id="filter.overdueTasks" value="false"/>
+        <option id="filter.inProgressTodayTasks" value="false"/>
+        <timeline><![CDATA[8,18,9,3,16,17,10,15,14]]></timeline>
+        <option id="color.recent"><![CDATA[#cc66ff #9999ff #cccc00 #3333ff #66ff66 #99ff99]]></option>
+    </view>
+    <view id="resource-table">
+        <field id="0" name="Name" width="210" order="0"/>
+        <field id="1" name="Default role" width="86" order="1"/>
+    </view>
+    <!-- -->
+    <calendars base-id="none">
+        <day-types>
+            <day-type id="0"/>
+            <day-type id="1"/>
+            <default-week id="1" name="default" sun="1" mon="1" tue="1" wed="1" thu="0" fri="1" sat="1"/>
+            <only-show-weekends value="true"/>
+            <overriden-day-types/>
+            <days/>
+        </day-types>
+    </calendars>
+    <tasks empty-milestones="true">
+        <taskproperties>
+            <taskproperty id="tpd0" name="type" type="default" valuetype="icon"/>
+            <taskproperty id="tpd1" name="priority" type="default" valuetype="icon"/>
+            <taskproperty id="tpd2" name="info" type="default" valuetype="icon"/>
+            <taskproperty id="tpd3" name="name" type="default" valuetype="text"/>
+            <taskproperty id="tpd4" name="begindate" type="default" valuetype="date"/>
+            <taskproperty id="tpd5" name="enddate" type="default" valuetype="date"/>
+            <taskproperty id="tpd6" name="duration" type="default" valuetype="int"/>
+            <taskproperty id="tpd7" name="completion" type="default" valuetype="int"/>
+            <taskproperty id="tpd8" name="coordinator" type="default" valuetype="text"/>
+            <taskproperty id="tpd9" name="predecessorsr" type="default" valuetype="text"/>
+        </taskproperties>
+        <task id="3" uid="bbf075fb9b7c47c0bda3d90ce3006566" name="Analisis de requisitos" color="#66ff66" meeting="false" start="2026-04-09" duration="10" complete="0" thirdDate="2026-04-09" thirdDate-constraint="1" expand="true">
+            <depend id="9" type="2" difference="0" hardness="Strong"/>
+        </task>
+        <task id="9" uid="9a18565c78fb49e98e380c5f7df8f58a" name="Diseño de Arquitectura" color="#66ff66" meeting="false" start="2026-04-19" duration="10" complete="0" expand="true">
+            <depend id="10" type="2" difference="0" hardness="Strong"/>
+        </task>
+        <task id="10" uid="d5f6aee29a5848cfbadebb87e2a20d89" name="Diseño de base de datos" color="#3333ff" meeting="false" start="2026-04-29" duration="12" complete="0" expand="true">
+            <depend id="17" type="2" difference="0" hardness="Strong"/>
+            <depend id="18" type="2" difference="0" hardness="Strong"/>
+        </task>
+        <task id="17" uid="96737997c7c248d4b866d3fe8f64380c" name="Desarrollo Backend" color="#3333ff" meeting="false" start="2026-05-11" duration="46" complete="0" expand="true">
+            <depend id="15" type="2" difference="0" hardness="Strong"/>
+            <depend id="16" type="2" difference="0" hardness="Strong"/>
+        </task>
+        <task id="18" uid="fd040f9f3809451787eecd98ee737f2c" name="Desarrollo Frontend" color="#3333ff" meeting="false" start="2026-05-11" duration="46" complete="0" expand="true">
+            <depend id="16" type="2" difference="0" hardness="Strong"/>
+        </task>
+        <task id="16" uid="e59ad2eca9d94cd9b4c2543bdc8038d2" name="Pruebas unitarias" color="#cccc00" meeting="false" start="2026-06-26" duration="8" complete="0" expand="true">
+            <depend id="14" type="2" difference="0" hardness="Strong"/>
+            <depend id="15" type="2" difference="0" hardness="Strong"/>
+        </task>
+        <task id="15" uid="c6b040197b6d4f2fa9f4720e7528010a" name="Pruebas de usabilidad" color="#cccc00" meeting="false" start="2026-07-04" duration="5" complete="0" expand="true">
+            <depend id="14" type="2" difference="0" hardness="Strong"/>
+        </task>
+        <task id="14" uid="819bbe535be341a79dcd80f4a6f52767" name="Revision y entrega final" color="#9999ff" meeting="false" start="2026-07-09" duration="7" complete="0" expand="true"/>
+        <task id="13" uid="aa7315dd4ed84a74aafc8ae7def1525f" name="Redaccion del documento de tesis" color="#cc66ff" meeting="false" start="2026-04-19" duration="83" complete="0" expand="true"/>
+    </tasks>
+    <resources/>
+    <allocations/>
+    <vacations/>
+    <previous/>
+    <roles roleset-name="Default"/>
+    <roles>
+        <role id="1" name="Milena Mariscal Ponce"/>
+    </roles>
+</project>

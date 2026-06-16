@@ -208,6 +208,10 @@ Recopilar, analizar y documentar las necesidades de IECA para transformarlas en 
 | **Contable** | Consulta ingresos/gastos y reportes; recibe alertas por correo; **no** aprueba movimientos ni gestiona usuarios/ministerios. |
 | **Colaborador** | Registra ingresos/gastos de su ministerio (si tiene `ministerioId`) en estado pendiente. |
 
+### 3.3.1 Casos de uso (18 en 4 módulos)
+
+La especificación validada agrupa **18 casos de uso** en **4 módulos** (Seguridad y Acceso, Gestión Financiera, Reportes y Analítica, Administración). Tabla completa, actores y diagramas en **[CASOS-DE-USO.md](./CASOS-DE-USO.md)**.
+
 ### 3.4 Requisitos funcionales principales
 
 | ID | Requisito | Descripción |
@@ -441,6 +445,8 @@ flowchart TD
 
 **Código fuente del sistema** — repositorio con frontend (`src/`), API (`server/src/`), configuración y scripts documentados en README.
 
+**Caso de implementación documentado:** flujo real de ingreso de talento, aportación 33 % y kardex en **[IMPLEMENTACION.md](./IMPLEMENTACION.md)**.
+
 **Criterio de cierre:** todos los requisitos funcionales de la Fase 1 implementados según el diseño de la Fase 2.
 
 ---
@@ -529,14 +535,14 @@ Verificar que el sistema cumple los requisitos, respeta las reglas de negocio y 
 
 | ID | Caso | Rol | Resultado esperado | Estado |
 |----|------|-----|-------------------|--------|
-| CP-M01 | Login con credenciales válidas | Todos | Redirección a dashboard | Verificado |
+| CP-M01 | Login con credenciales válidas | Administrador, Contable, Colaborador | Redirección a dashboard | Verificado |
 | CP-M02 | Colaborador registra ingreso pendiente | Colaborador | Estado `pendiente`, no aparece en balance | Verificado |
 | CP-M03 | Admin aprueba ingreso de talento | Admin | Aportación 33 % a General; 67 % al ministerio | Verificado |
 | CP-M04 | Contable consulta reportes sin aprobar | Contable | Solo lectura; sin botones aprobar/rechazar | Verificado |
 | CP-M05 | Cierre mensual bloquea edición | Admin | Movimientos del mes cerrado no editables | Verificado |
 | CP-M06 | Exportar Excel con kardex | Admin/Contable | Archivo `.xlsx` con hojas de resumen y kardex | Verificado |
 | CP-M07 | Kardex coherente con movimientos | Admin | Saldo acumulado = ingresos − gastos aprobados | Verificado |
-| CP-M08 | Bootstrap tras login | Todos | Una petición carga datos según rol | Verificado |
+| CP-M08 | Bootstrap tras login | Administrador, Contable, Colaborador | Una petición carga datos según rol | Verificado |
 
 ### 6.6 Integración continua (verificación automática)
 
@@ -712,7 +718,7 @@ flowchart LR
 
 ## 14. Cronograma de actividades
 
-El cronograma refleja las **etapas desarrolladas** del proyecto, alineadas con el modelo en cascada y el archivo Gantt del proyecto de titulación (`TITULACION/Untitled Project 1.gan`).
+El cronograma refleja las **etapas desarrolladas** del proyecto, alineadas con el modelo en cascada y el archivo Gantt **[diagramas/cronograma-ieca.gan](./diagramas/cronograma-ieca.gan)**.
 
 ```mermaid
 gantt
@@ -756,7 +762,14 @@ gantt
 
 ## 15. Referencias internas
 
-- [README.md](../README.md) — Visión general, API, roles, scripts, kardex y datos demo.
+- [README.md](./README.md) — Índice de toda la documentación del proyecto.
+- [REQUERIMIENTOS.md](./REQUERIMIENTOS.md) — RF, RNF y reglas de negocio.
+- [CASOS-DE-USO.md](./CASOS-DE-USO.md) — 18 casos de uso en 4 módulos.
+- [IMPLEMENTACION.md](./IMPLEMENTACION.md) — Caso de implementación (aportación 33 %, kardex).
+- [VERIFICACION.md](./VERIFICACION.md) — Resultados de pruebas automatizadas y manuales.
+- [ENTREGABLES-ACADEMICOS.md](./ENTREGABLES-ACADEMICOS.md) — Beneficiarios, entregables, criterios y resultados.
+- [diagramas/](./diagramas/) — Diagramas UML y cronograma Gantt.
+- [README.md](../README.md) — Visión general del repositorio, API, roles y scripts.
 - [DEPLOY.md](./DEPLOY.md) — Despliegue y checklist de producción.
 - [CHANGELOG.md](./CHANGELOG.md) — Historial resumido de entregas recientes.
 - [backup-demo-ieca.json](./backup-demo-ieca.json) — Respaldo JSON de ejemplo para restauración y pruebas de kardex.

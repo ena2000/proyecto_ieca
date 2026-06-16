@@ -164,10 +164,18 @@ proyecto_ieca/
 │   ├── alertas-email.yml        # Resumen operativo diario por email
 │   └── keep-render-warm.yml     # Ping /api/health cada 10 min (plan Free Render)
 ├── docs/
-│   ├── DEPLOY.md                # Guía de despliegue (Firebase Hosting + Render)
-│   ├── METODOLOGIA.md           # Metodología en cascada y trazabilidad del proyecto
-│   ├── CHANGELOG.md             # Historial resumido de entregas
-│   └── backup-demo-ieca.json    # Respaldo demo para pruebas de restauración y kardex
+│   ├── README.md                # Índice de documentación académica y técnica
+│   ├── METODOLOGIA.md           # Metodología en cascada y trazabilidad
+│   ├── REQUERIMIENTOS.md        # RF, RNF y reglas de negocio
+│   ├── CASOS-DE-USO.md          # 18 casos de uso en 4 módulos
+│   ├── IMPLEMENTACION.md        # Caso de implementación (aportación 33 %, kardex)
+│   ├── VERIFICACION.md          # Resultados de pruebas
+│   ├── ENTREGABLES-ACADEMICOS.md
+│   ├── diagramas/               # PNG UML + cronograma Gantt
+│   ├── scripts/                 # Scripts Python para actualizar Word de tesis
+│   ├── DEPLOY.md
+│   ├── CHANGELOG.md
+│   └── backup-demo-ieca.json
 ├── src/                         # Frontend
 │   ├── app/
 │   │   ├── auth/                # Login, recuperar y cambiar contraseña
@@ -849,12 +857,19 @@ npm run deploy:hosting
 
 ### Documentación adicional
 
+Índice completo: **[docs/README.md](docs/README.md)**
+
 | Documento | Contenido |
 |-----------|-----------|
+| [docs/METODOLOGIA.md](docs/METODOLOGIA.md) | Metodología en cascada, cronograma y trazabilidad |
+| [docs/REQUERIMIENTOS.md](docs/REQUERIMIENTOS.md) | Requisitos funcionales y no funcionales |
+| [docs/CASOS-DE-USO.md](docs/CASOS-DE-USO.md) | 18 casos de uso en 4 módulos |
+| [docs/IMPLEMENTACION.md](docs/IMPLEMENTACION.md) | Caso real: ingreso talento, 33 %, kardex |
+| [docs/VERIFICACION.md](docs/VERIFICACION.md) | Pruebas automatizadas y manuales |
+| [docs/diagramas/](docs/diagramas/) | Diagramas UML y cronograma |
 | [docs/DEPLOY.md](docs/DEPLOY.md) | Checklist y pasos de despliegue |
-| [docs/METODOLOGIA.md](docs/METODOLOGIA.md) | Metodología en cascada, requisitos y trazabilidad |
-| [docs/CHANGELOG.md](docs/CHANGELOG.md) | Historial resumido de entregas (aportación, vista estrecha, etc.) |
-| [docs/backup-demo-ieca.json](docs/backup-demo-ieca.json) | Dataset demo para restauración y pruebas de kardex |
+| [docs/CHANGELOG.md](docs/CHANGELOG.md) | Historial resumido de entregas |
+| [docs/backup-demo-ieca.json](docs/backup-demo-ieca.json) | Dataset demo para restauración y kardex |
 
 ---
 

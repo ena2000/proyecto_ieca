@@ -4,6 +4,18 @@ Registro resumido de entregas relevantes para el repositorio. Detalle técnico e
 
 ---
 
+## 2026-06 — Documentación académica consolidada
+
+### Documentación
+
+- Toda la documentación de tesis centralizada en **`docs/`**: casos de uso (18 CU / 4 módulos), requisitos, implementación, verificación, entregables académicos.
+- Diagramas UML y cronograma copiados a **`docs/diagramas/`** (PNG + `cronograma-ieca.gan`).
+- Índice en **`docs/README.md`**; metodología y README del repo actualizados con enlaces cruzados.
+- Caso de implementación validado: Andrés Quinde, ingreso #13, saldo kardex **$41,94**.
+- Scripts Python en `docs/scripts/` para actualizar documentos Word de titulación.
+
+---
+
 ## 2026-06 — Rendimiento, roles y validaciones
 
 ### Backend
