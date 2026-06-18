@@ -4,6 +4,15 @@
 
 ---
 
+## 0. Metodología de investigación (ingeniería de requisitos)
+
+Documento: [METODOLOGIA-INVESTIGACION.md](./METODOLOGIA-INVESTIGACION.md)
+
+- **No aplica** encuesta n = 203 ni estratos Alto/Medio/Bajo del ejemplo de la plantilla.
+- **Sí aplica:** justificación de ingeniería de requisitos, población = actores IECA, muestra intencional (~6 personas), entrevistas + pruebas.
+
+---
+
 ## 1. Requisitos y casos de uso
 
 | Tema | Documento | Validado |

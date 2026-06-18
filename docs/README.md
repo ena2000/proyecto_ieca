@@ -17,6 +17,7 @@
 | [ENTREGABLES-Y-PROPUESTA.md](./ENTREGABLES-Y-PROPUESTA.md) | EDT (Tabla 30) y propuesta de solución |
 | [CRITERIOS-VALIDACION-Y-RESULTADOS.md](./CRITERIOS-VALIDACION-Y-RESULTADOS.md) | Criterios V-01…V-08 y resultados |
 | [METODOLOGIA.md](./METODOLOGIA.md) | Cascada, ambientes, cronograma, trazabilidad |
+| [METODOLOGIA-INVESTIGACION.md](./METODOLOGIA-INVESTIGACION.md) | Ingeniería de requisitos, población, muestra, justificación |
 
 ## Documentación técnica
 
