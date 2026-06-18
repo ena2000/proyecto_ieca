@@ -4,7 +4,18 @@ Registro resumido de entregas relevantes para el repositorio. Detalle técnico e
 
 ---
 
-## 2026-06 — Documentación académica consolidada
+## 2026-06 — Secciones de tesis validadas (Beneficiarios, Entregables, Propuesta)
+
+### Documentación
+
+- **BENEFICIARIOS.md** — prosa narrativa validada (directos e indirectos).
+- **ENTREGABLES-Y-PROPUESTA.md** — EDT Tabla 30 y propuesta (3 capas, 4 módulos).
+- **CRITERIOS-VALIDACION-Y-RESULTADOS.md** — criterios V-01…V-08 y 6 resultados.
+- **TESIS-CONSOLIDADO.md** — índice maestro de todo el contenido validado.
+- Scripts Word: `actualizar-capitulo3-secciones-finales-word.py`, `beneficiarios-contenido.py`, `entregables-propuesta-contenido.py`.
+- Contenido aplicado en `CAPITULO 3 - ENTENDERLO.docx`.
+
+---
 
 ### Documentación
 

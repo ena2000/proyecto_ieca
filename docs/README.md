@@ -1,60 +1,54 @@
 # Documentación del proyecto — Gestión Financiera IECA
 
-Índice de la documentación académica y técnica del **Sistema Web de Gestión Financiera** de la Iglesia Evangélica La Alborada (IECA). Todo el material de tesis (diagramas, casos de uso, requisitos, verificación e implementación) está centralizado en esta carpeta.
+Índice de la documentación académica y técnica validada. **Punto de entrada:** [TESIS-CONSOLIDADO.md](./TESIS-CONSOLIDADO.md).
 
 ---
 
-## Documentos principales
+## Documentación de tesis (validada)
 
 | Documento | Contenido |
 |-----------|-----------|
-| [METODOLOGIA.md](./METODOLOGIA.md) | Metodología en cascada, viabilidad, tres ambientes (laboratorio, biblioteca, aula), fases, plan de calidad y cronograma |
-| [REQUERIMIENTOS.md](./REQUERIMIENTOS.md) | Actores, requisitos funcionales (RF-01…RF-14), no funcionales (RNF-01…RNF-06) y reglas de negocio validadas |
-| [CASOS-DE-USO.md](./CASOS-DE-USO.md) | **18 casos de uso** en **4 módulos** (versión simplificada validada) |
-| [IMPLEMENTACION.md](./IMPLEMENTACION.md) | Caso de implementación: ingreso de talento, aportación 33 %, kardex (Andrés Quinde, ministerio Alabanza) |
-| [VERIFICACION.md](./VERIFICACION.md) | Resultados de pruebas automatizadas (46/46 frontend, 48/49 backend) y casos manuales CP-M01…CP-M08 |
-| [ENTREGABLES-ACADEMICOS.md](./ENTREGABLES-ACADEMICOS.md) | Beneficiarios, entregables, propuesta, criterios de validación y resultados |
-| [DEPLOY.md](./DEPLOY.md) | Despliegue en Firebase Hosting + Render |
-| [CHANGELOG.md](./CHANGELOG.md) | Historial resumido de entregas del repositorio |
+| [TESIS-CONSOLIDADO.md](./TESIS-CONSOLIDADO.md) | **Índice maestro** — todo lo validado en un solo lugar |
+| [CASOS-DE-USO.md](./CASOS-DE-USO.md) | 18 casos de uso en 4 módulos |
+| [REQUERIMIENTOS.md](./REQUERIMIENTOS.md) | RF-01…RF-14, RNF-01…RNF-06, reglas de negocio |
+| [IMPLEMENTACION.md](./IMPLEMENTACION.md) | Caso ingreso #13 — Andrés Quinde — saldo $41,94 |
+| [VERIFICACION.md](./VERIFICACION.md) | 46/46 frontend, 48/49 backend, CP-M01…CP-M08 |
+| [BENEFICIARIOS.md](./BENEFICIARIOS.md) | Beneficiarios directos e indirectos (prosa validada) |
+| [ENTREGABLES-Y-PROPUESTA.md](./ENTREGABLES-Y-PROPUESTA.md) | EDT (Tabla 30) y propuesta de solución |
+| [CRITERIOS-VALIDACION-Y-RESULTADOS.md](./CRITERIOS-VALIDACION-Y-RESULTADOS.md) | Criterios V-01…V-08 y resultados |
+| [METODOLOGIA.md](./METODOLOGIA.md) | Cascada, ambientes, cronograma, trazabilidad |
+
+## Documentación técnica
+
+| Documento | Contenido |
+|-----------|-----------|
+| [DEPLOY.md](./DEPLOY.md) | Despliegue Firebase Hosting + Render |
+| [CHANGELOG.md](./CHANGELOG.md) | Historial de entregas del repositorio |
+| [backup-demo-ieca.json](./backup-demo-ieca.json) | Dataset demo para kardex y restauración |
 
 ---
 
 ## Diagramas
 
-Los diagramas UML y de arquitectura están en **[diagramas/](./diagramas/)** (PNG exportados + archivo Gantt).
-
-| Archivo | Descripción |
-|---------|-------------|
-| `DIAGRAMA CASOS DE USO 1.png` … `4.png` | Casos de uso por módulo (4 módulos) |
-| `DIAGRAMA CASOS DE USO INTEGRADO - ANEXO 18.png` | Vista integrada de los 18 casos de uso |
-| `DIAGRAMA DE ARQUITECTURA - REDUCIDO.png` / `COMPLETO.png` | Arquitectura en capas |
-| `DIAGRAMA DE ARQUITECTURA DE LA BASE DE DATOS.png` | Modelo Firestore |
-| `DIAGRAMA DE CLASES - REDUCIDO.png` / `COMPLETO.png` | Diagrama de clases |
-| `DIAGRAMA DE ESTADO - REDUCIDO.png` / `COMPLETO.png` | Estados de movimientos |
-| `cronograma-ieca.gan` | Cronograma editable (GanttProject) |
+Carpeta **[diagramas/](./diagramas/)** — PNG (UML, arquitectura, BD) + `cronograma-ieca.gan`.
 
 ---
 
-## Datos y scripts
+## Scripts Word
 
-| Recurso | Uso |
-|---------|-----|
-| [backup-demo-ieca.json](./backup-demo-ieca.json) | Respaldo JSON de ejemplo para restauración y pruebas de kardex |
-| [scripts/](./scripts/) | Scripts Python para actualizar tablas y secciones en documentos Word de titulación |
+Carpeta **[scripts/](./scripts/)** — ver [scripts/README.md](./scripts/README.md).
 
 ---
 
-## Referencia rápida — números validados
+## Números validados
 
 | Concepto | Valor |
 |----------|-------|
 | Casos de uso | 18 en 4 módulos |
-| Requisitos funcionales | RF-01 … RF-14 |
-| Requisitos no funcionales | RNF-01 … RNF-06 |
-| Pruebas frontend | 46/46 SUCCESS |
-| Pruebas backend | 48/49 pass (1 condicional SMTP) |
-| Aportación iglesia | 33 % sobre cuenta 4105 (talento) |
-| Caso de implementación | Ingreso #13 — $182,00 — saldo final $41,94 |
+| Pruebas | 46/46 frontend · 48/49 backend · 8 manuales OK |
+| Aportación iglesia | 33 % — cuenta 4105 |
+| Caso #13 | $182,00 bruto → saldo **$41,94** |
+| Tabla 14 (previos) | Abr/may 2026 antes del 28/05/2026 |
 
 ---
 

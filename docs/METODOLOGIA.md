@@ -767,7 +767,8 @@ gantt
 - [CASOS-DE-USO.md](./CASOS-DE-USO.md) — 18 casos de uso en 4 módulos.
 - [IMPLEMENTACION.md](./IMPLEMENTACION.md) — Caso de implementación (aportación 33 %, kardex).
 - [VERIFICACION.md](./VERIFICACION.md) — Resultados de pruebas automatizadas y manuales.
-- [ENTREGABLES-ACADEMICOS.md](./ENTREGABLES-ACADEMICOS.md) — Beneficiarios, entregables, criterios y resultados.
+- [CRITERIOS-VALIDACION-Y-RESULTADOS.md](./CRITERIOS-VALIDACION-Y-RESULTADOS.md) — Criterios V-01…V-08 y resultados.
+- [TESIS-CONSOLIDADO.md](./TESIS-CONSOLIDADO.md) — Índice maestro de documentación validada.
 - [diagramas/](./diagramas/) — Diagramas UML y cronograma Gantt.
 - [README.md](../README.md) — Visión general del repositorio, API, roles y scripts.
 - [DEPLOY.md](./DEPLOY.md) — Despliegue y checklist de producción.

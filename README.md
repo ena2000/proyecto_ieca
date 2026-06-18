@@ -857,15 +857,19 @@ npm run deploy:hosting
 
 ### Documentación adicional
 
-Índice completo: **[docs/README.md](docs/README.md)**
+Índice completo: **[docs/README.md](docs/README.md)** · **[docs/TESIS-CONSOLIDADO.md](docs/TESIS-CONSOLIDADO.md)**
 
 | Documento | Contenido |
 |-----------|-----------|
+| [docs/TESIS-CONSOLIDADO.md](docs/TESIS-CONSOLIDADO.md) | Índice maestro — todo lo validado para la tesis |
 | [docs/METODOLOGIA.md](docs/METODOLOGIA.md) | Metodología en cascada, cronograma y trazabilidad |
 | [docs/REQUERIMIENTOS.md](docs/REQUERIMIENTOS.md) | Requisitos funcionales y no funcionales |
 | [docs/CASOS-DE-USO.md](docs/CASOS-DE-USO.md) | 18 casos de uso en 4 módulos |
-| [docs/IMPLEMENTACION.md](docs/IMPLEMENTACION.md) | Caso real: ingreso talento, 33 %, kardex |
+| [docs/IMPLEMENTACION.md](docs/IMPLEMENTACION.md) | Caso ingreso #13, 33 %, kardex $41,94 |
 | [docs/VERIFICACION.md](docs/VERIFICACION.md) | Pruebas automatizadas y manuales |
+| [docs/BENEFICIARIOS.md](docs/BENEFICIARIOS.md) | Beneficiarios directos e indirectos |
+| [docs/ENTREGABLES-Y-PROPUESTA.md](docs/ENTREGABLES-Y-PROPUESTA.md) | EDT y propuesta |
+| [docs/CRITERIOS-VALIDACION-Y-RESULTADOS.md](docs/CRITERIOS-VALIDACION-Y-RESULTADOS.md) | Criterios y resultados |
 | [docs/diagramas/](docs/diagramas/) | Diagramas UML y cronograma |
 | [docs/DEPLOY.md](docs/DEPLOY.md) | Checklist y pasos de despliegue |
 | [docs/CHANGELOG.md](docs/CHANGELOG.md) | Historial resumido de entregas |
