@@ -2,6 +2,8 @@
 
 Especificación validada: **18 casos de uso** agrupados en **4 módulos funcionales**. Sustituye la versión anterior de 41 casos en 10 módulos.
 
+Documentos relacionados: [REQUERIMIENTOS.md](./REQUERIMIENTOS.md) · [BENEFICIARIOS.md](./BENEFICIARIOS.md) · [VERIFICACION.md](./VERIFICACION.md)
+
 ---
 
 ## Módulos y actores
@@ -42,13 +44,15 @@ Especificación validada: **18 casos de uso** agrupados en **4 módulos funciona
 
 ## Diagramas asociados
 
-Ver carpeta [diagramas/](./diagramas/):
+Carpeta [diagramas/](./diagramas/):
 
-- `DIAGRAMA CASOS DE USO 1.png` — Módulo 1 (Seguridad y Acceso)
-- `DIAGRAMA DE CASOS DE USO 2.png` — Módulo 2 (Gestión Financiera)
-- `DIAGRAMA DE CASOS DE USO 3.png` — Módulo 3 (Reportes)
-- `DIAGRAMA CASO DE USO 4.png` — Módulo 4 (Administración)
-- `DIAGRAMA CASOS DE USO INTEGRADO - ANEXO 18.png` — Vista integrada
+| Archivo | Contenido |
+|---------|-----------|
+| `DIAGRAMA CASOS DE USO 1.png` | Módulo 1 — Seguridad y Acceso |
+| `DIAGRAMA DE CASOS DE USO 2.png` | Módulo 2 — Gestión Financiera |
+| `DIAGRAMA DE CASOS DE USO 3.png` | Módulo 3 — Reportes |
+| `DIAGRAMA CASO DE USO 4.png` | Módulo 4 — Administración |
+| `DIAGRAMA CASOS DE USO INTEGRADO - ANEXO 18.png` | Vista integrada |
 
 ---
 
@@ -66,4 +70,5 @@ Ver carpeta [diagramas/](./diagramas/):
 | CU-16 | RF-11 |
 | CU-17, CU-18 | RF-02, RF-03, RF-04 |
 
-Ver [REQUERIMIENTOS.md](./REQUERIMIENTOS.md) para el detalle de cada RF.
+Detalle de requisitos: [REQUERIMIENTOS.md](./REQUERIMIENTOS.md).  
+Verificación asociada: [VERIFICACION.md § Trazabilidad](./VERIFICACION.md#trazabilidad-requisito--caso-de-uso--prueba).

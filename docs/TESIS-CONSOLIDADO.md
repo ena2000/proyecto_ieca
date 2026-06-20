@@ -1,118 +1,65 @@
 # Documentación validada — Capítulo 3 (consolidado)
 
-Índice único de todo el contenido académico validado para la tesis. Cada sección enlaza al documento detallado en `docs/`.
+Índice único del contenido académico validado para la tesis.
 
 ---
 
-## 0. Metodología de investigación (ingeniería de requisitos)
+## Estructura de documentos
 
-Documento: [METODOLOGIA-INVESTIGACION.md](./METODOLOGIA-INVESTIGACION.md)
+| # | Tema | Documento |
+|---|------|-----------|
+| 1 | **Requisitos** | [REQUERIMIENTOS.md](./REQUERIMIENTOS.md) |
+| 2 | **Beneficiarios** | [BENEFICIARIOS.md](./BENEFICIARIOS.md) |
+| 3 | **Casos de uso** | [CASOS-DE-USO.md](./CASOS-DE-USO.md) |
+| 4 | **Validación y verificación** | [VERIFICACION.md](./VERIFICACION.md) |
+| 5 | **Entregables (EDT)** | [ENTREGABLES.md](./ENTREGABLES.md) |
+| 6 | **Propuesta de solución** | [PROPUESTA.md](./PROPUESTA.md) |
+| 7 | Metodología cascada | [METODOLOGIA.md](./METODOLOGIA.md) |
+| 8 | Metodología de investigación | [METODOLOGIA-INVESTIGACION.md](./METODOLOGIA-INVESTIGACION.md) |
+| 9 | Caso de implementación | [IMPLEMENTACION.md](./IMPLEMENTACION.md) |
 
-- **No aplica** encuesta n = 203 ni estratos Alto/Medio/Bajo del ejemplo de la plantilla.
-- **Sí aplica:** justificación de ingeniería de requisitos, población = actores IECA, muestra intencional (~6 personas), entrevistas + pruebas.
-
----
-
-## 1. Requisitos y casos de uso
-
-| Tema | Documento | Validado |
-|------|-----------|----------|
-| 18 casos de uso en 4 módulos | [CASOS-DE-USO.md](./CASOS-DE-USO.md) | Sí |
-| RF-01 … RF-14, RNF-01 … RNF-06 | [REQUERIMIENTOS.md](./REQUERIMIENTOS.md) | Sí |
-| Actores: Administrador, Contable, Colaborador | [REQUERIMIENTOS.md](./REQUERIMIENTOS.md) | Sí |
-
----
-
-## 2. Diseño y diagramas
-
-| Tema | Documento | Validado |
-|------|-----------|----------|
-| Arquitectura, clases, estados, CU, BD | [diagramas/](./diagramas/) | Sí |
-| Metodología y fases en cascada | [METODOLOGIA.md](./METODOLOGIA.md) | Sí |
+Índice general: [README.md](./README.md)
 
 ---
 
-## 3. Implementación (caso real)
+## Resumen por documento
 
-| Dato | Valor |
-|------|-------|
-| Colaborador | Andrés Quinde |
-| Ministerio | Alabanza y Adoración |
-| Ingreso #13 | 28/05/2026 — $182,00 — cuenta 4105 |
-| Aportación 33 % | $60,06 |
-| Saldo kardex final | **$41,94** |
+### Requisitos
 
-Documento: [IMPLEMENTACION.md](./IMPLEMENTACION.md)
+[REQUERIMIENTOS.md](./REQUERIMIENTOS.md) — RF-01…RF-14, RNF-01…RNF-06, actores, reglas de negocio.
 
-**Movimientos previos (Tabla 14):**
+### Beneficiarios
 
-| Fecha | Tipo | Monto |
-|-------|------|-------|
-| 09/04/2026 | Gasto — Servicio de sonido | $72,00 |
-| 12/04/2026 | Ingreso — Donación anónima | $17,00 |
-| 14/05/2026 | Gasto — Papelería | $25,00 |
+[BENEFICIARIOS.md](./BENEFICIARIOS.md) — Directos (colaboradores, admin, contable, desarrolladora, IECA) e indirectos.
 
----
+### Casos de uso
 
-## 4. Verificación y plan de calidad
+[CASOS-DE-USO.md](./CASOS-DE-USO.md) — 18 CU en 4 módulos, diagramas, trazabilidad con RF.
 
-| Ámbito | Resultado |
-|--------|-----------|
-| Frontend | 46/46 SUCCESS |
-| Backend | 48/49 pass (SMTP condicional) |
-| Manuales CP-M01…CP-M08 | Verificados |
+### Validación y verificación
 
-Documento: [VERIFICACION.md](./VERIFICACION.md)
+[VERIFICACION.md](./VERIFICACION.md) — Criterios V-01…V-08, resultados R-1…R-6, 46/46 frontend, 48/49 backend, CP-M01…CP-M08.
+
+### Entregables y propuesta
+
+[ENTREGABLES.md](./ENTREGABLES.md) · [PROPUESTA.md](./PROPUESTA.md)
+
+### Implementación
+
+[IMPLEMENTACION.md](./IMPLEMENTACION.md) — Ingreso #13, saldo kardex **$41,94**.
 
 ---
 
-## 5. Beneficiarios directos e indirectos
+## Metodología de investigación
 
-Documento: [BENEFICIARIOS.md](./BENEFICIARIOS.md)
-
-**Directos:** colaboradores, administrador, contable, desarrolladora, IECA.  
-**Indirectos:** feligresía, liderazgo pastoral, ministerios, auditores, futuras instituciones.
+[METODOLOGIA-INVESTIGACION.md](./METODOLOGIA-INVESTIGACION.md) — Población N = 183, muestra n = 5.
 
 ---
 
-## 6. Entregables (EDT) y propuesta
-
-Documento: [ENTREGABLES-Y-PROPUESTA.md](./ENTREGABLES-Y-PROPUESTA.md)
-
-- Metodología: cascada (Waterfall)
-- Tabla 30: EDT con 10 entregables (1.1 … 1.10)
-- Propuesta: 3 capas, 4 módulos, prototipo en Firebase + Render
-
----
-
-## 7. Criterios de validación y resultados
-
-Documento: [CRITERIOS-VALIDACION-Y-RESULTADOS.md](./CRITERIOS-VALIDACION-Y-RESULTADOS.md)
-
-- Validación técnica + usuarios IECA (V-01 … V-08)
-- 6 resultados documentados
-- Conclusión parcial
-
----
-
-## 8. Scripts Word (titulación)
-
-| Script | Función |
-|--------|---------|
-| `actualizar-capitulo3-secciones-finales-word.py` | Beneficiarios + Entregables + Propuesta en Cap. 3 |
-| `actualizar-capitulo3-completo-word.py` | CU + plan calidad + cronograma + verificación |
-| `actualizar-tabla-casos-uso-word.py` | Tabla 18 CU |
-| `beneficiarios-contenido.py` | Texto fuente de beneficiarios |
-| `entregables-propuesta-contenido.py` | Texto fuente EDT y propuesta |
+## Scripts Word (titulación)
 
 Ver [scripts/README.md](./scripts/README.md).
 
 ---
 
-## Archivo Word de tesis
-
-Contenido aplicado en: `TITULACION/CAPITULO 3 - ENTENDERLO.docx` (fuera del repositorio).
-
----
-
-*Última consolidación: junio 2026 — contenido validado con el usuario.*
+*Última consolidación: junio 2026.*

@@ -210,7 +210,7 @@ Recopilar, analizar y documentar las necesidades de IECA para transformarlas en 
 
 ### 3.3.1 Casos de uso (18 en 4 módulos)
 
-La especificación validada agrupa **18 casos de uso** en **4 módulos** (Seguridad y Acceso, Gestión Financiera, Reportes y Analítica, Administración). Tabla completa, actores y diagramas en **[CASOS-DE-USO.md](./CASOS-DE-USO.md)**.
+La especificación validada agrupa **18 casos de uso** en **4 módulos**. Tabla completa en **[CASOS-DE-USO.md](./CASOS-DE-USO.md)**.
 
 ### 3.4 Requisitos funcionales principales
 
@@ -764,10 +764,12 @@ gantt
 
 - [README.md](./README.md) — Índice de toda la documentación del proyecto.
 - [REQUERIMIENTOS.md](./REQUERIMIENTOS.md) — RF, RNF y reglas de negocio.
+- [BENEFICIARIOS.md](./BENEFICIARIOS.md) — Beneficiarios directos e indirectos.
 - [CASOS-DE-USO.md](./CASOS-DE-USO.md) — 18 casos de uso en 4 módulos.
+- [VERIFICACION.md](./VERIFICACION.md) — Validación, verificación y trazabilidad.
+- [ENTREGABLES.md](./ENTREGABLES.md) — EDT (Tabla 30).
+- [PROPUESTA.md](./PROPUESTA.md) — Propuesta de solución.
 - [IMPLEMENTACION.md](./IMPLEMENTACION.md) — Caso de implementación (aportación 33 %, kardex).
-- [VERIFICACION.md](./VERIFICACION.md) — Resultados de pruebas automatizadas y manuales.
-- [CRITERIOS-VALIDACION-Y-RESULTADOS.md](./CRITERIOS-VALIDACION-Y-RESULTADOS.md) — Criterios V-01…V-08 y resultados.
 - [TESIS-CONSOLIDADO.md](./TESIS-CONSOLIDADO.md) — Índice maestro de documentación validada.
 - [diagramas/](./diagramas/) — Diagramas UML y cronograma Gantt.
 - [README.md](../README.md) — Visión general del repositorio, API, roles y scripts.

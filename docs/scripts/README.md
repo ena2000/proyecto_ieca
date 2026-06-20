@@ -23,7 +23,7 @@ pip install python-docx
 | Archivo | Uso |
 |---------|-----|
 | `beneficiarios-contenido.py` | Párrafos de beneficiarios → `docs/BENEFICIARIOS.md` |
-| `entregables-propuesta-contenido.py` | EDT y propuesta → `docs/ENTREGABLES-Y-PROPUESTA.md` |
+| `entregables-propuesta-contenido.py` | EDT y propuesta → `docs/ENTREGABLES.md` y `docs/PROPUESTA.md` |
 
 Tras editar un `*-contenido.py`, actualizar el `.md` correspondiente y ejecutar el script Word.
 

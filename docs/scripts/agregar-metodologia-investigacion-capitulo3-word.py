@@ -31,6 +31,7 @@ DOC_PATH = Path(r"c:\Users\ena\Desktop\TITULACION\CAPITULO 3 - ENTENDERLO.docx")
 OUT_FALLBACK = DOC_PATH.with_name(DOC_PATH.stem + "-metodologia-inv.docx")
 HEADING = _mod.HEADING
 ANCHOR = "Metodología de desarrollo y verificación"
+STOP_BEFORE = "Casos de uso integrados (Anexo 18)"
 
 
 def set_run_font(run, bold: bool = False, size: float = 11) -> None:
@@ -54,17 +55,31 @@ def find_heading(doc: Document, text: str) -> int | None:
     return None
 
 
-def remove_section(doc: Document, heading: str) -> None:
-    start = find_heading(doc, heading)
-    if start is None:
-        return
-    end = len(doc.paragraphs)
-    for i in range(start + 1, len(doc.paragraphs)):
-        if doc.paragraphs[i].style.name.startswith("Heading"):
-            end = i
+def paragraph_text(element) -> str:
+    texts = [t.text for t in element.iter(qn("w:t")) if t.text]
+    return "".join(texts).strip()
+
+
+def find_paragraph_element(doc: Document, text: str) -> CT_P | None:
+    for p in doc.paragraphs:
+        if p.text.strip() == text:
+            return p._element
+    return None
+
+
+def remove_before_anchor(doc: Document, anchor_text: str, stop_before: str) -> None:
+    """Elimina párrafos y tablas entre stop_before y anchor_text (sin borrar stop_before)."""
+    anchor = find_paragraph_element(doc, anchor_text)
+    if anchor is None:
+        raise ValueError(f"No se encontró ancla: {anchor_text!r}")
+
+    while True:
+        prev = anchor.getprevious()
+        if prev is None:
             break
-    for i in range(end - 1, start - 1, -1):
-        doc.paragraphs[i]._element.getparent().remove(doc.paragraphs[i]._element)
+        if prev.tag == qn("w:p") and paragraph_text(prev) == stop_before:
+            break
+        prev.getparent().remove(prev)
 
 
 def make_heading(doc: Document, text: str) -> Paragraph:
@@ -95,12 +110,24 @@ def insert_before(anchor, element) -> None:
 
 def build_blocks(doc: Document) -> list:
     blocks = []
+    blocks.append(("h", _mod.METODOLOGIAS_PROYECTO_HEADING))
+    for p in _mod.METODOLOGIAS_PROYECTO:
+        blocks.append(("p", p))
     blocks.append(("h", HEADING))
     for p in _mod.PARAGRAPHS:
         blocks.append(("p", p))
     blocks.append(("h", _mod.POBLACION_TITLE))
     blocks.append(("p", _mod.POBLACION))
-    blocks.append(("p", _mod.MUESTRA))
+    blocks.append(("pb", _mod.TABLA_POBLACION_CAPTION))
+    blocks.append(("t", _mod.TABLA_POBLACION))
+    blocks.append(("p", _mod.NOTA_POBLACION))
+    blocks.append(("p", _mod.MUESTRA_INTRO))
+    blocks.append(("p", _mod.MUESTRA_PARAMS))
+    for p in _mod.MUESTRA_FORMULA:
+        blocks.append(("p", p))
+    for p in _mod.MUESTRA_FRACCION:
+        blocks.append(("p", p))
+    blocks.append(("p", _mod.MUESTRA_APLICADA))
     blocks.append(("pb", _mod.TABLA_MUESTRA_CAPTION))
     blocks.append(("t", _mod.TABLA_MUESTRA))
     blocks.append(("p", _mod.NOTA_MUESTRA))
@@ -126,7 +153,7 @@ def insert_section(doc: Document) -> None:
         raise ValueError(f"No se encontró: {ANCHOR!r}")
     anchor = doc.paragraphs[idx]._element
 
-    for kind, data in reversed(build_blocks(doc)):
+    for kind, data in build_blocks(doc):
         if kind == "h":
             el = make_heading(doc, data)._element
         elif kind == "pb":
@@ -151,7 +178,7 @@ def main() -> None:
     print(f"Respaldo: {backup}")
 
     doc = Document(str(DOC_PATH))
-    remove_section(doc, HEADING)
+    remove_before_anchor(doc, ANCHOR, STOP_BEFORE)
     insert_section(doc)
 
     try:

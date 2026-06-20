@@ -165,12 +165,15 @@ proyecto_ieca/
 │   └── keep-render-warm.yml     # Ping /api/health cada 10 min (plan Free Render)
 ├── docs/
 │   ├── README.md                # Índice de documentación académica y técnica
+│   ├── TESIS-CONSOLIDADO.md     # Índice maestro Capítulo 3
 │   ├── METODOLOGIA.md           # Metodología en cascada y trazabilidad
 │   ├── REQUERIMIENTOS.md        # RF, RNF y reglas de negocio
+│   ├── BENEFICIARIOS.md         # Beneficiarios directos e indirectos
 │   ├── CASOS-DE-USO.md          # 18 casos de uso en 4 módulos
-│   ├── IMPLEMENTACION.md        # Caso de implementación (aportación 33 %, kardex)
-│   ├── VERIFICACION.md          # Resultados de pruebas
-│   ├── ENTREGABLES-ACADEMICOS.md
+│   ├── VERIFICACION.md          # Validación y verificación (pruebas)
+│   ├── ENTREGABLES.md           # EDT (Tabla 30)
+│   ├── PROPUESTA.md             # Propuesta de solución
+│   ├── IMPLEMENTACION.md        # Caso ingreso #13, kardex
 │   ├── diagramas/               # PNG UML + cronograma Gantt
 │   ├── scripts/                 # Scripts Python para actualizar Word de tesis
 │   ├── DEPLOY.md
@@ -864,12 +867,12 @@ npm run deploy:hosting
 | [docs/TESIS-CONSOLIDADO.md](docs/TESIS-CONSOLIDADO.md) | Índice maestro — todo lo validado para la tesis |
 | [docs/METODOLOGIA.md](docs/METODOLOGIA.md) | Metodología en cascada, cronograma y trazabilidad |
 | [docs/REQUERIMIENTOS.md](docs/REQUERIMIENTOS.md) | Requisitos funcionales y no funcionales |
-| [docs/CASOS-DE-USO.md](docs/CASOS-DE-USO.md) | 18 casos de uso en 4 módulos |
-| [docs/IMPLEMENTACION.md](docs/IMPLEMENTACION.md) | Caso ingreso #13, 33 %, kardex $41,94 |
-| [docs/VERIFICACION.md](docs/VERIFICACION.md) | Pruebas automatizadas y manuales |
 | [docs/BENEFICIARIOS.md](docs/BENEFICIARIOS.md) | Beneficiarios directos e indirectos |
-| [docs/ENTREGABLES-Y-PROPUESTA.md](docs/ENTREGABLES-Y-PROPUESTA.md) | EDT y propuesta |
-| [docs/CRITERIOS-VALIDACION-Y-RESULTADOS.md](docs/CRITERIOS-VALIDACION-Y-RESULTADOS.md) | Criterios y resultados |
+| [docs/CASOS-DE-USO.md](docs/CASOS-DE-USO.md) | 18 casos de uso en 4 módulos |
+| [docs/VERIFICACION.md](docs/VERIFICACION.md) | Validación y verificación (95 pruebas + 8 manuales) |
+| [docs/ENTREGABLES.md](docs/ENTREGABLES.md) | EDT — entregables por fase |
+| [docs/PROPUESTA.md](docs/PROPUESTA.md) | Propuesta de solución |
+| [docs/IMPLEMENTACION.md](docs/IMPLEMENTACION.md) | Caso ingreso #13, 33 %, kardex $41,94 |
 | [docs/diagramas/](docs/diagramas/) | Diagramas UML y cronograma |
 | [docs/DEPLOY.md](docs/DEPLOY.md) | Checklist y pasos de despliegue |
 | [docs/CHANGELOG.md](docs/CHANGELOG.md) | Historial resumido de entregas |
