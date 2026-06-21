@@ -240,6 +240,7 @@
             @if (esAdministrador) {
               <strong>Aportación iglesia</strong> es el 33% de ingresos de talento (período y acumulado).
             }
+            <strong>General</strong> solo recibe ingresos automáticos de esa aportación; no tiene gastos.
             <strong>Disponible</strong> es el acumulado histórico.
             Haz clic en una fila para abrir el kardex.
           </p>
@@ -265,7 +266,12 @@
             [class.desglose-ministerio-row--active]="filtroMinisterioId === item.ministerioId"
             [class.desglose-ministerio-row--static]="filtroMinisterioBloqueado"
             (click)="seleccionarMinisterioParaKardex(item.ministerioId)">
-            <div class="col-ministerio">{{ item.nombre }}</div>
+            <div class="col-ministerio">
+              {{ item.nombre }}
+              @if (esMinisterioIglesiaGeneral(item.nombre)) {
+                <span class="ministerio-tag ministerio-tag--iglesia" title="Solo ingresos automáticos del 33 % de talento">Aportación iglesia</span>
+              }
+            </div>
             <div class="col-cantidad ingresos">{{ formatearMoneda(item.ingresos) }}</div>
             <div class="col-cantidad gastos">{{ formatearMoneda(item.gastos) }}</div>
             <div class="col-cantidad" [class.negative]="item.saldo < 0">{{ formatearMoneda(item.saldo) }}</div>

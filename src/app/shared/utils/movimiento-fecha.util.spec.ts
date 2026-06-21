@@ -1,7 +1,9 @@
 import {
   actualizarDesdeFechaNativa,
   aplicarFechaManualFiltro,
-  limpiarActualizacionFechaNativa
+  limpiarActualizacionFechaNativa,
+  actualizarEstadoFiltroFechaMovimiento,
+  rangoFechasFiltroInvalido
 } from './movimiento-fecha.util';
 
 describe('movimiento-fecha.util', () => {
@@ -41,5 +43,42 @@ describe('movimiento-fecha.util', () => {
 
   it('limpiarActualizacionFechaNativa para formulario', () => {
     expect(limpiarActualizacionFechaNativa('form')).toEqual({ fechaManualForm: '' });
+  });
+
+  it('rechaza hasta anterior a desde', () => {
+    const desde = actualizarDesdeFechaNativa('2026-06-10', 'desde');
+    const res = actualizarEstadoFiltroFechaMovimiento(
+      'hasta',
+      actualizarDesdeFechaNativa('2026-06-01', 'hasta'),
+      {
+        filtroFechaInicio: desde.filtroFechaInicio!,
+        filtroFechaFin: '',
+        fechaManualDesde: desde.fechaManualDesde!,
+        fechaManualHasta: ''
+      }
+    );
+    expect(res.ok).toBe(false);
+    if (!res.ok) {
+      expect(res.mensaje).toContain('Hasta');
+      expect(res.estado.filtroFechaFin).toBe('');
+    }
+  });
+
+  it('acepta rango desde ≤ hasta', () => {
+    const res = actualizarEstadoFiltroFechaMovimiento(
+      'hasta',
+      actualizarDesdeFechaNativa('2026-06-20', 'hasta'),
+      {
+        filtroFechaInicio: actualizarDesdeFechaNativa('2026-06-01', 'desde').filtroFechaInicio!,
+        filtroFechaFin: '',
+        fechaManualDesde: '01/06/2026',
+        fechaManualHasta: ''
+      }
+    );
+    expect(res.ok).toBe(true);
+    expect(rangoFechasFiltroInvalido(
+      actualizarDesdeFechaNativa('2026-06-01', 'desde').filtroFechaInicio!,
+      actualizarDesdeFechaNativa('2026-06-20', 'hasta').filtroFechaFin!
+    )).toBe(false);
   });
 });

@@ -11,6 +11,7 @@ import { DataService } from './data.service';
 import { gastoAprobado } from '../shared/utils/gasto.util';
 import { ingresoAprobado } from '../shared/utils/ingreso.util';
 import { formatearISOaDDMMYYYY } from '../shared/utils/date.util';
+import { periodoKeyFromFecha } from '../shared/utils/month.util';
 import { etiquetaCuentaReporte } from '../shared/utils/reportes-cuenta.util';
 import { resolverNombreMinisterio as resolverNombreMinisterioMovimiento } from '../shared/utils/movimiento-ministerio.util';
 import { calcularMontoNetoMinisterio } from '../shared/utils/aportacion-iglesia.util';
@@ -78,7 +79,7 @@ export class ReportesService {
         gastos:          0,
         saldo:           monto,
         archivo:         i.foto || '',
-        mes:             new Date(i.fecha).toISOString().substring(0, 7)
+        mes:             periodoKeyFromFecha(i.fecha) ?? ''
       });
     });
 
@@ -97,7 +98,7 @@ export class ReportesService {
         gastos:          g.monto || 0,
         saldo:           -(g.monto || 0),
         archivo:         g.foto || '',
-        mes:             new Date(g.fecha).toISOString().substring(0, 7)
+        mes:             periodoKeyFromFecha(g.fecha) ?? ''
       });
     });
 

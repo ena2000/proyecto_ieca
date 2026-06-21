@@ -25,7 +25,8 @@ import { presentIecaToast } from '../../shared/utils/toast.util';
 import { registerAdministracionPageIcons } from '../../shared/utils/administracion-page.icons';
 import {
   aplicarFechaManualAuditoria,
-  aplicarFechaNativaAuditoria
+  aplicarFechaNativaAuditoria,
+  actualizarEstadoFiltroFechaAuditoria
 } from '../../shared/utils/audit-fecha.util';
 import { ACCESOS_RAPIDOS_ADMIN } from './administracion-accesos.constants';
 import { formatearMoneda } from '../../shared/utils/currency.util';
@@ -225,24 +226,41 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
       ?? (event.target as HTMLInputElement)?.value
       ?? '';
     const upd = aplicarFechaManualAuditoria(String(raw), tipo);
-    if (upd.auditDesde != null) this.auditDesde = upd.auditDesde;
-    if (upd.auditHasta != null) this.auditHasta = upd.auditHasta;
-    if (upd.auditFechaManualDesde != null) this.auditFechaManualDesde = upd.auditFechaManualDesde;
-    if (upd.auditFechaManualHasta != null) this.auditFechaManualHasta = upd.auditFechaManualHasta;
-    if (tipo === 'desde' && !upd.auditDesde) {
-      resetNativosDateInputs([this.dateInputAuditDesde?.nativeElement]);
-    }
-    if (tipo === 'hasta' && !upd.auditHasta) {
-      resetNativosDateInputs([this.dateInputAuditHasta?.nativeElement]);
-    }
+    this.aplicarCambioFiltroFechaAudit(tipo, upd);
   }
 
   onNativeDateChangeAudit(value: string, tipo: 'desde' | 'hasta'): void {
     const upd = aplicarFechaNativaAuditoria(value, tipo);
-    if (upd.auditDesde != null) this.auditDesde = upd.auditDesde;
-    if (upd.auditHasta != null) this.auditHasta = upd.auditHasta;
-    if (upd.auditFechaManualDesde != null) this.auditFechaManualDesde = upd.auditFechaManualDesde;
-    if (upd.auditFechaManualHasta != null) this.auditFechaManualHasta = upd.auditFechaManualHasta;
+    this.aplicarCambioFiltroFechaAudit(tipo, upd);
+  }
+
+  private aplicarCambioFiltroFechaAudit(
+    tipo: 'desde' | 'hasta',
+    upd: Partial<{
+      auditDesde: string;
+      auditHasta: string;
+      auditFechaManualDesde: string;
+      auditFechaManualHasta: string;
+    }>
+  ): void {
+    const res = actualizarEstadoFiltroFechaAuditoria(tipo, upd, {
+      auditDesde: this.auditDesde,
+      auditHasta: this.auditHasta,
+      auditFechaManualDesde: this.auditFechaManualDesde,
+      auditFechaManualHasta: this.auditFechaManualHasta
+    });
+    if (!res.ok) {
+      void this.mostrarToast(res.mensaje, 'warning');
+    }
+    this.auditDesde = res.estado.auditDesde;
+    this.auditHasta = res.estado.auditHasta;
+    this.auditFechaManualDesde = res.estado.auditFechaManualDesde;
+    this.auditFechaManualHasta = res.estado.auditFechaManualHasta;
+    if (res.resetNativo === 'desde') {
+      resetNativosDateInputs([this.dateInputAuditDesde?.nativeElement]);
+    } else if (res.resetNativo === 'hasta') {
+      resetNativosDateInputs([this.dateInputAuditHasta?.nativeElement]);
+    }
   }
 
   private filtrosAuditoria(): {

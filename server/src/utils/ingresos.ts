@@ -8,6 +8,7 @@ const {
 } = require('./notificacion-movimiento');
 const { stampActualizacion, resolveActor } = require('./auditoria');
 const { assertPeriodoAbierto, assertMovimientoModificable } = require('./cierre');
+const { assertMinisterioPermiteIngresoManual } = require('./ministerio-iglesia');
 const {
   generarAportacionIglesiaPorIngreso,
   revertirAportacionIglesiaPorIngreso,
@@ -82,11 +83,15 @@ async function assertIngresoModificable(req, entity) {
 
 async function beforeCreateIngreso(body) {
   await assertPeriodoAbierto(body?.fecha);
+  await assertMinisterioPermiteIngresoManual(body);
 }
 
 async function beforeUpdateIngreso(body, current) {
   await assertMovimientoModificable(current);
   if (body?.fecha) await assertPeriodoAbierto(body.fecha);
+  if (!current?.esAportacionIglesia) {
+    await assertMinisterioPermiteIngresoManual({ ...current, ...body });
+  }
 }
 
 async function notificarIngresoCreado(created, req) {

@@ -8,6 +8,7 @@ const {
 } = require('./notificacion-movimiento');
 const { stampActualizacion, resolveActor } = require('./auditoria');
 const { assertPeriodoAbierto, assertMovimientoModificable } = require('./cierre');
+const { assertMinisterioPermiteGastos } = require('./ministerio-iglesia');
 
 const COLLECTION = 'gastos';
 const ESTADOS = new Set(['pendiente', 'aprobado', 'rechazado']);
@@ -74,11 +75,13 @@ async function assertGastoModificable(req, entity) {
 
 async function beforeCreateGasto(body) {
   await assertPeriodoAbierto(body?.fecha);
+  await assertMinisterioPermiteGastos(body);
 }
 
 async function beforeUpdateGasto(body, current) {
   await assertMovimientoModificable(current);
   if (body?.fecha) await assertPeriodoAbierto(body.fecha);
+  await assertMinisterioPermiteGastos({ ...current, ...body });
 }
 
 async function notificarGastoCreado(created, req) {

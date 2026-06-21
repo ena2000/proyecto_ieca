@@ -21,7 +21,7 @@ import { gastoAprobado, gastoPendiente } from '../shared/utils/gasto.util';
 import { ingresoAprobado, ingresoPendiente } from '../shared/utils/ingreso.util';
 import { mesCortoEs } from '../shared/utils/month.util';
 import { resolverNombreMinisterio } from '../shared/utils/movimiento-ministerio.util';
-import { filtrarMinisteriosCatalogo } from '../shared/constants/ministerios-catalogo.constants';
+import { filtrarMinisteriosCatalogo, filtrarMinisteriosRegistroManual, filtrarMinisteriosReportes } from '../shared/constants/ministerios-catalogo.constants';
 import {
   AportacionMinisterioResumen,
   calcularMontoAportacionIngreso,
@@ -326,9 +326,13 @@ export class DataService {
   getIngresosActuales(): Ingreso[] { return this.ingresosSubject.getValue(); }
   getGastosActuales(): Gasto[] { return this.gastosSubject.getValue(); }
   getMinisteriosActuales(): Ministerio[] { return this.ministeriosSubject.getValue(); }
-  /** Ministerios visibles en formularios, reportes y asignación de colaboradores. */
+  /** Ministerios para formularios y asignación (sin Contabilidad ni General). */
   getMinisteriosParaCatalogo(): Ministerio[] {
-    return filtrarMinisteriosCatalogo(this.getMinisteriosActuales());
+    return filtrarMinisteriosRegistroManual(this.getMinisteriosActuales());
+  }
+  /** Ministerios en reportes y gráficos (incluye General; sin Contabilidad). */
+  getMinisteriosParaReportes(): Ministerio[] {
+    return filtrarMinisteriosReportes(this.getMinisteriosActuales());
   }
   getUsuariosActuales(): Usuario[] { return this.usuariosSubject.getValue(); }
 
@@ -384,7 +388,7 @@ export class DataService {
 
     const ministeriosActivos = ministerioId != null
       ? (ministerios.some(m => Number(m.id) === ministerioId && m.estado === 'Activo') ? 1 : 0)
-      : filtrarMinisteriosCatalogo(ministerios).filter(m => m.estado === 'Activo').length;
+      : filtrarMinisteriosReportes(ministerios).filter(m => m.estado === 'Activo').length;
 
     const mesAnterior = new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1);
     const mesAnteriorNum = mesAnterior.getMonth();
@@ -508,7 +512,7 @@ export class DataService {
 
     const ministerios = ministerioId != null
       ? this.getMinisteriosActuales().filter(m => Number(m.id) === ministerioId)
-      : this.getMinisteriosParaCatalogo();
+      : this.getMinisteriosParaReportes();
 
     const coloresDefault = ['#1e3a8a', '#7c3aed', '#0891b2', '#059669', '#dc2626', '#ea580c'];
     const distribucion = new Map<string, number>();

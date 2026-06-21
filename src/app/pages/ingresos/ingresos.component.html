@@ -446,6 +446,7 @@
                 type="date"
                 class="ieca-date-picker-hidden"
                 [value]="isoToDateInputValue(filtroFechaInicio)"
+                [max]="filtroFechaFin ? isoToDateInputValue(filtroFechaFin) : ''"
                 (change)="onNativeDateChange($any($event.target).value, 'desde')"
                 aria-label="Desde la fecha" />
             </div>
@@ -479,6 +480,7 @@
                 type="date"
                 class="ieca-date-picker-hidden"
                 [value]="isoToDateInputValue(filtroFechaFin)"
+                [min]="filtroFechaInicio ? isoToDateInputValue(filtroFechaInicio) : ''"
                 (change)="onNativeDateChange($any($event.target).value, 'hasta')"
                 aria-label="Hasta la fecha" />
             </div>

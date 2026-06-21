@@ -32,6 +32,7 @@ import {
   isoDesdeFechaManualDDMMYYYY,
   actualizarDesdeFechaNativa,
   aplicarFechaManualFiltro,
+  actualizarEstadoFiltroFechaMovimiento,
   CampoFechaMovimiento
 } from '../../shared/utils/movimiento-fecha.util';
 import { accionesTablaMovimiento } from '../../shared/utils/movimiento-acciones.util';
@@ -327,34 +328,51 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
   onNativeDateChange(value: string, tipo: CampoFechaMovimiento): void {
     const upd = actualizarDesdeFechaNativa(value, tipo);
-    if (upd.fechaIso !== undefined) {
-      this.nuevoIngreso.fecha = upd.fechaIso || new Date().toISOString();
-    }
-    if (upd.fechaManualForm != null) this.fechaManualForm = upd.fechaManualForm;
-    if (upd.fechaManualDesde != null) this.fechaManualDesde = upd.fechaManualDesde;
-    if (upd.fechaManualHasta != null) this.fechaManualHasta = upd.fechaManualHasta;
-    if (upd.filtroFechaInicio != null) this.filtroFechaInicio = upd.filtroFechaInicio;
-    if (upd.filtroFechaFin != null) this.filtroFechaFin = upd.filtroFechaFin;
-    if (tipo === 'desde' || tipo === 'hasta') {
-      this.actualizarVista();
-    } else {
+    if (tipo === 'form') {
+      if (upd.fechaIso !== undefined) {
+        this.nuevoIngreso.fecha = upd.fechaIso || new Date().toISOString();
+      }
+      if (upd.fechaManualForm != null) this.fechaManualForm = upd.fechaManualForm;
       this.cdr.markForCheck();
+      return;
     }
+    this.aplicarCambioFiltroFecha(tipo, upd);
   }
 
   validarFechaManual(event: Event, tipo: 'desde' | 'hasta'): void {
     const upd = aplicarFechaManualFiltro(leerValorIonInput(event), tipo);
-    if (upd.fechaManualDesde != null) this.fechaManualDesde = upd.fechaManualDesde;
-    if (upd.fechaManualHasta != null) this.fechaManualHasta = upd.fechaManualHasta;
-    if (upd.filtroFechaInicio != null) this.filtroFechaInicio = upd.filtroFechaInicio;
-    if (upd.filtroFechaFin != null) this.filtroFechaFin = upd.filtroFechaFin;
-    if (tipo === 'desde' && !upd.filtroFechaInicio) {
-      resetNativosDateInputs([this.dateInputDesde?.nativeElement]);
+    this.aplicarCambioFiltroFecha(tipo, upd);
+  }
+
+  private aplicarCambioFiltroFecha(
+    tipo: 'desde' | 'hasta',
+    upd: Partial<{
+      filtroFechaInicio: string;
+      filtroFechaFin: string;
+      fechaManualDesde: string;
+      fechaManualHasta: string;
+    }>
+  ): void {
+    const res = actualizarEstadoFiltroFechaMovimiento(tipo, upd, {
+      filtroFechaInicio: this.filtroFechaInicio,
+      filtroFechaFin: this.filtroFechaFin,
+      fechaManualDesde: this.fechaManualDesde,
+      fechaManualHasta: this.fechaManualHasta
+    });
+    if (!res.ok) {
+      void this.mostrarToast(res.mensaje, 'warning');
     }
-    if (tipo === 'hasta' && !upd.filtroFechaFin) {
+    this.filtroFechaInicio = res.estado.filtroFechaInicio;
+    this.filtroFechaFin = res.estado.filtroFechaFin;
+    this.fechaManualDesde = res.estado.fechaManualDesde;
+    this.fechaManualHasta = res.estado.fechaManualHasta;
+    if (res.resetNativo === 'desde') {
+      resetNativosDateInputs([this.dateInputDesde?.nativeElement]);
+    } else if (res.resetNativo === 'hasta') {
       resetNativosDateInputs([this.dateInputHasta?.nativeElement]);
     }
     this.actualizarVista();
+    this.cdr.markForCheck();
   }
 
   get ministerioBloqueado(): boolean {

@@ -90,3 +90,89 @@ export function estadoFiltrosFechaMovimientoVacios(): {
     fechaManualHasta: ''
   };
 }
+
+export interface EstadoFiltroFechaMovimiento {
+  filtroFechaInicio: string;
+  filtroFechaFin: string;
+  fechaManualDesde: string;
+  fechaManualHasta: string;
+}
+
+/** Inicio de día local en ms; acepta ISO o YYYY-MM-DD. */
+export function fechaDiaMs(valor: string): number | null {
+  const raw = String(valor || '').trim();
+  if (!raw) return null;
+  const d = /^\d{4}-\d{2}-\d{2}$/.test(raw)
+    ? new Date(`${raw}T00:00:00`)
+    : new Date(raw);
+  if (Number.isNaN(d.getTime())) return null;
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+}
+
+export function rangoFechasFiltroInvalido(desdeIso: string, hastaIso: string): boolean {
+  const desde = fechaDiaMs(desdeIso);
+  const hasta = fechaDiaMs(hastaIso);
+  if (desde == null || hasta == null) return false;
+  return hasta < desde;
+}
+
+export function mensajeRangoFiltroFechaInvalido(tipo: 'desde' | 'hasta'): string {
+  return tipo === 'hasta'
+    ? 'La fecha «Hasta» no puede ser anterior a «Desde la fecha».'
+    : 'La fecha «Desde» no puede ser posterior a «Hasta la fecha».';
+}
+
+export function limpiarCampoFiltroFecha(
+  tipo: 'desde' | 'hasta'
+): Partial<EstadoFiltroFechaMovimiento> {
+  return tipo === 'desde'
+    ? { filtroFechaInicio: '', fechaManualDesde: '' }
+    : { filtroFechaFin: '', fechaManualHasta: '' };
+}
+
+export type ResultadoActualizarFiltroFechaMovimiento =
+  | { ok: true; estado: EstadoFiltroFechaMovimiento; resetNativo: 'desde' | 'hasta' | null }
+  | {
+      ok: false;
+      mensaje: string;
+      estado: EstadoFiltroFechaMovimiento;
+      resetNativo: 'desde' | 'hasta';
+    };
+
+/** Fusiona cambio de filtro y valida que «desde» ≤ «hasta». */
+export function actualizarEstadoFiltroFechaMovimiento(
+  tipo: 'desde' | 'hasta',
+  upd: Partial<EstadoFiltroFechaMovimiento>,
+  actual: EstadoFiltroFechaMovimiento
+): ResultadoActualizarFiltroFechaMovimiento {
+  const estado: EstadoFiltroFechaMovimiento = {
+    filtroFechaInicio:
+      upd.filtroFechaInicio !== undefined ? upd.filtroFechaInicio : actual.filtroFechaInicio,
+    filtroFechaFin:
+      upd.filtroFechaFin !== undefined ? upd.filtroFechaFin : actual.filtroFechaFin,
+    fechaManualDesde:
+      upd.fechaManualDesde !== undefined ? upd.fechaManualDesde : actual.fechaManualDesde,
+    fechaManualHasta:
+      upd.fechaManualHasta !== undefined ? upd.fechaManualHasta : actual.fechaManualHasta
+  };
+
+  if (!estado.filtroFechaInicio || !estado.filtroFechaFin) {
+    const resetNativo =
+      (tipo === 'desde' && !estado.filtroFechaInicio) ||
+      (tipo === 'hasta' && !estado.filtroFechaFin)
+        ? tipo
+        : null;
+    return { ok: true, estado, resetNativo };
+  }
+
+  if (rangoFechasFiltroInvalido(estado.filtroFechaInicio, estado.filtroFechaFin)) {
+    return {
+      ok: false,
+      mensaje: mensajeRangoFiltroFechaInvalido(tipo),
+      estado: { ...estado, ...limpiarCampoFiltroFecha(tipo) },
+      resetNativo: tipo
+    };
+  }
+
+  return { ok: true, estado, resetNativo: null };
+}

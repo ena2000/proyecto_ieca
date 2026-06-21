@@ -225,6 +225,7 @@
                 type="date"
                 class="ieca-date-picker-hidden"
                 [value]="auditDesde"
+                [max]="auditHasta || ''"
                 (change)="onNativeDateChangeAudit($any($event.target).value, 'desde')"
                 aria-label="Desde" />
             </div>
@@ -255,6 +256,7 @@
                 type="date"
                 class="ieca-date-picker-hidden"
                 [value]="auditHasta"
+                [min]="auditDesde || ''"
                 (change)="onNativeDateChangeAudit($any($event.target).value, 'hasta')"
                 aria-label="Hasta" />
             </div>

@@ -181,6 +181,22 @@
   }
 }
 
+.ministerio-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  vertical-align: middle;
+  white-space: nowrap;
+
+  &--iglesia {
+    background: #fef3c7;
+    color: #92400e;
+  }
+}
+
 .reportes-bloque {
   margin-bottom: var(--space-4);
 

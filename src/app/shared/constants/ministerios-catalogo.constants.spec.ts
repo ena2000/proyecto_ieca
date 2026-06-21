@@ -1,6 +1,9 @@
 import {
   esMinisterioExcluidoCatalogo,
-  filtrarMinisteriosCatalogo
+  esMinisterioIglesiaGeneral,
+  filtrarMinisteriosCatalogo,
+  filtrarMinisteriosRegistroManual,
+  filtrarMinisteriosReportes
 } from './ministerios-catalogo.constants';
 
 describe('ministerios-catalogo.constants', () => {
@@ -20,5 +23,27 @@ describe('ministerios-catalogo.constants', () => {
       'Adolescentes',
       'General'
     ]);
+  });
+
+  it('registro manual excluye Contabilidad y General', () => {
+    const lista = [
+      { id: 1, nombre: 'Adolescentes' },
+      { id: 7, nombre: 'Contabilidad' },
+      { id: 22, nombre: 'General' }
+    ];
+    expect(filtrarMinisteriosRegistroManual(lista).map(m => m.nombre)).toEqual(['Adolescentes']);
+  });
+
+  it('reportes incluye General pero no Contabilidad', () => {
+    const lista = [
+      { id: 1, nombre: 'Adolescentes' },
+      { id: 7, nombre: 'Contabilidad' },
+      { id: 22, nombre: 'General' }
+    ];
+    expect(filtrarMinisteriosReportes(lista).map(m => m.nombre)).toEqual([
+      'Adolescentes',
+      'General'
+    ]);
+    expect(esMinisterioIglesiaGeneral('General')).toBe(true);
   });
 });

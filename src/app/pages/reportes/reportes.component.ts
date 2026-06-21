@@ -36,6 +36,7 @@ import {
   construirEtiquetaFiltroReporte
 } from '../../shared/utils/reportes-filtros.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
+import { esMinisterioIglesiaGeneral } from '../../shared/constants/ministerios-catalogo.constants';
 
 export type { FiltroMovimientoReporte } from '../../shared/utils/reportes-filtros.util';
 
@@ -58,6 +59,7 @@ registerReportesPageIcons();
 })
 export class ReportesComponent implements OnInit, OnDestroy, ViewWillEnter {
   readonly formatearMoneda = formatearMoneda;
+  readonly esMinisterioIglesiaGeneral = esMinisterioIglesiaGeneral;
 
   listaReportes: Reporte[] = [];
   listaMinisterios: Pick<Ministerio, 'id' | 'nombre'>[] = [];
@@ -132,7 +134,7 @@ export class ReportesComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   private actualizarVista(): void {
-    this.listaMinisterios = this.dataService.getMinisteriosParaCatalogo().map(m => ({
+    this.listaMinisterios = this.dataService.getMinisteriosParaReportes().map(m => ({
       id: m.id,
       nombre: m.nombre
     }));
