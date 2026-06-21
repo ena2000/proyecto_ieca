@@ -20,11 +20,12 @@
         <form class="form-content" (submit)="$event.preventDefault(); onLogin()">
 
           <label class="input-label" [class.text-danger]="usuarioError" for="login-usuario">Usuario</label>
-          <ion-item lines="none" class="modern-input" [class.input-error]="usuarioError">
+          <ion-item lines="none" class="modern-input" [class.input-error]="usuarioError || authError">
             <ion-input
               id="login-usuario"
               name="usuario"
               [(ngModel)]="usuario"
+              (ngModelChange)="onCredencialesChange()"
               type="text"
               autocomplete="username"
               placeholder="Ingresa tu usuario">
@@ -35,11 +36,12 @@
           }
 
           <label class="input-label" [class.text-danger]="passwordError" for="login-password">Contraseña</label>
-          <ion-item lines="none" class="modern-input password-item" [class.input-error]="passwordError">
+          <ion-item lines="none" class="modern-input password-item" [class.input-error]="passwordError || authError">
             <ion-input
               id="login-password"
               name="password"
               [(ngModel)]="password"
+              (ngModelChange)="onCredencialesChange()"
               [type]="showPassword ? 'text' : 'password'"
               autocomplete="current-password"
               placeholder="••••••••">
@@ -59,6 +61,13 @@
           </ion-item>
           @if (passwordError) {
             <small class="field-error">{{ passwordError }}</small>
+          }
+
+          @if (authError) {
+            <div class="login-auth-error" role="alert" aria-live="assertive">
+              <ion-icon name="alert-circle" aria-hidden="true"></ion-icon>
+              <span>{{ authError }}</span>
+            </div>
           }
 
           <ion-button expand="block" type="button" class="submit-btn" [disabled]="isLoading" (click)="onLogin()">

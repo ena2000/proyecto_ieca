@@ -26,7 +26,7 @@ export function getHttpErrorMessage(error: unknown, fallback = 'Ocurrió un erro
       );
     }
     if (error.status === 401) {
-      return extractBodyMessage(error) || 'Sesión expirada o credenciales incorrectas.';
+      return extractBodyMessage(error) || 'Usuario o contraseña incorrectos.';
     }
     if (error.status === 503) {
       return (

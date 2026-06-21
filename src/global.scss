@@ -562,6 +562,13 @@ ion-toast.ieca-toast--danger {
   --background: var(--ieca-red);
 }
 
+/* Login sin sidebar: toast arriba del formulario, no fuera de pantalla */
+ion-toast.ieca-toast.ieca-toast--login {
+  --top: 16px;
+  --start: 12px;
+  --end: 12px;
+}
+
 /* Toasts dentro del área de contenido (sidebar fijo en escritorio) */
 ion-app.ieca-has-sidebar ion-toast.ieca-toast {
   --start: calc(var(--ieca-sidebar-width) + 12px);

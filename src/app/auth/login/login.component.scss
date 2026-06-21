@@ -105,6 +105,27 @@
     box-shadow: 0 0 0 2px rgba(228, 32, 33, 0.12);
   }
 
+  .login-auth-error {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 4px 0 16px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(228, 32, 33, 0.08);
+    border: 1px solid rgba(228, 32, 33, 0.28);
+    color: var(--ieca-red);
+    font-size: 0.84rem;
+    font-weight: 600;
+    line-height: 1.4;
+
+    ion-icon {
+      flex-shrink: 0;
+      font-size: 1.25rem;
+      margin-top: 1px;
+    }
+  }
+
   .modern-input {
     --background: #ffffff;
     --border-radius: 14px;

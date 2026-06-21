@@ -27,9 +27,14 @@ export async function presentIecaToast(
   message: string,
   color: string,
   duration = 2600,
-  header?: string
+  header?: string,
+  extraCssClass?: string
 ): Promise<void> {
   const meta = resolveToastMeta(color);
+  const cssClasses = [`ieca-toast`, `ieca-toast--${meta.variant}`];
+  if (extraCssClass?.trim()) {
+    cssClasses.push(extraCssClass.trim());
+  }
   const toast = await toastCtrl.create({
     header: header ?? meta.header,
     message,
@@ -37,7 +42,7 @@ export async function presentIecaToast(
     position: 'top',
     layout: 'baseline',
     icon: meta.icon,
-    cssClass: `ieca-toast ieca-toast--${meta.variant}`,
+    cssClass: cssClasses.join(' '),
     ...(message.length > 72
       ? { buttons: [{ text: 'Cerrar', role: 'cancel' }] }
       : {})

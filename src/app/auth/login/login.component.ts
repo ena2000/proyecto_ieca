@@ -24,6 +24,8 @@ export class LoginComponent implements OnInit {
   conectandoServidor = false;
   cargandoDatos = false;
   submitted = false;
+  /** Error de credenciales o servidor; visible en el formulario (no solo toast). */
+  authError: string | null = null;
 
   constructor(
     private toastCtrl: ToastController,
@@ -42,16 +44,24 @@ export class LoginComponent implements OnInit {
     despertarApiEnSegundoPlano();
   }
 
+  onCredencialesChange(): void {
+    if (this.authError) {
+      this.authError = null;
+    }
+  }
+
   async onLogin(): Promise<void> {
     if (this.isLoading) return;
 
     this.submitted = true;
+    this.authError = null;
 
     const u = this.usuario.trim();
     const p = this.password;
 
     if (u.length < 4 || p.length < 6) {
-      await this.presentToast('Completa usuario (mín. 4) y contraseña (mín. 6).', 'warning');
+      this.authError = 'Completa usuario (mín. 4 caracteres) y contraseña (mín. 6).';
+      await this.presentToast(this.authError, 'warning');
       return;
     }
 
@@ -61,10 +71,9 @@ export class LoginComponent implements OnInit {
     try {
       const apiListo = await esperarApiDisponible(55_000);
       if (!apiListo) {
-        await this.presentToast(
-          'El servidor no respondió a tiempo. Espera un momento y vuelve a intentar.',
-          'danger'
-        );
+        this.authError =
+          'El servidor no respondió a tiempo. Espera un momento y vuelve a intentar.';
+        await this.presentToast(this.authError, 'danger');
         return;
       }
 
@@ -80,18 +89,20 @@ export class LoginComponent implements OnInit {
         void this.router.navigateByUrl(destino, { replaceUrl: true });
         void this.presentToast(`¡Bienvenido ${user?.usuario}!`, 'success');
       } else {
-        await this.presentToast(result.mensaje || 'Usuario o contraseña incorrectos', 'danger');
+        this.authError = result.mensaje || 'Usuario o contraseña incorrectos.';
+        await this.presentToast(this.authError, 'danger', 4500);
       }
     } catch (error) {
-      await this.presentToast(getHttpErrorMessage(error, 'Error en la autenticación. Intenta de nuevo.'), 'danger');
+      this.authError = getHttpErrorMessage(error, 'Error en la autenticación. Intenta de nuevo.');
+      await this.presentToast(this.authError, 'danger', 4500);
     } finally {
       this.isLoading = false;
       this.conectandoServidor = false;
     }
   }
 
-  async presentToast(msj: string, color: string): Promise<void> {
-    await presentIecaToast(this.toastCtrl, msj, color);
+  async presentToast(msj: string, color: string, duration = 2600): Promise<void> {
+    await presentIecaToast(this.toastCtrl, msj, color, duration, undefined, 'ieca-toast--login');
   }
 
   togglePassword(): void {

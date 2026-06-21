@@ -204,10 +204,14 @@ export class AuthService {
     if (error instanceof TimeoutError) {
       return AUTH_TIMEOUT_MESSAGE;
     }
-    if (error instanceof Error && error.message) {
+    const fromHttp = getHttpErrorMessage(error, '');
+    if (fromHttp) {
+      return fromHttp;
+    }
+    if (error instanceof Error && error.message?.trim()) {
       return error.message;
     }
-    return getHttpErrorMessage(error, fallback);
+    return fallback;
   }
 
   private persistSession(token: string, refreshToken: string, user: SessionUser): void {
