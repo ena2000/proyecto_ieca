@@ -15,7 +15,9 @@ export function normalizarIngreso(ingreso: IngresoLegacy): Ingreso {
 }
 
 export function estadoIngreso(i: Ingreso): IngresoEstado {
-  return i.estado ?? 'aprobado';
+  const raw = String(i.estado ?? 'aprobado').trim().toLowerCase();
+  if (raw === 'pendiente' || raw === 'rechazado') return raw;
+  return 'aprobado';
 }
 
 export function ingresoAprobado(i: Ingreso): boolean {

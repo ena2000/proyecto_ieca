@@ -50,6 +50,7 @@ const {
 } = require('../utils/unicidad');
 const { validate } = require('../middleware/validate');
 const { invalidateBootstrapCache } = require('../utils/bootstrapCache');
+const { filtrarMinisteriosCatalogo } = require('../constants/ministerios-catalogo');
 const { idParamSchema, motivoRechazoSchema } = require('../schemas/common.schema');
 const {
   ingresoCreateSchema,
@@ -114,6 +115,7 @@ function createCrudRouter(collection, options: {
   audit?: boolean;
   validateCreate?: unknown;
   validateUpdate?: unknown;
+  listFilter?: (items: unknown[]) => unknown[];
 } = {}) {
   const router = express.Router();
   const {
@@ -130,7 +132,8 @@ function createCrudRouter(collection, options: {
     beforeUpdate,
     audit,
     validateCreate,
-    validateUpdate
+    validateUpdate,
+    listFilter
   } = options;
 
   function getUserScope(req) {
@@ -167,9 +170,10 @@ function createCrudRouter(collection, options: {
   router.get('/', async (_req, res) => {
     try {
       const scope = getUserScope(_req);
-      const lista = scope
+      let lista = scope
         ? await listCollectionByField(collection, scope.field, scope.value)
         : await listCollection(collection);
+      if (listFilter) lista = listFilter(lista);
       res.json(lista);
     } catch (err) {
       console.error(`[${collection} GET]`, err);
@@ -396,6 +400,7 @@ async function beforeUpdateUsuario(body, _req, current) {
 const ministeriosRouter = createCrudRouter('ministerios', {
   validateCreate: ministerioCreateSchema,
   validateUpdate: ministerioUpdateSchema,
+  listFilter: filtrarMinisteriosCatalogo,
   onCreate(body) {
     const ahora = new Date().toISOString();
     const { id, fecha, fechaFormateada, ...rest } = body;

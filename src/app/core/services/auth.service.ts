@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, firstValueFrom, of, timeout, TimeoutError, throwError } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 import { getHttpErrorMessage } from '../../shared/utils/error-message.util';
+import { isJwtExpired } from '../../shared/utils/jwt.util';
 import { SessionUser, LoginResponse, RefreshTokenResponse } from '../models';
 import {
   AppRole,
@@ -45,10 +46,30 @@ export class AuthService {
   private sessionSubject = new BehaviorSubject<SessionUser | null>(this.loadSession());
   readonly session$: Observable<SessionUser | null> = this.sessionSubject.asObservable();
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService) {
+    this.purgeStaleSession();
+  }
 
   isAuthenticated(): boolean {
+    this.purgeStaleSession();
     return !!localStorage.getItem(this.TOKEN_KEY) && !!this.sessionSubject.getValue();
+  }
+
+  /** Elimina tokens caducados o ilegibles (p. ej. tras redeploy con otro JWT_SECRET). */
+  purgeStaleSession(): void {
+    const access = localStorage.getItem(this.TOKEN_KEY);
+    const refresh = localStorage.getItem(this.REFRESH_KEY);
+    if (!access && !refresh) {
+      if (this.sessionSubject.getValue()) {
+        this.clearSessionStorage();
+      }
+      return;
+    }
+    const accessDead = isJwtExpired(access);
+    const refreshDead = isJwtExpired(refresh);
+    if (accessDead && refreshDead) {
+      this.clearSessionStorage();
+    }
   }
 
   getSession(): SessionUser | null {
@@ -117,10 +138,7 @@ export class AuthService {
     if (!environment.useLocalFallback) {
       this.api.post(API.auth.logout, {}).subscribe({ error: () => undefined });
     }
-    localStorage.removeItem(this.TOKEN_KEY);
-    localStorage.removeItem(this.REFRESH_KEY);
-    localStorage.removeItem(this.USER_KEY);
-    this.sessionSubject.next(null);
+    this.clearSessionStorage();
   }
 
   /** Renueva el access token usando el refresh token almacenado. */
@@ -212,6 +230,13 @@ export class AuthService {
       return error.message;
     }
     return fallback;
+  }
+
+  private clearSessionStorage(): void {
+    localStorage.removeItem(this.TOKEN_KEY);
+    localStorage.removeItem(this.REFRESH_KEY);
+    localStorage.removeItem(this.USER_KEY);
+    this.sessionSubject.next(null);
   }
 
   private persistSession(token: string, refreshToken: string, user: SessionUser): void {

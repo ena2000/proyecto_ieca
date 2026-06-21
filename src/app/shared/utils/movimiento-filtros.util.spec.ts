@@ -69,4 +69,21 @@ describe('movimiento-filtros.util', () => {
     });
     expect(r.map(i => i.id)).toEqual([1]);
   });
+
+  it('ordena por fecha descendente (más recientes primero)', () => {
+    const desordenados: ItemPrueba[] = [
+      { id: 1, fecha: '2026-03-01T00:00:00.000Z', monto: 10, descripcion: 'Marzo' },
+      { id: 5, fecha: '2026-06-15T00:00:00.000Z', monto: 20, descripcion: 'Junio' },
+      { id: 3, fecha: '2026-06-15T00:00:00.000Z', monto: 30, descripcion: 'Junio B' }
+    ];
+    const r = filtrarMovimientos({
+      items: desordenados,
+      ministerioScopeId: null,
+      filtros: filtrosVacios,
+      textoBusqueda: () => [],
+      esPendiente: () => false,
+      enriquecer: i => i
+    });
+    expect(r.map(i => i.id)).toEqual([5, 3, 1]);
+  });
 });

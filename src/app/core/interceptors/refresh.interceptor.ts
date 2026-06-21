@@ -20,6 +20,7 @@ export const refreshInterceptor: HttpInterceptorFn = (req, next) => {
       return from(auth.refreshAccessToken()).pipe(
         switchMap((ok) => {
           if (!ok) {
+            auth.logout();
             return throwError(() => error);
           }
           const token = localStorage.getItem('auth_token');

@@ -18,3 +18,13 @@ export function resolverEstadoAlGuardar<T extends { id: number }, E extends stri
   if (actualEstado !== opts.estadoAprobado) return opts.estadoPendiente;
   return actualEstado;
 }
+
+/** Coincide con la lógica de la tabla (estado + etiqueta visible). */
+export function estaPendienteParaAprobacion(
+  row: { estado?: string; estadoEtiqueta?: string } | null | undefined
+): boolean {
+  if (!row) return false;
+  const estado = String(row.estado ?? '').trim().toLowerCase();
+  if (estado === 'pendiente') return true;
+  return row.estadoEtiqueta === 'Pendiente';
+}

@@ -28,13 +28,26 @@ export interface ActualizacionFechaNativa {
   fechaIso?: string;
 }
 
-/** Sincroniza campos de fecha al elegir fecha nativa (input type="date"). */
+/** Limpia campos de fecha (selector nativo o botón «Limpiar filtros»). */
+export function limpiarActualizacionFechaNativa(
+  tipo: CampoFechaMovimiento
+): ActualizacionFechaNativa {
+  if (tipo === 'form') {
+    return { fechaManualForm: '' };
+  }
+  if (tipo === 'desde') {
+    return { filtroFechaInicio: '', fechaManualDesde: '' };
+  }
+  return { filtroFechaFin: '', fechaManualHasta: '' };
+}
+
+/** Sincroniza campos de fecha al elegir o borrar en input type="date". */
 export function actualizarDesdeFechaNativa(
   value: string,
   tipo: CampoFechaMovimiento
-): ActualizacionFechaNativa | null {
+): ActualizacionFechaNativa {
   const yyyyMMdd = String(value || '').trim();
-  if (!yyyyMMdd) return null;
+  if (!yyyyMMdd) return limpiarActualizacionFechaNativa(tipo);
 
   const iso = new Date(`${yyyyMMdd}T00:00:00`).toISOString();
   if (tipo === 'form') {
@@ -46,4 +59,34 @@ export function actualizarDesdeFechaNativa(
     return { filtroFechaInicio: iso, fechaManualDesde: formateada };
   }
   return { filtroFechaFin: iso, fechaManualHasta: formateada };
+}
+
+/** Sincroniza filtros «desde/hasta» al escribir DD/MM/AAAA manualmente. */
+export function aplicarFechaManualFiltro(
+  raw: string,
+  tipo: 'desde' | 'hasta'
+): Pick<
+  ActualizacionFechaNativa,
+  'filtroFechaInicio' | 'filtroFechaFin' | 'fechaManualDesde' | 'fechaManualHasta'
+> {
+  const val = formatearEntradaFechaManual(raw);
+  const iso = isoDesdeFechaManualDDMMYYYY(val);
+  if (tipo === 'desde') {
+    return { fechaManualDesde: val, filtroFechaInicio: iso ?? '' };
+  }
+  return { fechaManualHasta: val, filtroFechaFin: iso ?? '' };
+}
+
+export function estadoFiltrosFechaMovimientoVacios(): {
+  filtroFechaInicio: string;
+  filtroFechaFin: string;
+  fechaManualDesde: string;
+  fechaManualHasta: string;
+} {
+  return {
+    filtroFechaInicio: '',
+    filtroFechaFin: '',
+    fechaManualDesde: '',
+    fechaManualHasta: ''
+  };
 }

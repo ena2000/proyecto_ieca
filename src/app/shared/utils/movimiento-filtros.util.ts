@@ -74,5 +74,22 @@ export function filtrarMovimientos<T extends { fecha: string; monto?: number | n
     filtrados = filtrados.filter(config.esPendiente);
   }
 
+  filtrados.sort(compararMovimientosPorFechaDesc);
+
   return filtrados.map(config.enriquecer);
+}
+
+function fechaMovimientoMs(fecha: string): number {
+  const t = new Date(fecha).getTime();
+  return Number.isFinite(t) ? t : 0;
+}
+
+/** Más recientes primero; empate por id descendente. */
+export function compararMovimientosPorFechaDesc(
+  a: { fecha: string; id?: number },
+  b: { fecha: string; id?: number }
+): number {
+  const diff = fechaMovimientoMs(b.fecha) - fechaMovimientoMs(a.fecha);
+  if (diff !== 0) return diff;
+  return (Number(b.id) || 0) - (Number(a.id) || 0);
 }

@@ -19,7 +19,7 @@ import { DataService } from '../../services/data.service';
 import { AdministracionService } from '../../services/administracion.service';
 import { NotificacionesBellComponent } from '../../components/notificaciones-bell/notificaciones-bell.component';
 import { ToolbarMenuButtonComponent } from '../../components/toolbar-menu-button/toolbar-menu-button.component';
-import { abrirSelectorFechaNativo } from '../../shared/utils/date-picker.util';
+import { abrirSelectorFechaNativo, resetNativosDateInputs } from '../../shared/utils/date-picker.util';
 import { withLoadingResult, getHttpErrorMessage } from '../../shared/utils/loading.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
 import { registerAdministracionPageIcons } from '../../shared/utils/administracion-page.icons';
@@ -229,11 +229,16 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
     if (upd.auditHasta != null) this.auditHasta = upd.auditHasta;
     if (upd.auditFechaManualDesde != null) this.auditFechaManualDesde = upd.auditFechaManualDesde;
     if (upd.auditFechaManualHasta != null) this.auditFechaManualHasta = upd.auditFechaManualHasta;
+    if (tipo === 'desde' && !upd.auditDesde) {
+      resetNativosDateInputs([this.dateInputAuditDesde?.nativeElement]);
+    }
+    if (tipo === 'hasta' && !upd.auditHasta) {
+      resetNativosDateInputs([this.dateInputAuditHasta?.nativeElement]);
+    }
   }
 
   onNativeDateChangeAudit(value: string, tipo: 'desde' | 'hasta'): void {
     const upd = aplicarFechaNativaAuditoria(value, tipo);
-    if (!upd) return;
     if (upd.auditDesde != null) this.auditDesde = upd.auditDesde;
     if (upd.auditHasta != null) this.auditHasta = upd.auditHasta;
     if (upd.auditFechaManualDesde != null) this.auditFechaManualDesde = upd.auditFechaManualDesde;
@@ -263,6 +268,10 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
     this.auditHasta = '';
     this.auditFechaManualDesde = '';
     this.auditFechaManualHasta = '';
+    resetNativosDateInputs([
+      this.dateInputAuditDesde?.nativeElement,
+      this.dateInputAuditHasta?.nativeElement
+    ]);
   }
 
   async descargarAuditoria(): Promise<void> {

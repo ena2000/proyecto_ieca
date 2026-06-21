@@ -329,6 +329,27 @@ ion-popover.image-style-popover ion-datetime,
   font-weight: 700;
 }
 
+.form-validation-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 var(--space-4);
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: rgba(228, 32, 33, 0.08);
+  border: 1px solid rgba(228, 32, 33, 0.28);
+  color: var(--ieca-red);
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.4;
+
+  ion-icon {
+    flex-shrink: 0;
+    font-size: 1.2rem;
+    margin-top: 1px;
+  }
+}
+
 .hint-text {
   display: block;
   margin-top: var(--space-1);

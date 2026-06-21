@@ -14,7 +14,8 @@ import {
   addCircleOutline,
   optionsOutline,
   checkmarkCircleOutline,
-  personOutline
+  personOutline,
+  alertCircleOutline
 } from 'ionicons/icons';
 
 /** Iconos comunes en pantallas de ingresos y gastos. */
@@ -34,6 +35,7 @@ export function registerMovimientoPageIcons(): void {
     'add-circle-outline': addCircleOutline,
     'options-outline': optionsOutline,
     'checkmark-circle-outline': checkmarkCircleOutline,
-    'person-outline': personOutline
+    'person-outline': personOutline,
+    'alert-circle-outline': alertCircleOutline
   });
 }

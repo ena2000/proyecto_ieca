@@ -46,7 +46,7 @@ export function aplicarFechaManualAuditoria(
 export function aplicarFechaNativaAuditoria(
   value: string,
   tipo: 'desde' | 'hasta'
-): ActualizacionFechaAuditoria | null {
+): ActualizacionFechaAuditoria {
   const yyyyMMdd = String(value || '').trim();
   if (!yyyyMMdd) {
     return tipo === 'desde'

@@ -35,9 +35,13 @@ export class LoginComponent implements OnInit {
   ) {}
 
   async ngOnInit(): Promise<void> {
+    this.authService.purgeStaleSession();
+
     if (this.authService.isAuthenticated()) {
-      await this.dataService.bootstrapRemote();
-      void this.router.navigateByUrl(this.authService.getRutaPorDefecto(), { replaceUrl: true });
+      const ok = await this.dataService.bootstrapRemote();
+      if (ok && this.authService.isAuthenticated()) {
+        void this.router.navigateByUrl(this.authService.getRutaPorDefecto(), { replaceUrl: true });
+      }
       return;
     }
 
@@ -84,8 +88,20 @@ export class LoginComponent implements OnInit {
         const destino = this.authService.getRutaPorDefecto();
         const user = this.authService.getSession();
         this.cargandoDatos = true;
-        await this.dataService.bootstrapRemote(true);
+        const bootstrapOk = await this.dataService.bootstrapRemote(true);
         this.cargandoDatos = false;
+
+        if (!this.authService.isAuthenticated()) {
+          this.authError = 'Tu sesión expiró. Vuelve a iniciar sesión.';
+          await this.presentToast(this.authError, 'warning', 4500);
+          return;
+        }
+        if (!bootstrapOk) {
+          this.authError = 'No se pudieron cargar los datos. Intenta de nuevo.';
+          await this.presentToast(this.authError, 'danger', 4500);
+          return;
+        }
+
         void this.router.navigateByUrl(destino, { replaceUrl: true });
         void this.presentToast(`¡Bienvenido ${user?.usuario}!`, 'success');
       } else {

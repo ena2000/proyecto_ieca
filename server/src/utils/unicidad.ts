@@ -1,5 +1,6 @@
 const { listCollection } = require('./firestore');
 const { normalizeEmail } = require('./email-normalize');
+const { esMinisterioExcluidoCatalogo } = require('../constants/ministerios-catalogo');
 
 function normalizarTextoUnico(value: unknown): string {
   return String(value ?? '')
@@ -19,6 +20,12 @@ function crearErrorUnicidad(message: string, status = 409) {
 async function assertMinisterioNombreUnico(nombre: unknown, excludeId: number | null = null) {
   const clave = normalizarTextoUnico(nombre);
   if (!clave) return;
+
+  if (esMinisterioExcluidoCatalogo(String(nombre))) {
+    throw crearErrorUnicidad(
+      'Este nombre está reservado y no puede usarse como ministerio operativo.'
+    );
+  }
 
   const ministerios = await listCollection('ministerios');
   const duplicado = ministerios.find(m => {

@@ -1,7 +1,9 @@
 import { Gasto, GastoEstado } from '../../core/models/gasto.model';
 
 export function estadoGasto(g: Gasto): GastoEstado {
-  return g.estado ?? 'aprobado';
+  const raw = String(g.estado ?? 'aprobado').trim().toLowerCase();
+  if (raw === 'pendiente' || raw === 'rechazado') return raw;
+  return 'aprobado';
 }
 
 export function gastoAprobado(g: Gasto): boolean {

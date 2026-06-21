@@ -10,6 +10,7 @@ import { ApiService } from '../core/services/api.service';
 import { NotificacionesService } from '../core/services/notificaciones.service';
 import { API } from '../core/constants/api.constants';
 import { environment } from '../../environments/environment';
+import { isUnauthorizedHttpError } from '../shared/utils/error-message.util';
 import { formatearISOaDDMMYYYY } from '../shared/utils/date.util';
 import { etiquetaCuentaReporte } from '../shared/utils/reportes-cuenta.util';
 import { IngresosService } from './ingresos.service';
@@ -20,6 +21,7 @@ import { gastoAprobado, gastoPendiente } from '../shared/utils/gasto.util';
 import { ingresoAprobado, ingresoPendiente } from '../shared/utils/ingreso.util';
 import { mesCortoEs } from '../shared/utils/month.util';
 import { resolverNombreMinisterio } from '../shared/utils/movimiento-ministerio.util';
+import { filtrarMinisteriosCatalogo } from '../shared/constants/ministerios-catalogo.constants';
 import {
   AportacionMinisterioResumen,
   calcularMontoAportacionIngreso,
@@ -46,7 +48,7 @@ export class DataService {
   readonly dataRevision$ = this.dataRevisionSubject.asObservable();
 
   private syncTimer: ReturnType<typeof setTimeout> | undefined;
-  private bootstrapInFlight: Promise<void> | null = null;
+  private bootstrapInFlight: Promise<boolean> | null = null;
   private bootstrapComplete = false;
   private lastBootstrapAt = 0;
   private readonly bootstrapTtlMs = 300_000;
@@ -148,16 +150,16 @@ export class DataService {
   }
 
   /** Una sola petición HTTP para ingresos, gastos, notificaciones, etc. */
-  bootstrapRemote(force = false): Promise<void> {
+  bootstrapRemote(force = false): Promise<boolean> {
     if (environment.useLocalFallback || !this.authService.isAuthenticated()) {
-      return Promise.resolve();
+      return Promise.resolve(true);
     }
 
     const memoryFresh = !force && this.bootstrapComplete &&
       Date.now() - this.lastBootstrapAt < this.bootstrapTtlMs;
     if (memoryFresh) {
       this.syncFromEntityServices();
-      return Promise.resolve();
+      return Promise.resolve(true);
     }
 
     if (!force) {
@@ -167,14 +169,14 @@ export class DataService {
         if (Date.now() - stored.at > 90_000) {
           void this.fetchBootstrapFromApi(force);
         }
-        return Promise.resolve();
+        return Promise.resolve(true);
       }
     }
 
     return this.fetchBootstrapFromApi(force);
   }
 
-  private fetchBootstrapFromApi(force = false): Promise<void> {
+  private fetchBootstrapFromApi(force = false): Promise<boolean> {
     if (this.bootstrapInFlight) {
       return this.bootstrapInFlight;
     }
@@ -185,12 +187,18 @@ export class DataService {
       .then(payload => {
         this.applyBootstrap(payload);
         this.writeBootstrapStorage(payload);
+        return true;
       })
       .catch(err => {
+        if (isUnauthorizedHttpError(err)) {
+          this.authService.logout();
+          return false;
+        }
         console.error('[DataService] bootstrapRemote:', err);
-        if (!this.hasRemoteData()) {
+        if (this.authService.isAuthenticated() && !this.hasRemoteData()) {
           this.fallbackReload();
         }
+        return false;
       })
       .finally(() => {
         this.bootstrapInFlight = null;
@@ -318,6 +326,10 @@ export class DataService {
   getIngresosActuales(): Ingreso[] { return this.ingresosSubject.getValue(); }
   getGastosActuales(): Gasto[] { return this.gastosSubject.getValue(); }
   getMinisteriosActuales(): Ministerio[] { return this.ministeriosSubject.getValue(); }
+  /** Ministerios visibles en formularios, reportes y asignación de colaboradores. */
+  getMinisteriosParaCatalogo(): Ministerio[] {
+    return filtrarMinisteriosCatalogo(this.getMinisteriosActuales());
+  }
   getUsuariosActuales(): Usuario[] { return this.usuariosSubject.getValue(); }
 
   private gastosAprobadosParaBalance(gastos: Gasto[]): Gasto[] {
@@ -372,7 +384,7 @@ export class DataService {
 
     const ministeriosActivos = ministerioId != null
       ? (ministerios.some(m => Number(m.id) === ministerioId && m.estado === 'Activo') ? 1 : 0)
-      : ministerios.filter(m => m.estado === 'Activo').length;
+      : filtrarMinisteriosCatalogo(ministerios).filter(m => m.estado === 'Activo').length;
 
     const mesAnterior = new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1);
     const mesAnteriorNum = mesAnterior.getMonth();
@@ -496,7 +508,7 @@ export class DataService {
 
     const ministerios = ministerioId != null
       ? this.getMinisteriosActuales().filter(m => Number(m.id) === ministerioId)
-      : this.getMinisteriosActuales();
+      : this.getMinisteriosParaCatalogo();
 
     const coloresDefault = ['#1e3a8a', '#7c3aed', '#0891b2', '#059669', '#dc2626', '#ea580c'];
     const distribucion = new Map<string, number>();
@@ -543,7 +555,7 @@ export class DataService {
   ): AportacionMinisterioResumen[] {
     const ministerios = ministerioScopeId != null
       ? this.getMinisteriosActuales().filter(m => Number(m.id) === ministerioScopeId)
-      : this.getMinisteriosActuales();
+      : this.getMinisteriosParaCatalogo();
 
     const porId = new Map<number, number>();
     ministerios.forEach(m => porId.set(m.id, 0));

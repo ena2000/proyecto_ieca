@@ -1,5 +1,6 @@
 import { Ministerio } from '../../core/models';
 import { MINISTERIO_IGLESIA_NOMBRE } from '../constants/aportacion-iglesia.constants';
+import { filtrarMinisteriosCatalogo } from '../constants/ministerios-catalogo.constants';
 
 /** Resuelve el nombre visible del ministerio; el catálogo por id tiene prioridad sobre texto guardado. */
 export function resolverNombreMinisterio(
@@ -32,8 +33,10 @@ export function ministeriosEnAlcance(
   lista: Ministerio[],
   ministerioScopeId: number | null
 ): Ministerio[] {
-  if (ministerioScopeId == null) return lista;
-  return lista.filter(m => Number(m.id) === ministerioScopeId);
+  if (ministerioScopeId != null) {
+    return lista.filter(m => Number(m.id) === ministerioScopeId);
+  }
+  return filtrarMinisteriosCatalogo(lista);
 }
 
 export function perteneceAlcanceMinisterio(

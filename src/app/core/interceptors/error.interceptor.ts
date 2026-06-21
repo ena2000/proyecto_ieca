@@ -15,7 +15,9 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
       if (error.status === 401 && !publicAuth) {
         auth.logout();
-        router.navigate(['/login']);
+        if (!router.url.startsWith('/login')) {
+          router.navigate(['/login']);
+        }
       }
 
       const message = getHttpErrorMessage(error, 'Error de conexión con el servidor');

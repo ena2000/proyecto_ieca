@@ -121,8 +121,10 @@ app-tabla-general {
 ========================================================= */
 .action-buttons {
   display: flex;
+  flex-wrap: nowrap;
   gap: 10px;
   justify-content: center;
+  min-width: max-content;
 
   button {
     border: none;
@@ -157,6 +159,14 @@ app-tabla-general {
       transform: none;
     }
   }
+}
+
+.ieca-table th.actions-cell,
+.ieca-table td.actions-cell {
+  min-width: 190px;
+  max-width: none;
+  text-align: center;
+  white-space: nowrap;
 }
 
 /* =========================================================

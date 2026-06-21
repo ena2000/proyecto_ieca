@@ -82,6 +82,7 @@
           </ion-label>
           <div class="hybrid-date-container">
             <ion-input
+              #fechaInput
               [(ngModel)]="fechaManualForm"
               name="fechaManualForm"
               placeholder="DD/MM/AAAA"
@@ -128,9 +129,11 @@
               class="text-green">
             </ion-icon>
             <ion-input
+              #montoInput
               type="number"
               inputmode="decimal"
               [(ngModel)]="nuevoIngreso.monto"
+              (ionInput)="onMontoInput($event)"
               name="monto"
               placeholder="0.00"
               class="amount-input amount-input--income">
@@ -242,8 +245,10 @@
               class="text-blue">
             </ion-icon>
             <ion-input
+              #descripcionInput
               type="text"
               [(ngModel)]="nuevoIngreso.descripcion"
+              (ionInput)="onDescripcionInput($event)"
               name="descripcion"
               placeholder="Ej. Ofrendas de culto dominical...">
             </ion-input>
@@ -268,6 +273,7 @@
               <p>Haz clic para subir imagen o PDF</p>
               <span>JPG, PNG, WebP o PDF (máx. 5 MB)</span>
               <input
+                #comprobanteInput
                 type="file"
                 class="file-overlay"
                 accept="image/jpeg,image/png,image/webp,application/pdf,.pdf"
@@ -317,6 +323,13 @@
           </div>
         </div>
 
+        @if ((intentoEnvio && !esFormularioValido) || formGuardadoError) {
+          <div class="form-validation-error" role="alert">
+            <ion-icon name="alert-circle-outline" aria-hidden="true"></ion-icon>
+            <span>{{ formGuardadoError || mensajeValidacion }}</span>
+          </div>
+        }
+
         <div class="form-footer-container">
           <div class="action-buttons-group">
             
@@ -324,12 +337,12 @@
               expand="block"
               type="button"
               class="ieca-button-primary btn-main"
-              [disabled]="periodoFormularioCerrado"
+              [disabled]="periodoFormularioCerrado || registrando"
               [class.button-disabled]="intentoEnvio && !esFormularioValido"
               (click)="registrarIngreso()">
               <ion-icon [name]="modoEdicion ? 'save-outline' : 'add-circle-outline'"></ion-icon>
               <span>
-                {{ modoEdicion ? 'Guardar Cambios' : 'Registrar Ingreso' }}
+                {{ registrando ? 'Enviando al servidor…' : (modoEdicion ? 'Guardar Cambios' : 'Registrar Ingreso') }}
               </span>
             </ion-button>
 
@@ -365,7 +378,15 @@
           <span class="badge-count">
             {{ listaFiltradaVista.length }} registros encontrados
           </span>
-          <span class="badge-count badge-count--warn" *ngIf="puedeAprobar && pendientesCount > 0">
+          <span
+            class="badge-count badge-count--warn badge-count--clickable"
+            *ngIf="puedeAprobar && pendientesCount > 0"
+            role="button"
+            tabindex="0"
+            [class.badge-count--active]="filtroSoloPendientes"
+            (click)="alternarFiltroPendientes()"
+            (keydown.enter)="alternarFiltroPendientes()"
+            title="Clic para ver solo pendientes">
             {{ pendientesCount }} pendiente(s)
           </span>
           <span class="badge-count badge-count--filter" *ngIf="filtroSoloPendientes">

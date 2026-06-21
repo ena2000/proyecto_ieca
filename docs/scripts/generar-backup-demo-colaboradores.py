@@ -36,6 +36,9 @@ LIDER_ROW_MINISTRY: dict[int, str] = {
     193: "UJIERES",
 }
 
+# Ministerios del Excel que no son áreas operativas del panel financiero
+EXCLUDED_MINISTRY_KEYS = frozenset({"CONTABILIDAD"})
+
 DISPLAY: dict[str, str] = {
     "ADOLESCENTES": "Adolescentes",
     "ALABANZA": "Alabanza",
@@ -44,7 +47,6 @@ DISPLAY: dict[str, str] = {
     "CONSEJERA": "Consejería",
     "CONSEJERO": "Consejería",
     "CONSOLIDACION": "Consolidación",
-    "CONTABILIDAD": "Contabilidad",
     "DAMAS": "Damas",
     "DANZA": "Danza",
     "DISCIPULADO": "Discipulado",
@@ -206,7 +208,7 @@ def parse_excel(path: Path) -> tuple[list[dict], list[dict], list[tuple]]:
         m = norm_ministry(minist)
         if not m or m in ("LIDER", "COLIDER"):
             m = LIDER_ROW_MINISTRY.get(r, "")
-        if not m:
+        if not m or m in EXCLUDED_MINISTRY_KEYS:
             continue
 
         pk = person_key(str(nombre), str(apellido))
@@ -222,7 +224,9 @@ def parse_excel(path: Path) -> tuple[list[dict], list[dict], list[tuple]]:
             "row": r,
         }
 
-    ministry_keys = sorted({p["ministerio_key"] for p in people.values()})
+    ministry_keys = sorted(
+        {p["ministerio_key"] for p in people.values() if p["ministerio_key"] not in EXCLUDED_MINISTRY_KEYS}
+    )
     if "GENERAL" not in ministry_keys:
         ministry_keys.append("GENERAL")
 

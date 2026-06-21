@@ -3,6 +3,7 @@ const { listCollection, listCollectionByField, stripInternalFields } = require('
 const { ROLES, esColaboradorMinisterio } = require('../middleware/auth');
 const { listNotificacionesForUser, userPuedeNotificaciones } = require('../utils/notificaciones');
 const { getCachedBootstrap, setCachedBootstrap } = require('../utils/bootstrapCache');
+const { filtrarMinisteriosCatalogo } = require('../constants/ministerios-catalogo');
 
 const router = express.Router();
 
@@ -40,7 +41,7 @@ router.get('/', async (req, res) => {
 
     if (isAdmin) {
       Object.assign(tasks, {
-        ministerios: listCollection('ministerios'),
+        ministerios: listCollection('ministerios').then(filtrarMinisteriosCatalogo),
         usuarios: listCollection('usuarios').then((lista) =>
           lista.map((row) => stripInternalFields(row))
         )

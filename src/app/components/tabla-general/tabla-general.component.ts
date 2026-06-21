@@ -26,6 +26,8 @@ import {
   readerOutline
 } from 'ionicons/icons';
 
+import { estaPendienteParaAprobacion } from '../../shared/utils/movimiento-estado.util';
+
 
 // =========================================================
 // TIPADO FUERTE (MUY IMPORTANTE)
@@ -176,11 +178,11 @@ export class TablaGeneralComponent implements OnChanges {
   }
 
   showApproveFor(row: any): boolean {
-    return !!this.actions.approve && (row?.estado ?? 'aprobado') === 'pendiente';
+    return !!this.actions.approve && estaPendienteParaAprobacion(row);
   }
 
   showRejectFor(row: any): boolean {
-    return !!this.actions.reject && (row?.estado ?? 'aprobado') === 'pendiente';
+    return !!this.actions.reject && estaPendienteParaAprobacion(row);
   }
 
   showEditFor(row: any): boolean {

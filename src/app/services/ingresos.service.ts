@@ -11,6 +11,7 @@ import { stampAuditoriaLocal, stampAuditoriaActualizacionLocal } from '../shared
 import { AuthService } from '../core/services/auth.service';
 import { ROLES } from '../core/constants/roles.constants';
 import { formatearISOaDDMMYYYY } from '../shared/utils/date.util';
+import { withMutationTimeout } from '../shared/utils/http-mutation.util';
 import {
   crearIngresoIglesiaPorAportacion,
   ingresoEstaAprobadoParaAportacion,
@@ -48,7 +49,10 @@ export class IngresosService {
     if (environment.useLocalFallback) {
       return of(this.createLocal(ingreso, fechaFormateada));
     }
-    return this.api.post<Ingreso>(API.ingresos.base, { ...ingreso, fechaFormateada }).pipe(
+    const payload = this.buildApiPayload(ingreso, fechaFormateada);
+    return withMutationTimeout(
+      this.api.post<Ingreso>(API.ingresos.base, payload)
+    ).pipe(
       tap(nuevo => {
         this.persist([nuevo, ...this.getAll()]);
         this.notificacionesService.recargar();
@@ -61,7 +65,9 @@ export class IngresosService {
     if (environment.useLocalFallback) {
       return of(this.updateLocal(id, ingreso, fechaFormateada));
     }
-    return this.api.put<Ingreso>(`${API.ingresos.base}/${id}`, { ...ingreso, fechaFormateada }).pipe(
+    return withMutationTimeout(
+      this.api.put<Ingreso>(`${API.ingresos.base}/${id}`, this.buildApiPayload(ingreso, fechaFormateada))
+    ).pipe(
       tap(actualizado => {
         const lista = this.getAll().map(i => (i.id === id ? actualizado : i));
         this.persist(lista);
@@ -89,7 +95,9 @@ export class IngresosService {
     if (environment.useLocalFallback) {
       return of(this.aprobarLocal(id));
     }
-    return this.api.patch<Ingreso>(API.ingresos.aprobar(id), {}).pipe(
+    return withMutationTimeout(
+      this.api.patch<Ingreso>(API.ingresos.aprobar(id), {})
+    ).pipe(
       tap(actualizado => {
         this.persist(this.getAll().map(i => (i.id === id ? actualizado : i)));
         this.notificacionesService.recargar();
@@ -102,7 +110,9 @@ export class IngresosService {
     if (environment.useLocalFallback) {
       return of(this.rechazarLocal(id, motivo));
     }
-    return this.api.patch<Ingreso>(API.ingresos.rechazar(id), { motivo }).pipe(
+    return withMutationTimeout(
+      this.api.patch<Ingreso>(API.ingresos.rechazar(id), { motivo })
+    ).pipe(
       tap(actualizado => {
         this.persist(this.getAll().map(i => (i.id === id ? actualizado : i)));
         this.notificacionesService.recargar();
@@ -161,6 +171,34 @@ export class IngresosService {
   private actorId(): string | undefined {
     const id = this.authService.getSession()?.id;
     return id != null ? String(id) : undefined;
+  }
+
+  /** Payload limpio para la API (sin id ni campos internos de aportación). */
+  private buildApiPayload(ingreso: Omit<Ingreso, 'id'>, fechaFormateada: string): Record<string, unknown> {
+    const {
+      id: _id,
+      estado: _estado,
+      esAportacionIglesia: _ei,
+      ingresoOrigenId: _io,
+      aportacionGenerada: _ag,
+      montoNetoMinisterio: _mn,
+      montoAportacionIglesia: _ma,
+      ingresoIglesiaId: _ii,
+      gastoAportacionId: _ga,
+      cerrado: _c,
+      periodoCierre: _pc,
+      ...rest
+    } = ingreso as Ingreso;
+
+    return {
+      ...rest,
+      monto: Number(ingreso.monto),
+      ministerioId: ingreso.ministerioId != null ? Number(ingreso.ministerioId) : undefined,
+      usuarioId: ingreso.usuarioId != null ? Number(ingreso.usuarioId) : undefined,
+      fechaFormateada,
+      foto: ingreso.foto ?? '',
+      categoria: ingreso.categoria?.trim() || ingreso.cuentaNombre?.trim() || ''
+    };
   }
 
   private createLocal(ingreso: Omit<Ingreso, 'id'>, fechaFormateada: string): Ingreso {

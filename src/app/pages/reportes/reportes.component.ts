@@ -132,7 +132,7 @@ export class ReportesComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   private actualizarVista(): void {
-    this.listaMinisterios = this.dataService.getMinisteriosActuales().map(m => ({
+    this.listaMinisterios = this.dataService.getMinisteriosParaCatalogo().map(m => ({
       id: m.id,
       nombre: m.nombre
     }));

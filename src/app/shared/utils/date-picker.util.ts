@@ -9,6 +9,15 @@ export function isoToDateInputValue(iso?: string): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+/** Vacía inputs type="date" (p. ej. tras «Limpiar filtros» o borrar en el selector). */
+export function resetNativosDateInputs(
+  inputs: Array<HTMLInputElement | null | undefined>
+): void {
+  for (const input of inputs) {
+    if (input) input.value = '';
+  }
+}
+
 /** Abre el selector nativo del navegador en el primer clic. */
 export function abrirSelectorFechaNativo(input: HTMLInputElement | null | undefined): void {
   if (!input) return;

@@ -7,6 +7,7 @@ import { ApiService } from '../core/services/api.service';
 import { API } from '../core/constants/api.constants';
 import { environment } from '../../environments/environment';
 import { ministerioNombreDuplicado, mensajeMinisterioDuplicado } from '../shared/utils/unicidad.util';
+import { filtrarMinisteriosCatalogo } from '../shared/constants/ministerios-catalogo.constants';
 
 @Injectable({ providedIn: 'root' })
 export class MinisteriosService {
@@ -22,7 +23,7 @@ export class MinisteriosService {
   }
 
   hydrate(lista: Ministerio[]): void {
-    this.ministeriosSubject.next(lista);
+    this.ministeriosSubject.next(filtrarMinisteriosCatalogo(lista));
   }
 
   getAll(): Ministerio[] {
@@ -65,7 +66,7 @@ export class MinisteriosService {
       return;
     }
     this.api.get<Ministerio[]>(API.ministerios).subscribe({
-      next: lista => this.ministeriosSubject.next(lista),
+      next: lista => this.ministeriosSubject.next(filtrarMinisteriosCatalogo(lista)),
       error: err => console.error('[MinisteriosService] reload:', err)
     });
   }
@@ -106,10 +107,11 @@ export class MinisteriosService {
   }
 
   private persist(lista: Ministerio[]): void {
+    const visible = filtrarMinisteriosCatalogo(lista);
     if (environment.useLocalFallback) {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(lista));
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(visible));
     }
-    this.ministeriosSubject.next(lista);
+    this.ministeriosSubject.next(visible);
   }
 
   private loadFromStorage(): void {

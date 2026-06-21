@@ -4,6 +4,20 @@
   color: #b45309;
 }
 
+.badge-count--clickable {
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    filter: brightness(0.97);
+  }
+
+  &.badge-count--active {
+    outline: 2px solid #b45309;
+    outline-offset: 1px;
+  }
+}
+
 .preview-pdf {
   display: flex;
   flex-direction: column;

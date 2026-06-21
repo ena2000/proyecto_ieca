@@ -67,6 +67,27 @@ function extractBodyMessage(error: HttpErrorResponse): string | null {
   return null;
 }
 
+/** true si el error corresponde a sesión inválida o credenciales rechazadas. */
+export function isUnauthorizedHttpError(error: unknown): boolean {
+  if (error instanceof HttpErrorResponse) {
+    return error.status === 401;
+  }
+  if (error instanceof Error) {
+    const msg = error.message.toLowerCase();
+    return (
+      msg.includes('token inválido') ||
+      msg.includes('token invalido') ||
+      msg.includes('no autorizado') ||
+      msg.includes('sesión expirada') ||
+      msg.includes('sesion expirada') ||
+      msg.includes('sesión inválida') ||
+      msg.includes('sesion invalida') ||
+      msg.includes('credenciales incorrectas')
+    );
+  }
+  return false;
+}
+
 export function isAuthPublicRequest(url: string): boolean {
   return AUTH_PUBLIC_PATHS.some((path) => url.includes(path));
 }

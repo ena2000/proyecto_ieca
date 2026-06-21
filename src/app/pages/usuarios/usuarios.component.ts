@@ -323,7 +323,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   }
 
   cargarMinisterios() {
-    this.listaMinisterios = this.dataService.getMinisteriosActuales();
+    this.listaMinisterios = this.dataService.getMinisteriosParaCatalogo();
   }
 
   mostrarContrasenaTemporal(usuario: string, password: string): void {

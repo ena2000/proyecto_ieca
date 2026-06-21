@@ -20,7 +20,7 @@ import { TablaGeneralComponent, TableColumn, TableActions } from 'src/app/compon
 import { NotificacionesBellComponent } from 'src/app/components/notificaciones-bell/notificaciones-bell.component';
 import { ToolbarMenuButtonComponent } from 'src/app/components/toolbar-menu-button/toolbar-menu-button.component';
 import { formatearISOaDDMMYYYY } from '../../shared/utils/date.util';
-import { abrirSelectorFechaNativo, isoToDateInputValue } from '../../shared/utils/date-picker.util';
+import { abrirSelectorFechaNativo, isoToDateInputValue, resetNativosDateInputs } from '../../shared/utils/date-picker.util';
 import { procesarComprobante, esComprobantePdf } from '../../shared/utils/comprobante-upload.util';
 import { withLoading } from '../../shared/utils/loading.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
@@ -31,8 +31,10 @@ import {
   formatearEntradaFechaManual,
   isoDesdeFechaManualDDMMYYYY,
   actualizarDesdeFechaNativa,
+  aplicarFechaManualFiltro,
   CampoFechaMovimiento
 } from '../../shared/utils/movimiento-fecha.util';
+import { leerValorIonInput } from '../../shared/utils/movimiento-form-sync.util';
 import { accionesTablaMovimiento } from '../../shared/utils/movimiento-acciones.util';
 import {
   ministeriosEnAlcance,
@@ -101,6 +103,7 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
   @ViewChild('dateInputForm') dateInputForm?: ElementRef<HTMLInputElement>;
   @ViewChild('dateInputDesde') dateInputDesde?: ElementRef<HTMLInputElement>;
   @ViewChild('dateInputHasta') dateInputHasta?: ElementRef<HTMLInputElement>;
+  @ViewChild('comprobanteInput') comprobanteInput?: ElementRef<HTMLInputElement>;
 
   fechaManualForm = '';
   listaMinisterios: Ministerio[] = [];
@@ -180,6 +183,7 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
     }
     this.cargarRelaciones();
     this.actualizarVista();
+    this.cdr.markForCheck();
   }
 
   ngOnDestroy(): void {
@@ -287,26 +291,33 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
   onNativeDateChange(value: string, tipo: CampoFechaMovimiento): void {
     const upd = actualizarDesdeFechaNativa(value, tipo);
-    if (!upd) return;
-    if (upd.fechaIso) this.nuevoGasto.fecha = upd.fechaIso;
+    if (upd.fechaIso !== undefined) {
+      this.nuevoGasto.fecha = upd.fechaIso || new Date().toISOString();
+    }
     if (upd.fechaManualForm != null) this.fechaManualForm = upd.fechaManualForm;
     if (upd.fechaManualDesde != null) this.fechaManualDesde = upd.fechaManualDesde;
     if (upd.fechaManualHasta != null) this.fechaManualHasta = upd.fechaManualHasta;
     if (upd.filtroFechaInicio != null) this.filtroFechaInicio = upd.filtroFechaInicio;
     if (upd.filtroFechaFin != null) this.filtroFechaFin = upd.filtroFechaFin;
-    if (upd.filtroFechaInicio != null || upd.filtroFechaFin != null) {
+    if (tipo === 'desde' || tipo === 'hasta') {
       this.actualizarVista();
+    } else {
+      this.cdr.markForCheck();
     }
   }
 
   validarFechaManual(event: Event, tipo: 'desde' | 'hasta'): void {
-    const val = formatearEntradaFechaManual((event.target as HTMLInputElement).value);
-    if (tipo === 'desde') this.fechaManualDesde = val;
-    else this.fechaManualHasta = val;
-    const iso = isoDesdeFechaManualDDMMYYYY(val);
-    if (!iso) return;
-    if (tipo === 'desde') this.filtroFechaInicio = iso;
-    else this.filtroFechaFin = iso;
+    const upd = aplicarFechaManualFiltro(leerValorIonInput(event), tipo);
+    if (upd.fechaManualDesde != null) this.fechaManualDesde = upd.fechaManualDesde;
+    if (upd.fechaManualHasta != null) this.fechaManualHasta = upd.fechaManualHasta;
+    if (upd.filtroFechaInicio != null) this.filtroFechaInicio = upd.filtroFechaInicio;
+    if (upd.filtroFechaFin != null) this.filtroFechaFin = upd.filtroFechaFin;
+    if (tipo === 'desde' && !upd.filtroFechaInicio) {
+      resetNativosDateInputs([this.dateInputDesde?.nativeElement]);
+    }
+    if (tipo === 'hasta' && !upd.filtroFechaFin) {
+      resetNativosDateInputs([this.dateInputHasta?.nativeElement]);
+    }
     this.actualizarVista();
   }
 
@@ -339,8 +350,13 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
     this.filtroMontoMin = null;
     this.filtroMontoMax = null;
     this.filtroSoloPendientes = false;
+    resetNativosDateInputs([
+      this.dateInputDesde?.nativeElement,
+      this.dateInputHasta?.nativeElement
+    ]);
     limpiarQueryPendientes(this.route, this.router);
     this.actualizarVista();
+    this.cdr.markForCheck();
   }
 
   private actualizarVista(): void {
@@ -367,6 +383,9 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
   async registrarGasto(): Promise<void> {
     this.intentoEnvio = true;
+    this.aplicarAlcanceMinisterioAlFormulario();
+    this.cdr.markForCheck();
+
     if (this.periodoFormularioCerrado) {
       await this.mostrarToast(
         `El periodo ${this.etiquetaPeriodoFormulario} está cerrado. No se pueden registrar movimientos.`,
@@ -374,13 +393,14 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
       );
       return;
     }
-    this.aplicarAlcanceMinisterioAlFormulario();
+
+    this.cargarRelaciones();
     if (!this.esFormularioValido) {
-      await this.mostrarToast(this.mensajeValidacion, 'danger');
+      await this.mostrarToast(this.mensajeValidacion, 'danger', 4500);
+      this.cdr.markForCheck();
       return;
     }
 
-    this.cargarRelaciones();
     const fechaFormateada = this.fechaManualForm;
     const preparado = this.gastosService.resolveRelations(
       this.normalizarGasto(),
@@ -407,14 +427,17 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
       });
       this.dataService.notifyChanges();
       this.resetFormulario();
+      this.cdr.markForCheck();
     } catch (error) {
       await this.mostrarToast(
         mensajeErrorGuardadoMovimiento(
           error,
           'No se pudo guardar. Si adjuntaste un archivo muy grande, intenta sin comprobante.'
         ),
-        'danger'
+        'danger',
+        4500
       );
+      this.cdr.markForCheck();
     }
   }
 
@@ -564,6 +587,10 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
     this.idEditando = null;
     this.intentoEnvio = false;
     this.aplicarAlcanceMinisterioAlFormulario();
+    if (this.comprobanteInput?.nativeElement) {
+      this.comprobanteInput.nativeElement.value = '';
+    }
+    this.cdr.markForCheck();
   }
 
   async onFileChange(event: Event): Promise<void> {
@@ -572,16 +599,26 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
     if (!file) return;
     try {
       const { dataUrl, tipo } = await procesarComprobante(file);
-      this.nuevoGasto.foto = dataUrl;
-      this.nuevoGasto.comprobanteTipo = tipo;
+      this.nuevoGasto = {
+        ...this.nuevoGasto,
+        foto: dataUrl,
+        comprobanteTipo: tipo
+      };
     } catch (error) {
       await this.mostrarToast(error instanceof Error ? error.message : 'No se pudo procesar el archivo.', 'danger');
       input.value = '';
+    } finally {
+      input.value = '';
+      this.cdr.markForCheck();
     }
   }
 
   eliminarFoto(): void {
-    this.nuevoGasto.foto = '';
+    this.nuevoGasto = { ...this.nuevoGasto, foto: '' };
+    if (this.comprobanteInput?.nativeElement) {
+      this.comprobanteInput.nativeElement.value = '';
+    }
+    this.cdr.markForCheck();
   }
 
   cargarRelaciones(): void {
@@ -608,8 +645,8 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
     this.aplicarResponsableAlFormulario();
   }
 
-  async mostrarToast(mensaje: string, color: string): Promise<void> {
-    await presentIecaToast(this.toastController, mensaje, color);
+  async mostrarToast(mensaje: string, color: string, duration = 2600): Promise<void> {
+    await presentIecaToast(this.toastController, mensaje, color, duration);
   }
 
   onCuentaGastoChange(codigo: string): void {

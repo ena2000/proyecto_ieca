@@ -20,7 +20,7 @@ import { TablaGeneralComponent, TableColumn, TableActions } from 'src/app/compon
 import { NotificacionesBellComponent } from 'src/app/components/notificaciones-bell/notificaciones-bell.component';
 import { ToolbarMenuButtonComponent } from 'src/app/components/toolbar-menu-button/toolbar-menu-button.component';
 import { formatearISOaDDMMYYYY } from '../../shared/utils/date.util';
-import { abrirSelectorFechaNativo, isoToDateInputValue } from '../../shared/utils/date-picker.util';
+import { abrirSelectorFechaNativo, isoToDateInputValue, resetNativosDateInputs } from '../../shared/utils/date-picker.util';
 import { procesarComprobante, esComprobantePdf } from '../../shared/utils/comprobante-upload.util';
 import { withLoading } from '../../shared/utils/loading.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
@@ -31,6 +31,7 @@ import {
   formatearEntradaFechaManual,
   isoDesdeFechaManualDDMMYYYY,
   actualizarDesdeFechaNativa,
+  aplicarFechaManualFiltro,
   CampoFechaMovimiento
 } from '../../shared/utils/movimiento-fecha.util';
 import { accionesTablaMovimiento } from '../../shared/utils/movimiento-acciones.util';
@@ -41,7 +42,7 @@ import {
 } from '../../shared/utils/movimiento-ministerio.util';
 import { leerFiltroPendientesDesdeRuta, limpiarQueryPendientes } from '../../shared/utils/movimiento-query.util';
 import { esFormularioMovimientoValido, mensajeValidacionMovimiento } from '../../shared/utils/movimiento-validacion.util';
-import { resolverEstadoAlGuardar } from '../../shared/utils/movimiento-estado.util';
+import { estaPendienteParaAprobacion, resolverEstadoAlGuardar } from '../../shared/utils/movimiento-estado.util';
 import {
   abrirVisorComprobante,
   cerrarVisorComprobante,
@@ -61,6 +62,14 @@ import { DataService } from '../../services/data.service';
 import { IngresosService } from '../../services/ingresos.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CierreService } from '../../core/services/cierre.service';
+import {
+  aplicarValoresTextoAlMovimiento,
+  leerValorIonInput,
+  leerValorIonInputAsync,
+  normalizarMontoFormulario,
+  sincronizarFechaFormularioMovimiento,
+  validarTamanoComprobante
+} from '../../shared/utils/movimiento-form-sync.util';
 
 registerLocaleData(localeEs);
 
@@ -94,7 +103,7 @@ const INGRESO_VACIO = (): Ingreso => {
     TablaGeneralComponent, NotificacionesBellComponent, ToolbarMenuButtonComponent
   ],
   providers: [AlertController, ToastController, LoadingController],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.Default
 })
 export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
   readonly isoToDateInputValue = isoToDateInputValue;
@@ -102,6 +111,10 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
   @ViewChild('dateInputForm') dateInputForm?: ElementRef<HTMLInputElement>;
   @ViewChild('dateInputDesde') dateInputDesde?: ElementRef<HTMLInputElement>;
   @ViewChild('dateInputHasta') dateInputHasta?: ElementRef<HTMLInputElement>;
+  @ViewChild('comprobanteInput') comprobanteInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('montoInput') montoInput?: IonInput;
+  @ViewChild('descripcionInput') descripcionInput?: IonInput;
+  @ViewChild('fechaInput') fechaInput?: IonInput;
 
   fechaManualForm = '';
   listaMinisterios: Ministerio[] = [];
@@ -127,6 +140,8 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
   comprobanteSeleccionado: string | null = null;
   comprobanteEsPdf = false;
+  registrando = false;
+  formGuardadoError: string | null = null;
 
   readonly cuentasIngreso = CUENTAS_INGRESO_OPCIONES;
   readonly etiquetaOpcionCuenta = etiquetaOpcionCuenta;
@@ -182,6 +197,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
     }
     this.cargarRelaciones();
     this.actualizarVista();
+    this.cdr.markForCheck();
   }
 
   ngOnDestroy(): void {
@@ -190,6 +206,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   ionViewWillEnter(): void {
+    this.inicializarPermisos();
     void this.cierreService.cargar();
     this.filtroSoloPendientes = leerFiltroPendientesDesdeRuta(
       this.route.snapshot.queryParamMap.get('pendientes')
@@ -246,6 +263,11 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
     this.actualizarVista();
   }
 
+  alternarFiltroPendientes(): void {
+    this.filtroSoloPendientes = !this.filtroSoloPendientes;
+    this.actualizarVista();
+  }
+
   @HostListener('document:keydown.escape')
   handleEscapeKey(): void {
     if (this.comprobanteSeleccionado) this.cerrarComprobante();
@@ -269,10 +291,29 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   validarFechaManualForm(event: Event): void {
-    const val = formatearEntradaFechaManual((event.target as HTMLInputElement).value);
+    const val = formatearEntradaFechaManual(leerValorIonInput(event));
     this.fechaManualForm = val;
     const iso = isoDesdeFechaManualDDMMYYYY(val);
-    if (iso) this.nuevoIngreso.fecha = iso;
+    if (iso) {
+      this.nuevoIngreso = { ...this.nuevoIngreso, fecha: iso };
+    }
+    this.cdr.markForCheck();
+  }
+
+  onFormFieldChange(): void {
+    this.formGuardadoError = null;
+    this.cdr.markForCheck();
+  }
+
+  onMontoInput(event: Event): void {
+    const monto = normalizarMontoFormulario(leerValorIonInput(event));
+    this.nuevoIngreso = { ...this.nuevoIngreso, monto };
+    this.onFormFieldChange();
+  }
+
+  onDescripcionInput(event: Event): void {
+    this.nuevoIngreso = { ...this.nuevoIngreso, descripcion: leerValorIonInput(event) };
+    this.onFormFieldChange();
   }
 
   abrirSelectorFecha(tipo: CampoFechaMovimiento): void {
@@ -286,26 +327,33 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
   onNativeDateChange(value: string, tipo: CampoFechaMovimiento): void {
     const upd = actualizarDesdeFechaNativa(value, tipo);
-    if (!upd) return;
-    if (upd.fechaIso) this.nuevoIngreso.fecha = upd.fechaIso;
+    if (upd.fechaIso !== undefined) {
+      this.nuevoIngreso.fecha = upd.fechaIso || new Date().toISOString();
+    }
     if (upd.fechaManualForm != null) this.fechaManualForm = upd.fechaManualForm;
     if (upd.fechaManualDesde != null) this.fechaManualDesde = upd.fechaManualDesde;
     if (upd.fechaManualHasta != null) this.fechaManualHasta = upd.fechaManualHasta;
     if (upd.filtroFechaInicio != null) this.filtroFechaInicio = upd.filtroFechaInicio;
     if (upd.filtroFechaFin != null) this.filtroFechaFin = upd.filtroFechaFin;
-    if (upd.filtroFechaInicio != null || upd.filtroFechaFin != null) {
+    if (tipo === 'desde' || tipo === 'hasta') {
       this.actualizarVista();
+    } else {
+      this.cdr.markForCheck();
     }
   }
 
   validarFechaManual(event: Event, tipo: 'desde' | 'hasta'): void {
-    const val = formatearEntradaFechaManual((event.target as HTMLInputElement).value);
-    if (tipo === 'desde') this.fechaManualDesde = val;
-    else this.fechaManualHasta = val;
-    const iso = isoDesdeFechaManualDDMMYYYY(val);
-    if (!iso) return;
-    if (tipo === 'desde') this.filtroFechaInicio = iso;
-    else this.filtroFechaFin = iso;
+    const upd = aplicarFechaManualFiltro(leerValorIonInput(event), tipo);
+    if (upd.fechaManualDesde != null) this.fechaManualDesde = upd.fechaManualDesde;
+    if (upd.fechaManualHasta != null) this.fechaManualHasta = upd.fechaManualHasta;
+    if (upd.filtroFechaInicio != null) this.filtroFechaInicio = upd.filtroFechaInicio;
+    if (upd.filtroFechaFin != null) this.filtroFechaFin = upd.filtroFechaFin;
+    if (tipo === 'desde' && !upd.filtroFechaInicio) {
+      resetNativosDateInputs([this.dateInputDesde?.nativeElement]);
+    }
+    if (tipo === 'hasta' && !upd.filtroFechaFin) {
+      resetNativosDateInputs([this.dateInputHasta?.nativeElement]);
+    }
     this.actualizarVista();
   }
 
@@ -338,8 +386,13 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
     this.filtroMontoMin = null;
     this.filtroMontoMax = null;
     this.filtroSoloPendientes = false;
+    resetNativosDateInputs([
+      this.dateInputDesde?.nativeElement,
+      this.dateInputHasta?.nativeElement
+    ]);
     limpiarQueryPendientes(this.route, this.router);
     this.actualizarVista();
+    this.cdr.markForCheck();
   }
 
   private actualizarVista(): void {
@@ -382,65 +435,137 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   async registrarIngreso(): Promise<void> {
+    if (this.registrando) return;
+
     this.intentoEnvio = true;
+    this.formGuardadoError = null;
+    await this.sincronizarFormularioAntesDeGuardar();
+    this.aplicarAlcanceMinisterioAlFormulario();
+    this.cdr.markForCheck();
+
     if (this.periodoFormularioCerrado) {
-      await this.mostrarToast(
-        `El periodo ${this.etiquetaPeriodoFormulario} está cerrado. No se pueden registrar movimientos.`,
-        'warning'
-      );
+      this.formGuardadoError =
+        `El periodo ${this.etiquetaPeriodoFormulario} está cerrado. No se pueden registrar movimientos.`;
+      await this.mostrarToast(this.formGuardadoError, 'warning');
       return;
     }
-    this.aplicarAlcanceMinisterioAlFormulario();
-    if (!this.esFormularioValido) {
-      await this.mostrarToast(this.mensajeValidacion, 'danger');
+
+    const comprobanteErr = validarTamanoComprobante(this.nuevoIngreso.foto);
+    if (comprobanteErr) {
+      this.formGuardadoError = comprobanteErr;
+      await this.mostrarToast(comprobanteErr, 'danger', 4500);
       return;
     }
 
     this.cargarRelaciones();
+    if (!this.esFormularioValido) {
+      this.formGuardadoError = this.mensajeValidacion;
+      await this.mostrarToast(this.formGuardadoError, 'danger', 4500);
+      this.scrollAlErrorFormulario();
+      this.cdr.markForCheck();
+      return;
+    }
+
     const fechaFormateada = this.fechaManualForm;
     const preparado = this.ingresosService.resolveRelations(
       this.normalizarIngreso(),
       this.listaMinisterios,
       this.listaUsuarios
     );
-    const guardando = this.modoEdicion ? 'Actualizando registro...' : 'Guardando ingreso...';
 
+    this.registrando = true;
+    this.cdr.markForCheck();
     try {
-      await withLoading(this.loadingController, guardando, async () => {
-        if (this.modoEdicion && this.idEditando !== null) {
-          await firstValueFrom(this.ingresosService.update(this.idEditando, preparado, fechaFormateada));
-          const msg = this.authService.isLider()
-            ? 'Ingreso actualizado y enviado a aprobación'
-            : 'Registro actualizado exitosamente';
-          await this.mostrarToast(msg, 'success');
-        } else {
-          await firstValueFrom(this.ingresosService.create(preparado, fechaFormateada));
-          const msg = this.authService.isLider()
-            ? 'Ingreso registrado. Queda pendiente de aprobación.'
-            : 'Registro creado exitosamente';
-          await this.mostrarToast(msg, 'success');
-        }
-      });
+      if (this.modoEdicion && this.idEditando !== null) {
+        await firstValueFrom(this.ingresosService.update(this.idEditando, preparado, fechaFormateada));
+        const msg = this.authService.isLider()
+          ? 'Ingreso actualizado y enviado a aprobación'
+          : 'Registro actualizado exitosamente';
+        await this.mostrarToast(msg, 'success');
+      } else {
+        await firstValueFrom(this.ingresosService.create(preparado, fechaFormateada));
+        const msg = this.authService.isLider()
+          ? 'Ingreso registrado. Queda pendiente de aprobación.'
+          : 'Registro creado exitosamente';
+        await this.mostrarToast(msg, 'success');
+      }
       this.dataService.notifyChanges();
       this.resetFormulario();
     } catch (error) {
-      await this.mostrarToast(
-        mensajeErrorGuardadoMovimiento(error, 'Error al guardar el registro'),
-        'danger'
-      );
+      this.formGuardadoError = mensajeErrorGuardadoMovimiento(error, 'Error al guardar el registro');
+      await this.mostrarToast(this.formGuardadoError, 'danger', 4500);
+      this.scrollAlErrorFormulario();
+    } finally {
+      this.registrando = false;
+      this.cdr.markForCheck();
     }
   }
 
+  private async sincronizarFormularioAntesDeGuardar(): Promise<void> {
+    const [montoRaw, descripcionRaw, fechaRaw] = await Promise.all([
+      leerValorIonInputAsync(this.montoInput),
+      leerValorIonInputAsync(this.descripcionInput),
+      leerValorIonInputAsync(this.fechaInput)
+    ]);
+
+    this.nuevoIngreso = aplicarValoresTextoAlMovimiento(
+      this.nuevoIngreso,
+      montoRaw,
+      descripcionRaw
+    );
+
+    if (fechaRaw.trim()) {
+      this.fechaManualForm = formatearEntradaFechaManual(fechaRaw);
+    }
+
+    const monto = normalizarMontoFormulario(this.nuevoIngreso.monto);
+    if (monto != null) {
+      this.nuevoIngreso = { ...this.nuevoIngreso, monto };
+    }
+
+    const syncFecha = sincronizarFechaFormularioMovimiento(
+      this.fechaManualForm,
+      this.nuevoIngreso.fecha
+    );
+    this.fechaManualForm = syncFecha.fechaManualForm;
+    if (syncFecha.fechaIso) {
+      this.nuevoIngreso = { ...this.nuevoIngreso, fecha: syncFecha.fechaIso };
+    }
+
+    if (this.nuevoIngreso.cuentaCodigo?.trim()) {
+      aplicarCuentaEnIngreso(this.nuevoIngreso, this.nuevoIngreso.cuentaCodigo);
+    }
+  }
+
+  private scrollAlErrorFormulario(): void {
+    requestAnimationFrame(() => {
+      document.querySelector('.form-validation-error')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest'
+      });
+    });
+  }
+
   async aprobarIngreso(item: Ingreso): Promise<void> {
-    if (!this.puedeAprobar || estadoIngreso(item) !== 'pendiente') return;
+    if (!this.puedeAprobar) {
+      await this.mostrarToast('Solo el administrador puede aprobar ingresos.', 'warning');
+      return;
+    }
+    if (!estaPendienteParaAprobacion(item)) {
+      await this.mostrarToast('Este ingreso ya no está pendiente de aprobación.', 'warning');
+      return;
+    }
     if (this.movimientoEnPeriodoCerrado(item)) {
       await this.mostrarToast('No se puede aprobar un ingreso de un periodo cerrado.', 'warning');
       return;
     }
+    const id = Number(item.id);
+    if (!Number.isFinite(id)) {
+      await this.mostrarToast('No se pudo identificar el ingreso.', 'danger');
+      return;
+    }
     try {
-      await withLoading(this.loadingController, 'Aprobando ingreso...', async () => {
-        await firstValueFrom(this.ingresosService.aprobar(item.id));
-      });
+      await firstValueFrom(this.ingresosService.aprobar(id));
       this.dataService.notifyChanges();
       await this.mostrarToast(
         ingresoEsTalento(item)
@@ -448,13 +573,21 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
           : 'Ingreso aprobado',
         'success'
       );
+      this.cdr.markForCheck();
     } catch (error) {
       await this.mostrarToast(error instanceof Error ? error.message : 'No se pudo aprobar', 'danger');
     }
   }
 
   async rechazarIngreso(item: Ingreso): Promise<void> {
-    if (!this.puedeAprobar || estadoIngreso(item) !== 'pendiente') return;
+    if (!this.puedeAprobar) {
+      await this.mostrarToast('Solo el administrador puede rechazar ingresos.', 'warning');
+      return;
+    }
+    if (!estaPendienteParaAprobacion(item)) {
+      await this.mostrarToast('Este ingreso ya no está pendiente de aprobación.', 'warning');
+      return;
+    }
     if (this.movimientoEnPeriodoCerrado(item)) {
       await this.mostrarToast('No se puede rechazar un ingreso de un periodo cerrado.', 'warning');
       return;
@@ -470,11 +603,10 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
           role: 'destructive',
           handler: async (data) => {
             try {
-              await withLoading(this.loadingController, 'Rechazando...', async () => {
-                await firstValueFrom(this.ingresosService.rechazar(item.id, data?.motivo));
-              });
+              await firstValueFrom(this.ingresosService.rechazar(Number(item.id), data?.motivo));
               this.dataService.notifyChanges();
               await this.mostrarToast('Ingreso rechazado', 'warning');
+              this.cdr.markForCheck();
             } catch (error) {
               await this.mostrarToast(error instanceof Error ? error.message : 'No se pudo rechazar', 'danger');
             }
@@ -560,6 +692,10 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
     this.idEditando = null;
     this.intentoEnvio = false;
     this.aplicarAlcanceMinisterioAlFormulario();
+    if (this.comprobanteInput?.nativeElement) {
+      this.comprobanteInput.nativeElement.value = '';
+    }
+    this.cdr.markForCheck();
   }
 
   async onFileChange(event: Event): Promise<void> {
@@ -568,16 +704,26 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
     if (!file) return;
     try {
       const { dataUrl, tipo } = await procesarComprobante(file);
-      this.nuevoIngreso.foto = dataUrl;
-      this.nuevoIngreso.comprobanteTipo = tipo;
+      this.nuevoIngreso = {
+        ...this.nuevoIngreso,
+        foto: dataUrl,
+        comprobanteTipo: tipo
+      };
     } catch (error) {
       await this.mostrarToast(error instanceof Error ? error.message : 'No se pudo procesar el archivo.', 'danger');
       input.value = '';
+    } finally {
+      input.value = '';
+      this.cdr.markForCheck();
     }
   }
 
   eliminarFoto(): void {
-    this.nuevoIngreso.foto = '';
+    this.nuevoIngreso = { ...this.nuevoIngreso, foto: '' };
+    if (this.comprobanteInput?.nativeElement) {
+      this.comprobanteInput.nativeElement.value = '';
+    }
+    this.cdr.markForCheck();
   }
 
   cargarRelaciones(): void {
@@ -604,8 +750,8 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
     this.aplicarResponsableAlFormulario();
   }
 
-  async mostrarToast(mensaje: string, color: string): Promise<void> {
-    await presentIecaToast(this.toastController, mensaje, color);
+  async mostrarToast(mensaje: string, color: string, duration = 2600): Promise<void> {
+    await presentIecaToast(this.toastController, mensaje, color, duration);
   }
 
   onMinisterioIngresoChange(ministerioId: number | string | null | undefined): void {
@@ -627,9 +773,10 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   get esFormularioValido(): boolean {
+    const monto = normalizarMontoFormulario(this.nuevoIngreso.monto);
     return esFormularioMovimientoValido({
       descripcion: this.nuevoIngreso.descripcion,
-      monto: this.nuevoIngreso.monto,
+      monto,
       fechaManualForm: this.fechaManualForm,
       cuentaCodigo: this.nuevoIngreso.cuentaCodigo,
       ministerioId: this.nuevoIngreso.ministerioId,
@@ -639,9 +786,10 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   get mensajeValidacion(): string {
+    const monto = normalizarMontoFormulario(this.nuevoIngreso.monto);
     return mensajeValidacionMovimiento({
       descripcion: this.nuevoIngreso.descripcion,
-      monto: this.nuevoIngreso.monto,
+      monto,
       fechaManualForm: this.fechaManualForm,
       cuentaCodigo: this.nuevoIngreso.cuentaCodigo,
       ministerioId: this.nuevoIngreso.ministerioId,
