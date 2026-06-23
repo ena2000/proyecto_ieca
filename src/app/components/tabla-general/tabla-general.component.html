@@ -53,7 +53,8 @@
 
         <tr
           *ngFor="let row of pagedData"
-          [class.editing-row]="isEditing(row)">
+          [class.editing-row]="isEditing(row)"
+          [class.resolving-row]="filaEnProcesoResolucion(row)">
 
           <!-- =====================================================
                COLUMNAS DINÁMICAS
@@ -180,20 +181,36 @@
                 type="button"
                 *ngIf="showApproveFor(row)"
                 class="btn-approve"
+                [disabled]="accionesResolucionBloqueadas"
                 (click)="approve(row); $event.stopPropagation()"
                 title="Aprobar"
                 aria-label="Aprobar registro">
-                <ion-icon name="checkmark-circle-outline"></ion-icon>
+                <ion-spinner
+                  *ngIf="isApproving(row)"
+                  name="crescent">
+                </ion-spinner>
+                <ion-icon
+                  *ngIf="!isApproving(row)"
+                  name="checkmark-circle-outline">
+                </ion-icon>
               </button>
 
               <button
                 type="button"
                 *ngIf="showRejectFor(row)"
                 class="btn-reject"
+                [disabled]="accionesResolucionBloqueadas"
                 (click)="reject(row); $event.stopPropagation()"
                 title="Rechazar"
                 aria-label="Rechazar registro">
-                <ion-icon name="close-circle-outline"></ion-icon>
+                <ion-spinner
+                  *ngIf="isRejecting(row)"
+                  name="crescent">
+                </ion-spinner>
+                <ion-icon
+                  *ngIf="!isRejecting(row)"
+                  name="close-circle-outline">
+                </ion-icon>
               </button>
 
             </div>

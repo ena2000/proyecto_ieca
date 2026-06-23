@@ -523,10 +523,18 @@
         </div>
       </div>
 
+      @if (accionFilaEnCurso) {
+        <div class="form-accion-en-curso" role="status" aria-live="polite">
+          <ion-spinner name="crescent"></ion-spinner>
+          <span>{{ etiquetaAccionFilaEnCurso(accionFilaEnCurso.tipo) }}</span>
+        </div>
+      }
+
       <app-tabla-general
         [columns]="columnsIngresos"
         [data]="listaFiltradaVista"
         [actions]="acciones"
+        [accionFilaEnCurso]="accionFilaEnCurso"
         [allowEditApproved]="authService.isAdministrador()"
         [allowDeleteApproved]="authService.isAdministrador()"
         (rowEdit)="editarIngreso($event)"

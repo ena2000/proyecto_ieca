@@ -72,6 +72,8 @@ export class TablaGeneralComponent implements OnChanges {
   /** Permite editar filas aunque estén aprobadas (p. ej. administrador). */
   @Input() allowEditApproved = false;
   @Input() allowDeleteApproved = false;
+  /** Fila en proceso de aprobar/rechazar (feedback sin overlay bloqueante). */
+  @Input() accionFilaEnCurso: { id: number; tipo: 'aprobar' | 'rechazar' } | null = null;
 
   // =========================================================
   // OUTPUTS
@@ -166,10 +168,12 @@ export class TablaGeneralComponent implements OnChanges {
   }
 
   approve(row: any) {
+    if (this.accionesResolucionBloqueadas) return;
     this.rowApprove.emit(row);
   }
 
   reject(row: any) {
+    if (this.accionesResolucionBloqueadas) return;
     this.rowReject.emit(row);
   }
 
@@ -256,5 +260,27 @@ export class TablaGeneralComponent implements OnChanges {
 
   isDeleting(row: any): boolean {
     return this.deletingRowId === row?.id;
+  }
+
+  get accionesResolucionBloqueadas(): boolean {
+    return this.accionFilaEnCurso != null;
+  }
+
+  isApproving(row: any): boolean {
+    return (
+      this.accionFilaEnCurso?.tipo === 'aprobar' &&
+      Number(row?.id) === Number(this.accionFilaEnCurso.id)
+    );
+  }
+
+  isRejecting(row: any): boolean {
+    return (
+      this.accionFilaEnCurso?.tipo === 'rechazar' &&
+      Number(row?.id) === Number(this.accionFilaEnCurso.id)
+    );
+  }
+
+  filaEnProcesoResolucion(row: any): boolean {
+    return this.isApproving(row) || this.isRejecting(row);
   }
 }

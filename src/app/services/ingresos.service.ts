@@ -22,7 +22,9 @@ import {
 import { fusionarMovimientosTrasBootstrap } from '../shared/utils/movimiento-list-merge.util';
 import {
   completarRegistroTrasMutacion,
-  prependRegistroUnico
+  fusionarRegistroMovimientoEstado,
+  prependRegistroUnico,
+  reemplazarRegistroEnLista
 } from '../shared/utils/entity-crud.util';
 
 @Injectable({ providedIn: 'root' })
@@ -101,29 +103,39 @@ export class IngresosService {
   }
 
   aprobar(id: number): Observable<Ingreso> {
+    const numId = Number(id);
     if (environment.useLocalFallback) {
-      return of(this.aprobarLocal(id));
+      return of(this.aprobarLocal(numId));
     }
     return withMutationTimeout(
-      this.api.patch<Ingreso>(API.ingresos.aprobar(id), {})
+      this.api.patch<Ingreso>(API.ingresos.aprobar(numId), {})
     ).pipe(
       tap(actualizado => {
-        this.persist(this.getAll().map(i => (i.id === id ? actualizado : i)));
+        const actual = this.getAll().find(i => Number(i.id) === numId);
+        const completo = normalizarIngreso(
+          fusionarRegistroMovimientoEstado(actualizado, actual, numId)
+        );
+        this.persist(reemplazarRegistroEnLista(this.getAll(), numId, completo));
         this.notificacionesService.recargar();
-        this.syncListaEnSegundoPlano();
+        setTimeout(() => this.syncListaEnSegundoPlano(), 800);
       })
     );
   }
 
   rechazar(id: number, motivo?: string): Observable<Ingreso> {
+    const numId = Number(id);
     if (environment.useLocalFallback) {
-      return of(this.rechazarLocal(id, motivo));
+      return of(this.rechazarLocal(numId, motivo));
     }
     return withMutationTimeout(
-      this.api.patch<Ingreso>(API.ingresos.rechazar(id), { motivo })
+      this.api.patch<Ingreso>(API.ingresos.rechazar(numId), { motivo })
     ).pipe(
       tap(actualizado => {
-        this.persist(this.getAll().map(i => (i.id === id ? actualizado : i)));
+        const actual = this.getAll().find(i => Number(i.id) === numId);
+        const completo = normalizarIngreso(
+          fusionarRegistroMovimientoEstado(actualizado, actual, numId)
+        );
+        this.persist(reemplazarRegistroEnLista(this.getAll(), numId, completo));
         this.notificacionesService.recargar();
         this.syncListaEnSegundoPlano();
       })

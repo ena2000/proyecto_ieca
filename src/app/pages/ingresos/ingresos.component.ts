@@ -10,7 +10,7 @@ import { ViewWillEnter } from '@ionic/angular';
 import {
   IonHeader, IonToolbar, IonButtons, IonTitle, IonContent,
   IonIcon, IonItem, IonLabel, IonInput, IonButton,
-  IonSearchbar, ToastController, IonSelect, IonSelectOption
+  IonSearchbar, ToastController, IonSelect, IonSelectOption, IonSpinner
 } from '@ionic/angular/standalone';
 import { AlertController, LoadingController } from '@ionic/angular';
 import { Subject, firstValueFrom } from 'rxjs';
@@ -44,6 +44,11 @@ import {
 import { leerFiltroPendientesDesdeRuta, limpiarQueryPendientes } from '../../shared/utils/movimiento-query.util';
 import { esFormularioMovimientoValido, mensajeValidacionMovimiento } from '../../shared/utils/movimiento-validacion.util';
 import { estaPendienteParaAprobacion, resolverEstadoAlGuardar } from '../../shared/utils/movimiento-estado.util';
+import {
+  AccionFilaEnCurso,
+  aplicarEstadoOptimistaEnLista,
+  etiquetaAccionFilaEnCurso
+} from '../../shared/utils/movimiento-accion.util';
 import {
   abrirVisorComprobante,
   cerrarVisorComprobante,
@@ -101,7 +106,7 @@ const INGRESO_VACIO = (): Ingreso => {
     CommonModule, FormsModule,
     IonHeader, IonToolbar, IonButtons, IonTitle, IonContent,
     IonIcon, IonItem, IonLabel, IonInput, IonButton, IonSearchbar,
-    IonSelectOption, IonSelect,
+    IonSelectOption, IonSelect, IonSpinner,
     TablaGeneralComponent, NotificacionesBellComponent, ToolbarMenuButtonComponent
   ],
   providers: [AlertController, ToastController, LoadingController],
@@ -144,6 +149,8 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
   comprobanteEsPdf = false;
   registrando = false;
   formGuardadoError: string | null = null;
+  accionFilaEnCurso: AccionFilaEnCurso | null = null;
+  readonly etiquetaAccionFilaEnCurso = etiquetaAccionFilaEnCurso;
 
   readonly cuentasIngreso = CUENTAS_INGRESO_OPCIONES;
   readonly etiquetaOpcionCuenta = etiquetaOpcionCuenta;
@@ -562,6 +569,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   async aprobarIngreso(item: Ingreso): Promise<void> {
+    if (this.accionFilaEnCurso) return;
     if (!this.puedeAprobar) {
       await this.mostrarToast('Solo el administrador puede aprobar ingresos.', 'warning');
       return;
@@ -579,8 +587,25 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
       await this.mostrarToast('No se pudo identificar el ingreso.', 'danger');
       return;
     }
+
+    const listaAntes = [...this.listaIngresos];
+    this.accionFilaEnCurso = { id, tipo: 'aprobar' };
+    this.listaIngresos = aplicarEstadoOptimistaEnLista(
+      this.listaIngresos,
+      id,
+      'aprobado',
+      etiquetaEstadoIngreso('aprobado')
+    );
+    this.actualizarVista();
+    this.cdr.markForCheck();
+
     try {
       await firstValueFrom(this.ingresosService.aprobar(id));
+      refrescarListaTrasMutacion(
+        () => this.ingresosService.getAll(),
+        lista => { this.listaIngresos = lista; },
+        () => this.actualizarVista()
+      );
       this.dataService.notifyChanges();
       await this.mostrarToast(
         ingresoEsTalento(item)
@@ -588,13 +613,18 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
           : 'Ingreso aprobado',
         'success'
       );
-      this.cdr.markForCheck();
     } catch (error) {
+      this.listaIngresos = listaAntes;
+      this.actualizarVista();
       await this.mostrarToast(error instanceof Error ? error.message : 'No se pudo aprobar', 'danger');
+    } finally {
+      this.accionFilaEnCurso = null;
+      this.cdr.markForCheck();
     }
   }
 
   async rechazarIngreso(item: Ingreso): Promise<void> {
+    if (this.accionFilaEnCurso) return;
     if (!this.puedeAprobar) {
       await this.mostrarToast('Solo el administrador puede rechazar ingresos.', 'warning');
       return;
@@ -607,6 +637,11 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
       await this.mostrarToast('No se puede rechazar un ingreso de un periodo cerrado.', 'warning');
       return;
     }
+    const id = Number(item.id);
+    if (!Number.isFinite(id)) {
+      await this.mostrarToast('No se pudo identificar el ingreso.', 'danger');
+      return;
+    }
     const alert = await this.alertController.create({
       header: 'Rechazar ingreso',
       message: 'Indica el motivo del rechazo (opcional).',
@@ -617,13 +652,32 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
           text: 'Rechazar',
           role: 'destructive',
           handler: async (data) => {
+            const listaAntes = [...this.listaIngresos];
+            this.accionFilaEnCurso = { id, tipo: 'rechazar' };
+            this.listaIngresos = aplicarEstadoOptimistaEnLista(
+              this.listaIngresos,
+              id,
+              'rechazado',
+              etiquetaEstadoIngreso('rechazado')
+            );
+            this.actualizarVista();
+            this.cdr.markForCheck();
             try {
-              await firstValueFrom(this.ingresosService.rechazar(Number(item.id), data?.motivo));
+              await firstValueFrom(this.ingresosService.rechazar(id, data?.motivo));
+              refrescarListaTrasMutacion(
+                () => this.ingresosService.getAll(),
+                lista => { this.listaIngresos = lista; },
+                () => this.actualizarVista()
+              );
               this.dataService.notifyChanges();
               await this.mostrarToast('Ingreso rechazado', 'warning');
-              this.cdr.markForCheck();
             } catch (error) {
+              this.listaIngresos = listaAntes;
+              this.actualizarVista();
               await this.mostrarToast(error instanceof Error ? error.message : 'No se pudo rechazar', 'danger');
+            } finally {
+              this.accionFilaEnCurso = null;
+              this.cdr.markForCheck();
             }
           }
         }

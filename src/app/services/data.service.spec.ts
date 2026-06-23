@@ -99,7 +99,12 @@ describe('DataService', () => {
         { provide: UsuariosService, useValue: mocks.usuariosService },
         {
           provide: AuthService,
-          useValue: { session$: new BehaviorSubject(null).asObservable() }
+          useValue: {
+            session$: new BehaviorSubject(null).asObservable(),
+            isAuthenticated: () => false,
+            isAdministrador: () => false,
+            getSession: () => null
+          }
         },
         {
           provide: NotificacionesService,

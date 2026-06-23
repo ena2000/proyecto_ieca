@@ -10,7 +10,7 @@ import localeEs from '@angular/common/locales/es';
 import {
   IonHeader, IonToolbar, IonButtons, IonTitle, IonContent,
   IonIcon, IonItem, IonLabel, IonInput, IonButton,
-  IonSearchbar, ToastController, IonSelect, IonSelectOption
+  IonSearchbar, ToastController, IonSelect, IonSelectOption, IonSpinner
 } from '@ionic/angular/standalone';
 import { AlertController, LoadingController } from '@ionic/angular';
 import { Subject, firstValueFrom } from 'rxjs';
@@ -52,7 +52,12 @@ import {
 } from '../../shared/utils/movimiento-ministerio.util';
 import { leerFiltroPendientesDesdeRuta, limpiarQueryPendientes } from '../../shared/utils/movimiento-query.util';
 import { esFormularioMovimientoValido, mensajeValidacionMovimiento } from '../../shared/utils/movimiento-validacion.util';
-import { resolverEstadoAlGuardar } from '../../shared/utils/movimiento-estado.util';
+import { estaPendienteParaAprobacion, resolverEstadoAlGuardar } from '../../shared/utils/movimiento-estado.util';
+import {
+  AccionFilaEnCurso,
+  aplicarEstadoOptimistaEnLista,
+  etiquetaAccionFilaEnCurso
+} from '../../shared/utils/movimiento-accion.util';
 import {
   abrirVisorComprobante,
   cerrarVisorComprobante,
@@ -100,7 +105,7 @@ const GASTO_VACIO = (): Gasto => {
     CommonModule, FormsModule,
     IonHeader, IonToolbar, IonButtons, IonTitle, IonContent,
     IonIcon, IonItem, IonLabel, IonInput, IonButton, IonSearchbar,
-    IonSelectOption, IonSelect,
+    IonSelectOption, IonSelect, IonSpinner,
     TablaGeneralComponent, NotificacionesBellComponent, ToolbarMenuButtonComponent
   ],
   providers: [AlertController, ToastController, LoadingController],
@@ -143,6 +148,8 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
   comprobanteEsPdf = false;
   registrando = false;
   formGuardadoError: string | null = null;
+  accionFilaEnCurso: AccionFilaEnCurso | null = null;
+  readonly etiquetaAccionFilaEnCurso = etiquetaAccionFilaEnCurso;
 
   readonly cuentasGasto = CUENTAS_GASTO_OPCIONES;
   readonly etiquetaOpcionCuenta = etiquetaOpcionCuenta;
@@ -586,26 +593,72 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   async aprobarGasto(item: Gasto): Promise<void> {
-    if (!this.puedeAprobar || estadoGasto(item) !== 'pendiente') return;
+    if (this.accionFilaEnCurso) return;
+    if (!this.puedeAprobar) {
+      await this.mostrarToast('Solo el administrador puede aprobar gastos.', 'warning');
+      return;
+    }
+    if (!estaPendienteParaAprobacion(item)) {
+      await this.mostrarToast('Este gasto ya no está pendiente de aprobación.', 'warning');
+      return;
+    }
     if (this.movimientoEnPeriodoCerrado(item)) {
       await this.mostrarToast('No se puede aprobar un gasto de un periodo cerrado.', 'warning');
       return;
     }
+    const id = Number(item.id);
+    if (!Number.isFinite(id)) {
+      await this.mostrarToast('No se pudo identificar el gasto.', 'danger');
+      return;
+    }
+
+    const listaAntes = [...this.listaGastos];
+    this.accionFilaEnCurso = { id, tipo: 'aprobar' };
+    this.listaGastos = aplicarEstadoOptimistaEnLista(
+      this.listaGastos,
+      id,
+      'aprobado',
+      etiquetaEstadoGasto('aprobado')
+    );
+    this.actualizarVista();
+    this.cdr.markForCheck();
+
     try {
-      await withLoading(this.loadingController, 'Aprobando gasto...', async () => {
-        await firstValueFrom(this.gastosService.aprobar(item.id));
-      });
+      await firstValueFrom(this.gastosService.aprobar(id));
+      refrescarListaTrasMutacion(
+        () => this.gastosService.getAll(),
+        lista => { this.listaGastos = lista; },
+        () => this.actualizarVista()
+      );
       this.dataService.notifyChanges();
       await this.mostrarToast('Gasto aprobado', 'success');
     } catch (error) {
+      this.listaGastos = listaAntes;
+      this.actualizarVista();
       await this.mostrarToast(error instanceof Error ? error.message : 'No se pudo aprobar', 'danger');
+    } finally {
+      this.accionFilaEnCurso = null;
+      this.cdr.markForCheck();
     }
   }
 
   async rechazarGasto(item: Gasto): Promise<void> {
-    if (!this.puedeAprobar || estadoGasto(item) !== 'pendiente') return;
+    if (this.accionFilaEnCurso) return;
+    if (!this.puedeAprobar) {
+      await this.mostrarToast('Solo el administrador puede rechazar gastos.', 'warning');
+      return;
+    }
+    if (!estaPendienteParaAprobacion(item)) {
+      await this.mostrarToast('Este gasto ya no está pendiente de aprobación.', 'warning');
+      return;
+    }
     if (this.movimientoEnPeriodoCerrado(item)) {
       await this.mostrarToast('No se puede rechazar un gasto de un periodo cerrado.', 'warning');
+      return;
+    }
+    const id = Number(item.id);
+    if (!Number.isFinite(id)) {
+      await this.mostrarToast('No se pudo identificar el gasto.', 'danger');
       return;
     }
     const alert = await this.alertController.create({
@@ -618,14 +671,32 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
           text: 'Rechazar',
           role: 'destructive',
           handler: async (data) => {
+            const listaAntes = [...this.listaGastos];
+            this.accionFilaEnCurso = { id, tipo: 'rechazar' };
+            this.listaGastos = aplicarEstadoOptimistaEnLista(
+              this.listaGastos,
+              id,
+              'rechazado',
+              etiquetaEstadoGasto('rechazado')
+            );
+            this.actualizarVista();
+            this.cdr.markForCheck();
             try {
-              await withLoading(this.loadingController, 'Rechazando...', async () => {
-                await firstValueFrom(this.gastosService.rechazar(item.id, data?.motivo));
-              });
+              await firstValueFrom(this.gastosService.rechazar(id, data?.motivo));
+              refrescarListaTrasMutacion(
+                () => this.gastosService.getAll(),
+                lista => { this.listaGastos = lista; },
+                () => this.actualizarVista()
+              );
               this.dataService.notifyChanges();
               await this.mostrarToast('Gasto rechazado', 'warning');
             } catch (error) {
+              this.listaGastos = listaAntes;
+              this.actualizarVista();
               await this.mostrarToast(error instanceof Error ? error.message : 'No se pudo rechazar', 'danger');
+            } finally {
+              this.accionFilaEnCurso = null;
+              this.cdr.markForCheck();
             }
           }
         }

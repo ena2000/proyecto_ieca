@@ -101,6 +101,7 @@ export class DataService {
 
   notifyChanges(): void {
     this.syncFromEntityServices();
+    this.persistBootstrapSnapshot();
   }
 
   refreshAllData(force = false): void {
@@ -166,9 +167,8 @@ export class DataService {
       const stored = this.readBootstrapStorage();
       if (stored) {
         this.applyBootstrap(stored.payload);
-        if (Date.now() - stored.at > 90_000) {
-          void this.fetchBootstrapFromApi(force);
-        }
+        // Siempre reconciliar con el servidor (evita lista vieja tras F5).
+        void this.fetchBootstrapFromApi(false);
         return Promise.resolve(true);
       }
     }
@@ -234,8 +234,36 @@ export class DataService {
         JSON.stringify({ at: Date.now(), payload })
       );
     } catch {
-      /* quota de sessionStorage */
+      this.clearBootstrapStorage();
     }
+  }
+
+  /**
+   * Tras crear/editar/eliminar, guarda en sessionStorage la lista actual
+   * para que un F5 no muestre datos viejos mientras llega el bootstrap.
+   */
+  private persistBootstrapSnapshot(): void {
+    if (environment.useLocalFallback || !this.authService.isAuthenticated()) {
+      return;
+    }
+    const prev = this.readBootstrapStorage()?.payload ?? {};
+    const payload: BootstrapResponse = {
+      ...prev,
+      ingresos: this.movimientosParaBootstrapSnapshot(this.ingresosService.getAll()),
+      gastos: this.movimientosParaBootstrapSnapshot(this.gastosService.getAll()),
+      ministerios: this.ministeriosService.getAll()
+    };
+    if (this.authService.isAdministrador()) {
+      payload.usuarios = this.usuariosService.getAll();
+    }
+    this.writeBootstrapStorage(payload);
+    this.bootstrapComplete = true;
+    this.lastBootstrapAt = Date.now();
+  }
+
+  /** Omite comprobantes base64 del snapshot (sessionStorage tiene límite de tamaño). */
+  private movimientosParaBootstrapSnapshot<T extends Ingreso | Gasto>(items: T[]): T[] {
+    return items.map(item => ({ ...item, foto: '' }));
   }
 
   private clearBootstrapStorage(): void {

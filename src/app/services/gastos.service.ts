@@ -10,7 +10,9 @@ import { estadoGasto, normalizarGasto } from '../shared/utils/gasto.util';
 import { fusionarMovimientosTrasBootstrap } from '../shared/utils/movimiento-list-merge.util';
 import {
   completarRegistroTrasMutacion,
-  prependRegistroUnico
+  fusionarRegistroMovimientoEstado,
+  prependRegistroUnico,
+  reemplazarRegistroEnLista
 } from '../shared/utils/entity-crud.util';
 import { withMutationTimeout } from '../shared/utils/http-mutation.util';
 import { stampAuditoriaLocal, stampAuditoriaActualizacionLocal } from '../shared/utils/audit.util';
@@ -90,28 +92,40 @@ export class GastosService {
   }
 
   aprobar(id: number): Observable<Gasto> {
+    const numId = Number(id);
     if (environment.useLocalFallback) {
-      return of(this.aprobarLocal(id));
+      return of(this.aprobarLocal(numId));
     }
     return withMutationTimeout(
-      this.api.patch<Gasto>(API.gastos.aprobar(id), {}).pipe(
+      this.api.patch<Gasto>(API.gastos.aprobar(numId), {}).pipe(
         tap(actualizado => {
-          this.persist(this.getAll().map(g => (g.id === id ? actualizado : g)));
+          const actual = this.getAll().find(g => Number(g.id) === numId);
+          const completo = normalizarGasto(
+            fusionarRegistroMovimientoEstado(actualizado, actual, numId)
+          );
+          this.persist(reemplazarRegistroEnLista(this.getAll(), numId, completo));
           this.notificacionesService.recargar();
+          this.syncListaEnSegundoPlano();
         })
       )
     );
   }
 
   rechazar(id: number, motivo?: string): Observable<Gasto> {
+    const numId = Number(id);
     if (environment.useLocalFallback) {
-      return of(this.rechazarLocal(id, motivo));
+      return of(this.rechazarLocal(numId, motivo));
     }
     return withMutationTimeout(
-      this.api.patch<Gasto>(API.gastos.rechazar(id), { motivo }).pipe(
+      this.api.patch<Gasto>(API.gastos.rechazar(numId), { motivo }).pipe(
         tap(actualizado => {
-          this.persist(this.getAll().map(g => (g.id === id ? actualizado : g)));
+          const actual = this.getAll().find(g => Number(g.id) === numId);
+          const completo = normalizarGasto(
+            fusionarRegistroMovimientoEstado(actualizado, actual, numId)
+          );
+          this.persist(reemplazarRegistroEnLista(this.getAll(), numId, completo));
           this.notificacionesService.recargar();
+          this.syncListaEnSegundoPlano();
         })
       )
     );
