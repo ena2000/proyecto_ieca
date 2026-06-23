@@ -1,10 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { IonicModule, LoadingController, NavController, ToastController } from '@ionic/angular';
+import { IonInput, IonicModule, NavController, ToastController } from '@ionic/angular';
 import { AuthService } from '../../core/services/auth.service';
 import { getHttpErrorMessage } from '../../shared/utils/error-message.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
+import { leerValorIonInputAsync } from '../../shared/utils/movimiento-form-sync.util';
+import { FORM_GUARDADO_TOAST_MS, scrollAlErrorFormulario } from '../../shared/utils/form-guardado.util';
+import { despertarApiEnSegundoPlano } from '../../shared/utils/api-wake.util';
 
 @Component({
   selector: 'app-cambiar-password',
@@ -18,11 +21,16 @@ export class CambiarPasswordComponent implements OnInit {
   showOld = false;
   showNew = false;
   showConfirm = false;
+  guardando = false;
+  formGuardadoError: string | null = null;
+
+  @ViewChild('oldPasswordInput') oldPasswordInput?: IonInput;
+  @ViewChild('newPasswordInput') newPasswordInput?: IonInput;
+  @ViewChild('confirmPasswordInput') confirmPasswordInput?: IonInput;
 
   constructor(
     private readonly fb: FormBuilder,
     private readonly auth: AuthService,
-    private readonly loadingCtrl: LoadingController,
     private readonly toastCtrl: ToastController,
     private readonly navCtrl: NavController
   ) {}
@@ -33,6 +41,7 @@ export class CambiarPasswordComponent implements OnInit {
       newPassword: ['', [Validators.required, Validators.minLength(6)]],
       confirmPassword: ['', [Validators.required, Validators.minLength(6)]],
     });
+    despertarApiEnSegundoPlano();
   }
 
   get mismatch(): boolean {
@@ -42,32 +51,49 @@ export class CambiarPasswordComponent implements OnInit {
   }
 
   async submit(): Promise<void> {
+    if (this.guardando) return;
+
+    this.formGuardadoError = null;
+    await this.sincronizarFormularioAntesDeGuardar();
+
     if (this.form.invalid || this.mismatch) {
       this.form.markAllAsTouched();
-      await this.toast('Revisa los campos. Las contraseñas deben coincidir.', 'danger');
+      this.formGuardadoError = this.mismatch
+        ? 'Las contraseñas nuevas no coinciden.'
+        : 'Revisa los campos. Cada contraseña debe tener al menos 6 caracteres.';
+      await this.toast(this.formGuardadoError, 'danger', FORM_GUARDADO_TOAST_MS);
+      scrollAlErrorFormulario();
       return;
     }
 
-    const loading = await this.loadingCtrl.create({
-      message: 'Actualizando contraseña...',
-      spinner: 'circles',
-      cssClass: 'ieca-loading'
-    });
-    await loading.present();
-
+    this.guardando = true;
     try {
       await this.auth.changePassword(this.form.value.oldPassword, this.form.value.newPassword);
-      await loading.dismiss();
       await this.toast('Contraseña actualizada. ¡Listo!', 'success');
       await this.navCtrl.navigateRoot(this.auth.getRutaPorDefecto(), { animated: false });
     } catch (err) {
-      await loading.dismiss().catch(() => undefined);
-      await this.toast(getHttpErrorMessage(err, 'No se pudo cambiar la contraseña'), 'danger');
+      this.formGuardadoError = getHttpErrorMessage(err, 'No se pudo cambiar la contraseña');
+      await this.toast(this.formGuardadoError, 'danger', FORM_GUARDADO_TOAST_MS);
+      scrollAlErrorFormulario();
+    } finally {
+      this.guardando = false;
     }
   }
 
-  private async toast(message: string, color: string): Promise<void> {
-    await presentIecaToast(this.toastCtrl, message, color, 2800);
+  private async sincronizarFormularioAntesDeGuardar(): Promise<void> {
+    const [oldRaw, newRaw, confirmRaw] = await Promise.all([
+      leerValorIonInputAsync(this.oldPasswordInput),
+      leerValorIonInputAsync(this.newPasswordInput),
+      leerValorIonInputAsync(this.confirmPasswordInput)
+    ]);
+    this.form.patchValue({
+      oldPassword: oldRaw,
+      newPassword: newRaw,
+      confirmPassword: confirmRaw
+    });
+  }
+
+  private async toast(message: string, color: string, duration = 2800): Promise<void> {
+    await presentIecaToast(this.toastCtrl, message, color, duration);
   }
 }
-

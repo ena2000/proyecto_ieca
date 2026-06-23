@@ -32,7 +32,7 @@ export interface ForgotPasswordResponse {
 
 const AUTH_REQUEST_TIMEOUT_MS = 90_000;
 const AUTH_TIMEOUT_MESSAGE =
-  'El servidor tarda en responder (arranque en Render). Espera un momento e inténtalo de nuevo.';
+  'La operación tardó demasiado. Espera un momento e inténtalo de nuevo.';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -178,7 +178,9 @@ export class AuthService {
 
   changePassword(oldPassword: string, newPassword: string): Promise<void> {
     return firstValueFrom(
-      this.api.post<void>(API.auth.changePassword, { oldPassword, newPassword })
+      this.api.post<void>(API.auth.changePassword, { oldPassword, newPassword }).pipe(
+        this.withAuthTimeout()
+      )
     ).then(() => {
       const current = this.getSession();
       if (!current) return;
