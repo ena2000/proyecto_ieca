@@ -6,7 +6,12 @@ import { NotificacionesService } from '../core/services/notificaciones.service';
 import { ApiService } from '../core/services/api.service';
 import { API } from '../core/constants/api.constants';
 import { environment } from '../../environments/environment';
-import { estadoGasto } from '../shared/utils/gasto.util';
+import { estadoGasto, normalizarGasto } from '../shared/utils/gasto.util';
+import { fusionarMovimientosTrasBootstrap } from '../shared/utils/movimiento-list-merge.util';
+import {
+  completarRegistroTrasMutacion,
+  prependRegistroUnico
+} from '../shared/utils/entity-crud.util';
 import { withMutationTimeout } from '../shared/utils/http-mutation.util';
 import { stampAuditoriaLocal, stampAuditoriaActualizacionLocal } from '../shared/utils/audit.util';
 import { AuthService } from '../core/services/auth.service';
@@ -30,7 +35,9 @@ export class GastosService {
   }
 
   hydrate(lista: Gasto[]): void {
-    this.gastosSubject.next(lista);
+    const normalizados = lista.map(normalizarGasto);
+    const merged = fusionarMovimientosTrasBootstrap(normalizados, this.getAll());
+    this.gastosSubject.next(merged);
   }
 
   getAll(): Gasto[] {
@@ -44,8 +51,10 @@ export class GastosService {
     return withMutationTimeout(
       this.api.post<Gasto>(API.gastos.base, { ...gasto, fechaFormateada }).pipe(
         tap(nuevo => {
-          this.persist([nuevo, ...this.getAll()]);
+          const completo = this.completarGastoTrasMutacion(nuevo, gasto, fechaFormateada);
+          this.persist(prependRegistroUnico(completo, this.getAll()));
           this.notificacionesService.recargar();
+          this.syncListaEnSegundoPlano();
         })
       )
     );
@@ -58,7 +67,8 @@ export class GastosService {
     return withMutationTimeout(
       this.api.put<Gasto>(`${API.gastos.base}/${id}`, { ...gasto, fechaFormateada }).pipe(
         tap(actualizado => {
-          const lista = this.getAll().map(g => (g.id === id ? actualizado : g));
+          const completo = this.completarGastoTrasMutacion(actualizado, gasto, fechaFormateada, id);
+          const lista = this.getAll().map(g => (g.id === id ? completo : g));
           this.persist(lista);
           this.notificacionesService.recargar();
         })
@@ -140,9 +150,38 @@ export class GastosService {
     }
     return firstValueFrom(
       this.api.get<Gasto[]>(API.gastos.base).pipe(
-        tap(lista => this.gastosSubject.next(lista))
+        tap(lista => {
+          const merged = fusionarMovimientosTrasBootstrap(
+            lista.map(normalizarGasto),
+            this.getAll()
+          );
+          this.gastosSubject.next(merged);
+        })
       )
     );
+  }
+
+  /** Sincroniza la lista completa en segundo plano sin perder filas recién creadas. */
+  private syncListaEnSegundoPlano(): void {
+    void this.reloadAsync().catch(() => undefined);
+  }
+
+  private completarGastoTrasMutacion(
+    desdeApi: Gasto,
+    enviado: Omit<Gasto, 'id'>,
+    fechaFormateada: string,
+    idFallback?: number
+  ): Gasto {
+    const base = completarRegistroTrasMutacion(desdeApi, enviado, idFallback);
+    return normalizarGasto({
+      ...base,
+      fechaFormateada: desdeApi.fechaFormateada ?? fechaFormateada,
+      ministerioId: desdeApi.ministerioId ?? enviado.ministerioId,
+      usuarioId: desdeApi.usuarioId ?? enviado.usuarioId,
+      estado: desdeApi.estado ?? enviado.estado,
+      ministerio: desdeApi.ministerio ?? enviado.ministerio,
+      registradoPor: desdeApi.registradoPor ?? enviado.registradoPor
+    });
   }
 
   private actorId(): string | undefined {

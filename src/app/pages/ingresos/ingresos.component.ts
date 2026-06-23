@@ -71,7 +71,7 @@ import {
   sincronizarFechaFormularioMovimiento,
   validarTamanoComprobante
 } from '../../shared/utils/movimiento-form-sync.util';
-import { FORM_GUARDADO_TOAST_MS, scrollAlErrorFormulario } from '../../shared/utils/form-guardado.util';
+import { FORM_GUARDADO_TOAST_MS, scrollAlErrorFormulario, refrescarListaTrasMutacion } from '../../shared/utils/form-guardado.util';
 
 registerLocaleData(localeEs);
 
@@ -508,6 +508,11 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
           : 'Registro creado exitosamente';
         await this.mostrarToast(msg, 'success');
       }
+      refrescarListaTrasMutacion(
+        () => this.ingresosService.getAll(),
+        lista => { this.listaIngresos = lista; },
+        () => this.actualizarVista()
+      );
       this.dataService.notifyChanges();
       this.resetFormulario();
     } catch (error) {

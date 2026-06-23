@@ -106,6 +106,10 @@ async function deliverEmail({ to, subject, text, html }) {
       return { sent: true, channel: 'email', recipients: recipients.length };
     } catch (err) {
       console.error('[email] Error SMTP:', err);
+      if (err?.code === 'EAUTH') {
+        transporter = null;
+        transporterVerified = false;
+      }
       throw crearErrorEmail(smtpErrorMessage(err));
     }
   }

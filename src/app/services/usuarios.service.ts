@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of } from 'rxjs';
+import { BehaviorSubject, Observable, firstValueFrom, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Usuario } from '../core/models';
 import { ApiService } from '../core/services/api.service';
@@ -7,6 +7,11 @@ import { API } from '../core/constants/api.constants';
 import { environment } from '../../environments/environment';
 import { mensajeUsuarioEmailDuplicado, usuarioEmailDuplicado } from '../shared/utils/unicidad.util';
 import { withMutationTimeout } from '../shared/utils/http-mutation.util';
+import { fusionarMovimientosTrasBootstrap } from '../shared/utils/movimiento-list-merge.util';
+import {
+  completarRegistroTrasMutacion,
+  prependRegistroUnico
+} from '../shared/utils/entity-crud.util';
 
 export type UsuarioPayload = Omit<Usuario, 'id'> & { password?: string };
 export type UsuarioCreateResponse = Usuario & { tempPassword?: string };
@@ -25,7 +30,8 @@ export class UsuariosService {
   }
 
   hydrate(lista: Usuario[]): void {
-    this.usuariosSubject.next(lista);
+    const merged = fusionarMovimientosTrasBootstrap(lista, this.getAll());
+    this.usuariosSubject.next(merged);
   }
 
   getAll(): Usuario[] {
@@ -39,8 +45,13 @@ export class UsuariosService {
     return withMutationTimeout(
       this.api.post<UsuarioCreateResponse>(API.usuarios, usuario).pipe(
         tap(res => {
-          const { tempPassword: _ignored, ...nuevo } = res;
-          this.persist([nuevo as Usuario, ...this.getAll()]);
+          const { tempPassword: _ignored, ...desdeApi } = res;
+          const completo = completarRegistroTrasMutacion(
+            desdeApi as Usuario,
+            usuario
+          ) as Usuario;
+          this.persist(prependRegistroUnico(completo, this.getAll()));
+          this.syncListaEnSegundoPlano();
         })
       )
     );
@@ -53,7 +64,9 @@ export class UsuariosService {
     return withMutationTimeout(
       this.api.put<Usuario>(`${API.usuarios}/${id}`, usuario).pipe(
         tap(actualizado => {
-          this.persist(this.getAll().map(u => (u.id === id ? actualizado : u)));
+          const completo = completarRegistroTrasMutacion(actualizado, usuario, id) as Usuario;
+          this.persist(this.getAll().map(u => (Number(u.id) === id ? completo : u)));
+          this.syncListaEnSegundoPlano();
         })
       )
     );
@@ -66,7 +79,10 @@ export class UsuariosService {
     }
     return withMutationTimeout(
       this.api.delete(`${API.usuarios}/${id}`).pipe(
-        tap(() => this.persist(this.getAll().filter(u => u.id !== id)))
+        tap(() => {
+          this.persist(this.getAll().filter(u => Number(u.id) !== id));
+          this.syncListaEnSegundoPlano();
+        })
       )
     );
   }
@@ -76,10 +92,26 @@ export class UsuariosService {
       this.loadFromStorage();
       return;
     }
-    this.api.get<Usuario[]>(API.usuarios).subscribe({
-      next: lista => this.usuariosSubject.next(lista),
-      error: err => console.error('[UsuariosService] reload:', err)
-    });
+    void this.reloadAsync().catch(err => console.error('[UsuariosService] reload:', err));
+  }
+
+  reloadAsync(): Promise<Usuario[]> {
+    if (environment.useLocalFallback) {
+      this.loadFromStorage();
+      return Promise.resolve(this.getAll());
+    }
+    return firstValueFrom(
+      this.api.get<Usuario[]>(API.usuarios).pipe(
+        tap(lista => {
+          const merged = fusionarMovimientosTrasBootstrap(lista, this.getAll());
+          this.usuariosSubject.next(merged);
+        })
+      )
+    );
+  }
+
+  private syncListaEnSegundoPlano(): void {
+    void this.reloadAsync().catch(() => undefined);
   }
 
   private createLocal(usuario: UsuarioPayload): Usuario {
@@ -89,7 +121,7 @@ export class UsuariosService {
     }
     const { password: _ignored, ...data } = usuario;
     const nuevo: Usuario = { ...data, id: this.nextId() };
-    this.persist([nuevo, ...this.getAll()]);
+    this.persist(prependRegistroUnico(nuevo, this.getAll()));
     return nuevo;
   }
 

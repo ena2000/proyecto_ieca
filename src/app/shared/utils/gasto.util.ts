@@ -14,6 +14,17 @@ export function gastoPendiente(g: Gasto): boolean {
   return estadoGasto(g) === 'pendiente';
 }
 
+/** Asegura tipos y campos mínimos al hidratar o tras crear/actualizar vía API. */
+export function normalizarGasto(gasto: Gasto): Gasto {
+  return {
+    ...gasto,
+    id: gasto.id != null ? Number(gasto.id) : gasto.id,
+    ministerioId: gasto.ministerioId != null ? Number(gasto.ministerioId) : undefined,
+    usuarioId: gasto.usuarioId != null ? Number(gasto.usuarioId) : undefined,
+    monto: gasto.monto != null ? Number(gasto.monto) : gasto.monto
+  };
+}
+
 export function etiquetaEstadoGasto(estado: GastoEstado): string {
   switch (estado) {
     case 'pendiente': return 'Pendiente';

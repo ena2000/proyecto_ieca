@@ -43,7 +43,7 @@ import {
   sincronizarFechaFormularioMovimiento,
   validarTamanoComprobante
 } from '../../shared/utils/movimiento-form-sync.util';
-import { FORM_GUARDADO_TOAST_MS, scrollAlErrorFormulario } from '../../shared/utils/form-guardado.util';
+import { FORM_GUARDADO_TOAST_MS, scrollAlErrorFormulario, refrescarListaTrasMutacion } from '../../shared/utils/form-guardado.util';
 import { accionesTablaMovimiento } from '../../shared/utils/movimiento-acciones.util';
 import {
   ministeriosEnAlcance,
@@ -104,7 +104,7 @@ const GASTO_VACIO = (): Gasto => {
     TablaGeneralComponent, NotificacionesBellComponent, ToolbarMenuButtonComponent
   ],
   providers: [AlertController, ToastController, LoadingController],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.Default
 })
 export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
   readonly isoToDateInputValue = isoToDateInputValue;
@@ -467,8 +467,14 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
           : 'Registro creado exitosamente';
         await this.mostrarToast(msg, 'success');
       }
+      refrescarListaTrasMutacion(
+        () => this.gastosService.getAll(),
+        lista => { this.listaGastos = lista; },
+        () => this.actualizarVista()
+      );
       this.dataService.notifyChanges();
       this.resetFormulario();
+      this.scrollAlHistorial();
     } catch (error) {
       this.formGuardadoError = mensajeErrorGuardadoMovimiento(
         error,
@@ -480,6 +486,15 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
       this.registrando = false;
       this.cdr.markForCheck();
     }
+  }
+
+  private scrollAlHistorial(): void {
+    requestAnimationFrame(() => {
+      document.querySelector('.list-container')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    });
   }
 
   private async sincronizarFormularioAntesDeGuardar(): Promise<void> {

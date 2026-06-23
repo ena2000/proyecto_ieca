@@ -15,3 +15,16 @@ export function scrollAlErrorFormulario(): void {
     });
   });
 }
+
+/**
+ * Refresca la lista local del componente tras crear/actualizar/eliminar.
+ * Mismo patrón en todos los CRUD para que la tabla se actualice al instante.
+ */
+export function refrescarListaTrasMutacion<T>(
+  leerLista: () => T[],
+  asignarLista: (lista: T[]) => void,
+  actualizarVista?: () => void
+): void {
+  asignarLista([...leerLista()]);
+  actualizarVista?.();
+}

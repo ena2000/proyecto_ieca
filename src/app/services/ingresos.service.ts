@@ -19,6 +19,11 @@ import {
   marcarIngresoConAportacion,
   assertMovimientoAportacionModificable
 } from '../shared/utils/aportacion-iglesia.util';
+import { fusionarMovimientosTrasBootstrap } from '../shared/utils/movimiento-list-merge.util';
+import {
+  completarRegistroTrasMutacion,
+  prependRegistroUnico
+} from '../shared/utils/entity-crud.util';
 
 @Injectable({ providedIn: 'root' })
 export class IngresosService {
@@ -38,7 +43,9 @@ export class IngresosService {
   }
 
   hydrate(lista: Ingreso[]): void {
-    this.ingresosSubject.next(lista.map(normalizarIngreso));
+    const normalizados = lista.map(normalizarIngreso);
+    const merged = fusionarMovimientosTrasBootstrap(normalizados, this.getAll());
+    this.ingresosSubject.next(merged);
   }
 
   getAll(): Ingreso[] {
@@ -54,7 +61,8 @@ export class IngresosService {
       this.api.post<Ingreso>(API.ingresos.base, payload)
     ).pipe(
       tap(nuevo => {
-        this.persist([nuevo, ...this.getAll()]);
+        const completo = this.completarIngresoTrasMutacion(nuevo, ingreso, fechaFormateada);
+        this.persist(prependRegistroUnico(completo, this.getAll()));
         this.notificacionesService.recargar();
         this.syncListaEnSegundoPlano();
       })
@@ -69,7 +77,8 @@ export class IngresosService {
       this.api.put<Ingreso>(`${API.ingresos.base}/${id}`, this.buildApiPayload(ingreso, fechaFormateada))
     ).pipe(
       tap(actualizado => {
-        const lista = this.getAll().map(i => (i.id === id ? actualizado : i));
+        const completo = this.completarIngresoTrasMutacion(actualizado, ingreso, fechaFormateada, id);
+        const lista = this.getAll().map(i => (Number(i.id) === id ? completo : i));
         this.persist(lista);
         this.notificacionesService.recargar();
         this.syncListaEnSegundoPlano();
@@ -158,9 +167,33 @@ export class IngresosService {
     }
     return firstValueFrom(
       this.api.get<Ingreso[]>(API.ingresos.base).pipe(
-        tap(lista => this.ingresosSubject.next(lista))
+        tap(lista => {
+          const merged = fusionarMovimientosTrasBootstrap(
+            lista.map(normalizarIngreso),
+            this.getAll()
+          );
+          this.ingresosSubject.next(merged);
+        })
       )
     );
+  }
+
+  private completarIngresoTrasMutacion(
+    desdeApi: Ingreso,
+    enviado: Omit<Ingreso, 'id'>,
+    fechaFormateada: string,
+    idFallback?: number
+  ): Ingreso {
+    const base = completarRegistroTrasMutacion(desdeApi, enviado, idFallback);
+    return normalizarIngreso({
+      ...base,
+      fechaFormateada: desdeApi.fechaFormateada ?? fechaFormateada,
+      ministerioId: desdeApi.ministerioId ?? enviado.ministerioId,
+      usuarioId: desdeApi.usuarioId ?? enviado.usuarioId,
+      estado: desdeApi.estado ?? enviado.estado,
+      ministerio: desdeApi.ministerio ?? enviado.ministerio,
+      registradoPor: desdeApi.registradoPor ?? enviado.registradoPor
+    });
   }
 
   /** Sincroniza la lista completa en segundo plano (p. ej. aportación 33% tras aprobar). */

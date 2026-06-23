@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of } from 'rxjs';
+import { BehaviorSubject, Observable, firstValueFrom, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Ministerio } from '../core/models';
 import { formatearISOaDDMMYYYY } from '../shared/utils/date.util';
@@ -9,6 +9,11 @@ import { environment } from '../../environments/environment';
 import { ministerioNombreDuplicado, mensajeMinisterioDuplicado } from '../shared/utils/unicidad.util';
 import { withMutationTimeout } from '../shared/utils/http-mutation.util';
 import { filtrarMinisteriosCatalogo } from '../shared/constants/ministerios-catalogo.constants';
+import { fusionarMovimientosTrasBootstrap } from '../shared/utils/movimiento-list-merge.util';
+import {
+  completarRegistroTrasMutacion,
+  prependRegistroUnico
+} from '../shared/utils/entity-crud.util';
 
 @Injectable({ providedIn: 'root' })
 export class MinisteriosService {
@@ -24,7 +29,9 @@ export class MinisteriosService {
   }
 
   hydrate(lista: Ministerio[]): void {
-    this.ministeriosSubject.next(filtrarMinisteriosCatalogo(lista));
+    const visible = filtrarMinisteriosCatalogo(lista);
+    const merged = fusionarMovimientosTrasBootstrap(visible, this.getAll());
+    this.ministeriosSubject.next(merged);
   }
 
   getAll(): Ministerio[] {
@@ -37,7 +44,11 @@ export class MinisteriosService {
     }
     return withMutationTimeout(
       this.api.post<Ministerio>(API.ministerios, ministerio).pipe(
-        tap(nuevo => this.persist([nuevo, ...this.getAll()]))
+        tap(nuevo => {
+          const completo = completarRegistroTrasMutacion(nuevo, ministerio);
+          this.persist(prependRegistroUnico(completo, this.getAll()));
+          this.syncListaEnSegundoPlano();
+        })
       )
     );
   }
@@ -49,7 +60,9 @@ export class MinisteriosService {
     return withMutationTimeout(
       this.api.put<Ministerio>(`${API.ministerios}/${id}`, ministerio).pipe(
         tap(actualizado => {
-          this.persist(this.getAll().map(m => (m.id === id ? actualizado : m)));
+          const completo = completarRegistroTrasMutacion(actualizado, ministerio, id);
+          this.persist(this.getAll().map(m => (Number(m.id) === id ? completo : m)));
+          this.syncListaEnSegundoPlano();
         })
       )
     );
@@ -62,7 +75,10 @@ export class MinisteriosService {
     }
     return withMutationTimeout(
       this.api.delete(`${API.ministerios}/${id}`).pipe(
-        tap(() => this.persist(this.getAll().filter(m => m.id !== id)))
+        tap(() => {
+          this.persist(this.getAll().filter(m => Number(m.id) !== id));
+          this.syncListaEnSegundoPlano();
+        })
       )
     );
   }
@@ -72,10 +88,29 @@ export class MinisteriosService {
       this.loadFromStorage();
       return;
     }
-    this.api.get<Ministerio[]>(API.ministerios).subscribe({
-      next: lista => this.ministeriosSubject.next(filtrarMinisteriosCatalogo(lista)),
-      error: err => console.error('[MinisteriosService] reload:', err)
-    });
+    void this.reloadAsync().catch(err => console.error('[MinisteriosService] reload:', err));
+  }
+
+  reloadAsync(): Promise<Ministerio[]> {
+    if (environment.useLocalFallback) {
+      this.loadFromStorage();
+      return Promise.resolve(this.getAll());
+    }
+    return firstValueFrom(
+      this.api.get<Ministerio[]>(API.ministerios).pipe(
+        tap(lista => {
+          const merged = fusionarMovimientosTrasBootstrap(
+            filtrarMinisteriosCatalogo(lista),
+            this.getAll()
+          );
+          this.ministeriosSubject.next(merged);
+        })
+      )
+    );
+  }
+
+  private syncListaEnSegundoPlano(): void {
+    void this.reloadAsync().catch(() => undefined);
   }
 
   private createLocal(ministerio: Omit<Ministerio, 'id' | 'fecha' | 'fechaFormateada'>): Ministerio {
@@ -90,7 +125,7 @@ export class MinisteriosService {
       fecha: ahora,
       fechaFormateada: formatearISOaDDMMYYYY(ahora)
     };
-    this.persist([nuevo, ...this.getAll()]);
+    this.persist(prependRegistroUnico(nuevo, this.getAll()));
     return nuevo;
   }
 

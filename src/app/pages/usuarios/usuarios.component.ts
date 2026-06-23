@@ -27,7 +27,7 @@ import { DataService } from '../../services/data.service';
 import { UsuariosService, UsuarioPayload, UsuarioCreateResponse } from '../../services/usuarios.service';
 import { withLoading, getHttpErrorMessage } from '../../shared/utils/loading.util';
 import { leerValorIonInputAsync } from '../../shared/utils/movimiento-form-sync.util';
-import { FORM_GUARDADO_TOAST_MS, scrollAlErrorFormulario } from '../../shared/utils/form-guardado.util';
+import { FORM_GUARDADO_TOAST_MS, scrollAlErrorFormulario, refrescarListaTrasMutacion } from '../../shared/utils/form-guardado.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
 import {
   isRolSinMinisterio,
@@ -268,10 +268,19 @@ export class UsuariosComponent implements OnInit, OnDestroy {
       if (this.modoEdicion && this.idEditando !== null) {
         await firstValueFrom(this.usuariosService.update(this.idEditando, payload));
         await this.mostrarToast('Usuario actualizado exitosamente', 'success');
+        refrescarListaTrasMutacion(
+          () => this.usuariosService.getAll(),
+          lista => { this.listaUsuarios = lista; }
+        );
+        this.dataService.notifyChanges();
         this.resetFormulario();
       } else {
         const res = await firstValueFrom(this.usuariosService.create(payload)) as UsuarioCreateResponse;
         await this.mostrarToast('Usuario creado exitosamente', 'success');
+        refrescarListaTrasMutacion(
+          () => this.usuariosService.getAll(),
+          lista => { this.listaUsuarios = lista; }
+        );
         this.dataService.notifyChanges();
         this.resetFormulario();
         if (!this.password.trim() && res?.tempPassword) {

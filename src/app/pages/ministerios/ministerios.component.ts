@@ -31,7 +31,7 @@ import { MinisteriosService } from '../../services/ministerios.service';
 import { withLoading, getHttpErrorMessage } from '../../shared/utils/loading.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
 import { leerValorIonInputAsync } from '../../shared/utils/movimiento-form-sync.util';
-import { FORM_GUARDADO_TOAST_MS, scrollAlErrorFormulario } from '../../shared/utils/form-guardado.util';
+import { FORM_GUARDADO_TOAST_MS, scrollAlErrorFormulario, refrescarListaTrasMutacion } from '../../shared/utils/form-guardado.util';
 import {
   colaboradoresEnMinisterio,
   esRolColaborador,
@@ -59,7 +59,7 @@ registerLocaleData(localeEs);
     NotificacionesBellComponent, ToolbarMenuButtonComponent
   ],
   providers: [AlertController, ToastController, LoadingController],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.Default
 })
 export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
@@ -276,6 +276,11 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
         await this.mostrarToast('Registro creado exitosamente', 'success');
       }
 
+      refrescarListaTrasMutacion(
+        () => this.ministeriosService.getAll(),
+        lista => { this.listaMinisterios = lista; },
+        () => this.actualizarVista()
+      );
       this.dataService.notifyChanges();
       this.resetFormulario();
     } catch (error) {
