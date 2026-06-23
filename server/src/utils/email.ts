@@ -131,8 +131,20 @@ async function sendPasswordResetEmail({ to, usuario, code }) {
   const { subject, text, html } = buildPasswordResetEmail({ usuario, code });
 
   if (smtpConfigured) {
-    await deliverEmail({ to, subject, text, html });
-    return { sent: true, channel: 'email', devCode: undefined };
+    try {
+      await deliverEmail({ to, subject, text, html });
+      return { sent: true, channel: 'email', devCode: undefined };
+    } catch (err) {
+      if (!isProduction) {
+        console.warn(
+          '[email] SMTP falló en desarrollo; mostrando código en consola/pantalla:',
+          err?.message || err
+        );
+        console.log(`\n[DEV] Código de recuperación para ${usuario} (${to}): ${code}\n`);
+        return { sent: false, channel: 'console', devCode: code };
+      }
+      throw err;
+    }
   }
 
   if (!isProduction) {
