@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, ViewChild } from '@angular/core';
 import { CommonModule, registerLocaleData } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import localeEs from '@angular/common/locales/es';
@@ -15,7 +15,8 @@ import { LoadingController } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import {
   notificationsOutline, expandOutline, closeOutline, pencilOutline,
-  trashOutline, addCircleOutline, optionsOutline, saveOutline, copyOutline
+  trashOutline, addCircleOutline, optionsOutline, saveOutline, copyOutline,
+  alertCircleOutline
 } from 'ionicons/icons';
 
 import { TablaGeneralComponent, TableColumn } from 'src/app/components/tabla-general/tabla-general.component';
@@ -25,6 +26,8 @@ import { Usuario, Ministerio } from '../../core/models';
 import { DataService } from '../../services/data.service';
 import { UsuariosService, UsuarioPayload, UsuarioCreateResponse } from '../../services/usuarios.service';
 import { withLoading, getHttpErrorMessage } from '../../shared/utils/loading.util';
+import { leerValorIonInputAsync } from '../../shared/utils/movimiento-form-sync.util';
+import { FORM_GUARDADO_TOAST_MS, scrollAlErrorFormulario } from '../../shared/utils/form-guardado.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
 import {
   isRolSinMinisterio,
@@ -91,6 +94,12 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   searchTerm:       string = '';
   fotoSeleccionada: string | null = null;
   contrasenaTemporal: { usuario: string; password: string } | null = null;
+  guardando = false;
+  formGuardadoError: string | null = null;
+
+  @ViewChild('nombreInput') nombreInput?: IonInput;
+  @ViewChild('emailInput') emailInput?: IonInput;
+  @ViewChild('passwordInput') passwordInput?: IonInput;
 
   private destroy$ = new Subject<void>();
 
@@ -123,7 +132,8 @@ export class UsuariosComponent implements OnInit, OnDestroy {
       'add-circle-outline':    addCircleOutline,
       'options-outline':       optionsOutline,
       'save-outline':          saveOutline,
-      'copy-outline':          copyOutline
+      'copy-outline':          copyOutline,
+      'alert-circle-outline':  alertCircleOutline
     });
   }
 
@@ -225,9 +235,16 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   }
 
   async registrarUsuario() {
+    if (this.guardando) return;
+
     this.intentoEnvio = true;
+    this.formGuardadoError = null;
+    await this.sincronizarFormularioAntesDeGuardar();
+
     if (!this.esFormularioValido) {
-      this.mostrarToast(this.mensajeValidacion, 'danger');
+      this.formGuardadoError = this.mensajeValidacion;
+      await this.mostrarToast(this.formGuardadoError, 'danger', FORM_GUARDADO_TOAST_MS);
+      scrollAlErrorFormulario();
       return;
     }
 
@@ -238,35 +255,54 @@ export class UsuariosComponent implements OnInit, OnDestroy {
       this.modoEdicion ? this.idEditando : null
     );
     if (errorLiderazgo) {
-      this.mostrarToast(errorLiderazgo, 'danger');
+      this.formGuardadoError = errorLiderazgo;
+      await this.mostrarToast(errorLiderazgo, 'danger', FORM_GUARDADO_TOAST_MS);
+      scrollAlErrorFormulario();
       return;
     }
 
     const payload = this.prepararPayloadUsuario();
-
-    const guardando = this.modoEdicion ? 'Actualizando usuario...' : 'Guardando usuario...';
+    this.guardando = true;
 
     try {
-      await withLoading(this.loadingController, guardando, async () => {
-        if (this.modoEdicion && this.idEditando !== null) {
-          await firstValueFrom(this.usuariosService.update(this.idEditando, payload));
-          await this.mostrarToast('Usuario actualizado exitosamente', 'success');
-        } else {
-          const res = await firstValueFrom(this.usuariosService.create(payload)) as UsuarioCreateResponse;
-          await this.mostrarToast('Usuario creado exitosamente', 'success');
-          if (!this.password.trim() && res?.tempPassword) {
-            this.mostrarContrasenaTemporal(
-              res.usuario ?? payload.email ?? 'usuario',
-              res.tempPassword
-            );
-          }
+      if (this.modoEdicion && this.idEditando !== null) {
+        await firstValueFrom(this.usuariosService.update(this.idEditando, payload));
+        await this.mostrarToast('Usuario actualizado exitosamente', 'success');
+        this.resetFormulario();
+      } else {
+        const res = await firstValueFrom(this.usuariosService.create(payload)) as UsuarioCreateResponse;
+        await this.mostrarToast('Usuario creado exitosamente', 'success');
+        this.dataService.notifyChanges();
+        this.resetFormulario();
+        if (!this.password.trim() && res?.tempPassword) {
+          this.mostrarContrasenaTemporal(
+            res.usuario ?? payload.email ?? 'usuario',
+            res.tempPassword
+          );
         }
-      });
-
-      this.resetFormulario();
+      }
     } catch (error) {
-      this.mostrarToast(getHttpErrorMessage(error, 'Error al guardar'), 'danger');
+      this.formGuardadoError = getHttpErrorMessage(error, 'Error al guardar');
+      await this.mostrarToast(this.formGuardadoError, 'danger', FORM_GUARDADO_TOAST_MS);
+      scrollAlErrorFormulario();
+    } finally {
+      this.guardando = false;
     }
+  }
+
+  private async sincronizarFormularioAntesDeGuardar(): Promise<void> {
+    const [nombreRaw, emailRaw, passwordRaw] = await Promise.all([
+      leerValorIonInputAsync(this.nombreInput),
+      leerValorIonInputAsync(this.emailInput),
+      leerValorIonInputAsync(this.passwordInput)
+    ]);
+    if (nombreRaw.trim()) {
+      this.nuevoUsuario.nombre = nombreRaw.trim();
+    }
+    if (emailRaw.trim()) {
+      this.nuevoUsuario.email = emailRaw.trim();
+    }
+    this.password = passwordRaw;
   }
 
   editarUsuario(item: Usuario) {
@@ -319,6 +355,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     this.modoEdicion  = false;
     this.idEditando   = null;
     this.intentoEnvio = false;
+    this.formGuardadoError = null;
     this.password = '';
   }
 
@@ -348,8 +385,8 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     }
   }
 
-  async mostrarToast(mensaje: string, color: string) {
-    await presentIecaToast(this.toastController, mensaje, color);
+  async mostrarToast(mensaje: string, color: string, duration = 2600): Promise<void> {
+    await presentIecaToast(this.toastController, mensaje, color, duration);
   }
 
   get esFormularioValido(): boolean {

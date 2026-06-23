@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ViewWillEnter } from '@ionic/angular';
 import { CommonModule, registerLocaleData } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -19,7 +19,7 @@ import { addIcons } from 'ionicons';
 import {
   documentTextOutline, saveOutline, notificationsOutline,
   pencilOutline, trashOutline, closeOutline, addCircleOutline, optionsOutline,
-  readerOutline, walletOutline
+  readerOutline, walletOutline, alertCircleOutline
 } from 'ionicons/icons';
 
 import { TablaGeneralComponent, TableColumn } from 'src/app/components/tabla-general/tabla-general.component';
@@ -30,6 +30,8 @@ import { DataService } from '../../services/data.service';
 import { MinisteriosService } from '../../services/ministerios.service';
 import { withLoading, getHttpErrorMessage } from '../../shared/utils/loading.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
+import { leerValorIonInputAsync } from '../../shared/utils/movimiento-form-sync.util';
+import { FORM_GUARDADO_TOAST_MS, scrollAlErrorFormulario } from '../../shared/utils/form-guardado.util';
 import {
   colaboradoresEnMinisterio,
   esRolColaborador,
@@ -61,6 +63,8 @@ registerLocaleData(localeEs);
 })
 export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
+  @ViewChild('nombreInput') nombreInput?: IonInput;
+
   listaUsuarios: Usuario[] = [];
 
   nuevoMinisterio: Ministerio = {
@@ -76,6 +80,8 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
   listaMinisterios: Ministerio[] = [];
   vistaMinisterios: Array<Ministerio & { colaboradoresNombre: string; saldo: number }> = [];
   formularioValido = false;
+  guardando = false;
+  formGuardadoError: string | null = null;
 
   searchTerm:           string = '';
   filtroColaboradorId: number | null = null;
@@ -110,7 +116,8 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
       'add-circle-outline':    addCircleOutline,
       'options-outline':       optionsOutline,
       'reader-outline':        readerOutline,
-      'wallet-outline':        walletOutline
+      'wallet-outline':        walletOutline,
+      'alert-circle-outline':  alertCircleOutline
     });
   }
 
@@ -235,37 +242,56 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   async registrarMinisterio() {
+    if (this.guardando) return;
+
     this.intentoEnvio = true;
+    this.formGuardadoError = null;
+    await this.sincronizarFormularioAntesDeGuardar();
+    this.actualizarValidacionFormulario();
+    this.cdr.markForCheck();
+
     if (!this.esFormularioValido) {
-      this.mostrarToast(this.mensajeValidacion, 'danger');
+      this.formGuardadoError = this.mensajeValidacion;
+      await this.mostrarToast(this.formGuardadoError, 'danger', FORM_GUARDADO_TOAST_MS);
+      scrollAlErrorFormulario();
       return;
     }
 
-    const guardando = this.modoEdicion ? 'Actualizando ministerio...' : 'Guardando ministerio...';
+    this.guardando = true;
+    this.cdr.markForCheck();
 
     try {
-      await withLoading(this.loadingController, guardando, async () => {
-        if (this.modoEdicion && this.idEditando !== null) {
-          const existente = this.listaMinisterios.find(m => m.id === this.idEditando);
-          const { hldrId, coLiderId, liderNombre, coLiderNombre, ...datos } = this.nuevoMinisterio;
-          await firstValueFrom(this.ministeriosService.update(this.idEditando, {
-            ...datos,
-            id: this.idEditando,
-            fechaFormateada: existente?.fechaFormateada
-          }));
-          await this.mostrarToast('Registro actualizado exitosamente', 'success');
-        } else {
-          const { id, fecha, fechaFormateada, hldrId, coLiderId, liderNombre, coLiderNombre, ...datos } = this.nuevoMinisterio;
-          await firstValueFrom(this.ministeriosService.create(datos));
-          await this.mostrarToast('Registro creado exitosamente', 'success');
-        }
-      });
+      if (this.modoEdicion && this.idEditando !== null) {
+        const existente = this.listaMinisterios.find(m => m.id === this.idEditando);
+        const { hldrId, coLiderId, liderNombre, coLiderNombre, ...datos } = this.nuevoMinisterio;
+        await firstValueFrom(this.ministeriosService.update(this.idEditando, {
+          ...datos,
+          id: this.idEditando,
+          fechaFormateada: existente?.fechaFormateada
+        }));
+        await this.mostrarToast('Registro actualizado exitosamente', 'success');
+      } else {
+        const { id, fecha, fechaFormateada, hldrId, coLiderId, liderNombre, coLiderNombre, ...datos } = this.nuevoMinisterio;
+        await firstValueFrom(this.ministeriosService.create(datos));
+        await this.mostrarToast('Registro creado exitosamente', 'success');
+      }
 
-      this.actualizarVista();
       this.dataService.notifyChanges();
       this.resetFormulario();
     } catch (error) {
-      this.mostrarToast(getHttpErrorMessage(error, 'Error al guardar'), 'danger');
+      this.formGuardadoError = getHttpErrorMessage(error, 'Error al guardar');
+      await this.mostrarToast(this.formGuardadoError, 'danger', FORM_GUARDADO_TOAST_MS);
+      scrollAlErrorFormulario();
+    } finally {
+      this.guardando = false;
+      this.actualizarVista();
+    }
+  }
+
+  private async sincronizarFormularioAntesDeGuardar(): Promise<void> {
+    const nombreRaw = await leerValorIonInputAsync(this.nombreInput);
+    if (nombreRaw.trim()) {
+      this.nuevoMinisterio = { ...this.nuevoMinisterio, nombre: nombreRaw.trim() };
     }
   }
 
@@ -317,6 +343,7 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
     this.modoEdicion  = false;
     this.idEditando   = null;
     this.intentoEnvio = false;
+    this.formGuardadoError = null;
     this.actualizarVista();
   }
 
@@ -324,8 +351,8 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
     this.listaUsuarios = this.dataService.getUsuariosActuales();
   }
 
-  async mostrarToast(mensaje: string, color: string) {
-    await presentIecaToast(this.toastController, mensaje, color);
+  async mostrarToast(mensaje: string, color: string, duration = 2600): Promise<void> {
+    await presentIecaToast(this.toastController, mensaje, color, duration);
   }
 
   get esFormularioValido(): boolean {

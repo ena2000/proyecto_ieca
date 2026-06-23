@@ -6,6 +6,7 @@ import { ApiService } from '../core/services/api.service';
 import { API } from '../core/constants/api.constants';
 import { environment } from '../../environments/environment';
 import { mensajeUsuarioEmailDuplicado, usuarioEmailDuplicado } from '../shared/utils/unicidad.util';
+import { withMutationTimeout } from '../shared/utils/http-mutation.util';
 
 export type UsuarioPayload = Omit<Usuario, 'id'> & { password?: string };
 export type UsuarioCreateResponse = Usuario & { tempPassword?: string };
@@ -35,11 +36,13 @@ export class UsuariosService {
     if (environment.useLocalFallback) {
       return of(this.createLocal(usuario));
     }
-    return this.api.post<UsuarioCreateResponse>(API.usuarios, usuario).pipe(
-      tap(res => {
-        const { tempPassword: _ignored, ...nuevo } = res;
-        this.persist([nuevo as Usuario, ...this.getAll()]);
-      })
+    return withMutationTimeout(
+      this.api.post<UsuarioCreateResponse>(API.usuarios, usuario).pipe(
+        tap(res => {
+          const { tempPassword: _ignored, ...nuevo } = res;
+          this.persist([nuevo as Usuario, ...this.getAll()]);
+        })
+      )
     );
   }
 
@@ -47,10 +50,12 @@ export class UsuariosService {
     if (environment.useLocalFallback) {
       return of(this.updateLocal(id, usuario));
     }
-    return this.api.put<Usuario>(`${API.usuarios}/${id}`, usuario).pipe(
-      tap(actualizado => {
-        this.persist(this.getAll().map(u => (u.id === id ? actualizado : u)));
-      })
+    return withMutationTimeout(
+      this.api.put<Usuario>(`${API.usuarios}/${id}`, usuario).pipe(
+        tap(actualizado => {
+          this.persist(this.getAll().map(u => (u.id === id ? actualizado : u)));
+        })
+      )
     );
   }
 
@@ -59,8 +64,10 @@ export class UsuariosService {
       this.deleteLocal(id);
       return of(undefined);
     }
-    return this.api.delete(`${API.usuarios}/${id}`).pipe(
-      tap(() => this.persist(this.getAll().filter(u => u.id !== id)))
+    return withMutationTimeout(
+      this.api.delete(`${API.usuarios}/${id}`).pipe(
+        tap(() => this.persist(this.getAll().filter(u => u.id !== id)))
+      )
     );
   }
 

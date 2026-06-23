@@ -35,7 +35,15 @@ import {
   actualizarEstadoFiltroFechaMovimiento,
   CampoFechaMovimiento
 } from '../../shared/utils/movimiento-fecha.util';
-import { leerValorIonInput } from '../../shared/utils/movimiento-form-sync.util';
+import {
+  leerValorIonInput,
+  aplicarValoresTextoAlMovimiento,
+  leerValorIonInputAsync,
+  normalizarMontoFormulario,
+  sincronizarFechaFormularioMovimiento,
+  validarTamanoComprobante
+} from '../../shared/utils/movimiento-form-sync.util';
+import { FORM_GUARDADO_TOAST_MS, scrollAlErrorFormulario } from '../../shared/utils/form-guardado.util';
 import { accionesTablaMovimiento } from '../../shared/utils/movimiento-acciones.util';
 import {
   ministeriosEnAlcance,
@@ -105,6 +113,9 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
   @ViewChild('dateInputDesde') dateInputDesde?: ElementRef<HTMLInputElement>;
   @ViewChild('dateInputHasta') dateInputHasta?: ElementRef<HTMLInputElement>;
   @ViewChild('comprobanteInput') comprobanteInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('montoInput') montoInput?: IonInput;
+  @ViewChild('descripcionInput') descripcionInput?: IonInput;
+  @ViewChild('fechaInput') fechaInput?: IonInput;
 
   fechaManualForm = '';
   listaMinisterios: Ministerio[] = [];
@@ -130,6 +141,8 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
   comprobanteSeleccionado: string | null = null;
   comprobanteEsPdf = false;
+  registrando = false;
+  formGuardadoError: string | null = null;
 
   readonly cuentasGasto = CUENTAS_GASTO_OPCIONES;
   readonly etiquetaOpcionCuenta = etiquetaOpcionCuenta;
@@ -400,21 +413,33 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   async registrarGasto(): Promise<void> {
+    if (this.registrando) return;
+
     this.intentoEnvio = true;
+    this.formGuardadoError = null;
+    await this.sincronizarFormularioAntesDeGuardar();
     this.aplicarAlcanceMinisterioAlFormulario();
     this.cdr.markForCheck();
 
     if (this.periodoFormularioCerrado) {
-      await this.mostrarToast(
-        `El periodo ${this.etiquetaPeriodoFormulario} está cerrado. No se pueden registrar movimientos.`,
-        'warning'
-      );
+      this.formGuardadoError =
+        `El periodo ${this.etiquetaPeriodoFormulario} está cerrado. No se pueden registrar movimientos.`;
+      await this.mostrarToast(this.formGuardadoError, 'warning');
+      return;
+    }
+
+    const comprobanteErr = validarTamanoComprobante(this.nuevoGasto.foto);
+    if (comprobanteErr) {
+      this.formGuardadoError = comprobanteErr;
+      await this.mostrarToast(comprobanteErr, 'danger', FORM_GUARDADO_TOAST_MS);
       return;
     }
 
     this.cargarRelaciones();
     if (!this.esFormularioValido) {
-      await this.mostrarToast(this.mensajeValidacion, 'danger', 4500);
+      this.formGuardadoError = this.mensajeValidacion;
+      await this.mostrarToast(this.formGuardadoError, 'danger', FORM_GUARDADO_TOAST_MS);
+      scrollAlErrorFormulario();
       this.cdr.markForCheck();
       return;
     }
@@ -425,37 +450,71 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
       this.listaMinisterios,
       this.listaUsuarios
     );
-    const guardando = this.modoEdicion ? 'Actualizando registro...' : 'Guardando gasto...';
 
+    this.registrando = true;
+    this.cdr.markForCheck();
     try {
-      await withLoading(this.loadingController, guardando, async () => {
-        if (this.modoEdicion && this.idEditando !== null) {
-          await firstValueFrom(this.gastosService.update(this.idEditando, preparado, fechaFormateada));
-          const msg = this.authService.isLider()
-            ? 'Gasto actualizado y enviado a aprobación'
-            : 'Registro actualizado exitosamente';
-          await this.mostrarToast(msg, 'success');
-        } else {
-          await firstValueFrom(this.gastosService.create(preparado, fechaFormateada));
-          const msg = this.authService.isLider()
-            ? 'Gasto registrado. Queda pendiente de aprobación.'
-            : 'Registro creado exitosamente';
-          await this.mostrarToast(msg, 'success');
-        }
-      });
+      if (this.modoEdicion && this.idEditando !== null) {
+        await firstValueFrom(this.gastosService.update(this.idEditando, preparado, fechaFormateada));
+        const msg = this.authService.isLider()
+          ? 'Gasto actualizado y enviado a aprobación'
+          : 'Registro actualizado exitosamente';
+        await this.mostrarToast(msg, 'success');
+      } else {
+        await firstValueFrom(this.gastosService.create(preparado, fechaFormateada));
+        const msg = this.authService.isLider()
+          ? 'Gasto registrado. Queda pendiente de aprobación.'
+          : 'Registro creado exitosamente';
+        await this.mostrarToast(msg, 'success');
+      }
       this.dataService.notifyChanges();
       this.resetFormulario();
-      this.cdr.markForCheck();
     } catch (error) {
-      await this.mostrarToast(
-        mensajeErrorGuardadoMovimiento(
-          error,
-          'No se pudo guardar. Si adjuntaste un archivo muy grande, intenta sin comprobante.'
-        ),
-        'danger',
-        4500
+      this.formGuardadoError = mensajeErrorGuardadoMovimiento(
+        error,
+        'No se pudo guardar. Si adjuntaste un archivo muy grande, intenta sin comprobante.'
       );
+      await this.mostrarToast(this.formGuardadoError, 'danger', FORM_GUARDADO_TOAST_MS);
+      scrollAlErrorFormulario();
+    } finally {
+      this.registrando = false;
       this.cdr.markForCheck();
+    }
+  }
+
+  private async sincronizarFormularioAntesDeGuardar(): Promise<void> {
+    const [montoRaw, descripcionRaw, fechaRaw] = await Promise.all([
+      leerValorIonInputAsync(this.montoInput),
+      leerValorIonInputAsync(this.descripcionInput),
+      leerValorIonInputAsync(this.fechaInput)
+    ]);
+
+    this.nuevoGasto = aplicarValoresTextoAlMovimiento(
+      this.nuevoGasto,
+      montoRaw,
+      descripcionRaw
+    );
+
+    if (fechaRaw.trim()) {
+      this.fechaManualForm = formatearEntradaFechaManual(fechaRaw);
+    }
+
+    const monto = normalizarMontoFormulario(this.nuevoGasto.monto);
+    if (monto != null) {
+      this.nuevoGasto = { ...this.nuevoGasto, monto };
+    }
+
+    const syncFecha = sincronizarFechaFormularioMovimiento(
+      this.fechaManualForm,
+      this.nuevoGasto.fecha
+    );
+    this.fechaManualForm = syncFecha.fechaManualForm;
+    if (syncFecha.fechaIso) {
+      this.nuevoGasto = { ...this.nuevoGasto, fecha: syncFecha.fechaIso };
+    }
+
+    if (this.nuevoGasto.cuentaCodigo?.trim()) {
+      aplicarCuentaEnGasto(this.nuevoGasto, this.nuevoGasto.cuentaCodigo);
     }
   }
 
@@ -604,6 +663,7 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
     this.modoEdicion = false;
     this.idEditando = null;
     this.intentoEnvio = false;
+    this.formGuardadoError = null;
     this.aplicarAlcanceMinisterioAlFormulario();
     if (this.comprobanteInput?.nativeElement) {
       this.comprobanteInput.nativeElement.value = '';

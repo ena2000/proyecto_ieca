@@ -342,7 +342,7 @@
               (click)="registrarIngreso()">
               <ion-icon [name]="modoEdicion ? 'save-outline' : 'add-circle-outline'"></ion-icon>
               <span>
-                {{ registrando ? 'Enviando al servidor…' : (modoEdicion ? 'Guardar Cambios' : 'Registrar Ingreso') }}
+                {{ registrando ? (modoEdicion ? 'Guardando…' : 'Registrando…') : (modoEdicion ? 'Guardar Cambios' : 'Registrar Ingreso') }}
               </span>
             </ion-button>
 

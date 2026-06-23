@@ -41,6 +41,7 @@
             [class.error-border]="intentoEnvio && nuevoMinisterio.nombre.trim().length < 3">
             <ion-icon slot="start" name="options-outline" class="text-blue"></ion-icon>
             <ion-input
+              #nombreInput
               type="text"
               [(ngModel)]="nuevoMinisterio.nombre"
               (ngModelChange)="onFormularioChange()"
@@ -70,6 +71,13 @@
           </ion-item>
         </div>
 
+        @if ((intentoEnvio && !formularioValido) || formGuardadoError) {
+          <div class="form-validation-error" role="alert">
+            <ion-icon name="alert-circle-outline" aria-hidden="true"></ion-icon>
+            <span>{{ formGuardadoError || mensajeValidacion }}</span>
+          </div>
+        }
+
         <!-- Botones -->
         <div class="form-footer-container">
           <div class="action-buttons-group">
@@ -77,10 +85,13 @@
               expand="block"
               type="button"
               class="ieca-button-primary btn-main"
+              [disabled]="guardando"
               [class.button-disabled]="intentoEnvio && !formularioValido"
               (click)="registrarMinisterio()">
               <ion-icon [name]="modoEdicion ? 'save-outline' : 'add-circle-outline'"></ion-icon>
-              <span>{{ modoEdicion ? 'Guardar Cambios' : 'Registrar Ministerio' }}</span>
+              <span>
+                {{ guardando ? (modoEdicion ? 'Guardando…' : 'Registrando…') : (modoEdicion ? 'Guardar Cambios' : 'Registrar Ministerio') }}
+              </span>
             </ion-button>
             <ion-button
               *ngIf="modoEdicion"

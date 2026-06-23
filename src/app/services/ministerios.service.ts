@@ -7,6 +7,7 @@ import { ApiService } from '../core/services/api.service';
 import { API } from '../core/constants/api.constants';
 import { environment } from '../../environments/environment';
 import { ministerioNombreDuplicado, mensajeMinisterioDuplicado } from '../shared/utils/unicidad.util';
+import { withMutationTimeout } from '../shared/utils/http-mutation.util';
 import { filtrarMinisteriosCatalogo } from '../shared/constants/ministerios-catalogo.constants';
 
 @Injectable({ providedIn: 'root' })
@@ -34,8 +35,10 @@ export class MinisteriosService {
     if (environment.useLocalFallback) {
       return of(this.createLocal(ministerio));
     }
-    return this.api.post<Ministerio>(API.ministerios, ministerio).pipe(
-      tap(nuevo => this.persist([nuevo, ...this.getAll()]))
+    return withMutationTimeout(
+      this.api.post<Ministerio>(API.ministerios, ministerio).pipe(
+        tap(nuevo => this.persist([nuevo, ...this.getAll()]))
+      )
     );
   }
 
@@ -43,10 +46,12 @@ export class MinisteriosService {
     if (environment.useLocalFallback) {
       return of(this.updateLocal(id, ministerio));
     }
-    return this.api.put<Ministerio>(`${API.ministerios}/${id}`, ministerio).pipe(
-      tap(actualizado => {
-        this.persist(this.getAll().map(m => (m.id === id ? actualizado : m)));
-      })
+    return withMutationTimeout(
+      this.api.put<Ministerio>(`${API.ministerios}/${id}`, ministerio).pipe(
+        tap(actualizado => {
+          this.persist(this.getAll().map(m => (m.id === id ? actualizado : m)));
+        })
+      )
     );
   }
 
@@ -55,8 +60,10 @@ export class MinisteriosService {
       this.deleteLocal(id);
       return of(undefined);
     }
-    return this.api.delete(`${API.ministerios}/${id}`).pipe(
-      tap(() => this.persist(this.getAll().filter(m => m.id !== id)))
+    return withMutationTimeout(
+      this.api.delete(`${API.ministerios}/${id}`).pipe(
+        tap(() => this.persist(this.getAll().filter(m => m.id !== id)))
+      )
     );
   }
 

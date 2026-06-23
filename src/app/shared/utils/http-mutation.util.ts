@@ -5,7 +5,7 @@ import { catchError, timeout } from 'rxjs/operators';
 export const API_MUTATION_TIMEOUT_MS = 120_000;
 
 export const API_MUTATION_TIMEOUT_MESSAGE =
-  'El servidor tardó demasiado en responder. Espera un minuto (arranque en Render) e inténtalo de nuevo.';
+  'La operación tardó demasiado. Espera un momento e inténtalo de nuevo.';
 
 export function withMutationTimeout<T>(source: Observable<T>): Observable<T> {
   return source.pipe(

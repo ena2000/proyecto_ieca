@@ -71,6 +71,7 @@ import {
   sincronizarFechaFormularioMovimiento,
   validarTamanoComprobante
 } from '../../shared/utils/movimiento-form-sync.util';
+import { FORM_GUARDADO_TOAST_MS, scrollAlErrorFormulario } from '../../shared/utils/form-guardado.util';
 
 registerLocaleData(localeEs);
 
@@ -471,15 +472,15 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
     const comprobanteErr = validarTamanoComprobante(this.nuevoIngreso.foto);
     if (comprobanteErr) {
       this.formGuardadoError = comprobanteErr;
-      await this.mostrarToast(comprobanteErr, 'danger', 4500);
+      await this.mostrarToast(comprobanteErr, 'danger', FORM_GUARDADO_TOAST_MS);
       return;
     }
 
     this.cargarRelaciones();
     if (!this.esFormularioValido) {
       this.formGuardadoError = this.mensajeValidacion;
-      await this.mostrarToast(this.formGuardadoError, 'danger', 4500);
-      this.scrollAlErrorFormulario();
+      await this.mostrarToast(this.formGuardadoError, 'danger', FORM_GUARDADO_TOAST_MS);
+      scrollAlErrorFormulario();
       this.cdr.markForCheck();
       return;
     }
@@ -511,8 +512,8 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
       this.resetFormulario();
     } catch (error) {
       this.formGuardadoError = mensajeErrorGuardadoMovimiento(error, 'Error al guardar el registro');
-      await this.mostrarToast(this.formGuardadoError, 'danger', 4500);
-      this.scrollAlErrorFormulario();
+      await this.mostrarToast(this.formGuardadoError, 'danger', FORM_GUARDADO_TOAST_MS);
+      scrollAlErrorFormulario();
     } finally {
       this.registrando = false;
       this.cdr.markForCheck();
@@ -553,15 +554,6 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
     if (this.nuevoIngreso.cuentaCodigo?.trim()) {
       aplicarCuentaEnIngreso(this.nuevoIngreso, this.nuevoIngreso.cuentaCodigo);
     }
-  }
-
-  private scrollAlErrorFormulario(): void {
-    requestAnimationFrame(() => {
-      document.querySelector('.form-validation-error')?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest'
-      });
-    });
   }
 
   async aprobarIngreso(item: Ingreso): Promise<void> {

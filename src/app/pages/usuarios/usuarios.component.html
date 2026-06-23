@@ -66,6 +66,7 @@
               class="text-blue">
             </ion-icon>
             <ion-input
+              #nombreInput
               type="text"
               [(ngModel)]="nuevoUsuario.nombre"
               name="nombre"
@@ -95,6 +96,7 @@
               class="text-blue">
             </ion-icon>
             <ion-input
+              #emailInput
               type="email"
               [(ngModel)]="nuevoUsuario.email"
               name="email"
@@ -155,7 +157,7 @@
               <ion-select-option *ngFor="let min of ministeriosParaColaborador" [value]="min.id">{{ min.nombre }}</ion-select-option>
             </ion-select>
           </ion-item>
-          <small class="error-text" *ngIf="isRolSinMinisterio(nuevoUsuario.rol)">
+          <small class="hint-text" *ngIf="isRolSinMinisterio(nuevoUsuario.rol)">
             Administrador y Contable no llevan ministerio asignado.
           </small>
           <small class="hint-text" *ngIf="nuevoUsuario.rol === ROL_COLABORADOR">
@@ -165,7 +167,7 @@
 
         <div class="input-group">
           <ion-label class="ieca-label">
-            Contraseña(Opcional) {{ modoEdicion ? '(dejar vacío para mantener)' : '*' }}
+            Contraseña (opcional)
           </ion-label>
           <ion-item
             lines="none"
@@ -176,17 +178,33 @@
               class="text-blue">
             </ion-icon>
             <ion-input
+              #passwordInput
               type="password"
               [(ngModel)]="password"
               name="password"
               [placeholder]="modoEdicion ? 'Nueva contraseña (opcional)' : 'Contraseña (mínimo 6)'">
             </ion-input>
           </ion-item>
-          <small class="error-text" *ngIf="intentoEnvio && !modoEdicion && password.trim().length < 6">
-            La contraseña debe tener al menos 6 caracteres.
+          <small class="hint-text" *ngIf="!modoEdicion">
+            Si no escribes una, al guardar se genera una contraseña temporal para copiar y entregar al usuario.
+          </small>
+          <small class="hint-text" *ngIf="modoEdicion">
+            Déjala vacía si no quieres cambiar la contraseña actual.
+          </small>
+          <small
+            class="error-text"
+            *ngIf="intentoEnvio && password.trim().length > 0 && password.trim().length < 6">
+            Si defines contraseña, debe tener al menos 6 caracteres.
           </small>
         </div>
        
+
+        @if ((intentoEnvio && !esFormularioValido) || formGuardadoError) {
+          <div class="form-validation-error" role="alert">
+            <ion-icon name="alert-circle-outline" aria-hidden="true"></ion-icon>
+            <span>{{ formGuardadoError || mensajeValidacion }}</span>
+          </div>
+        }
 
         <div class="form-footer-container">
           <div class="action-buttons-group">
@@ -195,11 +213,12 @@
               expand="block"
               type="button"
               class="ieca-button-primary btn-main"
+              [disabled]="guardando"
               [class.button-disabled]="intentoEnvio && !esFormularioValido"
               (click)="registrarUsuario()">
               <ion-icon [name]="modoEdicion ? 'save-outline' : 'add-circle-outline'"></ion-icon>
               <span>
-                {{ modoEdicion ? 'Guardar Cambios' : 'Registrar Usuario' }}
+                {{ guardando ? (modoEdicion ? 'Guardando…' : 'Registrando…') : (modoEdicion ? 'Guardar Cambios' : 'Registrar Usuario') }}
               </span>
             </ion-button>
 

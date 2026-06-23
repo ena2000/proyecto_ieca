@@ -82,6 +82,7 @@
           </ion-label>
           <div class="hybrid-date-container">
             <ion-input
+              #fechaInput
               [(ngModel)]="fechaManualForm"
               name="fechaManualForm"
               placeholder="DD/MM/AAAA"
@@ -128,6 +129,7 @@
               class="text-red">
             </ion-icon>
             <ion-input
+              #montoInput
               type="number"
               inputmode="decimal"
               [(ngModel)]="nuevoGasto.monto"
@@ -242,6 +244,7 @@
               class="text-blue">
             </ion-icon>
             <ion-input
+              #descripcionInput
               type="text"
               [(ngModel)]="nuevoGasto.descripcion"
               name="descripcion"
@@ -318,10 +321,10 @@
           </div>
         </div>
 
-        @if (intentoEnvio && !esFormularioValido) {
+        @if ((intentoEnvio && !esFormularioValido) || formGuardadoError) {
           <div class="form-validation-error" role="alert">
             <ion-icon name="alert-circle-outline" aria-hidden="true"></ion-icon>
-            <span>{{ mensajeValidacion }}</span>
+            <span>{{ formGuardadoError || mensajeValidacion }}</span>
           </div>
         }
 
@@ -332,12 +335,12 @@
               expand="block"
               type="button"
               class="ieca-button-primary btn-main"
-              [disabled]="periodoFormularioCerrado"
+              [disabled]="periodoFormularioCerrado || registrando"
               [class.button-disabled]="intentoEnvio && !esFormularioValido"
               (click)="registrarGasto()">
               <ion-icon [name]="modoEdicion ? 'save-outline' : 'add-circle-outline'"></ion-icon>
               <span>
-                {{ modoEdicion ? 'Guardar Cambios' : 'Registrar Gasto' }}
+                {{ registrando ? (modoEdicion ? 'Guardando…' : 'Registrando…') : (modoEdicion ? 'Guardar Cambios' : 'Registrar Gasto') }}
               </span>
             </ion-button>
 

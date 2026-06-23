@@ -7,6 +7,7 @@ import { ApiService } from '../core/services/api.service';
 import { API } from '../core/constants/api.constants';
 import { environment } from '../../environments/environment';
 import { estadoGasto } from '../shared/utils/gasto.util';
+import { withMutationTimeout } from '../shared/utils/http-mutation.util';
 import { stampAuditoriaLocal, stampAuditoriaActualizacionLocal } from '../shared/utils/audit.util';
 import { AuthService } from '../core/services/auth.service';
 import { ROLES } from '../core/constants/roles.constants';
@@ -40,11 +41,13 @@ export class GastosService {
     if (environment.useLocalFallback) {
       return of(this.createLocal(gasto, fechaFormateada));
     }
-    return this.api.post<Gasto>(API.gastos.base, { ...gasto, fechaFormateada }).pipe(
-      tap(nuevo => {
-        this.persist([nuevo, ...this.getAll()]);
-        this.notificacionesService.recargar();
-      })
+    return withMutationTimeout(
+      this.api.post<Gasto>(API.gastos.base, { ...gasto, fechaFormateada }).pipe(
+        tap(nuevo => {
+          this.persist([nuevo, ...this.getAll()]);
+          this.notificacionesService.recargar();
+        })
+      )
     );
   }
 
@@ -52,12 +55,14 @@ export class GastosService {
     if (environment.useLocalFallback) {
       return of(this.updateLocal(id, gasto, fechaFormateada));
     }
-    return this.api.put<Gasto>(`${API.gastos.base}/${id}`, { ...gasto, fechaFormateada }).pipe(
-      tap(actualizado => {
-        const lista = this.getAll().map(g => (g.id === id ? actualizado : g));
-        this.persist(lista);
-        this.notificacionesService.recargar();
-      })
+    return withMutationTimeout(
+      this.api.put<Gasto>(`${API.gastos.base}/${id}`, { ...gasto, fechaFormateada }).pipe(
+        tap(actualizado => {
+          const lista = this.getAll().map(g => (g.id === id ? actualizado : g));
+          this.persist(lista);
+          this.notificacionesService.recargar();
+        })
+      )
     );
   }
 
@@ -78,11 +83,13 @@ export class GastosService {
     if (environment.useLocalFallback) {
       return of(this.aprobarLocal(id));
     }
-    return this.api.patch<Gasto>(API.gastos.aprobar(id), {}).pipe(
-      tap(actualizado => {
-        this.persist(this.getAll().map(g => (g.id === id ? actualizado : g)));
-        this.notificacionesService.recargar();
-      })
+    return withMutationTimeout(
+      this.api.patch<Gasto>(API.gastos.aprobar(id), {}).pipe(
+        tap(actualizado => {
+          this.persist(this.getAll().map(g => (g.id === id ? actualizado : g)));
+          this.notificacionesService.recargar();
+        })
+      )
     );
   }
 
@@ -90,11 +97,13 @@ export class GastosService {
     if (environment.useLocalFallback) {
       return of(this.rechazarLocal(id, motivo));
     }
-    return this.api.patch<Gasto>(API.gastos.rechazar(id), { motivo }).pipe(
-      tap(actualizado => {
-        this.persist(this.getAll().map(g => (g.id === id ? actualizado : g)));
-        this.notificacionesService.recargar();
-      })
+    return withMutationTimeout(
+      this.api.patch<Gasto>(API.gastos.rechazar(id), { motivo }).pipe(
+        tap(actualizado => {
+          this.persist(this.getAll().map(g => (g.id === id ? actualizado : g)));
+          this.notificacionesService.recargar();
+        })
+      )
     );
   }
 
