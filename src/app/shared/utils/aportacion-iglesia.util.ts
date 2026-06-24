@@ -42,14 +42,29 @@ export function ingresoEstaAprobadoParaAportacion(ingreso: Ingreso): boolean {
   return !estado || estado === 'aprobado';
 }
 
+function camposAportacionCoherentesConBruto(ingreso: Ingreso, bruto: number): boolean {
+  if (ingreso.montoNetoMinisterio == null || ingreso.montoAportacionIglesia == null) {
+    return false;
+  }
+  const suma = Math.round((ingreso.montoNetoMinisterio + ingreso.montoAportacionIglesia) * 100) / 100;
+  return Math.abs(suma - bruto) < 0.02;
+}
+
 /** Monto del 33% que aporta un ingreso de talento aprobado de ministerio. */
 export function calcularMontoAportacionIngreso(ingreso: Ingreso): number {
   if (!ingresoEsTalento(ingreso) || ingreso.ministerioId == null || ingreso.esAportacionIglesia) {
     return 0;
   }
   if (!ingresoEstaAprobadoParaAportacion(ingreso)) return 0;
-  if (ingreso.montoAportacionIglesia != null) return ingreso.montoAportacionIglesia;
-  return calcularMontoAportacionIglesia(Number(ingreso.monto));
+  const bruto = Number(ingreso.monto);
+  if (
+    ingreso.montoAportacionIglesia != null &&
+    Number.isFinite(bruto) &&
+    camposAportacionCoherentesConBruto(ingreso, bruto)
+  ) {
+    return ingreso.montoAportacionIglesia;
+  }
+  return calcularMontoAportacionIglesia(bruto);
 }
 
 export interface AportacionMinisterioResumen {
@@ -64,11 +79,29 @@ export function calcularMontoNetoMinisterio(ingreso: Ingreso): number {
   if (!Number.isFinite(bruto) || bruto <= 0) return 0;
   if (ingreso.esAportacionIglesia || ingreso.ministerioId == null) return bruto;
   if (!ingresoEsTalento(ingreso)) return bruto;
-  if (ingreso.montoNetoMinisterio != null) return ingreso.montoNetoMinisterio;
-  if (ingreso.montoAportacionIglesia != null) {
+  if (ingreso.montoNetoMinisterio != null && camposAportacionCoherentesConBruto(ingreso, bruto)) {
+    return ingreso.montoNetoMinisterio;
+  }
+  if (ingreso.montoAportacionIglesia != null && camposAportacionCoherentesConBruto(ingreso, bruto)) {
     return Math.round((bruto - ingreso.montoAportacionIglesia) * 100) / 100;
   }
   return Math.round((bruto - calcularMontoAportacionIglesia(bruto)) * 100) / 100;
+}
+
+/** Recalcula monto neto y aportación cuando el bruto cambió tras editar un ingreso aprobado. */
+export function recalcularCamposAportacionEnIngreso(ingreso: Ingreso): Ingreso {
+  if (!ingreso.aportacionGenerada || ingreso.esAportacionIglesia) return ingreso;
+  if (!ingresoEsTalento(ingreso) || !ingresoEstaAprobadoParaAportacion(ingreso)) return ingreso;
+
+  const bruto = Number(ingreso.monto);
+  if (!Number.isFinite(bruto) || bruto <= 0) return ingreso;
+
+  const montoAportacionIglesia = calcularMontoAportacionIglesia(bruto);
+  return {
+    ...ingreso,
+    montoAportacionIglesia,
+    montoNetoMinisterio: Math.round((bruto - montoAportacionIglesia) * 100) / 100
+  };
 }
 
 export function crearIngresoIglesiaPorAportacion(

@@ -12,8 +12,11 @@ const { assertMinisterioPermiteIngresoManual } = require('./ministerio-iglesia')
 const {
   generarAportacionIglesiaPorIngreso,
   revertirAportacionIglesiaPorIngreso,
-  bloquearEdicionAportacionIglesia
+  bloquearEdicionAportacionIglesia,
+  actualizarAportacionIglesiaPorIngreso,
+  calcularMontoAportacionIglesia
 } = require('./aportacion-iglesia');
+const { ingresoEsTalento } = require('../constants/aportacion-iglesia');
 
 const COLLECTION = 'ingresos';
 const ESTADOS = new Set(['pendiente', 'aprobado', 'rechazado']);
@@ -59,6 +62,18 @@ function onUpdateIngreso(body, req, current) {
     const err = new Error('El contable solo puede consultar ingresos');
     err.status = 403;
     throw err;
+  }
+  const merged = { ...current, ...body };
+  if (merged?.aportacionGenerada && ingresoEsTalento(merged)) {
+    const monto = Number(body.monto ?? current?.monto);
+    if (Number.isFinite(monto) && monto > 0) {
+      const montoAportacionIglesia = calcularMontoAportacionIglesia(monto);
+      return {
+        ...body,
+        montoAportacionIglesia,
+        montoNetoMinisterio: Math.round((monto - montoAportacionIglesia) * 100) / 100
+      };
+    }
   }
   return body;
 }
@@ -188,12 +203,14 @@ async function rechazarIngreso(id, req, motivo) {
 }
 
 async function afterUpdateIngreso(updated, req, current) {
+  const sincronizado = await actualizarAportacionIglesiaPorIngreso(updated, req, current);
   await notificarMovimientoModificado({
     tipo: 'ingreso',
-    movimiento: updated,
+    movimiento: sincronizado,
     req,
     current
   });
+  return sincronizado;
 }
 
 async function afterDeleteIngreso(deleted, req) {

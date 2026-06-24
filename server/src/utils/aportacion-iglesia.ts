@@ -94,6 +94,47 @@ async function revertirAportacionIglesiaPorIngreso(ingreso) {
   }
 }
 
+async function actualizarAportacionIglesiaPorIngreso(ingreso, _req, previous) {
+  if (!ingreso?.aportacionGenerada || ingreso.ingresoIglesiaId == null) {
+    return ingreso;
+  }
+  if (!ingresoEsTalento(ingreso)) {
+    return ingreso;
+  }
+
+  const montoAnterior = Number(previous?.monto);
+  const montoNuevo = Number(ingreso.monto);
+  if (!Number.isFinite(montoNuevo) || montoNuevo <= 0) {
+    return ingreso;
+  }
+  if (montoAnterior === montoNuevo) {
+    return ingreso;
+  }
+
+  const montoAportacion = calcularMontoAportacionIglesia(montoNuevo);
+  const montoNetoMinisterio = Math.round((montoNuevo - montoAportacion) * 100) / 100;
+  const pct = etiquetaPorcentajeAportacion();
+  const ministerioNombre = ingreso.ministerio || 'ministerio';
+  const ref = `ingreso #${ingreso.id}`;
+  const fecha = ingreso.fecha || previous?.fecha || new Date().toISOString();
+  const fechaFormateada = ingreso.fechaFormateada || formatDateDDMMYYYY(fecha);
+
+  const ingresoIglesia = await getById('ingresos', ingreso.ingresoIglesiaId);
+  if (ingresoIglesia) {
+    await updateInCollection('ingresos', ingreso.ingresoIglesiaId, {
+      monto: montoAportacion,
+      descripcion: `Aportación de ${ministerioNombre} (${pct}) — ${ref}`,
+      fecha,
+      fechaFormateada
+    });
+  }
+
+  return updateInCollection('ingresos', ingreso.id, {
+    montoAportacionIglesia: montoAportacion,
+    montoNetoMinisterio
+  });
+}
+
 function bloquearEdicionAportacionIglesia(entity) {
   if (entity?.esAportacionIglesia) {
     return {
@@ -107,6 +148,7 @@ function bloquearEdicionAportacionIglesia(entity) {
 module.exports = {
   ingresoRequiereAportacion,
   generarAportacionIglesiaPorIngreso,
+  actualizarAportacionIglesiaPorIngreso,
   revertirAportacionIglesiaPorIngreso,
   bloquearEdicionAportacionIglesia,
   calcularMontoAportacionIglesia

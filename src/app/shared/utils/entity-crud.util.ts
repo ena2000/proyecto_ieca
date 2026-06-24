@@ -46,7 +46,9 @@ function rankEstadoMovimiento(estado: unknown): number {
 }
 
 /** Tras aprobar/rechazar, fusiona API + fila local sin perder el estado más avanzado. */
-export function fusionarRegistroMovimientoEstado<T extends { id?: number | null; estado?: string }>(
+export function fusionarRegistroMovimientoEstado<
+  T extends { id?: number | null; estado?: string; monto?: number | null }
+>(
   desdeApi: T,
   local: T | undefined,
   idFallback?: number
@@ -58,6 +60,15 @@ export function fusionarRegistroMovimientoEstado<T extends { id?: number | null;
   const rApi = rankEstadoMovimiento(desdeApi.estado);
   if (rLocal > rApi) {
     return { ...base, ...local, estado: local.estado, id: base.id ?? local.id };
+  }
+
+  // Misma resolución de estado: si el monto local difiere, priorizar la mutación reciente de la UI.
+  if (rLocal === rApi && rLocal > 0) {
+    const montoLocal = Number(local.monto);
+    const montoApi = Number(desdeApi.monto);
+    if (Number.isFinite(montoLocal) && Number.isFinite(montoApi) && montoLocal !== montoApi) {
+      return { ...base, ...local, id: base.id ?? local.id, estado: base.estado ?? local.estado };
+    }
   }
   return base;
 }

@@ -53,7 +53,7 @@ describe('aportacion-iglesia.util', () => {
   it('calcula monto neto solo para talento', () => {
     expect(calcularMontoNetoMinisterio(ingresoTalento)).toBe(67);
     expect(calcularMontoNetoMinisterio(ingresoDiezmo)).toBe(100);
-    expect(calcularMontoNetoMinisterio({ ...ingresoTalento, montoNetoMinisterio: 50 })).toBe(50);
+    expect(calcularMontoNetoMinisterio({ ...ingresoTalento, monto: 200, montoNetoMinisterio: 50 })).toBe(134);
   });
 
   it('crea ingreso de iglesia vinculado al ingreso origen', () => {

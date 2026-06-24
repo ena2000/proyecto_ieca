@@ -298,11 +298,12 @@ function createCrudRouter(collection, options: {
       if (audit) {
         body = await applyAuditActualizacion(body, req, current);
       }
-      const updated = await updateInCollection(collection, req.params.id, body);
+      let updated = await updateInCollection(collection, req.params.id, body);
       if (!updated) return res.status(404).json({ message: 'No encontrado' });
       if (afterUpdate) {
         try {
-          await afterUpdate(updated, req, current);
+          const hookResult = await afterUpdate(updated, req, current);
+          if (hookResult) updated = hookResult;
         } catch (hookErr) {
           console.error(`[${collection} afterUpdate]`, hookErr);
         }

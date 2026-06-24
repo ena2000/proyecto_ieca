@@ -17,6 +17,7 @@ import {
   ingresoEstaAprobadoParaAportacion,
   ingresoRequiereAportacion,
   marcarIngresoConAportacion,
+  recalcularCamposAportacionEnIngreso,
   assertMovimientoAportacionModificable
 } from '../shared/utils/aportacion-iglesia.util';
 import { fusionarMovimientosTrasBootstrap } from '../shared/utils/movimiento-list-merge.util';
@@ -83,7 +84,7 @@ export class IngresosService {
         const lista = this.getAll().map(i => (Number(i.id) === id ? completo : i));
         this.persist(lista);
         this.notificacionesService.recargar();
-        this.syncListaEnSegundoPlano();
+        setTimeout(() => this.syncListaEnSegundoPlano(), 800);
       })
     );
   }
@@ -197,7 +198,7 @@ export class IngresosService {
     idFallback?: number
   ): Ingreso {
     const base = completarRegistroTrasMutacion(desdeApi, enviado, idFallback);
-    return normalizarIngreso({
+    const normalizado = normalizarIngreso({
       ...base,
       fechaFormateada: desdeApi.fechaFormateada ?? fechaFormateada,
       ministerioId: desdeApi.ministerioId ?? enviado.ministerioId,
@@ -206,6 +207,7 @@ export class IngresosService {
       ministerio: desdeApi.ministerio ?? enviado.ministerio,
       registradoPor: desdeApi.registradoPor ?? enviado.registradoPor
     });
+    return recalcularCamposAportacionEnIngreso(normalizado);
   }
 
   /** Sincroniza la lista completa en segundo plano (p. ej. aportación 33% tras aprobar). */
@@ -268,11 +270,34 @@ export class IngresosService {
       motivoRechazo: estado === 'pendiente' ? undefined : ingreso.motivoRechazo,
       ...audit
     };
-    this.persist(this.getAll().map(i => (i.id === id ? actualizado : i)));
-    if (current) {
-      this.notifyModificado(actualizado, current);
+    let finalizado = recalcularCamposAportacionEnIngreso(actualizado);
+    let lista = this.getAll().map(i => (i.id === id ? finalizado : i));
+    if (finalizado.aportacionGenerada && finalizado.ingresoIglesiaId != null && current) {
+      const montoAnterior = Number(current.monto);
+      const montoNuevo = Number(finalizado.monto);
+      if (montoAnterior !== montoNuevo) {
+        const ingresoIglesia = lista.find(
+          i => Number(i.id) === Number(finalizado.ingresoIglesiaId)
+        );
+        if (ingresoIglesia) {
+          const fechaFormateadaIglesia =
+            ingresoIglesia.fechaFormateada || formatearISOaDDMMYYYY(finalizado.fecha);
+          const actualizadoIglesia = crearIngresoIglesiaPorAportacion(
+            finalizado,
+            Number(ingresoIglesia.id),
+            fechaFormateadaIglesia
+          );
+          lista = lista.map(i =>
+            Number(i.id) === Number(ingresoIglesia.id) ? actualizadoIglesia : i
+          );
+        }
+      }
     }
-    return actualizado;
+    this.persist(lista);
+    if (current) {
+      this.notifyModificado(finalizado, current);
+    }
+    return finalizado;
   }
 
   private aprobarLocal(id: number): Ingreso {
