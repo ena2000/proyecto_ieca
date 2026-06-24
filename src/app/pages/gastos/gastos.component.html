@@ -400,39 +400,54 @@
       </div>
 
       <div class="advanced-filters">
-        <div class="filter-item filter-item--estado">
-          <ion-label>Estado</ion-label>
-          <div class="periodo-chips estado-chips">
+        <section class="estado-filtro-section" aria-label="Filtrar por estado">
+          <div class="filter-item filter-item--estado-header">
+            <ion-label>Estado del registro</ion-label>
+          </div>
+          <div class="estado-filtro-bar" role="group">
             <button
               type="button"
-              class="periodo-chip"
-              [class.periodo-chip--active]="filtroEstado === 'todos'"
+              class="estado-filtro-option estado-filtro-option--todos"
+              [class.estado-filtro-option--active]="filtroEstado === 'todos'"
+              [attr.aria-pressed]="filtroEstado === 'todos'"
               (click)="seleccionarFiltroEstado('todos')">
-              Todos
+              <span class="estado-filtro-option__indicator estado-filtro-option__indicator--todos" aria-hidden="true"></span>
+              <span class="estado-filtro-option__text">Todos</span>
             </button>
             <button
               type="button"
-              class="periodo-chip periodo-chip--pendiente"
-              [class.periodo-chip--active]="filtroEstado === 'pendiente'"
+              class="estado-filtro-option estado-filtro-option--pendiente"
+              [class.estado-filtro-option--active]="filtroEstado === 'pendiente'"
+              [attr.aria-pressed]="filtroEstado === 'pendiente'"
               (click)="seleccionarFiltroEstado('pendiente')">
-              Pendientes<span *ngIf="pendientesCount > 0"> ({{ pendientesCount }})</span>
+              <span class="estado-filtro-option__indicator estado-filtro-option__indicator--pendiente" aria-hidden="true"></span>
+              <span class="estado-filtro-option__text">Pendientes</span>
+              <span class="estado-filtro-option__count" *ngIf="pendientesCount > 0">{{ pendientesCount }}</span>
             </button>
             <button
               type="button"
-              class="periodo-chip periodo-chip--aprobado"
-              [class.periodo-chip--active]="filtroEstado === 'aprobado'"
+              class="estado-filtro-option estado-filtro-option--aprobado"
+              [class.estado-filtro-option--active]="filtroEstado === 'aprobado'"
+              [attr.aria-pressed]="filtroEstado === 'aprobado'"
               (click)="seleccionarFiltroEstado('aprobado')">
-              Aprobados<span *ngIf="aprobadosCount > 0"> ({{ aprobadosCount }})</span>
+              <span class="estado-filtro-option__indicator estado-filtro-option__indicator--aprobado" aria-hidden="true"></span>
+              <span class="estado-filtro-option__text">Aprobados</span>
+              <span class="estado-filtro-option__count" *ngIf="aprobadosCount > 0">{{ aprobadosCount }}</span>
             </button>
             <button
               type="button"
-              class="periodo-chip periodo-chip--rechazado"
-              [class.periodo-chip--active]="filtroEstado === 'rechazado'"
+              class="estado-filtro-option estado-filtro-option--rechazado"
+              [class.estado-filtro-option--active]="filtroEstado === 'rechazado'"
+              [attr.aria-pressed]="filtroEstado === 'rechazado'"
               (click)="seleccionarFiltroEstado('rechazado')">
-              Rechazados<span *ngIf="rechazadosCount > 0"> ({{ rechazadosCount }})</span>
+              <span class="estado-filtro-option__indicator estado-filtro-option__indicator--rechazado" aria-hidden="true"></span>
+              <span class="estado-filtro-option__text">Rechazados</span>
+              <span class="estado-filtro-option__count" *ngIf="rechazadosCount > 0">{{ rechazadosCount }}</span>
             </button>
           </div>
-        </div>
+        </section>
+
+        <div class="advanced-filters__divider" aria-hidden="true"></div>
 
         <div class="filter-row filter-row--cols-4">
 
