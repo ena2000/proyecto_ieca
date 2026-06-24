@@ -24,9 +24,9 @@ import { abrirSelectorFechaNativo, isoToDateInputValue, resetNativosDateInputs }
 import { procesarComprobante, esComprobantePdf } from '../../shared/utils/comprobante-upload.util';
 import { withLoading } from '../../shared/utils/loading.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
-import { estadoIngreso, etiquetaEstadoIngreso, ingresoPendiente, categoriaIngreso } from '../../shared/utils/ingreso.util';
+import { estadoIngreso, etiquetaEstadoIngreso, ingresoAprobado, ingresoPendiente, categoriaIngreso } from '../../shared/utils/ingreso.util';
 import { registerMovimientoPageIcons } from '../../shared/utils/movimiento-page.icons';
-import { filtrarMovimientos, hayFiltrosMovimientoActivos, FiltrosMovimiento } from '../../shared/utils/movimiento-filtros.util';
+import { filtrarMovimientos, hayFiltrosMovimientoActivos, FiltrosMovimiento, FiltroEstadoMovimiento } from '../../shared/utils/movimiento-filtros.util';
 import {
   formatearEntradaFechaManual,
   isoDesdeFechaManualDDMMYYYY,
@@ -41,7 +41,7 @@ import {
   perteneceAlcanceMinisterio,
   aplicarMinisterioAlMovimiento
 } from '../../shared/utils/movimiento-ministerio.util';
-import { leerFiltroPendientesDesdeRuta, limpiarQueryPendientes } from '../../shared/utils/movimiento-query.util';
+import { leerFiltroEstadoDesdeRuta, limpiarQueryPendientes } from '../../shared/utils/movimiento-query.util';
 import { esFormularioMovimientoValido, mensajeValidacionMovimiento } from '../../shared/utils/movimiento-validacion.util';
 import { estaPendienteParaAprobacion, resolverEstadoAlGuardar } from '../../shared/utils/movimiento-estado.util';
 import {
@@ -133,6 +133,8 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
   listaIngresos: Ingreso[] = [];
   listaFiltradaVista: Ingreso[] = [];
   pendientesCount = 0;
+  aprobadosCount = 0;
+  rechazadosCount = 0;
 
   private destroy$ = new Subject<void>();
 
@@ -143,7 +145,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
   filtroFechaFin = '';
   filtroMontoMin: number | null = null;
   filtroMontoMax: number | null = null;
-  filtroSoloPendientes = false;
+  filtroEstado: FiltroEstadoMovimiento = 'todos';
 
   comprobanteSeleccionado: string | null = null;
   comprobanteEsPdf = false;
@@ -217,7 +219,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
   ionViewWillEnter(): void {
     this.inicializarPermisos();
     void this.cierreService.cargar();
-    this.filtroSoloPendientes = leerFiltroPendientesDesdeRuta(
+    this.filtroEstado = leerFiltroEstadoDesdeRuta(
       this.route.snapshot.queryParamMap.get('pendientes')
     );
     if (!this.dataService.hasRemoteData()) {
@@ -252,7 +254,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
       fechaManualHasta: this.fechaManualHasta,
       filtroMontoMin: this.filtroMontoMin,
       filtroMontoMax: this.filtroMontoMax,
-      filtroSoloPendientes: this.filtroSoloPendientes
+      filtroEstado: this.filtroEstado
     };
   }
 
@@ -272,9 +274,9 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
     this.actualizarVista();
   }
 
-  alternarFiltroPendientes(): void {
-    this.filtroSoloPendientes = !this.filtroSoloPendientes;
-    this.actualizarVista();
+  seleccionarFiltroEstado(estado: FiltroEstadoMovimiento): void {
+    this.filtroEstado = estado;
+    this.onFiltrosChange();
   }
 
   @HostListener('document:keydown.escape')
@@ -411,7 +413,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
     this.fechaManualHasta = '';
     this.filtroMontoMin = null;
     this.filtroMontoMax = null;
-    this.filtroSoloPendientes = false;
+    this.filtroEstado = 'todos';
     resetNativosDateInputs([
       this.dateInputDesde?.nativeElement,
       this.dateInputHasta?.nativeElement
@@ -431,7 +433,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
         i.cuentaNombre ?? categoriaIngreso(i) ?? '',
         i.cuentaCodigo ?? ''
       ],
-      esPendiente: ingresoPendiente,
+      resolverEstado: i => estadoIngreso(i),
       enriquecer: i => ({
         ...i,
         cuentaNombre: i.cuentaNombre || categoriaIngreso(i) || '—',
@@ -439,7 +441,12 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
         estadoEtiqueta: etiquetaEstadoIngreso(estadoIngreso(i))
       })
     });
-    this.pendientesCount = this.listaIngresos.filter(i => ingresoPendiente(i)).length;
+    const enAlcance = this.ministerioScopeId != null
+      ? this.listaIngresos.filter(i => Number(i.ministerioId) === this.ministerioScopeId)
+      : this.listaIngresos;
+    this.pendientesCount = enAlcance.filter(ingresoPendiente).length;
+    this.aprobadosCount = enAlcance.filter(ingresoAprobado).length;
+    this.rechazadosCount = enAlcance.filter(i => estadoIngreso(i) === 'rechazado').length;
     this.cdr.markForCheck();
   }
 

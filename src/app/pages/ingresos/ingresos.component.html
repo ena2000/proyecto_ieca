@@ -378,20 +378,6 @@
           <span class="badge-count">
             {{ listaFiltradaVista.length }} registros encontrados
           </span>
-          <span
-            class="badge-count badge-count--warn badge-count--clickable"
-            *ngIf="puedeAprobar && pendientesCount > 0"
-            role="button"
-            tabindex="0"
-            [class.badge-count--active]="filtroSoloPendientes"
-            (click)="alternarFiltroPendientes()"
-            (keydown.enter)="alternarFiltroPendientes()"
-            title="Clic para ver solo pendientes">
-            {{ pendientesCount }} pendiente(s)
-          </span>
-          <span class="badge-count badge-count--filter" *ngIf="filtroSoloPendientes">
-            Solo pendientes
-          </span>
         </div>
         <div class="list-header-actions">
           <button
@@ -416,6 +402,40 @@
       </div>
 
       <div class="advanced-filters">
+        <div class="filter-item filter-item--estado">
+          <ion-label>Estado</ion-label>
+          <div class="periodo-chips estado-chips">
+            <button
+              type="button"
+              class="periodo-chip"
+              [class.periodo-chip--active]="filtroEstado === 'todos'"
+              (click)="seleccionarFiltroEstado('todos')">
+              Todos
+            </button>
+            <button
+              type="button"
+              class="periodo-chip periodo-chip--pendiente"
+              [class.periodo-chip--active]="filtroEstado === 'pendiente'"
+              (click)="seleccionarFiltroEstado('pendiente')">
+              Pendientes<span *ngIf="pendientesCount > 0"> ({{ pendientesCount }})</span>
+            </button>
+            <button
+              type="button"
+              class="periodo-chip periodo-chip--aprobado"
+              [class.periodo-chip--active]="filtroEstado === 'aprobado'"
+              (click)="seleccionarFiltroEstado('aprobado')">
+              Aprobados<span *ngIf="aprobadosCount > 0"> ({{ aprobadosCount }})</span>
+            </button>
+            <button
+              type="button"
+              class="periodo-chip periodo-chip--rechazado"
+              [class.periodo-chip--active]="filtroEstado === 'rechazado'"
+              (click)="seleccionarFiltroEstado('rechazado')">
+              Rechazados<span *ngIf="rechazadosCount > 0"> ({{ rechazadosCount }})</span>
+            </button>
+          </div>
+        </div>
+
         <div class="filter-row filter-row--cols-4">
 
           <div class="filter-item">

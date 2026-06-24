@@ -24,9 +24,9 @@ import { abrirSelectorFechaNativo, isoToDateInputValue, resetNativosDateInputs }
 import { procesarComprobante, esComprobantePdf } from '../../shared/utils/comprobante-upload.util';
 import { withLoading } from '../../shared/utils/loading.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
-import { estadoGasto, etiquetaEstadoGasto, gastoPendiente } from '../../shared/utils/gasto.util';
+import { estadoGasto, etiquetaEstadoGasto, gastoAprobado, gastoPendiente } from '../../shared/utils/gasto.util';
 import { registerMovimientoPageIcons } from '../../shared/utils/movimiento-page.icons';
-import { filtrarMovimientos, hayFiltrosMovimientoActivos, FiltrosMovimiento } from '../../shared/utils/movimiento-filtros.util';
+import { filtrarMovimientos, hayFiltrosMovimientoActivos, FiltrosMovimiento, FiltroEstadoMovimiento } from '../../shared/utils/movimiento-filtros.util';
 import {
   formatearEntradaFechaManual,
   isoDesdeFechaManualDDMMYYYY,
@@ -50,7 +50,7 @@ import {
   perteneceAlcanceMinisterio,
   aplicarMinisterioAlMovimiento
 } from '../../shared/utils/movimiento-ministerio.util';
-import { leerFiltroPendientesDesdeRuta, limpiarQueryPendientes } from '../../shared/utils/movimiento-query.util';
+import { leerFiltroEstadoDesdeRuta, limpiarQueryPendientes } from '../../shared/utils/movimiento-query.util';
 import { esFormularioMovimientoValido, mensajeValidacionMovimiento } from '../../shared/utils/movimiento-validacion.util';
 import { estaPendienteParaAprobacion, resolverEstadoAlGuardar } from '../../shared/utils/movimiento-estado.util';
 import {
@@ -132,6 +132,8 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
   listaGastos: Gasto[] = [];
   listaFiltradaVista: Gasto[] = [];
   pendientesCount = 0;
+  aprobadosCount = 0;
+  rechazadosCount = 0;
 
   private destroy$ = new Subject<void>();
 
@@ -142,7 +144,7 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
   filtroFechaFin = '';
   filtroMontoMin: number | null = null;
   filtroMontoMax: number | null = null;
-  filtroSoloPendientes = false;
+  filtroEstado: FiltroEstadoMovimiento = 'todos';
 
   comprobanteSeleccionado: string | null = null;
   comprobanteEsPdf = false;
@@ -214,7 +216,7 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
   ionViewWillEnter(): void {
     void this.cierreService.cargar();
-    this.filtroSoloPendientes = leerFiltroPendientesDesdeRuta(
+    this.filtroEstado = leerFiltroEstadoDesdeRuta(
       this.route.snapshot.queryParamMap.get('pendientes')
     );
     if (!this.dataService.hasRemoteData()) {
@@ -249,7 +251,7 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
       fechaManualHasta: this.fechaManualHasta,
       filtroMontoMin: this.filtroMontoMin,
       filtroMontoMax: this.filtroMontoMax,
-      filtroSoloPendientes: this.filtroSoloPendientes
+      filtroEstado: this.filtroEstado
     };
   }
 
@@ -267,6 +269,11 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
   onFiltrosChange(): void {
     this.actualizarVista();
+  }
+
+  seleccionarFiltroEstado(estado: FiltroEstadoMovimiento): void {
+    this.filtroEstado = estado;
+    this.onFiltrosChange();
   }
 
   @HostListener('document:keydown.escape')
@@ -387,7 +394,7 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
     this.fechaManualHasta = '';
     this.filtroMontoMin = null;
     this.filtroMontoMax = null;
-    this.filtroSoloPendientes = false;
+    this.filtroEstado = 'todos';
     resetNativosDateInputs([
       this.dateInputDesde?.nativeElement,
       this.dateInputHasta?.nativeElement
@@ -407,7 +414,7 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
         g.cuentaNombre ?? g.categoria ?? '',
         g.cuentaCodigo ?? ''
       ],
-      esPendiente: gastoPendiente,
+      resolverEstado: g => estadoGasto(g),
       enriquecer: g => ({
         ...g,
         cuentaNombre: g.cuentaNombre || g.categoria || '—',
@@ -415,7 +422,12 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
         estadoEtiqueta: etiquetaEstadoGasto(estadoGasto(g))
       })
     });
-    this.pendientesCount = this.listaGastos.filter(g => gastoPendiente(g)).length;
+    const enAlcance = this.ministerioScopeId != null
+      ? this.listaGastos.filter(g => Number(g.ministerioId) === this.ministerioScopeId)
+      : this.listaGastos;
+    this.pendientesCount = enAlcance.filter(gastoPendiente).length;
+    this.aprobadosCount = enAlcance.filter(gastoAprobado).length;
+    this.rechazadosCount = enAlcance.filter(g => estadoGasto(g) === 'rechazado').length;
     this.cdr.markForCheck();
   }
 

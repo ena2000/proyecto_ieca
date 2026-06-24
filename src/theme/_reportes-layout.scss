@@ -312,6 +312,28 @@
   color: var(--ieca-red);
 }
 
+.estado-chips {
+  margin-bottom: 0;
+}
+
+.periodo-chip--pendiente.periodo-chip--active {
+  border-color: #b45309;
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.periodo-chip--aprobado.periodo-chip--active {
+  border-color: var(--ieca-green);
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--ieca-green);
+}
+
+.periodo-chip--rechazado.periodo-chip--active {
+  border-color: var(--ieca-red);
+  background: rgba(228, 32, 33, 0.08);
+  color: var(--ieca-red);
+}
+
 .totales-card--solo-ingresos,
 .totales-card--solo-gastos {
   grid-template-columns: repeat(2, 1fr);

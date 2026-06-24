@@ -1,3 +1,8 @@
+export type MovimientoEstadoFiltro = 'pendiente' | 'aprobado' | 'rechazado';
+export type FiltroEstadoMovimiento = 'todos' | MovimientoEstadoFiltro;
+
+export const FILTRO_ESTADO_MOVIMIENTO_TODOS: FiltroEstadoMovimiento = 'todos';
+
 export interface FiltrosMovimiento {
   searchTerm: string;
   filtroFechaInicio: string;
@@ -6,7 +11,7 @@ export interface FiltrosMovimiento {
   fechaManualHasta: string;
   filtroMontoMin: number | null;
   filtroMontoMax: number | null;
-  filtroSoloPendientes: boolean;
+  filtroEstado: FiltroEstadoMovimiento;
 }
 
 export function hayFiltrosMovimientoActivos(f: FiltrosMovimiento): boolean {
@@ -18,7 +23,7 @@ export function hayFiltrosMovimientoActivos(f: FiltrosMovimiento): boolean {
     f.fechaManualHasta ||
     f.filtroMontoMin !== null ||
     f.filtroMontoMax !== null ||
-    f.filtroSoloPendientes
+    f.filtroEstado !== FILTRO_ESTADO_MOVIMIENTO_TODOS
   );
 }
 
@@ -27,7 +32,7 @@ export interface FiltrarMovimientosConfig<T> {
   ministerioScopeId: number | null;
   filtros: FiltrosMovimiento;
   textoBusqueda: (item: T) => string[];
-  esPendiente: (item: T) => boolean;
+  resolverEstado: (item: T) => MovimientoEstadoFiltro;
   enriquecer: (item: T) => T;
 }
 
@@ -70,8 +75,11 @@ export function filtrarMovimientos<T extends { fecha: string; monto?: number | n
     filtrados = filtrados.filter(i => (i.monto || 0) <= config.filtros.filtroMontoMax!);
   }
 
-  if (config.filtros.filtroSoloPendientes) {
-    filtrados = filtrados.filter(config.esPendiente);
+  if (config.filtros.filtroEstado !== FILTRO_ESTADO_MOVIMIENTO_TODOS) {
+    const estadoFiltro = config.filtros.filtroEstado;
+    filtrados = filtrados.filter(
+      i => config.resolverEstado(i) === estadoFiltro
+    );
   }
 
   filtrados.sort(compararMovimientosPorFechaDesc);

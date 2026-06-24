@@ -24,7 +24,7 @@ describe('movimiento-filtros.util', () => {
     fechaManualHasta: '',
     filtroMontoMin: null,
     filtroMontoMax: null,
-    filtroSoloPendientes: false
+    filtroEstado: 'todos' as const
   };
 
   it('hayFiltrosMovimientoActivos detecta búsqueda activa', () => {
@@ -38,24 +38,40 @@ describe('movimiento-filtros.util', () => {
       ministerioScopeId: 1,
       filtros: filtrosVacios,
       textoBusqueda: i => [i.descripcion],
-      esPendiente: () => false,
+      resolverEstado: i => (i.estado === 'pendiente' ? 'pendiente' : i.estado === 'rechazado' ? 'rechazado' : 'aprobado'),
       enriquecer: i => i
     });
     expect(r.length).toBe(2);
     expect(r.every(i => i.ministerioId === 1)).toBeTrue();
   });
 
-  it('filtra solo pendientes y por texto', () => {
+  it('filtra por estado pendiente y por texto', () => {
     const r = filtrarMovimientos({
       items,
       ministerioScopeId: null,
-      filtros: { ...filtrosVacios, filtroSoloPendientes: true, searchTerm: 'otro' },
+      filtros: { ...filtrosVacios, filtroEstado: 'pendiente', searchTerm: 'otro' },
       textoBusqueda: i => [i.descripcion],
-      esPendiente: (i) => i.estado === 'pendiente',
+      resolverEstado: i => (i.estado === 'pendiente' ? 'pendiente' : 'aprobado'),
       enriquecer: i => i
     });
     expect(r.length).toBe(1);
     expect(r[0].id).toBe(2);
+  });
+
+  it('filtra por estado rechazado', () => {
+    const conRechazado: ItemPrueba[] = [
+      ...items,
+      { id: 4, fecha: '2026-06-02T00:00:00.000Z', monto: 10, descripcion: 'Rechazado', ministerioId: 1, estado: 'rechazado' }
+    ];
+    const r = filtrarMovimientos({
+      items: conRechazado,
+      ministerioScopeId: null,
+      filtros: { ...filtrosVacios, filtroEstado: 'rechazado' },
+      textoBusqueda: () => [],
+      resolverEstado: i => (i.estado === 'rechazado' ? 'rechazado' : i.estado === 'pendiente' ? 'pendiente' : 'aprobado'),
+      enriquecer: i => i
+    });
+    expect(r.map(i => i.id)).toEqual([4]);
   });
 
   it('filtra por rango de monto', () => {
@@ -64,7 +80,7 @@ describe('movimiento-filtros.util', () => {
       ministerioScopeId: null,
       filtros: { ...filtrosVacios, filtroMontoMin: 80, filtroMontoMax: 150 },
       textoBusqueda: () => [],
-      esPendiente: () => false,
+      resolverEstado: () => 'aprobado',
       enriquecer: i => i
     });
     expect(r.map(i => i.id)).toEqual([1]);
@@ -81,7 +97,7 @@ describe('movimiento-filtros.util', () => {
       ministerioScopeId: null,
       filtros: filtrosVacios,
       textoBusqueda: () => [],
-      esPendiente: () => false,
+      resolverEstado: () => 'aprobado',
       enriquecer: i => i
     });
     expect(r.map(i => i.id)).toEqual([5, 3, 1]);

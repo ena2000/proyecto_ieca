@@ -793,6 +793,10 @@ ion-select {
   flex-direction: column;
   width: 100%;
 
+  &--estado {
+    margin-bottom: var(--space-3);
+  }
+
   ion-label {
     display: block;
     margin-bottom: var(--space-2);
