@@ -15,7 +15,9 @@ import {
   optionsOutline,
   checkmarkCircleOutline,
   personOutline,
-  alertCircleOutline
+  alertCircleOutline,
+  chevronDownOutline,
+  chevronUpOutline
 } from 'ionicons/icons';
 
 /** Iconos comunes en pantallas de ingresos y gastos. */
@@ -36,6 +38,8 @@ export function registerMovimientoPageIcons(): void {
     'options-outline': optionsOutline,
     'checkmark-circle-outline': checkmarkCircleOutline,
     'person-outline': personOutline,
-    'alert-circle-outline': alertCircleOutline
+    'alert-circle-outline': alertCircleOutline,
+    'chevron-down-outline': chevronDownOutline,
+    'chevron-up-outline': chevronUpOutline
   });
 }

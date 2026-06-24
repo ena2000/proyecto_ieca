@@ -26,7 +26,7 @@ import { withLoading } from '../../shared/utils/loading.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
 import { estadoGasto, etiquetaEstadoGasto, gastoAprobado, gastoPendiente } from '../../shared/utils/gasto.util';
 import { registerMovimientoPageIcons } from '../../shared/utils/movimiento-page.icons';
-import { filtrarMovimientos, hayFiltrosMovimientoActivos, FiltrosMovimiento, FiltroEstadoMovimiento } from '../../shared/utils/movimiento-filtros.util';
+import { filtrarMovimientos, hayFiltrosMovimientoActivos, hayFiltrosMovimientoAvanzadosActivos, FiltrosMovimiento, FiltroEstadoMovimiento } from '../../shared/utils/movimiento-filtros.util';
 import {
   formatearEntradaFechaManual,
   isoDesdeFechaManualDDMMYYYY,
@@ -145,6 +145,8 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
   filtroMontoMin: number | null = null;
   filtroMontoMax: number | null = null;
   filtroEstado: FiltroEstadoMovimiento = 'todos';
+  filtroMinisterioId: number | null = null;
+  mostrarFiltrosAvanzados = false;
 
   comprobanteSeleccionado: string | null = null;
   comprobanteEsPdf = false;
@@ -251,8 +253,23 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
       fechaManualHasta: this.fechaManualHasta,
       filtroMontoMin: this.filtroMontoMin,
       filtroMontoMax: this.filtroMontoMax,
-      filtroEstado: this.filtroEstado
+      filtroEstado: this.filtroEstado,
+      filtroMinisterioId: this.filtroMinisterioId
     };
+  }
+
+  get puedeFiltrarPorMinisterio(): boolean {
+    return this.ministerioScopeId == null;
+  }
+
+  get ministeriosParaFiltro(): Ministerio[] {
+    return [...this.listaMinisterios].sort((a, b) =>
+      (a.nombre ?? '').localeCompare(b.nombre ?? '', 'es')
+    );
+  }
+
+  get hayFiltrosAvanzadosActivos(): boolean {
+    return hayFiltrosMovimientoAvanzadosActivos(this.filtros);
   }
 
   get periodoFormularioCerrado(): boolean {
@@ -273,6 +290,14 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
   seleccionarFiltroEstado(estado: FiltroEstadoMovimiento): void {
     this.filtroEstado = estado;
+    this.onFiltrosChange();
+  }
+
+  alternarFiltrosAvanzados(): void {
+    this.mostrarFiltrosAvanzados = !this.mostrarFiltrosAvanzados;
+  }
+
+  onFiltroMinisterioChange(): void {
     this.onFiltrosChange();
   }
 
@@ -395,6 +420,8 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
     this.filtroMontoMin = null;
     this.filtroMontoMax = null;
     this.filtroEstado = 'todos';
+    this.filtroMinisterioId = null;
+    this.mostrarFiltrosAvanzados = false;
     resetNativosDateInputs([
       this.dateInputDesde?.nativeElement,
       this.dateInputHasta?.nativeElement

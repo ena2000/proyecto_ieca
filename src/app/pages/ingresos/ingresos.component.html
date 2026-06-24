@@ -402,56 +402,93 @@
       </div>
 
       <div class="advanced-filters">
-        <section class="estado-filtro-section" aria-label="Filtrar por estado">
-          <div class="filter-item filter-item--estado-header">
-            <ion-label>Estado del registro</ion-label>
-          </div>
-          <div class="estado-filtro-bar" role="group">
-            <button
-              type="button"
-              class="estado-filtro-option estado-filtro-option--todos"
-              [class.estado-filtro-option--active]="filtroEstado === 'todos'"
-              [attr.aria-pressed]="filtroEstado === 'todos'"
-              (click)="seleccionarFiltroEstado('todos')">
-              <span class="estado-filtro-option__indicator estado-filtro-option__indicator--todos" aria-hidden="true"></span>
-              <span class="estado-filtro-option__text">Todos</span>
-            </button>
-            <button
-              type="button"
-              class="estado-filtro-option estado-filtro-option--pendiente"
-              [class.estado-filtro-option--active]="filtroEstado === 'pendiente'"
-              [attr.aria-pressed]="filtroEstado === 'pendiente'"
-              (click)="seleccionarFiltroEstado('pendiente')">
-              <span class="estado-filtro-option__indicator estado-filtro-option__indicator--pendiente" aria-hidden="true"></span>
-              <span class="estado-filtro-option__text">Pendientes</span>
-              <span class="estado-filtro-option__count" *ngIf="pendientesCount > 0">{{ pendientesCount }}</span>
-            </button>
-            <button
-              type="button"
-              class="estado-filtro-option estado-filtro-option--aprobado"
-              [class.estado-filtro-option--active]="filtroEstado === 'aprobado'"
-              [attr.aria-pressed]="filtroEstado === 'aprobado'"
-              (click)="seleccionarFiltroEstado('aprobado')">
-              <span class="estado-filtro-option__indicator estado-filtro-option__indicator--aprobado" aria-hidden="true"></span>
-              <span class="estado-filtro-option__text">Aprobados</span>
-              <span class="estado-filtro-option__count" *ngIf="aprobadosCount > 0">{{ aprobadosCount }}</span>
-            </button>
-            <button
-              type="button"
-              class="estado-filtro-option estado-filtro-option--rechazado"
-              [class.estado-filtro-option--active]="filtroEstado === 'rechazado'"
-              [attr.aria-pressed]="filtroEstado === 'rechazado'"
-              (click)="seleccionarFiltroEstado('rechazado')">
-              <span class="estado-filtro-option__indicator estado-filtro-option__indicator--rechazado" aria-hidden="true"></span>
-              <span class="estado-filtro-option__text">Rechazados</span>
-              <span class="estado-filtro-option__count" *ngIf="rechazadosCount > 0">{{ rechazadosCount }}</span>
-            </button>
-          </div>
-        </section>
+        <div class="filters-primary">
+          <div
+            class="filters-primary__row"
+            [class.filters-primary__row--solo-estado]="!puedeFiltrarPorMinisterio">
+            @if (puedeFiltrarPorMinisterio) {
+              <div class="filter-item filter-item--ministerio">
+                <ion-label>Ministerio</ion-label>
+                <ion-item lines="none" class="ieca-input-item ieca-input filter-select-item">
+                  <ion-icon slot="start" name="options-outline" class="text-blue"></ion-icon>
+                  <ion-select
+                    interface="popover"
+                    [(ngModel)]="filtroMinisterioId"
+                    (ionChange)="onFiltroMinisterioChange()"
+                    class="ieca-select"
+                    placeholder="Todos los ministerios">
+                    <ion-select-option [value]="null">Todos los ministerios</ion-select-option>
+                    <ion-select-option *ngFor="let min of ministeriosParaFiltro" [value]="min.id">
+                      {{ min.nombre }}
+                    </ion-select-option>
+                  </ion-select>
+                </ion-item>
+              </div>
+            }
 
-        <div class="advanced-filters__divider" aria-hidden="true"></div>
+            <section class="estado-filtro-section" aria-label="Filtrar por estado">
+              <div class="filter-item filter-item--estado-header">
+                <ion-label>Estado del registro</ion-label>
+              </div>
+              <div class="estado-filtro-bar" role="group">
+                <button
+                  type="button"
+                  class="estado-filtro-option estado-filtro-option--todos"
+                  [class.estado-filtro-option--active]="filtroEstado === 'todos'"
+                  [attr.aria-pressed]="filtroEstado === 'todos'"
+                  (click)="seleccionarFiltroEstado('todos')">
+                  <span class="estado-filtro-option__indicator estado-filtro-option__indicator--todos" aria-hidden="true"></span>
+                  <span class="estado-filtro-option__text">Todos</span>
+                </button>
+                <button
+                  type="button"
+                  class="estado-filtro-option estado-filtro-option--pendiente"
+                  [class.estado-filtro-option--active]="filtroEstado === 'pendiente'"
+                  [attr.aria-pressed]="filtroEstado === 'pendiente'"
+                  (click)="seleccionarFiltroEstado('pendiente')">
+                  <span class="estado-filtro-option__indicator estado-filtro-option__indicator--pendiente" aria-hidden="true"></span>
+                  <span class="estado-filtro-option__text">Pendientes</span>
+                  <span class="estado-filtro-option__count" *ngIf="pendientesCount > 0">{{ pendientesCount }}</span>
+                </button>
+                <button
+                  type="button"
+                  class="estado-filtro-option estado-filtro-option--aprobado"
+                  [class.estado-filtro-option--active]="filtroEstado === 'aprobado'"
+                  [attr.aria-pressed]="filtroEstado === 'aprobado'"
+                  (click)="seleccionarFiltroEstado('aprobado')">
+                  <span class="estado-filtro-option__indicator estado-filtro-option__indicator--aprobado" aria-hidden="true"></span>
+                  <span class="estado-filtro-option__text">Aprobados</span>
+                  <span class="estado-filtro-option__count" *ngIf="aprobadosCount > 0">{{ aprobadosCount }}</span>
+                </button>
+                <button
+                  type="button"
+                  class="estado-filtro-option estado-filtro-option--rechazado"
+                  [class.estado-filtro-option--active]="filtroEstado === 'rechazado'"
+                  [attr.aria-pressed]="filtroEstado === 'rechazado'"
+                  (click)="seleccionarFiltroEstado('rechazado')">
+                  <span class="estado-filtro-option__indicator estado-filtro-option__indicator--rechazado" aria-hidden="true"></span>
+                  <span class="estado-filtro-option__text">Rechazados</span>
+                  <span class="estado-filtro-option__count" *ngIf="rechazadosCount > 0">{{ rechazadosCount }}</span>
+                </button>
+              </div>
+            </section>
+          </div>
+        </div>
 
-        <div class="filter-row filter-row--cols-4">
+        <button
+          type="button"
+          class="btn-mas-filtros"
+          [attr.aria-expanded]="mostrarFiltrosAvanzados"
+          (click)="alternarFiltrosAvanzados()">
+          <ion-icon [name]="mostrarFiltrosAvanzados ? 'chevron-up-outline' : 'chevron-down-outline'" aria-hidden="true"></ion-icon>
+          Más filtros
+          <span class="btn-mas-filtros__badge" *ngIf="hayFiltrosAvanzadosActivos && !mostrarFiltrosAvanzados" aria-hidden="true"></span>
+        </button>
+
+        <div class="advanced-filters__panel" *ngIf="mostrarFiltrosAvanzados">
+          <div class="advanced-filters__divider" aria-hidden="true"></div>
+
+          <div class="filter-row filter-row--cols-4">
 
           <div class="filter-item">
             <ion-label>Desde la fecha</ion-label>
@@ -555,6 +592,7 @@
             </div>
           </div>
 
+        </div>
         </div>
       </div>
 

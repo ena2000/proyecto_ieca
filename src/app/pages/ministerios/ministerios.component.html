@@ -141,23 +141,77 @@
       </div>
 
       <div class="advanced-filters">
-        <div class="filter-row">
-          <div class="filter-item">
-            <ion-label>Filtrar por colaborador</ion-label>
-            <ion-item lines="none" class="ieca-input-item ieca-input filter-select-item">
-              <ion-icon slot="start" name="options-outline" class="text-blue"></ion-icon>
-              <ion-select
-                interface="popover"
-                [(ngModel)]="filtroColaboradorId"
-                (ionChange)="onFiltrosChange()"
-                class="ieca-select"
-                placeholder="Todos los colaboradores">
-                <ion-select-option [value]="null">Todos</ion-select-option>
-                <ion-select-option *ngFor="let user of colaboradoresParaFiltro" [value]="user.id">
-                  {{ user.nombre }}
-                </ion-select-option>
-              </ion-select>
-            </ion-item>
+        <div class="filters-primary">
+          <section class="estado-filtro-section" aria-label="Filtrar por estado">
+            <div class="filter-item filter-item--estado-header">
+              <ion-label>Estado del ministerio</ion-label>
+            </div>
+            <div class="estado-filtro-bar" role="group">
+              <button
+                type="button"
+                class="estado-filtro-option estado-filtro-option--todos"
+                [class.estado-filtro-option--active]="filtroEstadoMinisterio === 'todos'"
+                (click)="seleccionarFiltroEstadoMinisterio('todos')">
+                <span class="estado-filtro-option__text">Todos</span>
+              </button>
+              <button
+                type="button"
+                class="estado-filtro-option estado-filtro-option--aprobado"
+                [class.estado-filtro-option--active]="filtroEstadoMinisterio === 'Activo'"
+                (click)="seleccionarFiltroEstadoMinisterio('Activo')">
+                <span class="estado-filtro-option__text">Activo</span>
+                <span class="estado-filtro-option__count" *ngIf="contarMinisteriosPorEstado('Activo') > 0">{{ contarMinisteriosPorEstado('Activo') }}</span>
+              </button>
+              <button
+                type="button"
+                class="estado-filtro-option estado-filtro-option--pendiente"
+                [class.estado-filtro-option--active]="filtroEstadoMinisterio === 'Pausado'"
+                (click)="seleccionarFiltroEstadoMinisterio('Pausado')">
+                <span class="estado-filtro-option__text">Pausado</span>
+                <span class="estado-filtro-option__count" *ngIf="contarMinisteriosPorEstado('Pausado') > 0">{{ contarMinisteriosPorEstado('Pausado') }}</span>
+              </button>
+              <button
+                type="button"
+                class="estado-filtro-option estado-filtro-option--rechazado"
+                [class.estado-filtro-option--active]="filtroEstadoMinisterio === 'Inactivo'"
+                (click)="seleccionarFiltroEstadoMinisterio('Inactivo')">
+                <span class="estado-filtro-option__text">Inactivo</span>
+                <span class="estado-filtro-option__count" *ngIf="contarMinisteriosPorEstado('Inactivo') > 0">{{ contarMinisteriosPorEstado('Inactivo') }}</span>
+              </button>
+            </div>
+          </section>
+        </div>
+
+        <button
+          type="button"
+          class="btn-mas-filtros"
+          [attr.aria-expanded]="mostrarFiltrosAvanzados"
+          (click)="alternarFiltrosAvanzados()">
+          <ion-icon [name]="mostrarFiltrosAvanzados ? 'chevron-up-outline' : 'chevron-down-outline'" aria-hidden="true"></ion-icon>
+          Más filtros
+          <span class="btn-mas-filtros__badge" *ngIf="hayFiltrosAvanzadosActivos && !mostrarFiltrosAvanzados" aria-hidden="true"></span>
+        </button>
+
+        <div class="advanced-filters__panel" *ngIf="mostrarFiltrosAvanzados">
+          <div class="advanced-filters__divider" aria-hidden="true"></div>
+          <div class="filter-row">
+            <div class="filter-item filter-item--ministerio">
+              <ion-label>Colaborador asignado</ion-label>
+              <ion-item lines="none" class="ieca-input-item ieca-input filter-select-item">
+                <ion-icon slot="start" name="options-outline" class="text-blue"></ion-icon>
+                <ion-select
+                  interface="popover"
+                  [(ngModel)]="filtroColaboradorId"
+                  (ionChange)="onFiltrosChange()"
+                  class="ieca-select"
+                  placeholder="Todos los colaboradores">
+                  <ion-select-option [value]="null">Todos los colaboradores</ion-select-option>
+                  <ion-select-option *ngFor="let user of colaboradoresParaFiltro" [value]="user.id">
+                    {{ user.nombre }}
+                  </ion-select-option>
+                </ion-select>
+              </ion-item>
+            </div>
           </div>
         </div>
       </div>
@@ -217,8 +271,8 @@
           <tbody>
             <tr *ngFor="let linea of lineasKardexVista">
               <td>{{ linea.fechaFormateada }}</td>
-              <td>{{ linea.descripcion }}</td>
-              <td><span class="kardex-cuenta">{{ linea.cuentaEtiqueta }}</span></td>
+              <td [title]="linea.descripcion">{{ linea.descripcion }}</td>
+              <td><span class="kardex-cuenta" [title]="linea.cuentaEtiqueta">{{ linea.cuentaEtiqueta }}</span></td>
               <td>
                 <span class="kardex-tipo" [class.kardex-tipo--ingreso]="linea.tipo === 'ingreso'">
                   {{ linea.tipo === 'ingreso' ? 'Ingreso' : 'Gasto' }}

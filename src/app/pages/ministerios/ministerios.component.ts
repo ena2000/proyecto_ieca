@@ -19,7 +19,8 @@ import { addIcons } from 'ionicons';
 import {
   documentTextOutline, saveOutline, notificationsOutline,
   pencilOutline, trashOutline, closeOutline, addCircleOutline, optionsOutline,
-  readerOutline, walletOutline, alertCircleOutline
+  readerOutline, walletOutline, alertCircleOutline,
+  chevronDownOutline, chevronUpOutline
 } from 'ionicons/icons';
 
 import { TablaGeneralComponent, TableColumn } from 'src/app/components/tabla-general/tabla-general.component';
@@ -85,6 +86,8 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
   searchTerm:           string = '';
   filtroColaboradorId: number | null = null;
+  filtroEstadoMinisterio: 'todos' | 'Activo' | 'Pausado' | 'Inactivo' = 'todos';
+  mostrarFiltrosAvanzados = false;
 
   private destroy$ = new Subject<void>();
 
@@ -117,7 +120,9 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
       'options-outline':       optionsOutline,
       'reader-outline':        readerOutline,
       'wallet-outline':        walletOutline,
-      'alert-circle-outline':  alertCircleOutline
+      'alert-circle-outline':  alertCircleOutline,
+      'chevron-down-outline':  chevronDownOutline,
+      'chevron-up-outline':    chevronUpOutline
     });
   }
 
@@ -173,13 +178,36 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   get hayFiltrosActivos(): boolean {
-    return !!this.searchTerm || this.filtroColaboradorId !== null;
+    return !!(
+      this.searchTerm ||
+      this.filtroColaboradorId !== null ||
+      this.filtroEstadoMinisterio !== 'todos'
+    );
+  }
+
+  get hayFiltrosAvanzadosActivos(): boolean {
+    return this.filtroColaboradorId !== null;
   }
 
   limpiarFiltros(): void {
     this.searchTerm = '';
     this.filtroColaboradorId = null;
+    this.filtroEstadoMinisterio = 'todos';
+    this.mostrarFiltrosAvanzados = false;
     this.actualizarVista();
+  }
+
+  seleccionarFiltroEstadoMinisterio(estado: 'todos' | 'Activo' | 'Pausado' | 'Inactivo'): void {
+    this.filtroEstadoMinisterio = estado;
+    this.actualizarVista();
+  }
+
+  alternarFiltrosAvanzados(): void {
+    this.mostrarFiltrosAvanzados = !this.mostrarFiltrosAvanzados;
+  }
+
+  contarMinisteriosPorEstado(estado: 'Activo' | 'Pausado' | 'Inactivo'): number {
+    return this.listaMinisterios.filter(m => m.estado === estado).length;
   }
 
   onFiltrosChange(): void {
@@ -198,6 +226,9 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
     if (this.searchTerm) {
       const search = this.searchTerm.toLowerCase();
       filtrados = filtrados.filter(m => m.nombre?.toLowerCase().includes(search));
+    }
+    if (this.filtroEstadoMinisterio !== 'todos') {
+      filtrados = filtrados.filter(m => m.estado === this.filtroEstadoMinisterio);
     }
     if (this.filtroColaboradorId !== null) {
       const uid = this.filtroColaboradorId;

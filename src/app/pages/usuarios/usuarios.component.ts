@@ -16,7 +16,7 @@ import { addIcons } from 'ionicons';
 import {
   notificationsOutline, expandOutline, closeOutline, pencilOutline,
   trashOutline, addCircleOutline, optionsOutline, saveOutline, copyOutline,
-  alertCircleOutline
+  alertCircleOutline, chevronDownOutline, chevronUpOutline
 } from 'ionicons/icons';
 
 import { TablaGeneralComponent, TableColumn } from 'src/app/components/tabla-general/tabla-general.component';
@@ -35,7 +35,7 @@ import {
   ROL_COLABORADOR,
   validarUsuarioForm
 } from '../../shared/utils/liderazgo.util';
-import { ROLES, normalizarRol } from '../../core/constants/roles.constants';
+import { ROLES, normalizarRol, AppRole } from '../../core/constants/roles.constants';
 import {
   mensajeUsuarioEmailDuplicado,
   usuarioEmailDuplicado
@@ -92,6 +92,10 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   password = '';
 
   searchTerm:       string = '';
+  filtroRol: AppRole | 'todos' = 'todos';
+  filtroEstadoUsuario: 'todos' | 'Activo' | 'Inactivo' = 'todos';
+  filtroMinisterioId: number | null = null;
+  mostrarFiltrosAvanzados = false;
   fotoSeleccionada: string | null = null;
   contrasenaTemporal: { usuario: string; password: string } | null = null;
   guardando = false;
@@ -115,6 +119,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   estadosUsuario: string[] = ['Activo', 'Inactivo'];
   readonly ROL_COLABORADOR = ROLES.COLABORADOR;
   readonly isRolSinMinisterio = isRolSinMinisterio;
+  readonly ROLES_CATALOGO = ROLES;
 
   constructor(
     private toastController: ToastController,
@@ -133,7 +138,9 @@ export class UsuariosComponent implements OnInit, OnDestroy {
       'options-outline':       optionsOutline,
       'save-outline':          saveOutline,
       'copy-outline':          copyOutline,
-      'alert-circle-outline':  alertCircleOutline
+      'alert-circle-outline':  alertCircleOutline,
+      'chevron-down-outline':  chevronDownOutline,
+      'chevron-up-outline':    chevronUpOutline
     });
   }
 
@@ -184,11 +191,52 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   }
 
   get hayFiltrosActivos(): boolean {
-    return !!this.searchTerm;
+    return !!(
+      this.searchTerm ||
+      this.filtroRol !== 'todos' ||
+      this.filtroEstadoUsuario !== 'todos' ||
+      this.filtroMinisterioId != null
+    );
+  }
+
+  get hayFiltrosAvanzadosActivos(): boolean {
+    return this.filtroMinisterioId != null;
   }
 
   limpiarFiltros(): void {
     this.searchTerm = '';
+    this.filtroRol = 'todos';
+    this.filtroEstadoUsuario = 'todos';
+    this.filtroMinisterioId = null;
+    this.mostrarFiltrosAvanzados = false;
+  }
+
+  seleccionarFiltroRol(rol: AppRole | 'todos'): void {
+    this.filtroRol = rol;
+  }
+
+  seleccionarFiltroEstadoUsuario(estado: 'todos' | 'Activo' | 'Inactivo'): void {
+    this.filtroEstadoUsuario = estado;
+  }
+
+  alternarFiltrosAvanzados(): void {
+    this.mostrarFiltrosAvanzados = !this.mostrarFiltrosAvanzados;
+  }
+
+  onFiltroMinisterioChange(): void {}
+
+  get ministeriosParaFiltro(): Ministerio[] {
+    return [...this.listaMinisterios].sort((a, b) =>
+      (a.nombre ?? '').localeCompare(b.nombre ?? '', 'es')
+    );
+  }
+
+  contarUsuariosPorRol(rol: AppRole): number {
+    return this.listaUsuarios.filter(u => normalizarRol(u.rol) === rol).length;
+  }
+
+  contarUsuariosPorEstado(estado: 'Activo' | 'Inactivo'): number {
+    return this.listaUsuarios.filter(u => u.estado === estado).length;
   }
 
   get listaFiltrada(): Usuario[] {
@@ -200,6 +248,18 @@ export class UsuariosComponent implements OnInit, OnDestroy {
         u.nombre?.toLowerCase().includes(search) ||
         u.email?.toLowerCase().includes(search)
       );
+    }
+
+    if (this.filtroRol !== 'todos') {
+      filtrados = filtrados.filter(u => normalizarRol(u.rol) === this.filtroRol);
+    }
+
+    if (this.filtroEstadoUsuario !== 'todos') {
+      filtrados = filtrados.filter(u => u.estado === this.filtroEstadoUsuario);
+    }
+
+    if (this.filtroMinisterioId != null) {
+      filtrados = filtrados.filter(u => Number(u.ministerioId) === this.filtroMinisterioId);
     }
 
     return filtrados;

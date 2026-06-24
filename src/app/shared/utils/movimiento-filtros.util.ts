@@ -12,18 +12,26 @@ export interface FiltrosMovimiento {
   filtroMontoMin: number | null;
   filtroMontoMax: number | null;
   filtroEstado: FiltroEstadoMovimiento;
+  filtroMinisterioId: number | null;
 }
 
-export function hayFiltrosMovimientoActivos(f: FiltrosMovimiento): boolean {
+export function hayFiltrosMovimientoAvanzadosActivos(f: FiltrosMovimiento): boolean {
   return !!(
-    f.searchTerm ||
     f.filtroFechaInicio ||
     f.filtroFechaFin ||
     f.fechaManualDesde ||
     f.fechaManualHasta ||
     f.filtroMontoMin !== null ||
-    f.filtroMontoMax !== null ||
-    f.filtroEstado !== FILTRO_ESTADO_MOVIMIENTO_TODOS
+    f.filtroMontoMax !== null
+  );
+}
+
+export function hayFiltrosMovimientoActivos(f: FiltrosMovimiento): boolean {
+  return !!(
+    f.searchTerm ||
+    hayFiltrosMovimientoAvanzadosActivos(f) ||
+    f.filtroEstado !== FILTRO_ESTADO_MOVIMIENTO_TODOS ||
+    f.filtroMinisterioId != null
   );
 }
 
@@ -44,6 +52,10 @@ export function filtrarMovimientos<T extends { fecha: string; monto?: number | n
   if (config.ministerioScopeId != null) {
     filtrados = filtrados.filter(
       i => Number(i.ministerioId) === config.ministerioScopeId
+    );
+  } else if (config.filtros.filtroMinisterioId != null) {
+    filtrados = filtrados.filter(
+      i => Number(i.ministerioId) === config.filtros.filtroMinisterioId
     );
   }
 

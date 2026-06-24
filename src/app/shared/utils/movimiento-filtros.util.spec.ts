@@ -24,7 +24,8 @@ describe('movimiento-filtros.util', () => {
     fechaManualHasta: '',
     filtroMontoMin: null,
     filtroMontoMax: null,
-    filtroEstado: 'todos' as const
+    filtroEstado: 'todos' as const,
+    filtroMinisterioId: null
   };
 
   it('hayFiltrosMovimientoActivos detecta búsqueda activa', () => {
@@ -84,6 +85,18 @@ describe('movimiento-filtros.util', () => {
       enriquecer: i => i
     });
     expect(r.map(i => i.id)).toEqual([1]);
+  });
+
+  it('filtra por ministerio cuando no hay scope de rol', () => {
+    const r = filtrarMovimientos({
+      items,
+      ministerioScopeId: null,
+      filtros: { ...filtrosVacios, filtroMinisterioId: 1 },
+      textoBusqueda: () => [],
+      resolverEstado: () => 'aprobado',
+      enriquecer: i => i
+    });
+    expect(r.map(i => i.id)).toEqual([3, 1]);
   });
 
   it('ordena por fecha descendente (más recientes primero)', () => {

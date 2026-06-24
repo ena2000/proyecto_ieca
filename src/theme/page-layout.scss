@@ -785,6 +785,90 @@ ion-select {
   );
 }
 
+.filters-primary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.filters-primary__row {
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.filters-primary__row--solo-estado {
+  grid-template-columns: 1fr;
+}
+
+.filters-primary__row--dual {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.filter-item--ministerio {
+  min-width: 0;
+
+  .filter-select-item {
+    width: 100%;
+  }
+}
+
+.btn-mas-filtros {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: var(--space-3);
+  padding: 8px 14px;
+  border: 1.5px solid rgba(46, 53, 143, 0.22);
+  border-radius: var(--radius-pill);
+  background: #ffffff;
+  color: var(--ieca-blue);
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: var(--ieca-transition-fast);
+  position: relative;
+
+  ion-icon {
+    font-size: 0.95rem;
+    flex-shrink: 0;
+  }
+
+  &:hover {
+    background: rgba(46, 53, 143, 0.05);
+    border-color: rgba(46, 53, 143, 0.35);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(46, 53, 143, 0.35);
+    outline-offset: 2px;
+  }
+
+  &__badge {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-left: 2px;
+    border-radius: 50%;
+    background: var(--ieca-orange);
+    box-shadow: 0 0 0 2px #ffffff;
+  }
+}
+
+.advanced-filters__panel {
+  margin-top: var(--space-2);
+}
+
 .estado-filtro-section {
   margin-bottom: var(--space-4);
 }

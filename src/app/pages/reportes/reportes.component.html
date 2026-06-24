@@ -368,8 +368,8 @@
             <tbody>
               <tr *ngFor="let linea of lineasKardexVista">
                 <td>{{ linea.fechaFormateada }}</td>
-                <td>{{ linea.descripcion }}</td>
-                <td><span class="kardex-cuenta">{{ linea.cuentaEtiqueta }}</span></td>
+                <td [title]="linea.descripcion">{{ linea.descripcion }}</td>
+                <td><span class="kardex-cuenta" [title]="linea.cuentaEtiqueta">{{ linea.cuentaEtiqueta }}</span></td>
                 <td>
                   <span class="kardex-tipo" [class.kardex-tipo--ingreso]="linea.tipo === 'ingreso'">
                     {{ linea.tipo === 'ingreso' ? 'Ingreso' : 'Gasto' }}

@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef, NgZone } from '@angular/core';
-import { ViewWillEnter, ViewWillLeave } from '@ionic/angular';
+import { ViewWillEnter, ViewWillLeave, ViewDidEnter } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import {
@@ -32,7 +32,7 @@ import {
     ToolbarMenuButtonComponent
   ]
 })
-export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit, ViewWillEnter, ViewWillLeave {
+export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit, ViewWillEnter, ViewWillLeave, ViewDidEnter {
 
   @ViewChild('ingresosGastosChart') barChartCanvas?: ElementRef<HTMLCanvasElement>;
 
@@ -121,6 +121,13 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit, Vie
     this.cargarDatos(false);
   }
 
+  ionViewDidEnter() {
+    // Tras volver de otra ruta el canvas ya está en el DOM; recrear si se destruyó al salir.
+    if (this.chartsReady && this.chartTieneDatos && !this.barChart) {
+      this.scheduleBarChartUpdate(true);
+    }
+  }
+
   ionViewWillLeave() {
     if (this.chartUpdateTimer != null) {
       clearTimeout(this.chartUpdateTimer);
@@ -147,9 +154,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit, Vie
     this.pendientes = this.dataService.getConteoPendientes(scope);
 
     const fingerprint = JSON.stringify(this.chartData);
-    if (forceChartUpdate || fingerprint !== this.lastChartFingerprint) {
+    const graficoAusente = this.chartTieneDatos && this.barChart == null;
+    if (forceChartUpdate || fingerprint !== this.lastChartFingerprint || graficoAusente) {
       this.lastChartFingerprint = fingerprint;
-      this.scheduleBarChartUpdate(forceChartUpdate);
+      this.scheduleBarChartUpdate(forceChartUpdate || graficoAusente);
     }
   }
 
@@ -160,7 +168,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit, Vie
       clearTimeout(this.chartUpdateTimer);
     }
 
-    const delay = immediate ? 0 : 120;
+    const remount = this.barChart == null && this.chartTieneDatos;
+    const delay = immediate ? (remount ? 60 : 0) : 120;
     this.chartUpdateTimer = setTimeout(() => {
       this.chartUpdateTimer = undefined;
       this.ngZone.runOutsideAngular(() => this.updateBarChart());
