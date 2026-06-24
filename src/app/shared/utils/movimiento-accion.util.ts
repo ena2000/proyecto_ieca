@@ -1,7 +1,9 @@
-export type AccionFilaEnCurso = { id: number; tipo: 'aprobar' | 'rechazar' };
+export type AccionFilaEnCurso = { id: number; tipo: 'aprobar' | 'rechazar' | 'eliminar' };
 
 export function etiquetaAccionFilaEnCurso(tipo: AccionFilaEnCurso['tipo']): string {
-  return tipo === 'aprobar' ? 'Aprobando registro…' : 'Rechazando registro…';
+  if (tipo === 'aprobar') return 'Aprobando registro…';
+  if (tipo === 'rechazar') return 'Rechazando registro…';
+  return 'Eliminando registro…';
 }
 
 export function aplicarEstadoOptimistaEnLista<

@@ -1,0 +1,38 @@
+import { fusionarMovimientosTrasBootstrap } from './movimiento-list-merge.util';
+
+describe('fusionarMovimientosTrasBootstrap', () => {
+  it('no revive registros eliminados localmente si el servidor aún los devuelve', () => {
+    const servidor = [
+      { id: 1, estado: 'aprobado', monto: 100 },
+      { id: 2, estado: 'aprobado', monto: 200 }
+    ];
+    const locales = [{ id: 1, estado: 'aprobado', monto: 100 }];
+
+    const merged = fusionarMovimientosTrasBootstrap(servidor, locales);
+
+    expect(merged.map(i => i.id)).toEqual([1]);
+  });
+
+  it('conserva registros nuevos solo en local', () => {
+    const servidor = [{ id: 1, estado: 'aprobado', monto: 100 }];
+    const locales = [
+      { id: 1, estado: 'pendiente', monto: 100 },
+      { id: 99, estado: 'pendiente', monto: 50 }
+    ];
+
+    const merged = fusionarMovimientosTrasBootstrap(servidor, locales);
+
+    expect(merged.map(i => Number(i.id)).sort()).toEqual([1, 99]);
+  });
+
+  it('carga todo desde servidor en bootstrap vacío', () => {
+    const servidor = [
+      { id: 1, estado: 'aprobado' },
+      { id: 2, estado: 'aprobado' }
+    ];
+
+    const merged = fusionarMovimientosTrasBootstrap(servidor, []);
+
+    expect(merged.length).toBe(2);
+  });
+});

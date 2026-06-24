@@ -72,8 +72,8 @@ export class TablaGeneralComponent implements OnChanges {
   /** Permite editar filas aunque estén aprobadas (p. ej. administrador). */
   @Input() allowEditApproved = false;
   @Input() allowDeleteApproved = false;
-  /** Fila en proceso de aprobar/rechazar (feedback sin overlay bloqueante). */
-  @Input() accionFilaEnCurso: { id: number; tipo: 'aprobar' | 'rechazar' } | null = null;
+  /** Fila en proceso de aprobar/rechazar/eliminar (feedback visible en la tabla). */
+  @Input() accionFilaEnCurso: { id: number; tipo: 'aprobar' | 'rechazar' | 'eliminar' } | null = null;
 
   // =========================================================
   // OUTPUTS
@@ -100,7 +100,6 @@ export class TablaGeneralComponent implements OnChanges {
   // UX STATES (PRO LEVEL)
   // =========================================================
   editingRowId: number | null = null;
-  deletingRowId: number | null = null;
 
   constructor() {
     addIcons({
@@ -240,15 +239,7 @@ export class TablaGeneralComponent implements OnChanges {
   // DELETE (CON ESTADO UX)
   // =========================================================
   delete(row: any) {
-    this.deletingRowId = row.id ?? null;
-
-    // emit inmediato (el padre maneja lógica real)
     this.rowDelete.emit(row);
-
-    // reset visual state
-    setTimeout(() => {
-      this.deletingRowId = null;
-    }, 500);
   }
 
   // =========================================================
@@ -259,7 +250,10 @@ export class TablaGeneralComponent implements OnChanges {
   }
 
   isDeleting(row: any): boolean {
-    return this.deletingRowId === row?.id;
+    return (
+      this.accionFilaEnCurso?.tipo === 'eliminar' &&
+      Number(row?.id) === Number(this.accionFilaEnCurso.id)
+    );
   }
 
   get accionesResolucionBloqueadas(): boolean {
@@ -281,6 +275,6 @@ export class TablaGeneralComponent implements OnChanges {
   }
 
   filaEnProcesoResolucion(row: any): boolean {
-    return this.isApproving(row) || this.isRejecting(row);
+    return this.isApproving(row) || this.isRejecting(row) || this.isDeleting(row);
   }
 }

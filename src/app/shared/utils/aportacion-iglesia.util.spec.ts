@@ -2,6 +2,7 @@ import { calcularMontoAportacionIglesia } from '../constants/aportacion-iglesia.
 import {
   calcularMontoNetoMinisterio,
   crearIngresoIglesiaPorAportacion,
+  filtrarIngresosTrasEliminarOrigen,
   ingresoEsTalento,
   ingresoRequiereAportacion
 } from './aportacion-iglesia.util';
@@ -62,5 +63,47 @@ describe('aportacion-iglesia.util', () => {
     expect(ingresoIglesia.esAportacionIglesia).toBeTrue();
     expect(ingresoIglesia.ingresoOrigenId).toBe(10);
     expect(ingresoIglesia.ministerio).toBe('General');
+  });
+
+  it('al eliminar ingreso talento quita también la aportación automática vinculada', () => {
+    const aportacion: Ingreso = {
+      id: 99,
+      fecha: ingresoTalento.fecha,
+      descripcion: 'Aportación',
+      monto: 33,
+      foto: '',
+      categoria: 'Aportación de ministerio',
+      ministerio: 'General',
+      estado: 'aprobado',
+      esAportacionIglesia: true,
+      ingresoOrigenId: 10
+    };
+    const origenConVinculo: Ingreso = {
+      ...ingresoTalento,
+      aportacionGenerada: true,
+      ingresoIglesiaId: 99,
+      montoAportacionIglesia: 33,
+      montoNetoMinisterio: 67
+    };
+    const lista = [origenConVinculo, aportacion, ingresoDiezmo];
+    const filtrada = filtrarIngresosTrasEliminarOrigen(lista, 10);
+    expect(filtrada.map(i => i.id)).toEqual([11]);
+  });
+
+  it('al eliminar ingreso talento quita aportación aunque falte ingresoIglesiaId en el origen', () => {
+    const aportacion: Ingreso = {
+      id: 50,
+      fecha: ingresoTalento.fecha,
+      descripcion: 'Aportación',
+      monto: 33,
+      foto: '',
+      categoria: 'Aportación de ministerio',
+      ministerio: 'General',
+      estado: 'aprobado',
+      esAportacionIglesia: true,
+      ingresoOrigenId: 10
+    };
+    const lista = [ingresoTalento, aportacion];
+    expect(filtrarIngresosTrasEliminarOrigen(lista, 10)).toEqual([]);
   });
 });

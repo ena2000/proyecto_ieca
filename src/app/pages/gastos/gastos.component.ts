@@ -12,7 +12,7 @@ import {
   IonIcon, IonItem, IonLabel, IonInput, IonButton,
   IonSearchbar, ToastController, IonSelect, IonSelectOption, IonSpinner
 } from '@ionic/angular/standalone';
-import { AlertController, LoadingController } from '@ionic/angular';
+import { AlertController } from '@ionic/angular';
 import { Subject, firstValueFrom } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -22,7 +22,6 @@ import { ToolbarMenuButtonComponent } from 'src/app/components/toolbar-menu-butt
 import { formatearISOaDDMMYYYY } from '../../shared/utils/date.util';
 import { abrirSelectorFechaNativo, isoToDateInputValue, resetNativosDateInputs } from '../../shared/utils/date-picker.util';
 import { procesarComprobante, esComprobantePdf } from '../../shared/utils/comprobante-upload.util';
-import { withLoading } from '../../shared/utils/loading.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
 import { estadoGasto, etiquetaEstadoGasto, gastoAprobado, gastoPendiente } from '../../shared/utils/gasto.util';
 import { registerMovimientoPageIcons } from '../../shared/utils/movimiento-page.icons';
@@ -44,6 +43,7 @@ import {
   validarTamanoComprobante
 } from '../../shared/utils/movimiento-form-sync.util';
 import { FORM_GUARDADO_TOAST_MS, scrollAlErrorFormulario, refrescarListaTrasMutacion } from '../../shared/utils/form-guardado.util';
+import { confirmarAccionDestructiva } from '../../shared/utils/confirmacion-alerta.util';
 import { accionesTablaMovimiento } from '../../shared/utils/movimiento-acciones.util';
 import {
   ministeriosEnAlcance,
@@ -108,7 +108,6 @@ const GASTO_VACIO = (): Gasto => {
     IonSelectOption, IonSelect, IonSpinner,
     TablaGeneralComponent, NotificacionesBellComponent, ToolbarMenuButtonComponent
   ],
-  providers: [AlertController, ToastController, LoadingController],
   changeDetection: ChangeDetectionStrategy.Default
 })
 export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
@@ -174,7 +173,6 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
   constructor(
     private alertController: AlertController,
     private toastController: ToastController,
-    private loadingController: LoadingController,
     private dataService: DataService,
     private gastosService: GastosService,
     readonly authService: AuthService,
@@ -745,6 +743,7 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   async eliminarGasto(item: Gasto): Promise<void> {
+    if (this.accionFilaEnCurso) return;
     if (!perteneceAlcanceMinisterio(item, this.ministerioScopeId)) {
       await this.mostrarToast('No puedes eliminar registros de otro ministerio.', 'warning');
       return;
@@ -757,29 +756,38 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
       await this.mostrarToast('No puedes eliminar un gasto ya aprobado.', 'warning');
       return;
     }
-    const alert = await this.alertController.create({
+    const id = Number(item.id);
+    if (!Number.isFinite(id)) {
+      await this.mostrarToast('No se pudo identificar el registro.', 'danger');
+      return;
+    }
+    const confirmado = await confirmarAccionDestructiva(this.alertController, {
       header: 'Confirmar eliminación',
-      message: `¿Estás seguro de eliminar el registro "${item.descripcion?.trim() || item.cuentaNombre?.trim() || 'sin descripción'}"?`,
-      buttons: [
-        { text: 'Cancelar', role: 'cancel' },
-        {
-          text: 'Eliminar',
-          role: 'destructive',
-          handler: async () => {
-            try {
-              await withLoading(this.loadingController, 'Eliminando registro...', async () => {
-                await firstValueFrom(this.gastosService.delete(item.id));
-              });
-              this.dataService.notifyChanges();
-              await this.mostrarToast('Registro eliminado', 'warning');
-            } catch (error) {
-              await this.mostrarToast(error instanceof Error ? error.message : 'Error al eliminar', 'danger');
-            }
-          }
-        }
-      ]
+      message: `¿Estás seguro de eliminar el registro "${item.descripcion?.trim() || item.cuentaNombre?.trim() || 'sin descripción'}"?`
     });
-    await alert.present();
+    if (!confirmado) return;
+
+    const listaAntes = [...this.listaGastos];
+    this.accionFilaEnCurso = { id, tipo: 'eliminar' };
+    this.cdr.markForCheck();
+
+    try {
+      await firstValueFrom(this.gastosService.delete(id));
+      refrescarListaTrasMutacion(
+        () => this.gastosService.getAll(),
+        lista => { this.listaGastos = lista; },
+        () => this.actualizarVista()
+      );
+      this.dataService.notifyChanges();
+      await this.mostrarToast('Registro eliminado', 'warning');
+    } catch (error) {
+      this.listaGastos = listaAntes;
+      this.actualizarVista();
+      await this.mostrarToast(error instanceof Error ? error.message : 'Error al eliminar', 'danger');
+    } finally {
+      this.accionFilaEnCurso = null;
+      this.cdr.markForCheck();
+    }
   }
 
   resetFormulario(): void {

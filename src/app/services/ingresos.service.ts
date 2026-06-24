@@ -18,7 +18,8 @@ import {
   ingresoRequiereAportacion,
   marcarIngresoConAportacion,
   recalcularCamposAportacionEnIngreso,
-  assertMovimientoAportacionModificable
+  assertMovimientoAportacionModificable,
+  filtrarIngresosTrasEliminarOrigen
 } from '../shared/utils/aportacion-iglesia.util';
 import { fusionarMovimientosTrasBootstrap } from '../shared/utils/movimiento-list-merge.util';
 import {
@@ -90,15 +91,17 @@ export class IngresosService {
   }
 
   delete(id: number): Observable<void> {
+    const numId = Number(id);
     if (environment.useLocalFallback) {
-      this.deleteLocal(id);
+      this.deleteLocal(numId);
       return of(undefined);
     }
-    return this.api.delete(`${API.ingresos.base}/${id}`).pipe(
+    return withMutationTimeout(
+      this.api.delete(`${API.ingresos.base}/${numId}`)
+    ).pipe(
       tap(() => {
-        this.persist(this.getAll().filter(i => i.id !== id));
+        this.persist(filtrarIngresosTrasEliminarOrigen(this.getAll(), numId));
         this.notificacionesService.recargar();
-        this.syncListaEnSegundoPlano();
       })
     );
   }
@@ -330,13 +333,13 @@ export class IngresosService {
   }
 
   private deleteLocal(id: number): void {
-    const current = this.getAll().find(i => i.id === id);
+    const numId = Number(id);
+    const current = this.getAll().find(i => Number(i.id) === numId);
     if (current) {
       assertMovimientoAportacionModificable(current);
-      this.revertirAportacionIglesiaLocal(current);
       this.notifyEliminado(current);
     }
-    this.persist(this.getAll().filter(i => i.id !== id));
+    this.persist(filtrarIngresosTrasEliminarOrigen(this.getAll(), numId));
   }
 
   private notifyModificado(ingreso: Ingreso, current: Ingreso): void {
@@ -485,12 +488,6 @@ export class IngresosService {
     const marcado = marcarIngresoConAportacion(ingreso, ingresoIglesia.id);
     this.persist(this.getAll().map(i => (i.id === ingreso.id ? marcado : i)));
     return marcado;
-  }
-
-  private revertirAportacionIglesiaLocal(ingreso: Ingreso): void {
-    if (ingreso.ingresoIglesiaId != null) {
-      this.persist(this.getAll().filter(i => i.id !== ingreso.ingresoIglesiaId));
-    }
   }
 
   private persist(lista: Ingreso[]): void {

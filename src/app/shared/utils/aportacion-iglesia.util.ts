@@ -142,3 +142,19 @@ export function marcarIngresoConAportacion(ingreso: Ingreso, ingresoIglesiaId: n
     montoNetoMinisterio: Math.round((Number(ingreso.monto) - montoAportacionIglesia) * 100) / 100
   };
 }
+
+/** Quita el ingreso origen y cualquier aportación automática (33 %) vinculada. */
+export function filtrarIngresosTrasEliminarOrigen(lista: Ingreso[], origenId: number): Ingreso[] {
+  const numId = Number(origenId);
+  const origen = lista.find(i => Number(i.id) === numId);
+  const iglesiaId =
+    origen?.ingresoIglesiaId != null ? Number(origen.ingresoIglesiaId) : null;
+
+  return lista.filter(i => {
+    const id = Number(i.id);
+    if (id === numId) return false;
+    if (iglesiaId != null && Number.isFinite(iglesiaId) && id === iglesiaId) return false;
+    if (i.esAportacionIglesia && Number(i.ingresoOrigenId) === numId) return false;
+    return true;
+  });
+}

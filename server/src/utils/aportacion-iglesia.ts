@@ -3,7 +3,8 @@ const {
   deleteFromCollection,
   getById,
   updateInCollection,
-  formatDateDDMMYYYY
+  formatDateDDMMYYYY,
+  listCollectionByField
 } = require('./firestore');
 const {
   calcularMontoAportacionIglesia,
@@ -77,6 +78,22 @@ async function eliminarMovimientoSiExiste(collection, id) {
   await deleteFromCollection(collection, id);
 }
 
+async function eliminarAportacionesPorIngresoOrigen(ingresoOrigenId) {
+  if (ingresoOrigenId == null || ingresoOrigenId === '') return;
+  const origenId = Number(ingresoOrigenId);
+  if (!Number.isFinite(origenId)) return;
+
+  const eliminados = new Set();
+  for (const valor of [origenId, String(origenId)]) {
+    const vinculados = await listCollectionByField('ingresos', 'ingresoOrigenId', valor);
+    for (const row of vinculados) {
+      if (!row?.esAportacionIglesia || eliminados.has(row.id)) continue;
+      eliminados.add(row.id);
+      await deleteFromCollection('ingresos', row.id);
+    }
+  }
+}
+
 async function revertirAportacionIglesiaPorIngreso(ingreso) {
   if (!ingreso) return;
 
@@ -87,6 +104,7 @@ async function revertirAportacionIglesiaPorIngreso(ingreso) {
   }
 
   await eliminarMovimientoSiExiste('ingresos', ingreso.ingresoIglesiaId);
+  await eliminarAportacionesPorIngresoOrigen(ingreso.id);
 
   // Limpieza de registros antiguos que generaban un gasto automático.
   if (ingreso.gastoAportacionId != null) {

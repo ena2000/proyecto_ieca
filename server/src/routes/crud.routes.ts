@@ -331,11 +331,7 @@ function createCrudRouter(collection, options: {
       }
 
       if (afterDelete) {
-        try {
-          await afterDelete(current, req);
-        } catch (hookErr) {
-          console.error(`[${collection} afterDelete]`, hookErr);
-        }
+        await afterDelete(current, req);
       }
 
       const deleted = await deleteFromCollection(collection, req.params.id);

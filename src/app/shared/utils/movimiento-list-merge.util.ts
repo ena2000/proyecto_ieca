@@ -5,11 +5,25 @@ export function fusionarMovimientosTrasBootstrap<T extends { id?: number | null;
   desdeServidor: T[],
   locales: T[]
 ): T[] {
+  const localIds = new Set(
+    locales
+      .map(item => Number(item.id))
+      .filter(id => Number.isFinite(id) && id > 0)
+  );
+  const hayIdsNuevosSoloEnLocal = locales.some(
+    item => item.id != null && !desdeServidor.some(s => Number(s.id) === Number(item.id))
+  );
+
   const porId = new Map<number, T>();
   for (const item of desdeServidor) {
-    if (item.id != null) {
-      porId.set(Number(item.id), item);
+    if (item.id == null) continue;
+    const id = Number(item.id);
+    if (!Number.isFinite(id) || id <= 0) continue;
+    // Tras eliminar localmente, no revivir filas que el servidor aún devuelve por caché/latencia.
+    if (locales.length > 0 && !hayIdsNuevosSoloEnLocal && !localIds.has(id)) {
+      continue;
     }
+    porId.set(id, item);
   }
   for (const item of locales) {
     const id = Number(item.id);

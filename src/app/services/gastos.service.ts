@@ -79,13 +79,16 @@ export class GastosService {
   }
 
   delete(id: number): Observable<void> {
+    const numId = Number(id);
     if (environment.useLocalFallback) {
-      this.deleteLocal(id);
+      this.deleteLocal(numId);
       return of(undefined);
     }
-    return this.api.delete(`${API.gastos.base}/${id}`).pipe(
+    return withMutationTimeout(
+      this.api.delete(`${API.gastos.base}/${numId}`)
+    ).pipe(
       tap(() => {
-        this.persist(this.getAll().filter(g => g.id !== id));
+        this.persist(this.getAll().filter(g => Number(g.id) !== numId));
         this.notificacionesService.recargar();
       })
     );
@@ -261,11 +264,12 @@ export class GastosService {
   }
 
   private deleteLocal(id: number): void {
-    const current = this.getAll().find(g => g.id === id);
+    const numId = Number(id);
+    const current = this.getAll().find(g => Number(g.id) === numId);
     if (current) {
       this.notifyEliminado(current);
     }
-    this.persist(this.getAll().filter(g => g.id !== id));
+    this.persist(this.getAll().filter(g => Number(g.id) !== numId));
   }
 
   private notifyModificado(gasto: Gasto, current: Gasto): void {
