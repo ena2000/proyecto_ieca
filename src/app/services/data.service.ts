@@ -21,7 +21,7 @@ import { gastoAprobado, gastoPendiente } from '../shared/utils/gasto.util';
 import { ingresoAprobado, ingresoPendiente } from '../shared/utils/ingreso.util';
 import { mesCortoEs } from '../shared/utils/month.util';
 import { resolverNombreMinisterio } from '../shared/utils/movimiento-ministerio.util';
-import { filtrarMinisteriosCatalogo, filtrarMinisteriosRegistroManual, filtrarMinisteriosReportes } from '../shared/constants/ministerios-catalogo.constants';
+import { filtrarMinisteriosCatalogo, filtrarMinisteriosRegistroManual, filtrarMinisteriosReportes, esIdMinisterioIglesiaGeneral } from '../shared/constants/ministerios-catalogo.constants';
 import {
   AportacionMinisterioResumen,
   calcularMontoAportacionIngreso,
@@ -616,12 +616,20 @@ export class DataService {
   }
 
   getKardexMinisterio(ministerioId: number): KardexLinea[] {
+    const ministerios = this.getMinisteriosActuales();
+    const esGeneral = esIdMinisterioIglesiaGeneral(ministerioId, ministerios);
+
     const ingresos = this.ingresosAprobadosParaBalance(
-      this.getIngresosActuales().filter(i => Number(i.ministerioId) === ministerioId)
+      this.getIngresosActuales().filter(i => {
+        if (esGeneral) return !!i.esAportacionIglesia;
+        return Number(i.ministerioId) === ministerioId && !i.esAportacionIglesia;
+      })
     );
-    const gastos = this.gastosAprobadosParaBalance(
-      this.getGastosActuales().filter(g => Number(g.ministerioId) === ministerioId)
-    );
+    const gastos = esGeneral
+      ? []
+      : this.gastosAprobadosParaBalance(
+          this.getGastosActuales().filter(g => Number(g.ministerioId) === ministerioId)
+        );
 
     const movimientos = [
       ...ingresos.map(i => ({
@@ -630,7 +638,7 @@ export class DataService {
         cuentaCodigo: i.cuentaCodigo,
         cuentaNombre: i.cuentaNombre || i.categoria,
         tipo: 'ingreso' as const,
-        monto: calcularMontoNetoMinisterio(i)
+        monto: esGeneral ? (i.monto || 0) : calcularMontoNetoMinisterio(i)
       })),
       ...gastos.map(g => ({
         fecha: g.fecha,

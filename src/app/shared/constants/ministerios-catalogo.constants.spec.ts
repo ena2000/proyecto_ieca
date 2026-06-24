@@ -1,9 +1,11 @@
 import {
   esMinisterioExcluidoCatalogo,
+  esIdMinisterioIglesiaGeneral,
   esMinisterioIglesiaGeneral,
   filtrarMinisteriosCatalogo,
   filtrarMinisteriosRegistroManual,
-  filtrarMinisteriosReportes
+  filtrarMinisteriosReportes,
+  idMinisterioIglesiaGeneral
 } from './ministerios-catalogo.constants';
 
 describe('ministerios-catalogo.constants', () => {
@@ -45,5 +47,15 @@ describe('ministerios-catalogo.constants', () => {
       'General'
     ]);
     expect(esMinisterioIglesiaGeneral('General')).toBe(true);
+  });
+
+  it('resuelve el id del ministerio General', () => {
+    const lista = [
+      { id: 1, nombre: 'Adolescentes' },
+      { id: 22, nombre: 'General' }
+    ];
+    expect(idMinisterioIglesiaGeneral(lista)).toBe(22);
+    expect(esIdMinisterioIglesiaGeneral(22, lista)).toBe(true);
+    expect(esIdMinisterioIglesiaGeneral(1, lista)).toBe(false);
   });
 });

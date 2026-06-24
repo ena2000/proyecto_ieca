@@ -15,6 +15,7 @@ import { periodoKeyFromFecha } from '../shared/utils/month.util';
 import { etiquetaCuentaReporte } from '../shared/utils/reportes-cuenta.util';
 import { resolverNombreMinisterio as resolverNombreMinisterioMovimiento } from '../shared/utils/movimiento-ministerio.util';
 import { calcularMontoNetoMinisterio } from '../shared/utils/aportacion-iglesia.util';
+import { idMinisterioIglesiaGeneral } from '../shared/constants/ministerios-catalogo.constants';
 import { Ingreso } from '../core/models';
 import {
   estiloEncabezadoTabla,
@@ -61,8 +62,13 @@ export class ReportesService {
     const reportes: Reporte[] = [];
     let idCounter = 1;
 
+    const idGeneral = idMinisterioIglesiaGeneral(ministerios);
+
     ingresos.forEach(i => {
       const monto = this.montoIngresoReporte(i);
+      const ministerioIdReporte = i.esAportacionIglesia && idGeneral != null
+        ? idGeneral
+        : i.ministerioId;
       reportes.push({
         id:              idCounter++,
         fecha:           i.fecha,
@@ -74,7 +80,7 @@ export class ReportesService {
         ministerio:      resolverNombreMinisterioMovimiento(i.ministerioId, i.ministerio, ministerios, {
           esAportacionIglesia: i.esAportacionIglesia
         }),
-        ministerioId:    i.ministerioId,
+        ministerioId:    ministerioIdReporte,
         ingresos:        monto,
         gastos:          0,
         saldo:           monto,

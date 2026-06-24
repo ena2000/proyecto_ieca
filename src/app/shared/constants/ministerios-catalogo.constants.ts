@@ -16,6 +16,22 @@ export function esMinisterioIglesiaGeneral(nombre: string | undefined | null): b
   return String(nombre ?? '').trim().toLowerCase() === MINISTERIO_IGLESIA_NOMBRE.toLowerCase();
 }
 
+/** Id del ministerio «General» en catálogo (fondo iglesia / aportación 33 %). */
+export function idMinisterioIglesiaGeneral(
+  ministerios: ReadonlyArray<{ id: number; nombre?: string }>
+): number | undefined {
+  const m = ministerios.find(x => esMinisterioIglesiaGeneral(x.nombre));
+  return m?.id;
+}
+
+export function esIdMinisterioIglesiaGeneral(
+  ministerioId: number,
+  ministerios: ReadonlyArray<{ id: number; nombre?: string }>
+): boolean {
+  const idGeneral = idMinisterioIglesiaGeneral(ministerios);
+  return idGeneral != null && Number(ministerioId) === Number(idGeneral);
+}
+
 /** Formularios, usuarios y asignaciones: sin Contabilidad ni General. */
 export function filtrarMinisteriosRegistroManual<T extends { nombre?: string }>(lista: T[]): T[] {
   return filtrarMinisteriosCatalogo(lista).filter(m => !esMinisterioIglesiaGeneral(m.nombre));
