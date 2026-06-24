@@ -2,6 +2,7 @@ import { calcularMontoAportacionIglesia } from '../constants/aportacion-iglesia.
 import {
   calcularMontoNetoMinisterio,
   crearIngresoIglesiaPorAportacion,
+  asegurarAportacionIglesiaEnLista,
   filtrarIngresosTrasEliminarOrigen,
   ingresoEsTalento,
   ingresoRequiereAportacion
@@ -63,6 +64,21 @@ describe('aportacion-iglesia.util', () => {
     expect(ingresoIglesia.esAportacionIglesia).toBeTrue();
     expect(ingresoIglesia.ingresoOrigenId).toBe(10);
     expect(ingresoIglesia.ministerio).toBe('General');
+  });
+
+  it('inserta aportación en lista al aprobar ingreso talento (sin esperar sync)', () => {
+    const origenAprobado: Ingreso = {
+      ...ingresoTalento,
+      aportacionGenerada: true,
+      ingresoIglesiaId: 99,
+      montoAportacionIglesia: 33,
+      montoNetoMinisterio: 67
+    };
+    const lista = asegurarAportacionIglesiaEnLista([origenAprobado], origenAprobado);
+    expect(lista).toHaveSize(2);
+    expect(lista[0].id).toBe(99);
+    expect(lista[0].esAportacionIglesia).toBeTrue();
+    expect(lista[0].monto).toBe(33);
   });
 
   it('al eliminar ingreso talento quita también la aportación automática vinculada', () => {

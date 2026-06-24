@@ -8,6 +8,7 @@ import { routes } from './app/app.routes';
 import { AppComponent } from './app/app.component';
 import { authInterceptor } from './app/core/interceptors/auth.interceptor';
 import { refreshInterceptor } from './app/core/interceptors/refresh.interceptor';
+import { networkRetryInterceptor } from './app/core/interceptors/network-retry.interceptor';
 import { errorInterceptor } from './app/core/interceptors/error.interceptor';
 
 export const appConfig: ApplicationConfig = {
@@ -15,7 +16,12 @@ export const appConfig: ApplicationConfig = {
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
     provideIonicAngular(),
     provideRouter(routes, withPreloading(NoPreloading)),
-    provideHttpClient(withInterceptors([authInterceptor, refreshInterceptor, errorInterceptor])),
+    provideHttpClient(withInterceptors([
+      authInterceptor,
+      refreshInterceptor,
+      networkRetryInterceptor,
+      errorInterceptor
+    ])),
   ],
 };
 

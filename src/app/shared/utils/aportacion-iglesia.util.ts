@@ -1,5 +1,6 @@
 import { Gasto, Ingreso } from '../../core/models';
 import { categoriaIngreso } from './ingreso.util';
+import { formatearISOaDDMMYYYY } from './date.util';
 import {
   calcularMontoAportacionIglesia,
   CUENTA_INGRESO_TALENTO_CODIGO,
@@ -141,6 +142,32 @@ export function marcarIngresoConAportacion(ingreso: Ingreso, ingresoIglesiaId: n
     montoAportacionIglesia,
     montoNetoMinisterio: Math.round((Number(ingreso.monto) - montoAportacionIglesia) * 100) / 100
   };
+}
+
+/**
+ * Inserta o actualiza en la lista el ingreso automático de aportación (33 %)
+ * cuando el origen ya trae ingresoIglesiaId desde el API.
+ */
+export function asegurarAportacionIglesiaEnLista(lista: Ingreso[], origen: Ingreso): Ingreso[] {
+  if (
+    origen.esAportacionIglesia ||
+    !origen.aportacionGenerada ||
+    origen.ingresoIglesiaId == null ||
+    !ingresoEstaAprobadoParaAportacion(origen)
+  ) {
+    return lista;
+  }
+
+  const iglesiaId = Number(origen.ingresoIglesiaId);
+  if (!Number.isFinite(iglesiaId)) return lista;
+
+  const fechaFormateada = origen.fechaFormateada || formatearISOaDDMMYYYY(origen.fecha);
+  const hijo = crearIngresoIglesiaPorAportacion(origen, iglesiaId, fechaFormateada);
+  const idx = lista.findIndex(i => Number(i.id) === iglesiaId);
+  if (idx >= 0) {
+    return lista.map(i => (Number(i.id) === iglesiaId ? hijo : i));
+  }
+  return [hijo, ...lista];
 }
 
 /** Quita el ingreso origen y cualquier aportación automática (33 %) vinculada. */

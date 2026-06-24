@@ -1,10 +1,12 @@
-import { Component, HostListener } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { IonApp, IonRouterOutlet } from '@ionic/angular/standalone';
 import { SlidebarComponent } from './components/slidebar/slidebar.component';
 import { CommonModule } from '@angular/common';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { SidebarUiService } from './core/services/sidebar-ui.service';
+import { despertarApiEnSegundoPlano } from './shared/utils/api-wake.util';
+import { environment } from '../environments/environment';
 import { addIcons } from 'ionicons';
 import { 
   gridOutline, businessOutline, cashOutline, 
@@ -38,7 +40,7 @@ import {
     CommonModule
   ],
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   public mostrarMenu = true;
   readonly mobileMenuOpen$ = this.sidebarUi.mobileOpen$;
 
@@ -80,6 +82,12 @@ export class AppComponent {
     ).subscribe((event: any) => {
       this.actualizarVisibilidadMenu(event.urlAfterRedirects || event.url);
     });
+  }
+
+  ngOnInit(): void {
+    if (environment.production && !environment.useLocalFallback) {
+      despertarApiEnSegundoPlano();
+    }
   }
 
   /** Rutas de autenticación: sin sidebar (solo contenido de la pantalla). */

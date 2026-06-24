@@ -19,7 +19,8 @@ import {
   marcarIngresoConAportacion,
   recalcularCamposAportacionEnIngreso,
   assertMovimientoAportacionModificable,
-  filtrarIngresosTrasEliminarOrigen
+  filtrarIngresosTrasEliminarOrigen,
+  asegurarAportacionIglesiaEnLista
 } from '../shared/utils/aportacion-iglesia.util';
 import { fusionarMovimientosTrasBootstrap } from '../shared/utils/movimiento-list-merge.util';
 import {
@@ -66,7 +67,9 @@ export class IngresosService {
     ).pipe(
       tap(nuevo => {
         const completo = this.completarIngresoTrasMutacion(nuevo, ingreso, fechaFormateada);
-        this.persist(prependRegistroUnico(completo, this.getAll()));
+        let lista = prependRegistroUnico(completo, this.getAll());
+        lista = asegurarAportacionIglesiaEnLista(lista, completo);
+        this.persist(lista);
         this.notificacionesService.recargar();
         this.syncListaEnSegundoPlano();
       })
@@ -82,10 +85,11 @@ export class IngresosService {
     ).pipe(
       tap(actualizado => {
         const completo = this.completarIngresoTrasMutacion(actualizado, ingreso, fechaFormateada, id);
-        const lista = this.getAll().map(i => (Number(i.id) === id ? completo : i));
+        let lista = this.getAll().map(i => (Number(i.id) === id ? completo : i));
+        lista = asegurarAportacionIglesiaEnLista(lista, completo);
         this.persist(lista);
         this.notificacionesService.recargar();
-        setTimeout(() => this.syncListaEnSegundoPlano(), 800);
+        this.syncListaEnSegundoPlano();
       })
     );
   }
@@ -119,9 +123,11 @@ export class IngresosService {
         const completo = normalizarIngreso(
           fusionarRegistroMovimientoEstado(actualizado, actual, numId)
         );
-        this.persist(reemplazarRegistroEnLista(this.getAll(), numId, completo));
+        let lista = reemplazarRegistroEnLista(this.getAll(), numId, completo);
+        lista = asegurarAportacionIglesiaEnLista(lista, completo);
+        this.persist(lista);
         this.notificacionesService.recargar();
-        setTimeout(() => this.syncListaEnSegundoPlano(), 800);
+        this.syncListaEnSegundoPlano();
       })
     );
   }
