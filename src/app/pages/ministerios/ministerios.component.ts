@@ -31,7 +31,7 @@ import { DataService } from '../../services/data.service';
 import { MinisteriosService } from '../../services/ministerios.service';
 import { withLoading, getHttpErrorMessage } from '../../shared/utils/loading.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
-import { leerValorIonInputAsync } from '../../shared/utils/movimiento-form-sync.util';
+import { leerValorIonInput, leerValorIonInputAsync } from '../../shared/utils/movimiento-form-sync.util';
 import { FORM_GUARDADO_TOAST_MS, scrollAlErrorFormulario, refrescarListaTrasMutacion } from '../../shared/utils/form-guardado.util';
 import {
   colaboradoresEnMinisterio,
@@ -215,8 +215,17 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   onFormularioChange(): void {
+    this.formGuardadoError = null;
     this.actualizarValidacionFormulario();
     this.cdr.markForCheck();
+  }
+
+  onNombreInput(event: Event): void {
+    this.nuevoMinisterio = {
+      ...this.nuevoMinisterio,
+      nombre: leerValorIonInput(event)
+    };
+    this.onFormularioChange();
   }
 
   private actualizarVista(): void {
@@ -307,13 +316,13 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
         await this.mostrarToast('Registro creado exitosamente', 'success');
       }
 
+      this.resetFormulario();
       refrescarListaTrasMutacion(
         () => this.ministeriosService.getAll(),
         lista => { this.listaMinisterios = lista; },
         () => this.actualizarVista()
       );
       this.dataService.notifyChanges();
-      this.resetFormulario();
     } catch (error) {
       this.formGuardadoError = getHttpErrorMessage(error, 'Error al guardar');
       await this.mostrarToast(this.formGuardadoError, 'danger', FORM_GUARDADO_TOAST_MS);
@@ -397,7 +406,7 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
     return true;
   }
 
-  private get nombreMinisterioDuplicado() {
+  get nombreMinisterioDuplicado(): Ministerio | null {
     return ministerioNombreDuplicado(
       this.nuevoMinisterio.nombre,
       this.listaMinisterios,

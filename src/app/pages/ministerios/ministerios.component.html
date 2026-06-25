@@ -44,6 +44,7 @@
               #nombreInput
               type="text"
               [(ngModel)]="nuevoMinisterio.nombre"
+              (ionInput)="onNombreInput($event)"
               (ngModelChange)="onFormularioChange()"
               name="nombre"
               placeholder="Ej. Alabanza y Adoración...">
@@ -51,6 +52,9 @@
           </ion-item>
           <small class="error-text" *ngIf="intentoEnvio && nuevoMinisterio.nombre.trim().length < 3">
             Ingresa un nombre válido.
+          </small>
+          <small class="error-text" *ngIf="intentoEnvio && nuevoMinisterio.nombre.trim().length >= 3 && nombreMinisterioDuplicado">
+            Ya existe un ministerio con ese nombre.
           </small>
         </div>
 
