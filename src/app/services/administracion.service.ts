@@ -11,6 +11,11 @@ import { ROLES } from '../core/constants/roles.constants';
 import { environment } from '../../environments/environment';
 import { getMesActualLabel, periodoKeyFromFecha } from '../shared/utils/month.util';
 import { CierreService } from '../core/services/cierre.service';
+import {
+  AUDITORIA_CSV_HEADERS,
+  buildMapaNombresUsuarios,
+  mapMovimientoAuditoriaCsvRow
+} from '../shared/utils/auditoria-csv.util';
 
 const ULTIMO_CIERRE_KEY = 'ultimoCierre';
 const PERIODOS_CERRADOS_KEY = 'periodosCerrados';
@@ -326,48 +331,36 @@ export class AdministracionService {
       return true;
     };
 
+    const mapaUsuarios = buildMapaNombresUsuarios(this.dataService.getUsuariosActuales());
+
     const ingresos =
       tipo === 'todos' || tipo === 'ingresos'
         ? this.dataService.getIngresosActuales()
             .filter(i => inRange(i))
-            .map(i => ({ ...i, tipo: 'ingreso' }))
+            .map(i =>
+              mapMovimientoAuditoriaCsvRow(i as unknown as Record<string, unknown>, 'ingreso', mapaUsuarios)
+            )
         : [];
 
     const gastos =
       tipo === 'todos' || tipo === 'gastos'
         ? this.dataService.getGastosActuales()
             .filter(g => inRange(g))
-            .map(g => ({ ...g, tipo: 'gasto' }))
+            .map(g =>
+              mapMovimientoAuditoriaCsvRow(g as unknown as Record<string, unknown>, 'gasto', mapaUsuarios)
+            )
         : [];
 
-    const rows = [...ingresos, ...gastos].sort((a: any, b: any) => {
-      const da = a.fecha ? new Date(a.fecha).getTime() : 0;
-      const db = b.fecha ? new Date(b.fecha).getTime() : 0;
-      return db - da;
+    const rows = [...ingresos, ...gastos].sort((a, b) => {
+      const parseFf = (ff?: string | null) => {
+        if (!ff || ff.length !== 10 || !ff.includes('/')) return 0;
+        const [dd, mm, yyyy] = ff.split('/');
+        return new Date(Number(yyyy), Number(mm) - 1, Number(dd)).getTime();
+      };
+      return parseFf(b['fechaFormateada'] as string) - parseFf(a['fechaFormateada'] as string);
     });
 
-    const headers = [
-      'tipo',
-      'id',
-      'fecha',
-      'fechaFormateada',
-      'ministerio',
-      'ministerioId',
-      'descripcion',
-      'monto',
-      'estado',
-      'auditCreadoPorId',
-      'auditCreadoPorNombre',
-      'auditCreadoEn',
-      'auditActualizadoPorId',
-      'auditActualizadoPorNombre',
-      'auditActualizadoEn',
-      'aprobadoPor',
-      'fechaAprobacion',
-      'rechazadoPor',
-      'fechaRechazo',
-      'motivoRechazo'
-    ];
+    const headers = [...AUDITORIA_CSV_HEADERS];
 
     const escape = (v: any) => {
       if (v == null) return '';
@@ -376,7 +369,7 @@ export class AdministracionService {
     };
 
     const lines = [headers.map(escape).join(',')];
-    for (const r of rows as any[]) {
+    for (const r of rows) {
       lines.push(headers.map(h => escape(r[h])).join(','));
     }
     if (lines.length <= 1) {

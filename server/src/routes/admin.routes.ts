@@ -19,6 +19,11 @@ const { asyncHandler } = require('../middleware/errorHandler');
 const { listCollection } = require('../utils/firestore');
 const { db } = require('../config/firebase');
 const { invalidateBootstrapCache } = require('../utils/bootstrapCache');
+const {
+  AUDITORIA_CSV_HEADERS,
+  buildMapaNombresUsuarios,
+  mapMovimientoAuditoriaCsvRow
+} = require('../utils/auditoria-csv');
 
 const router = express.Router();
 
@@ -204,95 +209,40 @@ router.get('/auditoria', validate(auditoriaQuerySchema, 'query'), async (req, re
     const includeIngresos = tipo === 'todos' || tipo === 'ingresos';
     const includeGastos = tipo === 'todos' || tipo === 'gastos';
 
+    const [usuarios, ingresosRaw, gastosRaw] = await Promise.all([
+      listCollection('usuarios'),
+      includeIngresos ? listCollection('ingresos') : Promise.resolve([]),
+      includeGastos ? listCollection('gastos') : Promise.resolve([])
+    ]);
+
+    const mapaUsuarios = buildMapaNombresUsuarios(usuarios);
     const rows = [];
 
     if (includeIngresos) {
-      const ingresos = await listCollection('ingresos');
-      for (const i of ingresos) {
+      for (const i of ingresosRaw) {
         if (!inRange(i, desde, hasta)) continue;
-        rows.push({
-          tipo: 'ingreso',
-          id: i.id,
-          fecha: i.fecha,
-          fechaFormateada: i.fechaFormateada,
-          ministerio: i.ministerio,
-          ministerioId: i.ministerioId,
-          descripcion: i.descripcion,
-          monto: i.monto,
-          estado: i.estado,
-          auditCreadoPorId: i.auditCreadoPorId,
-          auditCreadoPorNombre: i.auditCreadoPorNombre,
-          auditCreadoEn: i.auditCreadoEn,
-          auditActualizadoPorId: i.auditActualizadoPorId,
-          auditActualizadoPorNombre: i.auditActualizadoPorNombre,
-          auditActualizadoEn: i.auditActualizadoEn,
-          aprobadoPor: i.aprobadoPor,
-          fechaAprobacion: i.fechaAprobacion,
-          rechazadoPor: i.rechazadoPor,
-          fechaRechazo: i.fechaRechazo,
-          motivoRechazo: i.motivoRechazo
-        });
+        rows.push(mapMovimientoAuditoriaCsvRow(i, 'ingreso', mapaUsuarios));
       }
     }
 
     if (includeGastos) {
-      const gastos = await listCollection('gastos');
-      for (const g of gastos) {
+      for (const g of gastosRaw) {
         if (!inRange(g, desde, hasta)) continue;
-        rows.push({
-          tipo: 'gasto',
-          id: g.id,
-          fecha: g.fecha,
-          fechaFormateada: g.fechaFormateada,
-          ministerio: g.ministerio,
-          ministerioId: g.ministerioId,
-          descripcion: g.descripcion,
-          monto: g.monto,
-          estado: g.estado,
-          auditCreadoPorId: g.auditCreadoPorId,
-          auditCreadoPorNombre: g.auditCreadoPorNombre,
-          auditCreadoEn: g.auditCreadoEn,
-          auditActualizadoPorId: g.auditActualizadoPorId,
-          auditActualizadoPorNombre: g.auditActualizadoPorNombre,
-          auditActualizadoEn: g.auditActualizadoEn,
-          aprobadoPor: g.aprobadoPor,
-          fechaAprobacion: g.fechaAprobacion,
-          rechazadoPor: g.rechazadoPor,
-          fechaRechazo: g.fechaRechazo,
-          motivoRechazo: g.motivoRechazo
-        });
+        rows.push(mapMovimientoAuditoriaCsvRow(g, 'gasto', mapaUsuarios));
       }
     }
 
-    // Ordena por fecha desc si existe
+    // Ordena por fecha del movimiento desc
     rows.sort((a, b) => {
-      const da = a.fecha ? new Date(a.fecha).getTime() : 0;
-      const dbb = b.fecha ? new Date(b.fecha).getTime() : 0;
-      return dbb - da;
+      const parseFf = (ff) => {
+        if (typeof ff !== 'string' || ff.length !== 10 || !ff.includes('/')) return 0;
+        const [dd, mm, yyyy] = ff.split('/');
+        return new Date(Number(yyyy), Number(mm) - 1, Number(dd)).getTime();
+      };
+      return parseFf(b.fechaFormateada) - parseFf(a.fechaFormateada);
     });
 
-    const headers = [
-      'tipo',
-      'id',
-      'fecha',
-      'fechaFormateada',
-      'ministerio',
-      'ministerioId',
-      'descripcion',
-      'monto',
-      'estado',
-      'auditCreadoPorId',
-      'auditCreadoPorNombre',
-      'auditCreadoEn',
-      'auditActualizadoPorId',
-      'auditActualizadoPorNombre',
-      'auditActualizadoEn',
-      'aprobadoPor',
-      'fechaAprobacion',
-      'rechazadoPor',
-      'fechaRechazo',
-      'motivoRechazo'
-    ];
+    const headers = [...AUDITORIA_CSV_HEADERS];
 
     const csv = toCsv(rows, headers);
     const stamp = new Date().toISOString().substring(0, 10);

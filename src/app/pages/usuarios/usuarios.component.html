@@ -154,7 +154,7 @@
               class="ieca-select"
               placeholder="Seleccione un ministerio">
               <ion-select-option [value]="null">Sin asignar</ion-select-option>
-              <ion-select-option *ngFor="let min of ministeriosParaColaborador" [value]="min.id">{{ min.nombre }}</ion-select-option>
+              <ion-select-option *ngFor="let min of ministeriosColaboradorLista" [value]="min.id">{{ min.nombre }}</ion-select-option>
             </ion-select>
           </ion-item>
           <small class="hint-text" *ngIf="isRolSinMinisterio(nuevoUsuario.rol)">
@@ -268,9 +268,9 @@
               animated="true"
               debounce="300"
               class="professional-search"
-              placeholder="Buscar por nombre, usuario, email o ministerio..."
-              [(ngModel)]="searchTerm"
-              (ngModelChange)="onBusquedaUsuariosChange()">
+              placeholder="Buscar por nombre..."
+              [value]="searchTerm"
+              (ionInput)="onBusquedaUsuarios($event)">
             </ion-searchbar>
           </div>
         </div>
@@ -297,7 +297,7 @@
                   [class.estado-filtro-option--active]="filtroRol === ROLES_CATALOGO.ADMIN"
                   (click)="seleccionarFiltroRol(ROLES_CATALOGO.ADMIN)">
                   <span class="estado-filtro-option__text">Administrador</span>
-                  <span class="estado-filtro-option__count" *ngIf="contarUsuariosPorRol(ROLES_CATALOGO.ADMIN) > 0">{{ contarUsuariosPorRol(ROLES_CATALOGO.ADMIN) }}</span>
+                  <span class="estado-filtro-option__count" *ngIf="conteoRolAdmin > 0">{{ conteoRolAdmin }}</span>
                 </button>
                 <button
                   type="button"
@@ -305,7 +305,7 @@
                   [class.estado-filtro-option--active]="filtroRol === ROLES_CATALOGO.CONTABLE"
                   (click)="seleccionarFiltroRol(ROLES_CATALOGO.CONTABLE)">
                   <span class="estado-filtro-option__text">Contable</span>
-                  <span class="estado-filtro-option__count" *ngIf="contarUsuariosPorRol(ROLES_CATALOGO.CONTABLE) > 0">{{ contarUsuariosPorRol(ROLES_CATALOGO.CONTABLE) }}</span>
+                  <span class="estado-filtro-option__count" *ngIf="conteoRolContable > 0">{{ conteoRolContable }}</span>
                 </button>
                 <button
                   type="button"
@@ -313,7 +313,7 @@
                   [class.estado-filtro-option--active]="filtroRol === ROLES_CATALOGO.COLABORADOR"
                   (click)="seleccionarFiltroRol(ROLES_CATALOGO.COLABORADOR)">
                   <span class="estado-filtro-option__text">Colaborador</span>
-                  <span class="estado-filtro-option__count" *ngIf="contarUsuariosPorRol(ROLES_CATALOGO.COLABORADOR) > 0">{{ contarUsuariosPorRol(ROLES_CATALOGO.COLABORADOR) }}</span>
+                  <span class="estado-filtro-option__count" *ngIf="conteoRolColaborador > 0">{{ conteoRolColaborador }}</span>
                 </button>
               </div>
             </section>
@@ -336,7 +336,7 @@
                   [class.estado-filtro-option--active]="filtroEstadoUsuario === 'Activo'"
                   (click)="seleccionarFiltroEstadoUsuario('Activo')">
                   <span class="estado-filtro-option__text">Activo</span>
-                  <span class="estado-filtro-option__count" *ngIf="contarUsuariosPorEstado('Activo') > 0">{{ contarUsuariosPorEstado('Activo') }}</span>
+                  <span class="estado-filtro-option__count" *ngIf="conteoEstadoActivo > 0">{{ conteoEstadoActivo }}</span>
                 </button>
                 <button
                   type="button"
@@ -344,7 +344,7 @@
                   [class.estado-filtro-option--active]="filtroEstadoUsuario === 'Inactivo'"
                   (click)="seleccionarFiltroEstadoUsuario('Inactivo')">
                   <span class="estado-filtro-option__text">Inactivo</span>
-                  <span class="estado-filtro-option__count" *ngIf="contarUsuariosPorEstado('Inactivo') > 0">{{ contarUsuariosPorEstado('Inactivo') }}</span>
+                  <span class="estado-filtro-option__count" *ngIf="conteoEstadoInactivo > 0">{{ conteoEstadoInactivo }}</span>
                 </button>
               </div>
             </section>
@@ -375,7 +375,7 @@
                   class="ieca-select"
                   placeholder="Todos los ministerios">
                   <ion-select-option [value]="null">Todos los ministerios</ion-select-option>
-                  <ion-select-option *ngFor="let min of ministeriosParaFiltro" [value]="min.id">
+                  <ion-select-option *ngFor="let min of ministeriosFiltroOrdenados" [value]="min.id">
                     {{ min.nombre }}
                   </ion-select-option>
                 </ion-select>

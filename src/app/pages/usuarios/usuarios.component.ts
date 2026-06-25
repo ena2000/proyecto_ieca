@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, HostListener, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, ViewChild, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, registerLocaleData } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import localeEs from '@angular/common/locales/es';
@@ -48,6 +48,7 @@ registerLocaleData(localeEs);
   selector: 'app-usuarios',
   templateUrl: './usuarios.component.html',
   styleUrls: ['./usuarios.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [
     CommonModule,
@@ -90,6 +91,14 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   listaUsuarios: Usuario[] = [];
   listaUsuariosTabla: (Usuario & { ministerioLabel: string })[] = [];
   conteoUsuariosFiltrados = 0;
+  ministeriosFiltroOrdenados: Ministerio[] = [];
+  ministeriosColaboradorLista: Ministerio[] = [];
+  conteoRolAdmin = 0;
+  conteoRolContable = 0;
+  conteoRolColaborador = 0;
+  conteoEstadoActivo = 0;
+  conteoEstadoInactivo = 0;
+  hayFiltrosActivosFlag = false;
 
   // Contraseña solo para backend (se hashea). Vacía = no cambiar.
   password = '';
@@ -131,7 +140,8 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     private alertController: AlertController,
     private loadingController: LoadingController,
     private dataService: DataService,
-    private usuariosService: UsuariosService
+    private usuariosService: UsuariosService,
+    private cdr: ChangeDetectorRef
   ) {
     addIcons({
       'notifications-outline': notificationsOutline,
@@ -154,12 +164,10 @@ export class UsuariosComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(list => {
         this.listaUsuarios = list;
+        this.actualizarConteosResumen();
         this.actualizarVistaUsuarios();
       });
     this.dataService.ministerios$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => this.cargarMinisterios());
-    this.dataService.dataRevision$
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => this.cargarMinisterios());
     void this.inicializarDatos();
@@ -199,7 +207,15 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   }
 
   get hayFiltrosActivos(): boolean {
-    return !!(
+    return this.hayFiltrosActivosFlag;
+  }
+
+  get hayFiltrosAvanzadosActivos(): boolean {
+    return this.filtroMinisterioId != null;
+  }
+
+  private syncHayFiltrosActivos(): void {
+    this.hayFiltrosActivosFlag = !!(
       this.searchTerm ||
       this.filtroRol !== 'todos' ||
       this.filtroEstadoUsuario !== 'todos' ||
@@ -207,8 +223,28 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     );
   }
 
-  get hayFiltrosAvanzadosActivos(): boolean {
-    return this.filtroMinisterioId != null;
+  private actualizarConteosResumen(): void {
+    let admin = 0;
+    let contable = 0;
+    let colaborador = 0;
+    let activo = 0;
+    let inactivo = 0;
+
+    for (const u of this.listaUsuarios) {
+      const rol = normalizarRol(u.rol);
+      if (rol === ROLES.ADMIN) admin++;
+      else if (rol === ROLES.CONTABLE) contable++;
+      else if (rol === ROLES.COLABORADOR) colaborador++;
+
+      if (u.estado === 'Activo') activo++;
+      else if (u.estado === 'Inactivo') inactivo++;
+    }
+
+    this.conteoRolAdmin = admin;
+    this.conteoRolContable = contable;
+    this.conteoRolColaborador = colaborador;
+    this.conteoEstadoActivo = activo;
+    this.conteoEstadoInactivo = inactivo;
   }
 
   limpiarFiltros(): void {
@@ -238,61 +274,77 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     this.actualizarVistaUsuarios();
   }
 
-  onBusquedaUsuariosChange(): void {
+  onBusquedaUsuarios(event: CustomEvent): void {
+    this.searchTerm = (event.detail.value as string) ?? '';
     this.actualizarVistaUsuarios();
   }
 
-  get ministeriosParaFiltro(): Ministerio[] {
-    return [...this.listaMinisterios].sort((a, b) =>
-      (a.nombre ?? '').localeCompare(b.nombre ?? '', 'es')
-    );
-  }
-
-  contarUsuariosPorRol(rol: AppRole): number {
-    return this.listaUsuarios.filter(u => normalizarRol(u.rol) === rol).length;
-  }
-
-  contarUsuariosPorEstado(estado: 'Activo' | 'Inactivo'): number {
-    return this.listaUsuarios.filter(u => u.estado === estado).length;
-  }
-
   private actualizarVistaUsuarios(): void {
+    this.syncHayFiltrosActivos();
+
     const ministerioPorId = new Map(
       this.listaMinisterios.map(m => [Number(m.id), (m.nombre ?? '').trim()])
     );
 
-    let filtrados = this.listaUsuarios;
+    const search = this.searchTerm.trim().toLowerCase();
+    const filas: (Usuario & { ministerioLabel: string })[] = [];
 
-    if (this.searchTerm) {
-      const search = this.searchTerm.toLowerCase();
-      filtrados = filtrados.filter(u => {
-        const ministerio = this.etiquetaMinisterioUsuario(u, ministerioPorId).toLowerCase();
-        return (
-          u.nombre?.toLowerCase().includes(search) ||
-          u.usuario?.toLowerCase().includes(search) ||
-          u.email?.toLowerCase().includes(search) ||
-          ministerio.includes(search)
-        );
-      });
+    for (const u of this.listaUsuarios) {
+      const ministerioLabel = this.etiquetaMinisterioUsuario(u, ministerioPorId);
+
+      if (search) {
+        if (!u.nombre?.toLowerCase().includes(search)) {
+          continue;
+        }
+      }
+
+      if (this.filtroRol !== 'todos' && normalizarRol(u.rol) !== this.filtroRol) {
+        continue;
+      }
+
+      if (this.filtroEstadoUsuario !== 'todos' && u.estado !== this.filtroEstadoUsuario) {
+        continue;
+      }
+
+      if (this.filtroMinisterioId != null && Number(u.ministerioId) !== this.filtroMinisterioId) {
+        continue;
+      }
+
+      filas.push({ ...u, ministerioLabel });
     }
 
-    if (this.filtroRol !== 'todos') {
-      filtrados = filtrados.filter(u => normalizarRol(u.rol) === this.filtroRol);
+    this.conteoUsuariosFiltrados = filas.length;
+
+    if (!this.mismaListaTabla(filas)) {
+      this.listaUsuariosTabla = filas;
     }
 
-    if (this.filtroEstadoUsuario !== 'todos') {
-      filtrados = filtrados.filter(u => u.estado === this.filtroEstadoUsuario);
+    this.cdr.markForCheck();
+  }
+
+  private mismaListaTabla(
+    nueva: (Usuario & { ministerioLabel: string })[]
+  ): boolean {
+    const actual = this.listaUsuariosTabla;
+    if (actual.length !== nueva.length) return false;
+
+    for (let i = 0; i < nueva.length; i++) {
+      const prev = actual[i];
+      const row = nueva[i];
+      if (
+        prev.id !== row.id ||
+        prev.nombre !== row.nombre ||
+        prev.usuario !== row.usuario ||
+        prev.email !== row.email ||
+        prev.rol !== row.rol ||
+        prev.estado !== row.estado ||
+        prev.ministerioLabel !== row.ministerioLabel
+      ) {
+        return false;
+      }
     }
 
-    if (this.filtroMinisterioId != null) {
-      filtrados = filtrados.filter(u => Number(u.ministerioId) === this.filtroMinisterioId);
-    }
-
-    this.conteoUsuariosFiltrados = filtrados.length;
-    this.listaUsuariosTabla = filtrados.map(u => ({
-      ...u,
-      ministerioLabel: this.etiquetaMinisterioUsuario(u, ministerioPorId)
-    }));
+    return true;
   }
 
   private etiquetaMinisterioUsuario(
@@ -321,15 +373,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     if (isRolSinMinisterio(this.nuevoUsuario.rol)) {
       this.nuevoUsuario.ministerioId = undefined;
     }
-  }
-
-  get ministeriosParaColaborador(): Ministerio[] {
-    return ministeriosParaColaborador(
-      this.listaMinisterios,
-      this.listaUsuarios,
-      this.modoEdicion ? this.idEditando : null,
-      this.nuevoUsuario.ministerioId ?? null
-    );
+    this.cdr.markForCheck();
   }
 
   private prepararPayloadUsuario(): UsuarioPayload {
@@ -498,6 +542,15 @@ export class UsuariosComponent implements OnInit, OnDestroy {
 
   cargarMinisterios() {
     this.listaMinisterios = this.dataService.getMinisteriosParaCatalogo();
+    this.ministeriosFiltroOrdenados = [...this.listaMinisterios].sort((a, b) =>
+      (a.nombre ?? '').localeCompare(b.nombre ?? '', 'es')
+    );
+    this.ministeriosColaboradorLista = ministeriosParaColaborador(
+      this.listaMinisterios,
+      this.listaUsuarios,
+      this.modoEdicion ? this.idEditando : null,
+      this.nuevoUsuario.ministerioId ?? null
+    );
     this.actualizarVistaUsuarios();
   }
 
