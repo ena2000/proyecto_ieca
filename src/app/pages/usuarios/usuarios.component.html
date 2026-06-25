@@ -251,7 +251,7 @@
             Usuarios del Sistema
           </h2>
           <span class="badge-count">
-            {{ listaFiltrada.length }} usuarios encontrados
+            {{ conteoUsuariosFiltrados }} usuarios encontrados
           </span>
         </div>
         <div class="list-header-actions">
@@ -268,8 +268,9 @@
               animated="true"
               debounce="300"
               class="professional-search"
-              placeholder="Buscar por nombre o email..."
-              [(ngModel)]="searchTerm">
+              placeholder="Buscar por nombre, usuario, email o ministerio..."
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="onBusquedaUsuariosChange()">
             </ion-searchbar>
           </div>
         </div>
@@ -386,7 +387,8 @@
 
       <app-tabla-general
         [columns]="columnsUsuarios"
-        [data]="listaFiltrada"
+        [data]="listaUsuariosTabla"
+        [itemsPerPage]="10"
         [actions]="acciones"
         (rowEdit)="editarUsuario($event)"
         (rowDelete)="eliminarUsuario($event)">
@@ -417,12 +419,23 @@
       </button>
 
       <h2 id="temp-password-title" class="temp-password-title">
-        Contraseña temporal
+        {{ contrasenaTemporal.temporal ? 'Contraseña temporal' : 'Usuario creado' }}
       </h2>
       <p class="temp-password-user">
-        Usuario: <strong>{{ contrasenaTemporal.usuario }}</strong>
+        Usuario para iniciar sesión:
       </p>
+      <button
+        type="button"
+        class="temp-password-copy"
+        (click)="copiarUsuarioTemporal()">
+        <span class="temp-password-value">{{ contrasenaTemporal.usuario }}</span>
+        <ion-icon name="copy-outline" aria-hidden="true"></ion-icon>
+      </button>
+      <p class="temp-password-hint">Clic en el usuario para copiarlo</p>
 
+      <p class="temp-password-user temp-password-user--spaced">
+        Contraseña:
+      </p>
       <button
         type="button"
         class="temp-password-copy"
@@ -433,7 +446,11 @@
       <p class="temp-password-hint">Clic en la contraseña para copiarla</p>
 
       <p class="temp-password-note">
-        Compártela una sola vez. Al iniciar sesión el usuario puede cambiarla.
+        {{
+          contrasenaTemporal.temporal
+            ? 'Compártelas una sola vez. Al iniciar sesión el usuario puede cambiar la contraseña.'
+            : 'Entrega estas credenciales al usuario. Puede cambiar la contraseña después desde su perfil.'
+        }}
       </p>
 
       <ion-button

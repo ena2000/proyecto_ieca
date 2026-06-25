@@ -35,6 +35,7 @@ import {
   ROL_COLABORADOR,
   validarUsuarioForm
 } from '../../shared/utils/liderazgo.util';
+import { resolverNombreMinisterio } from '../../shared/utils/movimiento-ministerio.util';
 import { ROLES, normalizarRol, AppRole } from '../../core/constants/roles.constants';
 import {
   mensajeUsuarioEmailDuplicado,
@@ -87,6 +88,8 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   modoEdicion  = false;
   idEditando: number | null = null;
   listaUsuarios: Usuario[] = [];
+  listaUsuariosTabla: (Usuario & { ministerioLabel: string })[] = [];
+  conteoUsuariosFiltrados = 0;
 
   // Contraseña solo para backend (se hashea). Vacía = no cambiar.
   password = '';
@@ -97,7 +100,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   filtroMinisterioId: number | null = null;
   mostrarFiltrosAvanzados = false;
   fotoSeleccionada: string | null = null;
-  contrasenaTemporal: { usuario: string; password: string } | null = null;
+  contrasenaTemporal: { usuario: string; password: string; temporal: boolean } | null = null;
   guardando = false;
   formGuardadoError: string | null = null;
 
@@ -108,10 +111,12 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   columnsUsuarios: TableColumn[] = [
-    { field: 'nombre', header: 'Nombre'                    },
-    { field: 'email',  header: 'Email'                     },
-    { field: 'rol',    header: 'Rol',    type: 'badge'     },
-    { field: 'estado', header: 'Estado', type: 'badge'     }
+    { field: 'nombre',          header: 'Nombre'     },
+    { field: 'usuario',         header: 'Usuario'    },
+    { field: 'email',           header: 'Email'      },
+    { field: 'ministerioLabel', header: 'Ministerio' },
+    { field: 'rol',             header: 'Rol',    type: 'badge' },
+    { field: 'estado',          header: 'Estado', type: 'badge' }
   ];
 
   acciones = { edit: true, delete: true };
@@ -147,7 +152,10 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.usuariosService.usuarios$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(list => { this.listaUsuarios = list; });
+      .subscribe(list => {
+        this.listaUsuarios = list;
+        this.actualizarVistaUsuarios();
+      });
     this.dataService.ministerios$
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => this.cargarMinisterios());
@@ -209,21 +217,30 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     this.filtroEstadoUsuario = 'todos';
     this.filtroMinisterioId = null;
     this.mostrarFiltrosAvanzados = false;
+    this.actualizarVistaUsuarios();
   }
 
   seleccionarFiltroRol(rol: AppRole | 'todos'): void {
     this.filtroRol = rol;
+    this.actualizarVistaUsuarios();
   }
 
   seleccionarFiltroEstadoUsuario(estado: 'todos' | 'Activo' | 'Inactivo'): void {
     this.filtroEstadoUsuario = estado;
+    this.actualizarVistaUsuarios();
   }
 
   alternarFiltrosAvanzados(): void {
     this.mostrarFiltrosAvanzados = !this.mostrarFiltrosAvanzados;
   }
 
-  onFiltroMinisterioChange(): void {}
+  onFiltroMinisterioChange(): void {
+    this.actualizarVistaUsuarios();
+  }
+
+  onBusquedaUsuariosChange(): void {
+    this.actualizarVistaUsuarios();
+  }
 
   get ministeriosParaFiltro(): Ministerio[] {
     return [...this.listaMinisterios].sort((a, b) =>
@@ -239,15 +256,24 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     return this.listaUsuarios.filter(u => u.estado === estado).length;
   }
 
-  get listaFiltrada(): Usuario[] {
-    let filtrados = [...this.listaUsuarios];
+  private actualizarVistaUsuarios(): void {
+    const ministerioPorId = new Map(
+      this.listaMinisterios.map(m => [Number(m.id), (m.nombre ?? '').trim()])
+    );
+
+    let filtrados = this.listaUsuarios;
 
     if (this.searchTerm) {
       const search = this.searchTerm.toLowerCase();
-      filtrados = filtrados.filter(u =>
-        u.nombre?.toLowerCase().includes(search) ||
-        u.email?.toLowerCase().includes(search)
-      );
+      filtrados = filtrados.filter(u => {
+        const ministerio = this.etiquetaMinisterioUsuario(u, ministerioPorId).toLowerCase();
+        return (
+          u.nombre?.toLowerCase().includes(search) ||
+          u.usuario?.toLowerCase().includes(search) ||
+          u.email?.toLowerCase().includes(search) ||
+          ministerio.includes(search)
+        );
+      });
     }
 
     if (this.filtroRol !== 'todos') {
@@ -262,7 +288,33 @@ export class UsuariosComponent implements OnInit, OnDestroy {
       filtrados = filtrados.filter(u => Number(u.ministerioId) === this.filtroMinisterioId);
     }
 
-    return filtrados;
+    this.conteoUsuariosFiltrados = filtrados.length;
+    this.listaUsuariosTabla = filtrados.map(u => ({
+      ...u,
+      ministerioLabel: this.etiquetaMinisterioUsuario(u, ministerioPorId)
+    }));
+  }
+
+  private etiquetaMinisterioUsuario(
+    usuario: Usuario,
+    ministerioPorId: Map<number, string>
+  ): string {
+    if (isRolSinMinisterio(usuario.rol)) {
+      return '—';
+    }
+    if (usuario.ministerioId == null) {
+      return 'Sin asignar';
+    }
+    const id = Number(usuario.ministerioId);
+    const desdeMapa = ministerioPorId.get(id);
+    if (desdeMapa) {
+      return desdeMapa;
+    }
+    return resolverNombreMinisterio(
+      usuario.ministerioId,
+      undefined,
+      this.listaMinisterios
+    );
   }
 
   onRolChange(): void {
@@ -330,24 +382,40 @@ export class UsuariosComponent implements OnInit, OnDestroy {
         await this.mostrarToast('Usuario actualizado exitosamente', 'success');
         refrescarListaTrasMutacion(
           () => this.usuariosService.getAll(),
-          lista => { this.listaUsuarios = lista; }
+          lista => {
+            this.listaUsuarios = lista;
+            this.actualizarVistaUsuarios();
+          }
         );
         this.dataService.notifyChanges();
         this.resetFormulario();
       } else {
+        const passwordIngresada = this.password.trim();
         const res = await firstValueFrom(this.usuariosService.create(payload)) as UsuarioCreateResponse;
-        await this.mostrarToast('Usuario creado exitosamente', 'success');
+        const login =
+          res.usuario?.trim() ||
+          payload.usuario?.trim() ||
+          res.email?.trim() ||
+          payload.email?.trim() ||
+          '';
+        const passwordMostrar = res.tempPassword ?? passwordIngresada;
+        const esTemporal = !!res.tempPassword;
+
+        this.resetFormulario();
+        this.limpiarFiltros();
         refrescarListaTrasMutacion(
           () => this.usuariosService.getAll(),
-          lista => { this.listaUsuarios = lista; }
+          lista => {
+            this.listaUsuarios = lista;
+            this.actualizarVistaUsuarios();
+          }
         );
         this.dataService.notifyChanges();
-        this.resetFormulario();
-        if (!this.password.trim() && res?.tempPassword) {
-          this.mostrarContrasenaTemporal(
-            res.usuario ?? payload.email ?? 'usuario',
-            res.tempPassword
-          );
+
+        if (login && passwordMostrar) {
+          this.mostrarCredencialesNuevoUsuario(login, passwordMostrar, esTemporal);
+        } else {
+          await this.mostrarToast('Usuario creado exitosamente', 'success');
         }
       }
     } catch (error) {
@@ -430,10 +498,11 @@ export class UsuariosComponent implements OnInit, OnDestroy {
 
   cargarMinisterios() {
     this.listaMinisterios = this.dataService.getMinisteriosParaCatalogo();
+    this.actualizarVistaUsuarios();
   }
 
-  mostrarContrasenaTemporal(usuario: string, password: string): void {
-    this.contrasenaTemporal = { usuario, password };
+  mostrarCredencialesNuevoUsuario(usuario: string, password: string, temporal: boolean): void {
+    this.contrasenaTemporal = { usuario, password, temporal };
     document.body.style.overflow = 'hidden';
   }
 
@@ -442,16 +511,26 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     document.body.style.overflow = 'auto';
   }
 
+  async copiarCredencial(valor: string, etiqueta: string): Promise<void> {
+    if (!valor.trim()) return;
+    try {
+      await navigator.clipboard.writeText(valor);
+      await this.mostrarToast(`${etiqueta} copiado al portapapeles`, 'success');
+    } catch {
+      await this.mostrarToast(`No se pudo copiar ${etiqueta.toLowerCase()}. Selecciónalo manualmente.`, 'warning');
+    }
+  }
+
   async copiarContrasenaTemporal(): Promise<void> {
     const password = this.contrasenaTemporal?.password;
     if (!password) return;
+    await this.copiarCredencial(password, 'Contraseña');
+  }
 
-    try {
-      await navigator.clipboard.writeText(password);
-      await this.mostrarToast('Contraseña copiada al portapapeles', 'success');
-    } catch {
-      await this.mostrarToast('No se pudo copiar. Selecciónala manualmente.', 'warning');
-    }
+  async copiarUsuarioTemporal(): Promise<void> {
+    const usuario = this.contrasenaTemporal?.usuario;
+    if (!usuario) return;
+    await this.copiarCredencial(usuario, 'Usuario');
   }
 
   async mostrarToast(mensaje: string, color: string, duration = 2600): Promise<void> {

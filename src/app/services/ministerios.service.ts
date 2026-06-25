@@ -47,7 +47,6 @@ export class MinisteriosService {
         tap(nuevo => {
           const completo = completarRegistroTrasMutacion(nuevo, ministerio);
           this.persist(prependRegistroUnico(completo, this.getAll()));
-          this.syncListaEnSegundoPlano();
         })
       )
     );

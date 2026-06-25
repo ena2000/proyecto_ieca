@@ -51,7 +51,6 @@ export class UsuariosService {
             usuario
           ) as Usuario;
           this.persist(prependRegistroUnico(completo, this.getAll()));
-          this.syncListaEnSegundoPlano();
         })
       )
     );
