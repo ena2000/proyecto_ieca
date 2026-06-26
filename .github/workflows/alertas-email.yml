@@ -6,6 +6,11 @@ on:
     # 14:00 UTC ≈ 08:00 Guatemala (CST)
     - cron: '0 14 * * *'
   workflow_dispatch:
+    inputs:
+      force:
+        description: 'Forzar envío aunque ya se envió hoy'
+        type: boolean
+        default: true
 
 jobs:
   enviar-resumen:
@@ -28,20 +33,44 @@ jobs:
         working-directory: server
         run: npm ci
 
-      - name: Credenciales Firebase
+      - name: Verificar secrets obligatorios
+        run: |
+          missing=0
+          if [ -z "${{ secrets.JWT_SECRET }}" ]; then echo "::error::Falta secret JWT_SECRET"; missing=1; fi
+          if [ -z "${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}" ]; then echo "::error::Falta secret FIREBASE_SERVICE_ACCOUNT_JSON"; missing=1; fi
+          if [ -n "${{ secrets.BREVO_API_KEY }}" ]; then
+            echo "Correo: Brevo API"
+          elif [ -z "${{ secrets.SMTP_HOST }}" ] || [ -z "${{ secrets.SMTP_USER }}" ] || [ -z "${{ secrets.SMTP_PASS }}" ]; then
+            echo "::error::Configura BREVO_API_KEY o SMTP_HOST + SMTP_USER + SMTP_PASS"
+            missing=1
+          else
+            echo "Correo: SMTP"
+          fi
+          if [ "$missing" -eq 1 ]; then exit 1; fi
+          echo "Secrets obligatorios presentes."
+
+      - name: Logo para correos
         working-directory: server
-        run: echo "$FIREBASE_SERVICE_ACCOUNT_JSON" > firebase-service-account.json
-        env:
-          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+        run: npm run email:logo
+        continue-on-error: true
 
       - name: Enviar alertas
         working-directory: server
-        run: npm run alertas
         env:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
-          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_PORT: '587'
+          SMTP_SECURE: 'false'
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          EMAIL_FROM: ${{ secrets.SMTP_FROM }}
           ALERTAS_EMAIL_ENABLED: 'true'
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.force }}" = "true" ]; then
+            npm run alertas:force
+          else
+            npm run alertas
+          fi

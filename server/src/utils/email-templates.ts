@@ -334,12 +334,20 @@ function buildOperationalDigestEmail(resumen) {
   };
 }
 
+function inlineLogoForApi(html) {
+  if (!html || typeof html !== 'string') return html;
+  const dataUri = resolveLogoDataUri();
+  if (!dataUri) return html;
+  return html.replaceAll(`cid:${LOGO_CID}`, dataUri);
+}
+
 module.exports = {
   BRAND,
   LOGO_CID,
   resolveLogoPath,
   resolveLogoDataUri,
   getLogoAttachment,
+  inlineLogoForApi,
   buildPasswordResetEmail,
   buildTestEmail,
   buildOperationalDigestEmail
