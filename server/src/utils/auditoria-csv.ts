@@ -22,11 +22,40 @@ const AUDITORIA_CSV_HEADERS = [
   'motivoRechazo'
 ];
 
+function formatSoloHoraDesdeIso(iso) {
+  if (!iso) return '';
+  const d = new Date(String(iso));
+  if (Number.isNaN(d.getTime())) return '';
+  const hh = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return `${hh}:${min}`;
+}
+
 function formatFechaFormateadaMovimiento(entity) {
   const ff = entity?.fechaFormateada?.trim?.() ?? String(entity?.fechaFormateada ?? '').trim();
-  if (ff) return ff;
-  if (entity?.fecha) return formatDateDDMMYYYY(entity.fecha);
-  return '';
+  const dia = ff || (entity?.fecha ? formatDateDDMMYYYY(entity.fecha) : '');
+
+  const hora =
+    formatSoloHoraDesdeIso(entity?.auditCreadoEn) ||
+    formatSoloHoraDesdeIso(entity?.fecha);
+
+  if (dia && hora) return `${dia} ${hora}`;
+
+  if (entity?.fecha) {
+    const completa = formatFechaHoraAuditoria(entity.fecha);
+    if (completa) return completa;
+  }
+
+  return dia;
+}
+
+function parseFechaCsvParaOrden(valor) {
+  if (!valor || typeof valor !== 'string') return 0;
+  const m = valor.trim().match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}))?$/);
+  if (!m) return 0;
+  const [, dd, mm, yyyy, hh = '0', min = '0'] = m;
+  const d = new Date(Number(yyyy), Number(mm) - 1, Number(dd), Number(hh), Number(min));
+  return Number.isNaN(d.getTime()) ? 0 : d.getTime();
 }
 
 function formatFechaHoraAuditoria(iso) {
@@ -94,6 +123,7 @@ module.exports = {
   AUDITORIA_CSV_HEADERS,
   formatFechaFormateadaMovimiento,
   formatFechaHoraAuditoria,
+  parseFechaCsvParaOrden,
   buildMapaNombresUsuarios,
   formatActorAuditoria,
   mapMovimientoAuditoriaCsvRow

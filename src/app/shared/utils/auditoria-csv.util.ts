@@ -23,14 +23,45 @@ export const AUDITORIA_CSV_HEADERS = [
   'motivoRechazo'
 ] as const;
 
+export function formatSoloHoraDesdeIso(iso?: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const hh = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return `${hh}:${min}`;
+}
+
 export function formatFechaFormateadaMovimiento(entity: {
   fecha?: string;
   fechaFormateada?: string;
+  auditCreadoEn?: string;
 }): string {
-  const ff = entity.fechaFormateada?.trim();
-  if (ff) return ff;
-  if (entity.fecha) return formatearISOaDDMMYYYY(entity.fecha);
-  return '';
+  const dia =
+    entity.fechaFormateada?.trim() ||
+    (entity.fecha ? formatearISOaDDMMYYYY(entity.fecha) : '');
+
+  const hora =
+    formatSoloHoraDesdeIso(entity.auditCreadoEn) ||
+    formatSoloHoraDesdeIso(entity.fecha);
+
+  if (dia && hora) return `${dia} ${hora}`;
+
+  if (entity.fecha) {
+    const completa = formatFechaHoraAuditoria(entity.fecha);
+    if (completa) return completa;
+  }
+
+  return dia;
+}
+
+export function parseFechaCsvParaOrden(valor?: string | null): number {
+  if (!valor) return 0;
+  const m = valor.trim().match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}))?$/);
+  if (!m) return 0;
+  const [, dd, mm, yyyy, hh = '0', min = '0'] = m;
+  const d = new Date(Number(yyyy), Number(mm) - 1, Number(dd), Number(hh), Number(min));
+  return Number.isNaN(d.getTime()) ? 0 : d.getTime();
 }
 
 export function formatFechaHoraAuditoria(iso?: string | null): string {
@@ -81,7 +112,11 @@ export function mapMovimientoAuditoriaCsvRow(
   return {
     tipo,
     id: entity['id'] as number | undefined,
-    fechaFormateada: formatFechaFormateadaMovimiento(entity as { fecha?: string; fechaFormateada?: string }),
+    fechaFormateada: formatFechaFormateadaMovimiento({
+      fecha: entity['fecha'] as string | undefined,
+      fechaFormateada: entity['fechaFormateada'] as string | undefined,
+      auditCreadoEn: entity['auditCreadoEn'] as string | undefined
+    }),
     ministerio: entity['ministerio'] as string | undefined,
     ministerioId: entity['ministerioId'] as number | undefined,
     descripcion: entity['descripcion'] as string | undefined,

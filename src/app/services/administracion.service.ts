@@ -14,7 +14,8 @@ import { CierreService } from '../core/services/cierre.service';
 import {
   AUDITORIA_CSV_HEADERS,
   buildMapaNombresUsuarios,
-  mapMovimientoAuditoriaCsvRow
+  mapMovimientoAuditoriaCsvRow,
+  parseFechaCsvParaOrden
 } from '../shared/utils/auditoria-csv.util';
 
 const ULTIMO_CIERRE_KEY = 'ultimoCierre';
@@ -351,14 +352,11 @@ export class AdministracionService {
             )
         : [];
 
-    const rows = [...ingresos, ...gastos].sort((a, b) => {
-      const parseFf = (ff?: string | null) => {
-        if (!ff || ff.length !== 10 || !ff.includes('/')) return 0;
-        const [dd, mm, yyyy] = ff.split('/');
-        return new Date(Number(yyyy), Number(mm) - 1, Number(dd)).getTime();
-      };
-      return parseFf(b['fechaFormateada'] as string) - parseFf(a['fechaFormateada'] as string);
-    });
+    const rows = [...ingresos, ...gastos].sort(
+      (a, b) =>
+        parseFechaCsvParaOrden(b['fechaFormateada'] as string) -
+        parseFechaCsvParaOrden(a['fechaFormateada'] as string)
+    );
 
     const headers = [...AUDITORIA_CSV_HEADERS];
 

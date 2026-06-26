@@ -22,7 +22,8 @@ const { invalidateBootstrapCache } = require('../utils/bootstrapCache');
 const {
   AUDITORIA_CSV_HEADERS,
   buildMapaNombresUsuarios,
-  mapMovimientoAuditoriaCsvRow
+  mapMovimientoAuditoriaCsvRow,
+  parseFechaCsvParaOrden
 } = require('../utils/auditoria-csv');
 
 const router = express.Router();
@@ -232,15 +233,7 @@ router.get('/auditoria', validate(auditoriaQuerySchema, 'query'), async (req, re
       }
     }
 
-    // Ordena por fecha del movimiento desc
-    rows.sort((a, b) => {
-      const parseFf = (ff) => {
-        if (typeof ff !== 'string' || ff.length !== 10 || !ff.includes('/')) return 0;
-        const [dd, mm, yyyy] = ff.split('/');
-        return new Date(Number(yyyy), Number(mm) - 1, Number(dd)).getTime();
-      };
-      return parseFf(b.fechaFormateada) - parseFf(a.fechaFormateada);
-    });
+    rows.sort((a, b) => parseFechaCsvParaOrden(b.fechaFormateada) - parseFechaCsvParaOrden(a.fechaFormateada));
 
     const headers = [...AUDITORIA_CSV_HEADERS];
 
