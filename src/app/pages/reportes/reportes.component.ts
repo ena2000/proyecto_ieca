@@ -149,10 +149,11 @@ export class ReportesComponent implements OnInit, OnDestroy, ViewWillEnter {
     );
     this.totalSaldoFiltrado = this.totalIngresosFiltrado - this.totalGastosFiltrado;
     this.desgloseAgregado = this.reportesService.calcularDesglose(this.listaFiltradaVista);
+    const ministerioDesgloseId = this.filtroMinisterioId ?? this.ministerioScopeId ?? null;
     this.desgloseMinisterioVista = this.reportesService.calcularDesglosePorMinisterio(
       this.listaFiltradaVista,
       this.listaMinisterios,
-      this.ministerioScopeId,
+      ministerioDesgloseId,
       {
         mesPeriodo: this.filtroMes || null,
         incluirAportacion: this.esAdministrador

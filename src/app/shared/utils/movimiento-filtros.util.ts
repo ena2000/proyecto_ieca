@@ -44,20 +44,28 @@ export interface FiltrarMovimientosConfig<T> {
   enriquecer: (item: T) => T;
 }
 
+export function itemsEnAlcanceMinisterio<T extends { ministerioId?: number }>(
+  items: T[],
+  ministerioScopeId: number | null,
+  filtroMinisterioId: number | null
+): T[] {
+  if (ministerioScopeId != null) {
+    return items.filter(i => Number(i.ministerioId) === ministerioScopeId);
+  }
+  if (filtroMinisterioId != null) {
+    return items.filter(i => Number(i.ministerioId) === filtroMinisterioId);
+  }
+  return items;
+}
+
 export function filtrarMovimientos<T extends { fecha: string; monto?: number | null; ministerioId?: number }>(
   config: FiltrarMovimientosConfig<T>
 ): T[] {
-  let filtrados = [...config.items];
-
-  if (config.ministerioScopeId != null) {
-    filtrados = filtrados.filter(
-      i => Number(i.ministerioId) === config.ministerioScopeId
-    );
-  } else if (config.filtros.filtroMinisterioId != null) {
-    filtrados = filtrados.filter(
-      i => Number(i.ministerioId) === config.filtros.filtroMinisterioId
-    );
-  }
+  let filtrados = itemsEnAlcanceMinisterio(
+    config.items,
+    config.ministerioScopeId,
+    config.filtros.filtroMinisterioId
+  );
 
   if (config.filtros.searchTerm) {
     const search = config.filtros.searchTerm.toLowerCase();

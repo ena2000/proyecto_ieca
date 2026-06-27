@@ -25,7 +25,7 @@ import { procesarComprobante, esComprobantePdf } from '../../shared/utils/compro
 import { presentIecaToast } from '../../shared/utils/toast.util';
 import { estadoGasto, etiquetaEstadoGasto, gastoAprobado, gastoPendiente } from '../../shared/utils/gasto.util';
 import { registerMovimientoPageIcons } from '../../shared/utils/movimiento-page.icons';
-import { filtrarMovimientos, hayFiltrosMovimientoActivos, hayFiltrosMovimientoAvanzadosActivos, FiltrosMovimiento, FiltroEstadoMovimiento } from '../../shared/utils/movimiento-filtros.util';
+import { filtrarMovimientos, hayFiltrosMovimientoActivos, hayFiltrosMovimientoAvanzadosActivos, FiltrosMovimiento, FiltroEstadoMovimiento, itemsEnAlcanceMinisterio } from '../../shared/utils/movimiento-filtros.util';
 import {
   formatearEntradaFechaManual,
   isoDesdeFechaManualDDMMYYYY,
@@ -447,9 +447,11 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
         estadoEtiqueta: etiquetaEstadoGasto(estadoGasto(g))
       })
     });
-    const enAlcance = this.ministerioScopeId != null
-      ? this.listaGastos.filter(g => Number(g.ministerioId) === this.ministerioScopeId)
-      : this.listaGastos;
+    const enAlcance = itemsEnAlcanceMinisterio(
+      this.listaGastos,
+      this.ministerioScopeId,
+      this.filtroMinisterioId
+    );
     this.pendientesCount = enAlcance.filter(gastoPendiente).length;
     this.aprobadosCount = enAlcance.filter(gastoAprobado).length;
     this.rechazadosCount = enAlcance.filter(g => estadoGasto(g) === 'rechazado').length;

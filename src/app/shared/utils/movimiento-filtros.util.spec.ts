@@ -1,4 +1,4 @@
-import { filtrarMovimientos, hayFiltrosMovimientoActivos } from './movimiento-filtros.util';
+import { filtrarMovimientos, hayFiltrosMovimientoActivos, itemsEnAlcanceMinisterio } from './movimiento-filtros.util';
 
 interface ItemPrueba {
   id: number;
@@ -85,6 +85,11 @@ describe('movimiento-filtros.util', () => {
       enriquecer: i => i
     });
     expect(r.map(i => i.id)).toEqual([1]);
+  });
+
+  it('itemsEnAlcanceMinisterio respeta filtro de ministerio sin scope de rol', () => {
+    const r = itemsEnAlcanceMinisterio(items, null, 1);
+    expect(r.map(i => i.id)).toEqual([1, 3]);
   });
 
   it('filtra por ministerio cuando no hay scope de rol', () => {

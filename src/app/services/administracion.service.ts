@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import {
-  ActividadAdmin, BackupIeca, ConfigIglesia, ResumenAdmin
+  ActividadAdmin, BackupIeca, ConfigIglesia, Ingreso, ResumenAdmin
 } from '../core/models';
 import { DataService } from './data.service';
 import { NotificacionesService } from '../core/services/notificaciones.service';
@@ -10,6 +10,7 @@ import { API } from '../core/constants/api.constants';
 import { ROLES } from '../core/constants/roles.constants';
 import { environment } from '../../environments/environment';
 import { getMesActualLabel, periodoKeyFromFecha } from '../shared/utils/month.util';
+import { referenciaIngresoOrigen } from '../shared/utils/aportacion-iglesia.util';
 import { CierreService } from '../core/services/cierre.service';
 import {
   AUDITORIA_CSV_HEADERS,
@@ -119,7 +120,7 @@ export class AdministracionService {
 
     ingresos.slice(0, 2).forEach(i => {
       actividades.push({
-        accion: `Nuevo ingreso: ${i.descripcion}`,
+        accion: `Nuevo ingreso: ${this.etiquetaActividadIngreso(i, ingresos)}`,
         modulo: 'Ingresos',
         tiempo: this.calcularTiempoRelativo(i.fecha),
         icono:  'trending-up-outline',
@@ -409,6 +410,16 @@ export class AdministracionService {
     localStorage.removeItem(PERIODOS_CERRADOS_KEY);
     this.cierreService.limpiarLocal();
     this.dataService.refreshAllData();
+  }
+
+  private etiquetaActividadIngreso(ingreso: Ingreso, ingresos: Ingreso[]): string {
+    if (ingreso.esAportacionIglesia && ingreso.ingresoOrigenId != null) {
+      const origen = ingresos.find(x => Number(x.id) === Number(ingreso.ingresoOrigenId));
+      const detalle = referenciaIngresoOrigen(origen ?? ingreso);
+      const ministerio = origen?.ministerio || ingreso.ministerio || 'ministerio';
+      return `Aportación de ${ministerio} (33%) — ${detalle}`;
+    }
+    return ingreso.descripcion?.trim() || 'Sin descripción';
   }
 
   private calcularTiempoRelativo(fecha: string): string {

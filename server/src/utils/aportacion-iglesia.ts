@@ -29,6 +29,11 @@ function ingresoEstaAprobado(ingreso) {
   return !estado || estado === 'aprobado';
 }
 
+function referenciaIngresoOrigen(ingreso) {
+  const detalle = String(ingreso?.descripcion ?? '').trim();
+  return detalle || 'Sin descripción';
+}
+
 async function generarAportacionIglesiaPorIngreso(ingreso, req) {
   if (!ingresoRequiereAportacion(ingreso) || !ingresoEstaAprobado(ingreso)) {
     return ingreso;
@@ -41,7 +46,7 @@ async function generarAportacionIglesiaPorIngreso(ingreso, req) {
   const ministerioNombre = ingreso.ministerio || 'ministerio';
   const fecha = ingreso.fecha || new Date().toISOString();
   const fechaFormateada = ingreso.fechaFormateada || formatDateDDMMYYYY(fecha);
-  const ref = `ingreso #${ingreso.id}`;
+  const ref = referenciaIngresoOrigen(ingreso);
 
   const ingresoIglesia = await createInCollection('ingresos', {
     fecha,
@@ -133,7 +138,7 @@ async function actualizarAportacionIglesiaPorIngreso(ingreso, _req, previous) {
   const montoNetoMinisterio = Math.round((montoNuevo - montoAportacion) * 100) / 100;
   const pct = etiquetaPorcentajeAportacion();
   const ministerioNombre = ingreso.ministerio || 'ministerio';
-  const ref = `ingreso #${ingreso.id}`;
+  const ref = referenciaIngresoOrigen(ingreso);
   const fecha = ingreso.fecha || previous?.fecha || new Date().toISOString();
   const fechaFormateada = ingreso.fechaFormateada || formatDateDDMMYYYY(fecha);
 

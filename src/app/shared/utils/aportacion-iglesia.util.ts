@@ -8,8 +8,12 @@ import {
   MINISTERIO_IGLESIA_NOMBRE
 } from '../constants/aportacion-iglesia.constants';
 
+const SEPARADOR_DETALLE = ' \u2014 ';
+const APORTACION = 'Aportaci\u00f3n';
+const CATEGORIA_APORTACION = `${APORTACION} de ministerio`;
+
 const MSG_BLOQUEO_APORTACION =
-  'Este movimiento se generó automáticamente por la aportación del 33% a la iglesia y no se puede modificar';
+  'Este movimiento se gener\u00f3 autom\u00e1ticamente por la aportaci\u00f3n del 33% a la iglesia y no se puede modificar';
 
 export function assertMovimientoAportacionModificable(
   movimiento: Pick<Ingreso, 'esAportacionIglesia'> | Pick<Gasto, 'esAportacionIglesia'> | null | undefined
@@ -89,7 +93,7 @@ export function calcularMontoNetoMinisterio(ingreso: Ingreso): number {
   return Math.round((bruto - calcularMontoAportacionIglesia(bruto)) * 100) / 100;
 }
 
-/** Recalcula monto neto y aportación cuando el bruto cambió tras editar un ingreso aprobado. */
+/** Recalcula monto neto y aportaci?n cuando el bruto cambi? tras editar un ingreso aprobado. */
 export function recalcularCamposAportacionEnIngreso(ingreso: Ingreso): Ingreso {
   if (!ingreso.aportacionGenerada || ingreso.esAportacionIglesia) return ingreso;
   if (!ingresoEsTalento(ingreso) || !ingresoEstaAprobadoParaAportacion(ingreso)) return ingreso;
@@ -105,6 +109,21 @@ export function recalcularCamposAportacionEnIngreso(ingreso: Ingreso): Ingreso {
   };
 }
 
+export function referenciaIngresoOrigen(
+  ingreso: Pick<Ingreso, 'descripcion' | 'id'> | null | undefined
+): string {
+  const detalle = String(ingreso?.descripcion ?? '').trim();
+  return detalle || 'Sin descripci\u00f3n';
+}
+
+function descripcionIngresoIglesiaPorAportacion(
+  ministerioNombre: string,
+  pct: string,
+  ref: string
+): string {
+  return `${APORTACION} de ${ministerioNombre} (${pct})${SEPARADOR_DETALLE}${ref}`;
+}
+
 export function crearIngresoIglesiaPorAportacion(
   ingreso: Ingreso,
   id: number,
@@ -113,16 +132,16 @@ export function crearIngresoIglesiaPorAportacion(
   const montoAportacion = calcularMontoAportacionIglesia(Number(ingreso.monto));
   const pct = etiquetaPorcentajeAportacion();
   const ministerioNombre = ingreso.ministerio || 'ministerio';
-  const ref = `ingreso #${ingreso.id}`;
+  const ref = referenciaIngresoOrigen(ingreso);
 
   return {
     id,
     fecha: ingreso.fecha,
     fechaFormateada,
-    descripcion: `Aportación de ${ministerioNombre} (${pct}) — ${ref}`,
+    descripcion: descripcionIngresoIglesiaPorAportacion(ministerioNombre, pct, ref),
     monto: montoAportacion,
     foto: '',
-    categoria: 'Aportación de ministerio',
+    categoria: CATEGORIA_APORTACION,
     cuentaCodigo: '4101',
     cuentaNombre: 'Ingresos generales',
     ministerio: MINISTERIO_IGLESIA_NOMBRE,
@@ -145,7 +164,7 @@ export function marcarIngresoConAportacion(ingreso: Ingreso, ingresoIglesiaId: n
 }
 
 /**
- * Inserta o actualiza en la lista el ingreso automático de aportación (33 %)
+ * Inserta o actualiza en la lista el ingreso autom?tico de aportaci?n (33 %)
  * cuando el origen ya trae ingresoIglesiaId desde el API.
  */
 export function asegurarAportacionIglesiaEnLista(lista: Ingreso[], origen: Ingreso): Ingreso[] {
@@ -170,7 +189,7 @@ export function asegurarAportacionIglesiaEnLista(lista: Ingreso[], origen: Ingre
   return [hijo, ...lista];
 }
 
-/** Quita el ingreso origen y cualquier aportación automática (33 %) vinculada. */
+/** Quita el ingreso origen y cualquier aportaci?n autom?tica (33 %) vinculada. */
 export function filtrarIngresosTrasEliminarOrigen(lista: Ingreso[], origenId: number): Ingreso[] {
   const numId = Number(origenId);
   const origen = lista.find(i => Number(i.id) === numId);

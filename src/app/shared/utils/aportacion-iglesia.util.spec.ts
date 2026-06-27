@@ -64,6 +64,9 @@ describe('aportacion-iglesia.util', () => {
     expect(ingresoIglesia.esAportacionIglesia).toBeTrue();
     expect(ingresoIglesia.ingresoOrigenId).toBe(10);
     expect(ingresoIglesia.ministerio).toBe('General');
+    expect(ingresoIglesia.descripcion).toContain('Evento talento');
+    expect(ingresoIglesia.descripcion).toContain('Jóvenes');
+    expect(ingresoIglesia.descripcion).not.toContain('ingreso #');
   });
 
   it('inserta aportación en lista al aprobar ingreso talento (sin esperar sync)', () => {

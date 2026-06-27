@@ -25,7 +25,7 @@ import { procesarComprobante, esComprobantePdf } from '../../shared/utils/compro
 import { presentIecaToast } from '../../shared/utils/toast.util';
 import { estadoIngreso, etiquetaEstadoIngreso, ingresoAprobado, ingresoPendiente, categoriaIngreso } from '../../shared/utils/ingreso.util';
 import { registerMovimientoPageIcons } from '../../shared/utils/movimiento-page.icons';
-import { filtrarMovimientos, hayFiltrosMovimientoActivos, hayFiltrosMovimientoAvanzadosActivos, FiltrosMovimiento, FiltroEstadoMovimiento } from '../../shared/utils/movimiento-filtros.util';
+import { filtrarMovimientos, hayFiltrosMovimientoActivos, hayFiltrosMovimientoAvanzadosActivos, FiltrosMovimiento, FiltroEstadoMovimiento, itemsEnAlcanceMinisterio } from '../../shared/utils/movimiento-filtros.util';
 import {
   formatearEntradaFechaManual,
   isoDesdeFechaManualDDMMYYYY,
@@ -466,9 +466,11 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
         estadoEtiqueta: etiquetaEstadoIngreso(estadoIngreso(i))
       })
     });
-    const enAlcance = this.ministerioScopeId != null
-      ? this.listaIngresos.filter(i => Number(i.ministerioId) === this.ministerioScopeId)
-      : this.listaIngresos;
+    const enAlcance = itemsEnAlcanceMinisterio(
+      this.listaIngresos,
+      this.ministerioScopeId,
+      this.filtroMinisterioId
+    );
     this.pendientesCount = enAlcance.filter(ingresoPendiente).length;
     this.aprobadosCount = enAlcance.filter(ingresoAprobado).length;
     this.rechazadosCount = enAlcance.filter(i => estadoIngreso(i) === 'rechazado').length;
