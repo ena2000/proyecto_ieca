@@ -152,13 +152,6 @@ module.exports = {
     process.env.SMTP_USER?.trim() &&
     process.env.SMTP_PASS?.trim()
   ),
-  brevoConfigured: Boolean(process.env.BREVO_API_KEY?.trim()),
-  emailConfigured: Boolean(
-    process.env.BREVO_API_KEY?.trim() ||
-    (process.env.SMTP_HOST?.trim() &&
-      process.env.SMTP_USER?.trim() &&
-      process.env.SMTP_PASS?.trim())
-  ),
   devResetCodeInResponse,
   alertasEmailEnabled: process.env.ALERTAS_EMAIL_ENABLED !== 'false',
   alertasCronEnabled: process.env.ALERTAS_CRON_ENABLED === 'true',

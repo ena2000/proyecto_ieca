@@ -1,6 +1,5 @@
 const nodemailer = require('nodemailer');
-const { brevoConfigured, smtpConfigured, isProduction } = require('../config/env');
-const { sendViaBrevo } = require('./email-api');
+const { smtpConfigured, isProduction } = require('../config/env');
 const {
   getLogoAttachment,
   buildPasswordResetEmail,
@@ -100,18 +99,6 @@ async function deliverEmail({ to, subject, text, html }) {
     attachments: mailAttachments()
   };
 
-  if (brevoConfigured) {
-    try {
-      return await sendViaBrevo({ to: recipients, subject, text, html });
-    } catch (err) {
-      console.error('[email] Error Brevo:', err?.message || err);
-      if (!smtpConfigured) {
-        throw err;
-      }
-      console.warn('[email] Brevo falló; intentando SMTP…');
-    }
-  }
-
   if (smtpConfigured) {
     try {
       const transport = await ensureTransporterReady();
@@ -128,7 +115,7 @@ async function deliverEmail({ to, subject, text, html }) {
   }
 
   if (!isProduction) {
-    console.log('\n[DEV] Correo IECA (sin Brevo ni SMTP)\n');
+    console.log('\n[DEV] Correo IECA (sin SMTP)\n');
     console.log(`Para: ${recipients.join(', ')}`);
     console.log(`Asunto: ${subject}\n`);
     console.log(text);
@@ -137,7 +124,7 @@ async function deliverEmail({ to, subject, text, html }) {
   }
 
   throw crearErrorEmail(
-    'El correo no está activo. Configura BREVO_API_KEY (Render Free) o SMTP_HOST, SMTP_USER y SMTP_PASS en Render.'
+    'La recuperación por correo no está activa. Configura SMTP_HOST, SMTP_USER y SMTP_PASS en Render.'
   );
 }
 
@@ -147,10 +134,10 @@ async function deliverEmail({ to, subject, text, html }) {
 async function sendPasswordResetEmail({ to, usuario, code }) {
   const { subject, text, html } = buildPasswordResetEmail({ usuario, code });
 
-  if (brevoConfigured || smtpConfigured) {
+  if (smtpConfigured) {
     try {
       await deliverEmail({ to, subject, text, html });
-      return { sent: true, channel: brevoConfigured ? 'brevo' : 'email', devCode: undefined };
+      return { sent: true, channel: 'email', devCode: undefined };
     } catch (err) {
       if (!isProduction) {
         console.warn(
@@ -170,7 +157,7 @@ async function sendPasswordResetEmail({ to, usuario, code }) {
   }
 
   throw crearErrorEmail(
-    'El correo no está activo. Configura BREVO_API_KEY (Render Free) o SMTP_HOST, SMTP_USER y SMTP_PASS en Render.'
+    'La recuperación por correo no está activa. Configura SMTP_HOST, SMTP_USER y SMTP_PASS en Render.'
   );
 }
 

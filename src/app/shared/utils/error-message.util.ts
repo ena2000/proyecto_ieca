@@ -31,7 +31,7 @@ export function getHttpErrorMessage(error: unknown, fallback = 'Ocurrió un erro
     if (error.status === 503) {
       return (
         extractBodyMessage(error) ||
-        'Servicio de correo no disponible. Configura BREVO_API_KEY o SMTP en Render.'
+        'Servicio de correo no disponible. Contacta al administrador para configurar SMTP en Render.'
       );
     }
     if (error.status === 403) {

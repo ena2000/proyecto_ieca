@@ -38,14 +38,9 @@ jobs:
           missing=0
           if [ -z "${{ secrets.JWT_SECRET }}" ]; then echo "::error::Falta secret JWT_SECRET"; missing=1; fi
           if [ -z "${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}" ]; then echo "::error::Falta secret FIREBASE_SERVICE_ACCOUNT_JSON"; missing=1; fi
-          if [ -n "${{ secrets.BREVO_API_KEY }}" ]; then
-            echo "Correo: Brevo API"
-          elif [ -z "${{ secrets.SMTP_HOST }}" ] || [ -z "${{ secrets.SMTP_USER }}" ] || [ -z "${{ secrets.SMTP_PASS }}" ]; then
-            echo "::error::Configura BREVO_API_KEY o SMTP_HOST + SMTP_USER + SMTP_PASS"
-            missing=1
-          else
-            echo "Correo: SMTP"
-          fi
+          if [ -z "${{ secrets.SMTP_HOST }}" ]; then echo "::error::Falta secret SMTP_HOST"; missing=1; fi
+          if [ -z "${{ secrets.SMTP_USER }}" ]; then echo "::error::Falta secret SMTP_USER"; missing=1; fi
+          if [ -z "${{ secrets.SMTP_PASS }}" ]; then echo "::error::Falta secret SMTP_PASS"; missing=1; fi
           if [ "$missing" -eq 1 ]; then exit 1; fi
           echo "Secrets obligatorios presentes."
 
@@ -59,14 +54,12 @@ jobs:
         env:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
-          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
           SMTP_PORT: '587'
           SMTP_SECURE: 'false'
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           SMTP_FROM: ${{ secrets.SMTP_FROM }}
-          EMAIL_FROM: ${{ secrets.SMTP_FROM }}
           ALERTAS_EMAIL_ENABLED: 'true'
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.force }}" = "true" ]; then

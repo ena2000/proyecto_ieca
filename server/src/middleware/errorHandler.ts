@@ -25,7 +25,8 @@ function errorHandler(err, req, res, _next) {
 
   if (status >= 500) {
     console.error(`[${req.method} ${req.originalUrl}]`, err);
-    if (isProduction) {
+    // 503 = correo/SMTP: el admin debe ver el mensaje en producción.
+    if (isProduction && status !== 503) {
       message = 'Error interno del servidor';
     }
   }

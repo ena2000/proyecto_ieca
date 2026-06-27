@@ -19,17 +19,11 @@ const server = app.listen(PORT, () => {
   if (isProduction) {
     console.log('  Seguridad  → errores 500 ocultos, JWT refresh activo');
   }
-  const { smtpConfigured, brevoConfigured } = require('./config/env');
-  let correoLabel = 'sin correo (códigos en consola/pantalla en dev)';
-  if (brevoConfigured) {
-    correoLabel = 'Brevo API (HTTP)';
-  } else if (smtpConfigured) {
-    correoLabel = `SMTP ${process.env.SMTP_HOST || 'ok'} (${process.env.SMTP_USER || 'usuario'})`;
-  }
-  console.log(`  Correo     → ${correoLabel}`);
-  if (isProduction && smtpConfigured && !brevoConfigured) {
-    console.log('  Aviso      → En Render Free usa BREVO_API_KEY; SMTP suele estar bloqueado.');
-  }
+  const { smtpConfigured } = require('./config/env');
+  const smtpLabel = smtpConfigured
+    ? `SMTP ${process.env.SMTP_HOST || 'ok'} (${process.env.SMTP_USER || 'usuario'})`
+    : 'sin SMTP (códigos en consola/pantalla en dev)';
+  console.log(`  Correo     → ${smtpLabel}`);
 
   const { alertasCronEnabled, alertasCronIntervalMs, alertasEmailEnabled } = require('./config/env');
   if (

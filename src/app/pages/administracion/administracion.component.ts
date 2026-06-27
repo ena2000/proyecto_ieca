@@ -186,8 +186,7 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
         return;
       }
 
-      const ch = result.mailResult?.channel;
-      const canal = ch === 'email' || ch === 'brevo' ? 'correo' : 'consola (dev)';
+      const canal = result.mailResult?.channel === 'email' ? 'correo' : 'consola (dev)';
       const n = result.resumen?.pendientes?.length ?? 0;
       await this.mostrarToast(
         `Resumen enviado por ${canal}. Pendientes antiguos: ${n}.`,
