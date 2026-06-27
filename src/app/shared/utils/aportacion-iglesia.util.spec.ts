@@ -3,6 +3,8 @@ import {
   calcularMontoNetoMinisterio,
   crearIngresoIglesiaPorAportacion,
   asegurarAportacionIglesiaEnLista,
+  aplicarAportacionOptimistaEnLista,
+  idAportacionOptimista,
   filtrarIngresosTrasEliminarOrigen,
   ingresoEsTalento,
   ingresoRequiereAportacion
@@ -67,6 +69,19 @@ describe('aportacion-iglesia.util', () => {
     expect(ingresoIglesia.descripcion).toContain('Evento talento');
     expect(ingresoIglesia.descripcion).toContain('Jóvenes');
     expect(ingresoIglesia.descripcion).not.toContain('ingreso #');
+  });
+
+  it('aplica aportación optimista al aprobar talento antes del API', () => {
+    const pendiente: Ingreso = { ...ingresoTalento, estado: 'pendiente' };
+    const lista = aplicarAportacionOptimistaEnLista([pendiente], {
+      ...pendiente,
+      estado: 'aprobado'
+    });
+    expect(lista).toHaveSize(2);
+    expect(lista[0].esAportacionIglesia).toBeTrue();
+    expect(lista[0].id).toBe(idAportacionOptimista(10));
+    expect(lista[0].monto).toBe(33);
+    expect(lista.find(i => Number(i.id) === 10)?.aportacionGenerada).toBeTrue();
   });
 
   it('inserta aportación en lista al aprobar ingreso talento (sin esperar sync)', () => {

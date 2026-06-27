@@ -1,15 +1,36 @@
 import { fusionarRegistroMovimientoEstado } from './entity-crud.util';
 
-/** Conserva registros locales recientes si un bootstrap o reload aún no los trae o viene desactualizado. */
-export function fusionarMovimientosTrasBootstrap<T extends { id?: number | null; estado?: string }>(
-  desdeServidor: T[],
-  locales: T[]
-): T[] {
-  const localIds = new Set(
+type MovimientoMerge = {
+  id?: number | null;
+  estado?: string;
+  esAportacionIglesia?: boolean;
+  ingresoOrigenId?: number;
+};
+
+function idsLocales<T extends MovimientoMerge>(locales: T[]): Set<number> {
+  return new Set(
     locales
       .map(item => Number(item.id))
       .filter(id => Number.isFinite(id) && id > 0)
   );
+}
+
+/** Aportación 33 % recién creada en servidor: el origen ya está en local pero el hijo aún no. */
+function esAportacionServidorVinculadaALocal<T extends MovimientoMerge>(
+  item: T,
+  localIds: Set<number>
+): boolean {
+  if (!item.esAportacionIglesia || item.ingresoOrigenId == null) return false;
+  const origenId = Number(item.ingresoOrigenId);
+  return Number.isFinite(origenId) && origenId > 0 && localIds.has(origenId);
+}
+
+/** Conserva registros locales recientes si un bootstrap o reload aún no los trae o viene desactualizado. */
+export function fusionarMovimientosTrasBootstrap<T extends MovimientoMerge>(
+  desdeServidor: T[],
+  locales: T[]
+): T[] {
+  const localIds = idsLocales(locales);
   const hayIdsNuevosSoloEnLocal = locales.some(
     item => item.id != null && !desdeServidor.some(s => Number(s.id) === Number(item.id))
   );
@@ -21,6 +42,9 @@ export function fusionarMovimientosTrasBootstrap<T extends { id?: number | null;
     if (!Number.isFinite(id) || id <= 0) continue;
     // Tras eliminar localmente, no revivir filas que el servidor aún devuelve por caché/latencia.
     if (locales.length > 0 && !hayIdsNuevosSoloEnLocal && !localIds.has(id)) {
+      if (esAportacionServidorVinculadaALocal(item, localIds)) {
+        porId.set(id, item);
+      }
       continue;
     }
     porId.set(id, item);

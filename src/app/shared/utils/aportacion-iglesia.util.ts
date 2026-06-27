@@ -163,6 +163,48 @@ export function marcarIngresoConAportacion(ingreso: Ingreso, ingresoIglesiaId: n
   };
 }
 
+/** Id temporal negativo para la fila de aportaci?n mientras llega la respuesta del API. */
+export function idAportacionOptimista(origenId: number): number {
+  return -Math.abs(Number(origenId));
+}
+
+export function esIdAportacionOptimista(id: number | null | undefined): boolean {
+  const n = Number(id);
+  return Number.isFinite(n) && n < 0;
+}
+
+function quitarAportacionesOptimistasDeOrigen(lista: Ingreso[], origenId: number): Ingreso[] {
+  const numOrigen = Number(origenId);
+  return lista.filter(
+    i =>
+      !(
+        esIdAportacionOptimista(i.id) &&
+        i.esAportacionIglesia &&
+        Number(i.ingresoOrigenId) === numOrigen
+      )
+  );
+}
+
+/**
+ * Muestra al instante el ingreso del 33 % al aprobar talento (antes de la respuesta del API).
+ */
+export function aplicarAportacionOptimistaEnLista(lista: Ingreso[], origen: Ingreso): Ingreso[] {
+  const origenId = Number(origen.id);
+  if (!Number.isFinite(origenId) || origenId <= 0) return lista;
+  if (origen.esAportacionIglesia || origen.ministerioId == null) return lista;
+  if (!ingresoEsTalento(origen) || !ingresoEstaAprobadoParaAportacion(origen)) return lista;
+  if (calcularMontoAportacionIglesia(Number(origen.monto)) <= 0) return lista;
+
+  const tempId = idAportacionOptimista(origenId);
+  const marcado = marcarIngresoConAportacion(origen, tempId);
+  const fechaFormateada = origen.fechaFormateada || formatearISOaDDMMYYYY(origen.fecha);
+  const hijo = crearIngresoIglesiaPorAportacion(marcado, tempId, fechaFormateada);
+
+  let result = quitarAportacionesOptimistasDeOrigen(lista, origenId);
+  result = result.map(i => (Number(i.id) === origenId ? marcado : i));
+  return [hijo, ...result];
+}
+
 /**
  * Inserta o actualiza en la lista el ingreso autom?tico de aportaci?n (33 %)
  * cuando el origen ya trae ingresoIglesiaId desde el API.
@@ -180,13 +222,15 @@ export function asegurarAportacionIglesiaEnLista(lista: Ingreso[], origen: Ingre
   const iglesiaId = Number(origen.ingresoIglesiaId);
   if (!Number.isFinite(iglesiaId)) return lista;
 
+  let base = quitarAportacionesOptimistasDeOrigen(lista, Number(origen.id));
+
   const fechaFormateada = origen.fechaFormateada || formatearISOaDDMMYYYY(origen.fecha);
   const hijo = crearIngresoIglesiaPorAportacion(origen, iglesiaId, fechaFormateada);
-  const idx = lista.findIndex(i => Number(i.id) === iglesiaId);
+  const idx = base.findIndex(i => Number(i.id) === iglesiaId);
   if (idx >= 0) {
-    return lista.map(i => (Number(i.id) === iglesiaId ? hijo : i));
+    return base.map(i => (Number(i.id) === iglesiaId ? hijo : i));
   }
-  return [hijo, ...lista];
+  return [hijo, ...base];
 }
 
 /** Quita el ingreso origen y cualquier aportaci?n autom?tica (33 %) vinculada. */

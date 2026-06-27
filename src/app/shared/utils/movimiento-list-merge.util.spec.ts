@@ -25,14 +25,21 @@ describe('fusionarMovimientosTrasBootstrap', () => {
     expect(merged.map(i => Number(i.id)).sort()).toEqual([1, 99]);
   });
 
-  it('carga todo desde servidor en bootstrap vacío', () => {
+  it('incorpora aportación 33% del servidor cuando el origen ya está en local', () => {
     const servidor = [
-      { id: 1, estado: 'aprobado' },
-      { id: 2, estado: 'aprobado' }
+      { id: 10, estado: 'aprobado', monto: 100, aportacionGenerada: true, ingresoIglesiaId: 11 },
+      {
+        id: 11,
+        estado: 'aprobado',
+        monto: 33,
+        esAportacionIglesia: true,
+        ingresoOrigenId: 10
+      }
     ];
+    const locales = [{ id: 10, estado: 'aprobado', monto: 100, aportacionGenerada: true, ingresoIglesiaId: 11 }];
 
-    const merged = fusionarMovimientosTrasBootstrap(servidor, []);
+    const merged = fusionarMovimientosTrasBootstrap(servidor, locales);
 
-    expect(merged.length).toBe(2);
+    expect(merged.map(i => Number(i.id)).sort()).toEqual([10, 11]);
   });
 });

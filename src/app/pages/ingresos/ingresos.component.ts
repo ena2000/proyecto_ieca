@@ -622,15 +622,9 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
       return;
     }
 
-    const listaAntes = [...this.listaIngresos];
+    const listaAntes = [...this.ingresosService.getAll()];
     this.accionFilaEnCurso = { id, tipo: 'aprobar' };
-    this.listaIngresos = aplicarEstadoOptimistaEnLista(
-      this.listaIngresos,
-      id,
-      'aprobado',
-      etiquetaEstadoIngreso('aprobado')
-    );
-    this.actualizarVista();
+    this.ingresosService.prepararAprobacionOptimista(id);
     this.cdr.markForCheck();
 
     try {
@@ -648,7 +642,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
         'success'
       );
     } catch (error) {
-      this.listaIngresos = listaAntes;
+      this.ingresosService.reemplazarListaLocal(listaAntes);
       this.actualizarVista();
       await this.mostrarToast(error instanceof Error ? error.message : 'No se pudo aprobar', 'danger');
     } finally {

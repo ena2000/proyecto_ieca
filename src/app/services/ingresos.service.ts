@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, firstValueFrom, of } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { BehaviorSubject, Observable, firstValueFrom, from, of } from 'rxjs';
+import { map, switchMap, tap } from 'rxjs/operators';
 import { Ingreso, IngresoEstado, Ministerio, Usuario } from '../core/models';
 import { NotificacionesService } from '../core/services/notificaciones.service';
 import { ApiService } from '../core/services/api.service';
@@ -20,8 +20,11 @@ import {
   recalcularCamposAportacionEnIngreso,
   assertMovimientoAportacionModificable,
   filtrarIngresosTrasEliminarOrigen,
-  asegurarAportacionIglesiaEnLista
+  asegurarAportacionIglesiaEnLista,
+  aplicarAportacionOptimistaEnLista
 } from '../shared/utils/aportacion-iglesia.util';
+import { aplicarEstadoOptimistaEnLista } from '../shared/utils/movimiento-accion.util';
+import { etiquetaEstadoIngreso } from '../shared/utils/ingreso.util';
 import { fusionarMovimientosTrasBootstrap } from '../shared/utils/movimiento-list-merge.util';
 import {
   completarRegistroTrasMutacion,
@@ -118,18 +121,36 @@ export class IngresosService {
     return withMutationTimeout(
       this.api.patch<Ingreso>(API.ingresos.aprobar(numId), {})
     ).pipe(
-      tap(actualizado => {
-        const actual = this.getAll().find(i => Number(i.id) === numId);
-        const completo = normalizarIngreso(
-          fusionarRegistroMovimientoEstado(actualizado, actual, numId)
-        );
-        let lista = reemplazarRegistroEnLista(this.getAll(), numId, completo);
-        lista = asegurarAportacionIglesiaEnLista(lista, completo);
-        this.persist(lista);
-        this.notificacionesService.recargar();
-        this.syncListaEnSegundoPlano();
-      })
+      switchMap(actualizado =>
+        from(this.integrarIngresoTrasAprobacionRemota(numId, actualizado))
+      ),
+      tap(() => this.notificacionesService.recargar())
     );
+  }
+
+  /** Vista optimista: aprobado + aportación 33 % al instante mientras responde el API. */
+  prepararAprobacionOptimista(numId: number): void {
+    const actual = this.getAll().find(i => Number(i.id) === numId);
+    if (!actual) return;
+
+    let lista = aplicarEstadoOptimistaEnLista(
+      this.getAll(),
+      numId,
+      'aprobado',
+      etiquetaEstadoIngreso('aprobado')
+    );
+    const origen = lista.find(i => Number(i.id) === numId);
+    if (
+      origen &&
+      ingresoRequiereAportacion({ ...origen, estado: 'aprobado', aportacionGenerada: false })
+    ) {
+      lista = aplicarAportacionOptimistaEnLista(lista, { ...origen, estado: 'aprobado' });
+    }
+    this.persist(lista);
+  }
+
+  reemplazarListaLocal(lista: Ingreso[]): void {
+    this.persist(lista);
   }
 
   rechazar(id: number, motivo?: string): Observable<Ingreso> {
@@ -219,7 +240,34 @@ export class IngresosService {
     return recalcularCamposAportacionEnIngreso(normalizado);
   }
 
-  /** Sincroniza la lista completa en segundo plano (p. ej. aportación 33% tras aprobar). */
+  private async integrarIngresoTrasAprobacionRemota(
+    numId: number,
+    actualizado: Ingreso
+  ): Promise<Ingreso> {
+    const actual = this.getAll().find(i => Number(i.id) === numId);
+    const completo = this.completarIngresoAprobado(actualizado, actual, numId);
+    this.persistirIngresoConAportacion(completo, numId);
+    await this.reloadAsync();
+    return this.getAll().find(i => Number(i.id) === numId) ?? completo;
+  }
+
+  private completarIngresoAprobado(
+    desdeApi: Ingreso,
+    local: Ingreso | undefined,
+    numId: number
+  ): Ingreso {
+    return recalcularCamposAportacionEnIngreso(
+      normalizarIngreso(fusionarRegistroMovimientoEstado(desdeApi, local, numId))
+    );
+  }
+
+  private persistirIngresoConAportacion(completo: Ingreso, numId: number): void {
+    let lista = reemplazarRegistroEnLista(this.getAll(), numId, completo);
+    lista = asegurarAportacionIglesiaEnLista(lista, completo);
+    this.persist(lista);
+  }
+
+  /** Sincroniza la lista completa en segundo plano (p. ej. tras crear). */
   private syncListaEnSegundoPlano(): void {
     void this.reloadAsync().catch(() => undefined);
   }
