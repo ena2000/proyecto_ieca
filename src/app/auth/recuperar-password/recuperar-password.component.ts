@@ -1,11 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { IonicModule, NavController, ToastController } from '@ionic/angular';
 import { AuthService } from '../../core/services/auth.service';
 import { getHttpErrorMessage } from '../../shared/utils/error-message.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
+import { leerValorIonInput } from '../../shared/utils/movimiento-form-sync.util';
 import { despertarApiEnSegundoPlano, esperarApiDisponible } from '../../shared/utils/api-wake.util';
 
 type Paso = 'solicitar' | 'restablecer';
@@ -16,7 +16,7 @@ const STORAGE_STEP = 'ieca_recovery_paso';
 @Component({
   selector: 'app-recuperar-password',
   standalone: true,
-  imports: [CommonModule, IonicModule, FormsModule, RouterLink],
+  imports: [CommonModule, IonicModule, RouterLink],
   templateUrl: './recuperar-password.component.html',
   styleUrls: ['./recuperar-password.component.scss']
 })
@@ -55,12 +55,28 @@ export class RecuperarPasswordComponent implements OnInit {
     return !!n && !!c && n !== c;
   }
 
-  get cargando(): boolean {
-    return this.enviandoCodigo || this.restableciendo;
+  onUsuarioInput(event: Event): void {
+    this.usuario = leerValorIonInput(event).trim();
+    this.formError = null;
+  }
+
+  onCodeInput(event: Event): void {
+    this.code = this.normalizarCodigo(leerValorIonInput(event));
+    this.formError = null;
+  }
+
+  onNewPasswordInput(event: Event): void {
+    this.newPassword = leerValorIonInput(event);
+    this.formError = null;
+  }
+
+  onConfirmPasswordInput(event: Event): void {
+    this.confirmPassword = leerValorIonInput(event);
+    this.formError = null;
   }
 
   async solicitarCodigo(): Promise<void> {
-    if (this.cargando) return;
+    if (this.enviandoCodigo || this.restableciendo) return;
 
     this.formError = null;
     const login = String(this.usuario ?? '').trim();
@@ -107,7 +123,7 @@ export class RecuperarPasswordComponent implements OnInit {
   }
 
   async solicitarOtroCodigo(): Promise<void> {
-    if (this.cargando) return;
+    if (this.enviandoCodigo || this.restableciendo) return;
 
     const login = String(this.usuarioSolicitado ?? this.usuario ?? '').trim();
     if (!login) {
@@ -158,7 +174,7 @@ export class RecuperarPasswordComponent implements OnInit {
   }
 
   async restablecer(): Promise<void> {
-    if (this.cargando) return;
+    if (this.enviandoCodigo || this.restableciendo) return;
 
     this.formError = null;
     const error = this.validarRestablecer();
@@ -198,7 +214,7 @@ export class RecuperarPasswordComponent implements OnInit {
   }
 
   volverASolicitar(): void {
-    if (this.cargando) return;
+    if (this.enviandoCodigo || this.restableciendo) return;
     this.paso = 'solicitar';
     this.formError = null;
     this.devCodeHint = null;
