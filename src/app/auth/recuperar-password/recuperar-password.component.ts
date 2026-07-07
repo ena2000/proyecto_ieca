@@ -191,6 +191,7 @@ export class RecuperarPasswordComponent implements OnInit {
     this.isLoading = true;
     this.loadingAccion = 'restablecer';
     this.loadingFase = 'conectando';
+    void this.toast('Verificando código con el servidor…', 'primary');
 
     try {
       const apiListo = await esperarApiDisponible(55_000);
