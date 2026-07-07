@@ -6,6 +6,7 @@ import { IonicModule, NavController, ToastController } from '@ionic/angular';
 import { AuthService } from '../../core/services/auth.service';
 import { getHttpErrorMessage } from '../../shared/utils/error-message.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
+import { leerValorIonInput } from '../../shared/utils/movimiento-form-sync.util';
 import { despertarApiEnSegundoPlano, esperarApiDisponible } from '../../shared/utils/api-wake.util';
 
 type Paso = 'solicitar' | 'restablecer';
@@ -59,11 +60,36 @@ export class RecuperarPasswordComponent implements OnInit {
     return !!n && !!c && n !== c;
   }
 
+  get puedeRestablecer(): boolean {
+    const code = String(this.restablecerForm.value.code ?? '').trim();
+    const newPassword = String(this.restablecerForm.value.newPassword ?? '');
+    const confirmPassword = String(this.restablecerForm.value.confirmPassword ?? '');
+    return (
+      /^\d{6}$/.test(code) &&
+      newPassword.length >= 6 &&
+      confirmPassword.length >= 6 &&
+      newPassword === confirmPassword
+    );
+  }
+
+  onUsuarioInput(event: Event): void {
+    this.solicitarForm.patchValue({ usuario: leerValorIonInput(event).trim() });
+  }
+
+  onRestablecerInput(field: 'code' | 'newPassword' | 'confirmPassword', event: Event): void {
+    let value = leerValorIonInput(event);
+    if (field === 'code') {
+      value = value.replace(/\D/g, '').slice(0, 6);
+    }
+    this.restablecerForm.patchValue({ [field]: value });
+  }
+
   async solicitarCodigo(): Promise<void> {
     if (this.isLoading) return;
 
     if (this.solicitarForm.invalid) {
       this.solicitarForm.markAllAsTouched();
+      await this.toast('Ingresa tu usuario o email (mínimo 3 caracteres).', 'danger');
       return;
     }
 
@@ -103,12 +129,17 @@ export class RecuperarPasswordComponent implements OnInit {
   }
 
   async restablecer(): Promise<void> {
-    if (this.isLoading) return;
+    if (this.isLoading || !this.puedeRestablecer) return;
 
     if (this.restablecerForm.invalid || this.mismatch) {
       this.restablecerForm.markAllAsTouched();
       if (this.mismatch) {
         await this.toast('Las contraseñas no coinciden.', 'danger');
+      } else {
+        await this.toast(
+          'Revisa los campos. Código de 6 dígitos y contraseña de al menos 6 caracteres.',
+          'danger'
+        );
       }
       return;
     }
