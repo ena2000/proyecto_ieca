@@ -1,26 +1,20 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { IonInput, IonicModule, NavController, ToastController } from '@ionic/angular';
+import { IonicModule, NavController, ToastController } from '@ionic/angular';
 import { AuthService } from '../../core/services/auth.service';
 import { getHttpErrorMessage } from '../../shared/utils/error-message.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
-import {
-  leerValorIonInput,
-  leerValorIonInputAsync
-} from '../../shared/utils/movimiento-form-sync.util';
 import { despertarApiEnSegundoPlano, esperarApiDisponible } from '../../shared/utils/api-wake.util';
 
 type Paso = 'solicitar' | 'restablecer';
-
-const STORAGE_USER = 'ieca_recovery_usuario';
-const STORAGE_STEP = 'ieca_recovery_paso';
+type LoadingFase = 'conectando' | 'enviando' | 'actualizando';
 
 @Component({
   selector: 'app-recuperar-password',
   standalone: true,
-  imports: [CommonModule, IonicModule, FormsModule, RouterLink],
+  imports: [CommonModule, IonicModule, ReactiveFormsModule, RouterLink],
   templateUrl: './recuperar-password.component.html',
   styleUrls: ['./recuperar-password.component.scss']
 })
@@ -29,82 +23,56 @@ export class RecuperarPasswordComponent implements OnInit {
   usuarioSolicitado = '';
   devCodeHint: string | null = null;
   emailEnviado = false;
-  formError: string | null = null;
 
-  usuario = '';
-  code = '';
-  newPassword = '';
-  confirmPassword = '';
-
+  solicitarForm: FormGroup;
+  restablecerForm: FormGroup;
   showNew = false;
   showConfirm = false;
-  enviandoCodigo = false;
-  restableciendo = false;
-  mensajeEspera = '';
-
-  @ViewChild('codeIon') codeIon?: IonInput;
-  @ViewChild('newPwdIon') newPwdIon?: IonInput;
-  @ViewChild('confirmPwdIon') confirmPwdIon?: IonInput;
-  @ViewChild('usuarioIon') usuarioIon?: IonInput;
+  isLoading = false;
+  loadingAccion: 'solicitar' | 'restablecer' | null = null;
+  loadingFase: LoadingFase | null = null;
 
   constructor(
+    private readonly fb: FormBuilder,
     private readonly auth: AuthService,
     private readonly toastCtrl: ToastController,
     private readonly navCtrl: NavController
-  ) {}
+  ) {
+    this.solicitarForm = this.fb.group({
+      usuario: ['', [Validators.required, Validators.minLength(3)]]
+    });
+
+    this.restablecerForm = this.fb.group({
+      code: ['', [Validators.required, Validators.pattern(/^\d{6}$/)]],
+      newPassword: ['', [Validators.required, Validators.minLength(6)]],
+      confirmPassword: ['', [Validators.required, Validators.minLength(6)]]
+    });
+  }
 
   ngOnInit(): void {
     despertarApiEnSegundoPlano();
-    this.restaurarSesionRecuperacion();
   }
 
   get mismatch(): boolean {
-    const n = String(this.newPassword ?? '').trim();
-    const c = String(this.confirmPassword ?? '').trim();
+    const n = String(this.restablecerForm.value.newPassword ?? '');
+    const c = String(this.restablecerForm.value.confirmPassword ?? '');
     return !!n && !!c && n !== c;
   }
 
-  get listoParaRestablecer(): boolean {
-    return this.paso === 'restablecer' && !this.validarRestablecer();
-  }
-
-  onUsuarioInput(event: Event): void {
-    this.usuario = leerValorIonInput(event).trim();
-    this.formError = null;
-  }
-
-  onCodeInput(event: Event): void {
-    this.code = this.normalizarCodigo(leerValorIonInput(event));
-    this.formError = null;
-  }
-
-  onNewPasswordInput(event: Event): void {
-    this.newPassword = leerValorIonInput(event);
-    this.formError = null;
-  }
-
-  onConfirmPasswordInput(event: Event): void {
-    this.confirmPassword = leerValorIonInput(event);
-    this.formError = null;
-  }
-
   async solicitarCodigo(): Promise<void> {
-    if (this.enviandoCodigo || this.restableciendo) return;
+    if (this.isLoading) return;
 
-    await this.sincronizarUsuarioDesdeDom();
-    this.formError = null;
-
-    const login = String(this.usuario ?? '').trim();
-    if (login.length < 3) {
-      this.formError = 'Ingresa tu usuario o email (mínimo 3 caracteres).';
-      await this.toast(this.formError, 'danger');
+    if (this.solicitarForm.invalid) {
+      this.solicitarForm.markAllAsTouched();
       return;
     }
 
-    this.enviandoCodigo = true;
-    this.mensajeEspera = 'Conectando con el servidor…';
+    this.isLoading = true;
+    this.loadingAccion = 'solicitar';
+    this.loadingFase = 'conectando';
 
     try {
+      const usuario = String(this.solicitarForm.value.usuario).trim();
       const apiListo = await esperarApiDisponible(55_000);
       if (!apiListo) {
         await this.toast(
@@ -114,99 +82,40 @@ export class RecuperarPasswordComponent implements OnInit {
         return;
       }
 
-      this.mensajeEspera = 'Enviando el código a tu correo…';
-      const res = await this.auth.forgotPassword(login);
+      this.loadingFase = 'enviando';
+      const res = await this.auth.forgotPassword(usuario);
       if (!res.codeDispatched) {
         await this.toast(res.message, 'warning');
         return;
       }
-
-      this.usuarioSolicitado = login;
-      this.usuario = login;
+      this.usuarioSolicitado = usuario;
       this.devCodeHint = res.devCode ?? null;
       this.emailEnviado = !!res.emailSent;
       this.paso = 'restablecer';
-      this.limpiarCamposRestablecer();
-      this.guardarSesionRecuperacion();
       await this.toast(res.message, res.emailSent ? 'success' : 'warning');
     } catch (err) {
       await this.toast(getHttpErrorMessage(err, 'No se pudo enviar el código'), 'danger');
     } finally {
-      this.enviandoCodigo = false;
-      this.mensajeEspera = '';
-    }
-  }
-
-  async solicitarOtroCodigo(): Promise<void> {
-    if (this.enviandoCodigo || this.restableciendo) return;
-
-    const login = String(this.usuarioSolicitado ?? this.usuario ?? '').trim();
-    if (!login) {
-      this.paso = 'solicitar';
-      this.formError = 'Ingresa tu usuario o email para solicitar un código.';
-      await this.toast(this.formError, 'warning');
-      return;
-    }
-
-    this.usuarioSolicitado = login;
-    this.usuario = login;
-    this.formError = null;
-    this.enviandoCodigo = true;
-    this.mensajeEspera = 'Enviando un código nuevo a tu correo…';
-
-    try {
-      const apiListo = await esperarApiDisponible(55_000);
-      if (!apiListo) {
-        await this.toast(
-          'El servidor no respondió a tiempo. Espera un momento y vuelve a intentar.',
-          'danger'
-        );
-        return;
-      }
-
-      const res = await this.auth.forgotPassword(login);
-      if (!res.codeDispatched) {
-        await this.toast(res.message, 'warning');
-        return;
-      }
-
-      this.devCodeHint = res.devCode ?? null;
-      this.emailEnviado = !!res.emailSent;
-      this.limpiarCamposRestablecer();
-      this.guardarSesionRecuperacion();
-      await this.toast(
-        res.emailSent
-          ? 'Enviamos un código nuevo. Revisa tu correo y también spam.'
-          : res.message,
-        res.emailSent ? 'success' : 'warning'
-      );
-    } catch (err) {
-      await this.toast(getHttpErrorMessage(err, 'No se pudo enviar otro código'), 'danger');
-    } finally {
-      this.enviandoCodigo = false;
-      this.mensajeEspera = '';
+      this.isLoading = false;
+      this.loadingAccion = null;
+      this.loadingFase = null;
     }
   }
 
   async restablecer(): Promise<void> {
-    if (this.enviandoCodigo || this.restableciendo) return;
+    if (this.isLoading) return;
 
-    await this.sincronizarRestablecerDesdeDom();
-    this.formError = null;
-
-    const error = this.validarRestablecer();
-    if (error) {
-      this.formError = error;
-      await this.toast(error, 'danger');
+    if (this.restablecerForm.invalid || this.mismatch) {
+      this.restablecerForm.markAllAsTouched();
+      if (this.mismatch) {
+        await this.toast('Las contraseñas no coinciden.', 'danger');
+      }
       return;
     }
 
-    const login = String(this.usuarioSolicitado ?? '').trim();
-    const code = this.normalizarCodigo(this.code);
-    const newPwd = String(this.newPassword ?? '').trim();
-
-    this.restableciendo = true;
-    this.mensajeEspera = 'Guardando tu nueva contraseña…';
+    this.isLoading = true;
+    this.loadingAccion = 'restablecer';
+    this.loadingFase = 'conectando';
 
     try {
       const apiListo = await esperarApiDisponible(55_000);
@@ -218,103 +127,39 @@ export class RecuperarPasswordComponent implements OnInit {
         return;
       }
 
-      const res = await this.auth.resetPassword(login, code, newPwd);
-      this.limpiarSesionRecuperacion();
+      this.loadingFase = 'actualizando';
+      const { code, newPassword } = this.restablecerForm.value;
+      const res = await this.auth.resetPassword(this.usuarioSolicitado, code, newPassword);
       await this.toast(res.message, 'success');
       await this.navCtrl.navigateRoot('/login', { animated: false });
     } catch (err) {
       await this.toast(getHttpErrorMessage(err, 'No se pudo restablecer la contraseña'), 'danger');
     } finally {
-      this.restableciendo = false;
-      this.mensajeEspera = '';
+      this.isLoading = false;
+      this.loadingAccion = null;
+      this.loadingFase = null;
     }
+  }
+
+  get mensajeEspera(): string {
+    if (this.loadingFase === 'conectando') {
+      return 'Conectando con el servidor (puede tardar hasta 1 minuto si Render estaba en reposo)…';
+    }
+    if (this.loadingFase === 'enviando') {
+      return 'Enviando el código a tu correo…';
+    }
+    if (this.loadingFase === 'actualizando') {
+      return 'Guardando tu nueva contraseña…';
+    }
+    return '';
   }
 
   volverASolicitar(): void {
-    if (this.enviandoCodigo || this.restableciendo) return;
+    if (this.isLoading) return;
     this.paso = 'solicitar';
-    this.formError = null;
     this.devCodeHint = null;
     this.emailEnviado = false;
-    this.limpiarCamposRestablecer();
-    if (this.usuarioSolicitado) {
-      this.usuario = this.usuarioSolicitado;
-    }
-    sessionStorage.removeItem(STORAGE_STEP);
-  }
-
-  private validarRestablecer(): string | null {
-    if (!String(this.usuarioSolicitado ?? '').trim()) {
-      return 'Sesión de recuperación perdida. Vuelve a solicitar el código.';
-    }
-
-    const code = this.normalizarCodigo(this.code);
-    const newPwd = String(this.newPassword ?? '').trim();
-    const confirmPwd = String(this.confirmPassword ?? '').trim();
-
-    if (code.length !== 6) {
-      return `El código debe tener 6 dígitos (tienes ${code.length}).`;
-    }
-    if (newPwd.length < 6) {
-      return 'Cada contraseña debe tener al menos 6 caracteres.';
-    }
-    if (newPwd !== confirmPwd) {
-      return 'Las contraseñas no coinciden.';
-    }
-    return null;
-  }
-
-  private normalizarCodigo(raw: string): string {
-    return String(raw ?? '').replace(/\D/g, '').slice(0, 6);
-  }
-
-  private async sincronizarUsuarioDesdeDom(): Promise<void> {
-    const desdeDom = await leerValorIonInputAsync(this.usuarioIon);
-    if (desdeDom) {
-      this.usuario = desdeDom.trim();
-    }
-  }
-
-  private async sincronizarRestablecerDesdeDom(): Promise<void> {
-    await new Promise<void>(resolve => setTimeout(resolve, 0));
-
-    const [codeRaw, newPwd, confirmPwd] = await Promise.all([
-      leerValorIonInputAsync(this.codeIon),
-      leerValorIonInputAsync(this.newPwdIon),
-      leerValorIonInputAsync(this.confirmPwdIon)
-    ]);
-
-    if (codeRaw || this.code) this.code = this.normalizarCodigo(codeRaw || this.code);
-    if (newPwd || this.newPassword) this.newPassword = newPwd || this.newPassword;
-    if (confirmPwd || this.confirmPassword) this.confirmPassword = confirmPwd || this.confirmPassword;
-  }
-
-  private limpiarCamposRestablecer(): void {
-    this.code = '';
-    this.newPassword = '';
-    this.confirmPassword = '';
-    this.formError = null;
-  }
-
-  private guardarSesionRecuperacion(): void {
-    sessionStorage.setItem(STORAGE_USER, this.usuarioSolicitado);
-    sessionStorage.setItem(STORAGE_STEP, 'restablecer');
-  }
-
-  private restaurarSesionRecuperacion(): void {
-    const user = sessionStorage.getItem(STORAGE_USER)?.trim();
-    const step = sessionStorage.getItem(STORAGE_STEP);
-    if (!user || step !== 'restablecer') return;
-
-    this.usuarioSolicitado = user;
-    this.usuario = user;
-    this.paso = 'restablecer';
-    this.emailEnviado = true;
-  }
-
-  private limpiarSesionRecuperacion(): void {
-    sessionStorage.removeItem(STORAGE_USER);
-    sessionStorage.removeItem(STORAGE_STEP);
+    this.restablecerForm.reset();
   }
 
   private async toast(message: string, color: string): Promise<void> {
