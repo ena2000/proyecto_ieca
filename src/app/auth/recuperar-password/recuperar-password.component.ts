@@ -37,6 +37,8 @@ export class RecuperarPasswordComponent implements OnInit {
   isLoading = false;
   loadingAccion: 'solicitar' | 'restablecer' | null = null;
   loadingFase: LoadingFase | null = null;
+  /** El API ya se despertó al pedir el código; no repetir espera de 1 min. */
+  apiDespierta = false;
 
   constructor(
     private readonly fb: FormBuilder,
@@ -70,6 +72,11 @@ export class RecuperarPasswordComponent implements OnInit {
       this.confirmPassword.length >= 6 &&
       this.newPassword === this.confirmPassword
     );
+  }
+
+  /** Solo bloquea el botón de restablecer mientras esa acción corre (no el envío del código). */
+  get restableciendo(): boolean {
+    return this.isLoading && this.loadingAccion === 'restablecer';
   }
 
   get motivoBotonDeshabilitado(): string {
@@ -143,6 +150,7 @@ export class RecuperarPasswordComponent implements OnInit {
         );
         return;
       }
+      this.apiDespierta = true;
 
       this.loadingFase = 'enviando';
       const res = await this.auth.forgotPassword(usuario);
@@ -156,12 +164,19 @@ export class RecuperarPasswordComponent implements OnInit {
       this.code = '';
       this.newPassword = '';
       this.confirmPassword = '';
+      // Quitar loading ANTES de cambiar de paso: si no, el botón de restablecer queda deshabilitado
+      // mientras el toast del código sigue visible (~3 s).
+      this.isLoading = false;
+      this.loadingAccion = null;
+      this.loadingFase = null;
       this.paso = 'restablecer';
+      this.cdr.markForCheck();
       console.log(LOG_PREFIX, 'paso restablecer', {
         usuario: this.usuarioSolicitado,
-        emailEnviado: this.emailEnviado
+        emailEnviado: this.emailEnviado,
+        isLoading: this.isLoading
       });
-      await this.toast(res.message, res.emailSent ? 'success' : 'warning');
+      void this.toast(res.message, res.emailSent ? 'success' : 'warning');
     } catch (err) {
       await this.toast(getHttpErrorMessage(err, 'No se pudo enviar el código'), 'danger');
     } finally {
@@ -190,20 +205,25 @@ export class RecuperarPasswordComponent implements OnInit {
 
     this.isLoading = true;
     this.loadingAccion = 'restablecer';
-    this.loadingFase = 'conectando';
-    void this.toast('Verificando código con el servidor…', 'primary');
+    this.loadingFase = this.apiDespierta ? 'actualizando' : 'conectando';
+    this.cdr.markForCheck();
+    void this.toast('Verificando código con el servidor…', 'info');
 
     try {
-      const apiListo = await esperarApiDisponible(55_000);
-      if (!apiListo) {
-        await this.toast(
-          'El servidor no respondió a tiempo. Espera un momento y vuelve a intentar.',
-          'danger'
-        );
-        return;
+      if (!this.apiDespierta) {
+        const apiListo = await esperarApiDisponible(55_000);
+        if (!apiListo) {
+          await this.toast(
+            'El servidor no respondió a tiempo. Espera un momento y vuelve a intentar.',
+            'danger'
+          );
+          return;
+        }
+        this.apiDespierta = true;
       }
 
       this.loadingFase = 'actualizando';
+      this.cdr.markForCheck();
       console.log(LOG_PREFIX, 'enviando reset-password', {
         usuario: this.usuarioSolicitado,
         code: this.code.trim(),
@@ -244,6 +264,7 @@ export class RecuperarPasswordComponent implements OnInit {
     this.paso = 'solicitar';
     this.devCodeHint = null;
     this.emailEnviado = false;
+    this.apiDespierta = false;
     this.code = '';
     this.newPassword = '';
     this.confirmPassword = '';
