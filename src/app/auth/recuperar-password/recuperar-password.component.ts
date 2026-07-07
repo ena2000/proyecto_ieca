@@ -1,11 +1,15 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { IonicModule, NavController, ToastController } from '@ionic/angular';
+import { IonInput, IonicModule, NavController, ToastController } from '@ionic/angular';
 import { AuthService } from '../../core/services/auth.service';
 import { getHttpErrorMessage } from '../../shared/utils/error-message.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
-import { leerValorIonInput } from '../../shared/utils/movimiento-form-sync.util';
+import {
+  leerValorIonInput,
+  leerValorIonInputAsync
+} from '../../shared/utils/movimiento-form-sync.util';
 import { despertarApiEnSegundoPlano, esperarApiDisponible } from '../../shared/utils/api-wake.util';
 
 type Paso = 'solicitar' | 'restablecer';
@@ -16,7 +20,7 @@ const STORAGE_STEP = 'ieca_recovery_paso';
 @Component({
   selector: 'app-recuperar-password',
   standalone: true,
-  imports: [CommonModule, IonicModule, RouterLink],
+  imports: [CommonModule, IonicModule, FormsModule, RouterLink],
   templateUrl: './recuperar-password.component.html',
   styleUrls: ['./recuperar-password.component.scss']
 })
@@ -38,6 +42,11 @@ export class RecuperarPasswordComponent implements OnInit {
   restableciendo = false;
   mensajeEspera = '';
 
+  @ViewChild('codeIon') codeIon?: IonInput;
+  @ViewChild('newPwdIon') newPwdIon?: IonInput;
+  @ViewChild('confirmPwdIon') confirmPwdIon?: IonInput;
+  @ViewChild('usuarioIon') usuarioIon?: IonInput;
+
   constructor(
     private readonly auth: AuthService,
     private readonly toastCtrl: ToastController,
@@ -53,6 +62,10 @@ export class RecuperarPasswordComponent implements OnInit {
     const n = String(this.newPassword ?? '').trim();
     const c = String(this.confirmPassword ?? '').trim();
     return !!n && !!c && n !== c;
+  }
+
+  get listoParaRestablecer(): boolean {
+    return this.paso === 'restablecer' && !this.validarRestablecer();
   }
 
   onUsuarioInput(event: Event): void {
@@ -78,7 +91,9 @@ export class RecuperarPasswordComponent implements OnInit {
   async solicitarCodigo(): Promise<void> {
     if (this.enviandoCodigo || this.restableciendo) return;
 
+    await this.sincronizarUsuarioDesdeDom();
     this.formError = null;
+
     const login = String(this.usuario ?? '').trim();
     if (login.length < 3) {
       this.formError = 'Ingresa tu usuario o email (mínimo 3 caracteres).';
@@ -176,7 +191,9 @@ export class RecuperarPasswordComponent implements OnInit {
   async restablecer(): Promise<void> {
     if (this.enviandoCodigo || this.restableciendo) return;
 
+    await this.sincronizarRestablecerDesdeDom();
     this.formError = null;
+
     const error = this.validarRestablecer();
     if (error) {
       this.formError = error;
@@ -236,7 +253,7 @@ export class RecuperarPasswordComponent implements OnInit {
     const confirmPwd = String(this.confirmPassword ?? '').trim();
 
     if (code.length !== 6) {
-      return 'El código debe tener exactamente 6 dígitos.';
+      return `El código debe tener 6 dígitos (tienes ${code.length}).`;
     }
     if (newPwd.length < 6) {
       return 'Cada contraseña debe tener al menos 6 caracteres.';
@@ -249,6 +266,27 @@ export class RecuperarPasswordComponent implements OnInit {
 
   private normalizarCodigo(raw: string): string {
     return String(raw ?? '').replace(/\D/g, '').slice(0, 6);
+  }
+
+  private async sincronizarUsuarioDesdeDom(): Promise<void> {
+    const desdeDom = await leerValorIonInputAsync(this.usuarioIon);
+    if (desdeDom) {
+      this.usuario = desdeDom.trim();
+    }
+  }
+
+  private async sincronizarRestablecerDesdeDom(): Promise<void> {
+    await new Promise<void>(resolve => setTimeout(resolve, 0));
+
+    const [codeRaw, newPwd, confirmPwd] = await Promise.all([
+      leerValorIonInputAsync(this.codeIon),
+      leerValorIonInputAsync(this.newPwdIon),
+      leerValorIonInputAsync(this.confirmPwdIon)
+    ]);
+
+    if (codeRaw || this.code) this.code = this.normalizarCodigo(codeRaw || this.code);
+    if (newPwd || this.newPassword) this.newPassword = newPwd || this.newPassword;
+    if (confirmPwd || this.confirmPassword) this.confirmPassword = confirmPwd || this.confirmPassword;
   }
 
   private limpiarCamposRestablecer(): void {
