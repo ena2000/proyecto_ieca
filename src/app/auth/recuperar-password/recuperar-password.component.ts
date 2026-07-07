@@ -154,12 +154,65 @@ export class RecuperarPasswordComponent implements OnInit {
     return '';
   }
 
+  /** Vuelve al paso inicial (usuario vacío o distinto). */
   volverASolicitar(): void {
     if (this.isLoading) return;
     this.paso = 'solicitar';
     this.devCodeHint = null;
     this.emailEnviado = false;
     this.restablecerForm.reset();
+    if (this.usuarioSolicitado) {
+      this.solicitarForm.patchValue({ usuario: this.usuarioSolicitado });
+    }
+  }
+
+  /** Reenvía el código al mismo usuario sin salir del paso de restablecer. */
+  async solicitarOtroCodigo(): Promise<void> {
+    if (this.isLoading) return;
+
+    if (!this.usuarioSolicitado?.trim()) {
+      this.volverASolicitar();
+      return;
+    }
+
+    this.solicitarForm.patchValue({ usuario: this.usuarioSolicitado });
+    this.isLoading = true;
+    this.loadingAccion = 'solicitar';
+    this.loadingFase = 'conectando';
+
+    try {
+      const apiListo = await esperarApiDisponible(55_000);
+      if (!apiListo) {
+        await this.toast(
+          'El servidor no respondió a tiempo. Espera un momento y vuelve a intentar.',
+          'danger'
+        );
+        return;
+      }
+
+      this.loadingFase = 'enviando';
+      const res = await this.auth.forgotPassword(this.usuarioSolicitado);
+      if (!res.codeDispatched) {
+        await this.toast(res.message, 'warning');
+        return;
+      }
+
+      this.devCodeHint = res.devCode ?? null;
+      this.emailEnviado = !!res.emailSent;
+      this.restablecerForm.patchValue({ code: '', newPassword: '', confirmPassword: '' });
+      await this.toast(
+        res.emailSent
+          ? `Enviamos un código nuevo a tu correo. Revisa también spam.`
+          : res.message,
+        res.emailSent ? 'success' : 'warning'
+      );
+    } catch (err) {
+      await this.toast(getHttpErrorMessage(err, 'No se pudo enviar otro código'), 'danger');
+    } finally {
+      this.isLoading = false;
+      this.loadingAccion = null;
+      this.loadingFase = null;
+    }
   }
 
   private async toast(message: string, color: string): Promise<void> {
