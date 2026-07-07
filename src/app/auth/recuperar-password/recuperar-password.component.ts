@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { IonicModule, NavController, ToastController } from '@ionic/angular';
 import { AuthService } from '../../core/services/auth.service';
@@ -15,7 +15,7 @@ type LoadingFase = 'conectando' | 'enviando' | 'actualizando';
 @Component({
   selector: 'app-recuperar-password',
   standalone: true,
-  imports: [CommonModule, IonicModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, IonicModule, FormsModule, ReactiveFormsModule, RouterLink],
   templateUrl: './recuperar-password.component.html',
   styleUrls: ['./recuperar-password.component.scss']
 })
@@ -26,7 +26,10 @@ export class RecuperarPasswordComponent implements OnInit {
   emailEnviado = false;
 
   solicitarForm: FormGroup;
-  restablecerForm: FormGroup;
+  /** Campos del paso 2: ngModel (ion-input no sincroniza bien con reactive forms). */
+  code = '';
+  newPassword = '';
+  confirmPassword = '';
   showNew = false;
   showConfirm = false;
   isLoading = false;
@@ -43,11 +46,6 @@ export class RecuperarPasswordComponent implements OnInit {
       usuario: ['', [Validators.required, Validators.minLength(3)]]
     });
 
-    this.restablecerForm = this.fb.group({
-      code: ['', [Validators.required, Validators.pattern(/^\d{6}$/)]],
-      newPassword: ['', [Validators.required, Validators.minLength(6)]],
-      confirmPassword: ['', [Validators.required, Validators.minLength(6)]]
-    });
   }
 
   ngOnInit(): void {
@@ -55,20 +53,19 @@ export class RecuperarPasswordComponent implements OnInit {
   }
 
   get mismatch(): boolean {
-    const n = String(this.restablecerForm.value.newPassword ?? '');
-    const c = String(this.restablecerForm.value.confirmPassword ?? '');
-    return !!n && !!c && n !== c;
+    return (
+      !!this.newPassword &&
+      !!this.confirmPassword &&
+      this.newPassword !== this.confirmPassword
+    );
   }
 
   get puedeRestablecer(): boolean {
-    const code = String(this.restablecerForm.value.code ?? '').trim();
-    const newPassword = String(this.restablecerForm.value.newPassword ?? '');
-    const confirmPassword = String(this.restablecerForm.value.confirmPassword ?? '');
     return (
-      /^\d{6}$/.test(code) &&
-      newPassword.length >= 6 &&
-      confirmPassword.length >= 6 &&
-      newPassword === confirmPassword
+      /^\d{6}$/.test(this.code.trim()) &&
+      this.newPassword.length >= 6 &&
+      this.confirmPassword.length >= 6 &&
+      this.newPassword === this.confirmPassword
     );
   }
 
@@ -76,12 +73,8 @@ export class RecuperarPasswordComponent implements OnInit {
     this.solicitarForm.patchValue({ usuario: leerValorIonInput(event).trim() });
   }
 
-  onRestablecerInput(field: 'code' | 'newPassword' | 'confirmPassword', event: Event): void {
-    let value = leerValorIonInput(event);
-    if (field === 'code') {
-      value = value.replace(/\D/g, '').slice(0, 6);
-    }
-    this.restablecerForm.patchValue({ [field]: value });
+  onCodeChange(value: string): void {
+    this.code = String(value ?? '').replace(/\D/g, '').slice(0, 6);
   }
 
   async solicitarCodigo(): Promise<void> {
@@ -117,6 +110,9 @@ export class RecuperarPasswordComponent implements OnInit {
       this.usuarioSolicitado = usuario;
       this.devCodeHint = res.devCode ?? null;
       this.emailEnviado = !!res.emailSent;
+      this.code = '';
+      this.newPassword = '';
+      this.confirmPassword = '';
       this.paso = 'restablecer';
       await this.toast(res.message, res.emailSent ? 'success' : 'warning');
     } catch (err) {
@@ -131,16 +127,8 @@ export class RecuperarPasswordComponent implements OnInit {
   async restablecer(): Promise<void> {
     if (this.isLoading || !this.puedeRestablecer) return;
 
-    if (this.restablecerForm.invalid || this.mismatch) {
-      this.restablecerForm.markAllAsTouched();
-      if (this.mismatch) {
-        await this.toast('Las contraseñas no coinciden.', 'danger');
-      } else {
-        await this.toast(
-          'Revisa los campos. Código de 6 dígitos y contraseña de al menos 6 caracteres.',
-          'danger'
-        );
-      }
+    if (this.mismatch) {
+      await this.toast('Las contraseñas no coinciden.', 'danger');
       return;
     }
 
@@ -159,8 +147,11 @@ export class RecuperarPasswordComponent implements OnInit {
       }
 
       this.loadingFase = 'actualizando';
-      const { code, newPassword } = this.restablecerForm.value;
-      const res = await this.auth.resetPassword(this.usuarioSolicitado, code, newPassword);
+      const res = await this.auth.resetPassword(
+        this.usuarioSolicitado,
+        this.code.trim(),
+        this.newPassword
+      );
       await this.toast(res.message, 'success');
       await this.navCtrl.navigateRoot('/login', { animated: false });
     } catch (err) {
@@ -190,7 +181,9 @@ export class RecuperarPasswordComponent implements OnInit {
     this.paso = 'solicitar';
     this.devCodeHint = null;
     this.emailEnviado = false;
-    this.restablecerForm.reset();
+    this.code = '';
+    this.newPassword = '';
+    this.confirmPassword = '';
   }
 
   private async toast(message: string, color: string): Promise<void> {
