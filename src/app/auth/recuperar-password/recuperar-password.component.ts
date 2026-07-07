@@ -1,6 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { IonicModule, NavController, ToastController } from '@ionic/angular';
 import { AuthService } from '../../core/services/auth.service';
@@ -9,13 +9,15 @@ import { presentIecaToast } from '../../shared/utils/toast.util';
 import { leerValorIonInput } from '../../shared/utils/movimiento-form-sync.util';
 import { despertarApiEnSegundoPlano, esperarApiDisponible } from '../../shared/utils/api-wake.util';
 
+const LOG_PREFIX = '[recuperar-password]';
+
 type Paso = 'solicitar' | 'restablecer';
 type LoadingFase = 'conectando' | 'enviando' | 'actualizando';
 
 @Component({
   selector: 'app-recuperar-password',
   standalone: true,
-  imports: [CommonModule, IonicModule, FormsModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, IonicModule, ReactiveFormsModule, RouterLink],
   templateUrl: './recuperar-password.component.html',
   styleUrls: ['./recuperar-password.component.scss']
 })
@@ -40,7 +42,8 @@ export class RecuperarPasswordComponent implements OnInit {
     private readonly fb: FormBuilder,
     private readonly auth: AuthService,
     private readonly toastCtrl: ToastController,
-    private readonly navCtrl: NavController
+    private readonly navCtrl: NavController,
+    private readonly cdr: ChangeDetectorRef
   ) {
     this.solicitarForm = this.fb.group({
       usuario: ['', [Validators.required, Validators.minLength(3)]]
@@ -69,12 +72,52 @@ export class RecuperarPasswordComponent implements OnInit {
     );
   }
 
+  get motivoBotonDeshabilitado(): string {
+    const code = this.code.trim();
+    if (!/^\d{6}$/.test(code)) {
+      return `Código del correo: ${code.length}/6 dígitos`;
+    }
+    if (this.newPassword.length < 6) {
+      return `Nueva contraseña: mínimo 6 caracteres (llevas ${this.newPassword.length})`;
+    }
+    if (this.confirmPassword.length < 6) {
+      return 'Debes repetir la misma contraseña en «Confirmar contraseña»';
+    }
+    if (this.mismatch) {
+      return 'Las dos contraseñas deben ser iguales';
+    }
+    return '';
+  }
+
+  onCampoRestablecer(field: 'code' | 'newPassword' | 'confirmPassword', event: Event): void {
+    let value = leerValorIonInput(event);
+    if (field === 'code') {
+      this.code = value.replace(/\D/g, '').slice(0, 6);
+    } else if (field === 'newPassword') {
+      this.newPassword = value;
+    } else {
+      this.confirmPassword = value;
+    }
+    this.logEstadoRestablecer(`ionInput:${field}`);
+    this.cdr.markForCheck();
+  }
+
   onUsuarioInput(event: Event): void {
     this.solicitarForm.patchValue({ usuario: leerValorIonInput(event).trim() });
   }
 
-  onCodeChange(value: string): void {
-    this.code = String(value ?? '').replace(/\D/g, '').slice(0, 6);
+  private logEstadoRestablecer(origen: string): void {
+    const estado = {
+      origen,
+      code: this.code,
+      codeLen: this.code.length,
+      newPasswordLen: this.newPassword.length,
+      confirmPasswordLen: this.confirmPassword.length,
+      mismatch: this.mismatch,
+      puedeRestablecer: this.puedeRestablecer,
+      motivo: this.motivoBotonDeshabilitado || 'listo'
+    };
+    console.log(LOG_PREFIX, estado);
   }
 
   async solicitarCodigo(): Promise<void> {
@@ -114,6 +157,10 @@ export class RecuperarPasswordComponent implements OnInit {
       this.newPassword = '';
       this.confirmPassword = '';
       this.paso = 'restablecer';
+      console.log(LOG_PREFIX, 'paso restablecer', {
+        usuario: this.usuarioSolicitado,
+        emailEnviado: this.emailEnviado
+      });
       await this.toast(res.message, res.emailSent ? 'success' : 'warning');
     } catch (err) {
       await this.toast(getHttpErrorMessage(err, 'No se pudo enviar el código'), 'danger');
@@ -125,7 +172,16 @@ export class RecuperarPasswordComponent implements OnInit {
   }
 
   async restablecer(): Promise<void> {
-    if (this.isLoading || !this.puedeRestablecer) return;
+    this.logEstadoRestablecer('click-restablecer');
+
+    if (this.isLoading) return;
+
+    if (!this.puedeRestablecer) {
+      const motivo = this.motivoBotonDeshabilitado || 'Completa todos los campos.';
+      console.warn(LOG_PREFIX, 'bloqueado antes de enviar', motivo);
+      await this.toast(motivo, 'warning');
+      return;
+    }
 
     if (this.mismatch) {
       await this.toast('Las contraseñas no coinciden.', 'danger');
@@ -147,6 +203,11 @@ export class RecuperarPasswordComponent implements OnInit {
       }
 
       this.loadingFase = 'actualizando';
+      console.log(LOG_PREFIX, 'enviando reset-password', {
+        usuario: this.usuarioSolicitado,
+        code: this.code.trim(),
+        newPasswordLen: this.newPassword.length
+      });
       const res = await this.auth.resetPassword(
         this.usuarioSolicitado,
         this.code.trim(),
@@ -155,6 +216,7 @@ export class RecuperarPasswordComponent implements OnInit {
       await this.toast(res.message, 'success');
       await this.navCtrl.navigateRoot('/login', { animated: false });
     } catch (err) {
+      console.error(LOG_PREFIX, 'error reset-password', err);
       await this.toast(getHttpErrorMessage(err, 'No se pudo restablecer la contraseña'), 'danger');
     } finally {
       this.isLoading = false;
