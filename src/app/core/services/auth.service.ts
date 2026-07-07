@@ -31,6 +31,7 @@ export interface ForgotPasswordResponse {
 }
 
 const AUTH_REQUEST_TIMEOUT_MS = 90_000;
+const RESET_PASSWORD_TIMEOUT_MS = 60_000;
 const AUTH_TIMEOUT_MESSAGE =
   'La operación tardó demasiado. Espera un momento e inténtalo de nuevo.';
 
@@ -202,15 +203,15 @@ export class AuthService {
   resetPassword(usuario: string, code: string, newPassword: string): Promise<{ message: string }> {
     return firstValueFrom(
       this.api.post<{ message: string }>(API.auth.resetPassword, { usuario, code, newPassword }).pipe(
-        this.withAuthTimeout()
+        this.withAuthTimeout(RESET_PASSWORD_TIMEOUT_MS)
       )
     );
   }
 
-  private withAuthTimeout<T>() {
+  private withAuthTimeout<T>(ms = AUTH_REQUEST_TIMEOUT_MS) {
     return (source: Observable<T>) =>
       source.pipe(
-        timeout(AUTH_REQUEST_TIMEOUT_MS),
+        timeout(ms),
         catchError(err => {
           if (err instanceof TimeoutError) {
             return throwError(() => new Error(AUTH_TIMEOUT_MESSAGE));

@@ -205,22 +205,20 @@ export class RecuperarPasswordComponent implements OnInit {
 
     this.isLoading = true;
     this.loadingAccion = 'restablecer';
-    this.loadingFase = this.apiDespierta ? 'actualizando' : 'conectando';
+    this.loadingFase = 'conectando';
     this.cdr.markForCheck();
     void this.toast('Verificando código con el servidor…', 'info');
 
     try {
-      if (!this.apiDespierta) {
-        const apiListo = await esperarApiDisponible(55_000);
-        if (!apiListo) {
-          await this.toast(
-            'El servidor no respondió a tiempo. Espera un momento y vuelve a intentar.',
-            'danger'
-          );
-          return;
-        }
-        this.apiDespierta = true;
+      const apiListo = await esperarApiDisponible(this.apiDespierta ? 25_000 : 55_000);
+      if (!apiListo) {
+        await this.toast(
+          'El servidor no respondió a tiempo. Espera un momento y vuelve a intentar.',
+          'danger'
+        );
+        return;
       }
+      this.apiDespierta = true;
 
       this.loadingFase = 'actualizando';
       this.cdr.markForCheck();
@@ -234,7 +232,12 @@ export class RecuperarPasswordComponent implements OnInit {
         this.code.trim(),
         this.newPassword
       );
-      await this.toast(res.message, 'success');
+      console.log(LOG_PREFIX, 'reset-password ok', res.message);
+      this.isLoading = false;
+      this.loadingAccion = null;
+      this.loadingFase = null;
+      this.cdr.markForCheck();
+      void this.toast(res.message, 'success');
       await this.navCtrl.navigateRoot('/login', { animated: false });
     } catch (err) {
       console.error(LOG_PREFIX, 'error reset-password', err);
@@ -243,6 +246,7 @@ export class RecuperarPasswordComponent implements OnInit {
       this.isLoading = false;
       this.loadingAccion = null;
       this.loadingFase = null;
+      this.cdr.markForCheck();
     }
   }
 
@@ -254,7 +258,7 @@ export class RecuperarPasswordComponent implements OnInit {
       return 'Enviando el código a tu correo…';
     }
     if (this.loadingFase === 'actualizando') {
-      return 'Guardando tu nueva contraseña…';
+      return 'Guardando tu nueva contraseña en el servidor…';
     }
     return '';
   }
