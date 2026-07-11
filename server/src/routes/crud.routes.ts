@@ -7,11 +7,10 @@ const {
   createInCollection,
   updateInCollection,
   deleteFromCollection,
-  formatDateDDMMYYYY
+  formatDateDDMMYYYY,
+  stripInternalFields
 } = require('../utils/firestore');
-const { ROLES } = require('../middleware/auth');
 const { db } = require('../config/firebase');
-const { createNotificacion } = require('../utils/notificaciones');
 const {
   onCreateGasto,
   onUpdateGasto,
@@ -63,12 +62,15 @@ const {
   usuarioUpdateSchema
 } = require('../schemas/crud.schema');
 
+// --- Helpers de usuarios (login / password temporal) ---
+const crypto = require('crypto');
+
 function generateTempPassword(length = 10) {
-  // Evita caracteres confusos, y asegura mezcla básica
+  // Evita caracteres confusos; CSPRNG (no Math.random)
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789@#$';
   let out = '';
   for (let i = 0; i < length; i++) {
-    out += chars[Math.floor(Math.random() * chars.length)];
+    out += chars[crypto.randomInt(0, chars.length)];
   }
   return out;
 }
@@ -100,6 +102,7 @@ async function ensureUniqueUsuario(base) {
   }
 }
 
+// --- Factory CRUD genérico (scope, list/get/post/put/delete) ---
 function createCrudRouter(collection, options: {
   onCreate?: Function;
   onUpdate?: Function;
@@ -136,6 +139,7 @@ function createCrudRouter(collection, options: {
     listFilter
   } = options;
 
+  // Scope por ministerio (Colaborador)
   function getUserScope(req) {
     if (!scopeField) return null;
     const rol = req.user?.rol;
@@ -173,9 +177,17 @@ function createCrudRouter(collection, options: {
     const { password, ...rest } = body ?? {};
     if (!password) return rest;
     const passwordHash = await bcrypt.hash(String(password), 10);
-    return { ...rest, passwordHash };
+    // Invalida refresh tokens previos al cambiar password por Admin
+    return { ...rest, passwordHash, passwordChangedAt: Date.now(), refreshJti: null };
   }
 
+  function sanitizeEntity(item) {
+    if (!item) return item;
+    if (collection === 'usuarios') return stripInternalFields(item);
+    return item;
+  }
+
+  // Rutas REST estándar
   router.get('/', async (_req, res) => {
     try {
       const scope = getUserScope(_req);
@@ -186,7 +198,7 @@ function createCrudRouter(collection, options: {
         ? await listCollectionByField(collection, scope.field, scope.value)
         : await listCollection(collection);
       if (listFilter) lista = listFilter(lista);
-      res.json(lista);
+      res.json(lista.map((row) => sanitizeEntity(row)));
     } catch (err) {
       console.error(`[${collection} GET]`, err);
       res.status(500).json({ message: `Error al listar ${collection}` });
@@ -199,7 +211,7 @@ function createCrudRouter(collection, options: {
       if (!item) return res.status(404).json({ message: 'No encontrado' });
       const ok = await assertScopeAllowed(req, item);
       if (!ok) return res.status(403).json({ message: 'No tienes permisos para ver este registro' });
-      res.json(item);
+      res.json(sanitizeEntity(item));
     } catch (err) {
       console.error(`[${collection} GET/:id]`, err);
       res.status(500).json({ message: 'Error al obtener registro' });
@@ -262,15 +274,23 @@ function createCrudRouter(collection, options: {
         try {
           const result = await afterCreate(created, req);
           if (result) responseBody = result;
-        } catch (notifErr) {
-          console.error(`[${collection} afterCreate notificación]`, notifErr);
+        } catch (afterErr) {
+          const status = Number(afterErr?.status) || 500;
+          console.error(`[${collection} afterCreate]`, afterErr);
+          // Errores de negocio (p. ej. aportación 33 %) no se silencian
+          if (status >= 400) {
+            return res.status(status).json({
+              message: afterErr.message || 'Error al completar el registro'
+            });
+          }
         }
       }
 
       invalidateBootstrapCache();
 
       // Devolver la contraseña temporal SOLO en la creación, una vez.
-      res.status(201).json(tempPassword ? { ...responseBody, tempPassword } : responseBody);
+      const safe = sanitizeEntity(responseBody);
+      res.status(201).json(tempPassword ? { ...safe, tempPassword } : safe);
     } catch (err) {
       console.error(`[${collection} POST]`, err);
       res.status(500).json({ message: 'Error al crear registro' });
@@ -326,7 +346,7 @@ function createCrudRouter(collection, options: {
         }
       }
       invalidateBootstrapCache();
-      res.json(updated);
+      res.json(sanitizeEntity(updated));
     } catch (err) {
       console.error(`[${collection} PUT]`, err);
       res.status(500).json({ message: 'Error al actualizar registro' });
@@ -364,6 +384,7 @@ function createCrudRouter(collection, options: {
   return router;
 }
 
+// --- Hooks ministerios / usuarios ---
 async function beforeCreateMinisterio(body) {
   if (body.nombre != null) {
     body.nombre = String(body.nombre).trim();
@@ -411,6 +432,7 @@ async function beforeUpdateUsuario(body, _req, current) {
   await normalizarYValidarUsuario(body, excludeId);
 }
 
+// --- Router: ministerios ---
 const ministeriosRouter = createCrudRouter('ministerios', {
   validateCreate: ministerioCreateSchema,
   validateUpdate: ministerioUpdateSchema,
@@ -430,6 +452,7 @@ const ministeriosRouter = createCrudRouter('ministerios', {
   afterUpdate: afterSaveMinisterio
 });
 
+// --- Router: usuarios ---
 const usuariosRouter = createCrudRouter('usuarios', {
   validateCreate: usuarioCreateSchema,
   validateUpdate: usuarioUpdateSchema,
@@ -438,6 +461,8 @@ const usuariosRouter = createCrudRouter('usuarios', {
   beforeCreate: beforeCreateUsuario,
   beforeUpdate: beforeUpdateUsuario
 });
+
+// --- Router: ingresos (+ aprobar / rechazar) ---
 const ingresosRouter = createCrudRouter('ingresos', {
   validateCreate: ingresoCreateSchema,
   validateUpdate: ingresoUpdateSchema,
@@ -477,6 +502,8 @@ ingresosRouter.patch('/:id/rechazar', validate(idParamSchema, 'params'), validat
     res.status(err.status || 500).json({ message: err.message || 'Error al rechazar' });
   }
 });
+
+// --- Router: gastos (+ aprobar / rechazar) ---
 const gastosRouter = createCrudRouter('gastos', {
   validateCreate: gastoCreateSchema,
   validateUpdate: gastoUpdateSchema,
@@ -517,6 +544,7 @@ gastosRouter.patch('/:id/rechazar', validate(idParamSchema, 'params'), validate(
   }
 });
 
+// --- Exports (montados en createApp) ---
 module.exports = {
   ministeriosRouter,
   usuariosRouter,

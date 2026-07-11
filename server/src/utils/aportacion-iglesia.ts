@@ -1,5 +1,5 @@
+const { db } = require('../config/firebase');
 const {
-  createInCollection,
   deleteFromCollection,
   getById,
   updateInCollection,
@@ -34,6 +34,21 @@ function referenciaIngresoOrigen(ingreso) {
   return detalle || 'Sin descripción';
 }
 
+/** Id determinístico del hijo 33 % (evita duplicados en carrera). */
+function aportacionDocId(origenId) {
+  return `aportacion-${origenId}`;
+}
+
+async function vincularPadreConAportacion(ingreso, hijoId, montoBruto, montoAportacion) {
+  const montoNetoMinisterio = Math.round((montoBruto - montoAportacion) * 100) / 100;
+  return updateInCollection('ingresos', ingreso.id, {
+    aportacionGenerada: true,
+    ingresoIglesiaId: hijoId,
+    montoAportacionIglesia: montoAportacion,
+    montoNetoMinisterio
+  });
+}
+
 async function generarAportacionIglesiaPorIngreso(ingreso, req) {
   if (!ingreso || ingreso.esAportacionIglesia) return ingreso;
   if (!ingresoEstaAprobado(ingreso)) return ingreso;
@@ -52,7 +67,7 @@ async function generarAportacionIglesiaPorIngreso(ingreso, req) {
     if (existente) return ingreso;
   }
 
-  // Idempotencia: buscar aportación previa por origen (evita duplicados en carrera)
+  // Idempotencia: buscar aportación previa por origen
   const origenIdNum = Number(ingreso.id);
   const candidatos = [];
   for (const valor of [origenIdNum, String(ingreso.id)]) {
@@ -62,17 +77,13 @@ async function generarAportacionIglesiaPorIngreso(ingreso, req) {
   }
   const ya = candidatos.find((r) => r?.esAportacionIglesia);
   if (ya) {
-    const montoNetoMinisterio = Math.round((montoBruto - montoAportacion) * 100) / 100;
-    return updateInCollection('ingresos', ingreso.id, {
-      aportacionGenerada: true,
-      ingresoIglesiaId: ya.id,
-      montoAportacionIglesia: montoAportacion,
-      montoNetoMinisterio
-    });
+    return vincularPadreConAportacion(ingreso, ya.id, montoBruto, montoAportacion);
   }
 
-  if (ingreso.aportacionGenerada) {
-    // Flag sin hijo: regenerar
+  const childId = aportacionDocId(ingreso.id);
+  const existingChild = await getById('ingresos', childId);
+  if (existingChild?.esAportacionIglesia) {
+    return vincularPadreConAportacion(ingreso, existingChild.id, montoBruto, montoAportacion);
   }
 
   const montoNetoMinisterio = Math.round((montoBruto - montoAportacion) * 100) / 100;
@@ -82,7 +93,7 @@ async function generarAportacionIglesiaPorIngreso(ingreso, req) {
   const fechaFormateada = ingreso.fechaFormateada || formatDateDDMMYYYY(fecha);
   const ref = referenciaIngresoOrigen(ingreso);
 
-  const ingresoIglesia = await createInCollection('ingresos', {
+  const childData = {
     fecha,
     fechaFormateada,
     descripcion: `Aportación de ${ministerioNombre} (${pct}) — ${ref}`,
@@ -100,11 +111,31 @@ async function generarAportacionIglesiaPorIngreso(ingreso, req) {
     registradoPor: 'Sistema IECA',
     aprobadoPor: req?.user?.sub ?? null,
     fechaAprobacion: new Date().toISOString()
-  });
+  };
+
+  const childRef = db.collection('ingresos').doc(String(childId));
+  try {
+    if (typeof childRef.create === 'function') {
+      await childRef.create(childData);
+    } else {
+      const snap = await childRef.get();
+      if (snap.exists) {
+        return vincularPadreConAportacion(ingreso, childId, montoBruto, montoAportacion);
+      }
+      await childRef.set(childData);
+    }
+  } catch {
+    // Carrera: otro request creó el doc
+    const race = await getById('ingresos', childId);
+    if (race) {
+      return vincularPadreConAportacion(ingreso, race.id, montoBruto, montoAportacion);
+    }
+    throw new Error('No se pudo generar la aportación del 33 % a la iglesia');
+  }
 
   return updateInCollection('ingresos', ingreso.id, {
     aportacionGenerada: true,
-    ingresoIglesiaId: ingresoIglesia.id,
+    ingresoIglesiaId: childId,
     montoAportacionIglesia: montoAportacion,
     montoNetoMinisterio
   });
@@ -123,6 +154,11 @@ async function eliminarAportacionesPorIngresoOrigen(ingresoOrigenId) {
   if (!Number.isFinite(origenId)) return;
 
   const eliminados = new Set();
+  // Doc determinístico
+  const detId = aportacionDocId(ingresoOrigenId);
+  await eliminarMovimientoSiExiste('ingresos', detId);
+  eliminados.add(detId);
+
   for (const valor of [origenId, String(origenId)]) {
     const vinculados = await listCollectionByField('ingresos', 'ingresoOrigenId', valor);
     for (const row of vinculados) {
@@ -227,5 +263,6 @@ module.exports = {
   actualizarAportacionIglesiaPorIngreso,
   revertirAportacionIglesiaPorIngreso,
   bloquearEdicionAportacionIglesia,
-  calcularMontoAportacionIglesia
+  calcularMontoAportacionIglesia,
+  aportacionDocId
 };

@@ -9,8 +9,6 @@ import { presentIecaToast } from '../../shared/utils/toast.util';
 import { leerValorIonInput } from '../../shared/utils/movimiento-form-sync.util';
 import { despertarApiEnSegundoPlano, esperarApiDisponible } from '../../shared/utils/api-wake.util';
 
-const LOG_PREFIX = '[recuperar-password]';
-
 type Paso = 'solicitar' | 'restablecer';
 type LoadingFase = 'conectando' | 'enviando' | 'actualizando';
 
@@ -50,7 +48,6 @@ export class RecuperarPasswordComponent implements OnInit {
     this.solicitarForm = this.fb.group({
       usuario: ['', [Validators.required, Validators.minLength(3)]]
     });
-
   }
 
   ngOnInit(): void {
@@ -105,25 +102,11 @@ export class RecuperarPasswordComponent implements OnInit {
     } else {
       this.confirmPassword = value;
     }
-    this.logEstadoRestablecer(`ionInput:${field}`);
     this.cdr.markForCheck();
   }
 
   onUsuarioInput(event: Event): void {
     this.solicitarForm.patchValue({ usuario: leerValorIonInput(event).trim() });
-  }
-
-  private logEstadoRestablecer(origen: string): void {
-    const estado = {
-      origen,
-      codeLen: this.code.length,
-      newPasswordLen: this.newPassword.length,
-      confirmPasswordLen: this.confirmPassword.length,
-      mismatch: this.mismatch,
-      puedeRestablecer: this.puedeRestablecer,
-      motivo: this.motivoBotonDeshabilitado || 'listo'
-    };
-    console.log(LOG_PREFIX, estado);
   }
 
   async solicitarCodigo(): Promise<void> {
@@ -170,11 +153,6 @@ export class RecuperarPasswordComponent implements OnInit {
       this.loadingFase = null;
       this.paso = 'restablecer';
       this.cdr.markForCheck();
-      console.log(LOG_PREFIX, 'paso restablecer', {
-        usuario: this.usuarioSolicitado,
-        emailEnviado: this.emailEnviado,
-        isLoading: this.isLoading
-      });
       void this.toast(res.message, res.emailSent ? 'success' : 'warning');
     } catch (err) {
       await this.toast(getHttpErrorMessage(err, 'No se pudo enviar el código'), 'danger');
@@ -186,13 +164,10 @@ export class RecuperarPasswordComponent implements OnInit {
   }
 
   async restablecer(): Promise<void> {
-    this.logEstadoRestablecer('click-restablecer');
-
     if (this.isLoading) return;
 
     if (!this.puedeRestablecer) {
       const motivo = this.motivoBotonDeshabilitado || 'Completa todos los campos.';
-      console.warn(LOG_PREFIX, 'bloqueado antes de enviar', motivo);
       await this.toast(motivo, 'warning');
       return;
     }
@@ -221,17 +196,11 @@ export class RecuperarPasswordComponent implements OnInit {
 
       this.loadingFase = 'actualizando';
       this.cdr.markForCheck();
-      console.log(LOG_PREFIX, 'enviando reset-password', {
-        usuario: this.usuarioSolicitado,
-        codeLen: this.code.trim().length,
-        newPasswordLen: this.newPassword.length
-      });
       const res = await this.auth.resetPassword(
         this.usuarioSolicitado,
         this.code.trim(),
         this.newPassword
       );
-      console.log(LOG_PREFIX, 'reset-password ok', res.message);
       this.isLoading = false;
       this.loadingAccion = null;
       this.loadingFase = null;
@@ -239,7 +208,6 @@ export class RecuperarPasswordComponent implements OnInit {
       void this.toast(res.message, 'success');
       await this.navCtrl.navigateRoot('/login', { animated: false });
     } catch (err) {
-      console.error(LOG_PREFIX, 'error reset-password', err);
       await this.toast(getHttpErrorMessage(err, 'No se pudo restablecer la contraseña'), 'danger');
     } finally {
       this.isLoading = false;

@@ -74,12 +74,25 @@ function signRefreshToken(user) {
 
 /**
  * @param {AuthUser} user
- * @returns {{ token: string, refreshToken: string }}
+ * @returns {{ token: string, refreshToken: string, refreshJti: string }}
  */
 function signTokenPair(user) {
+  const refreshJti = crypto.randomUUID();
+  /** @type {Omit<RefreshTokenPayload, 'iat' | 'exp'>} */
+  const refreshPayload = {
+    sub: String(user.id),
+    type: 'refresh',
+    jti: refreshJti
+  };
+  const refreshToken = jwt.sign(
+    refreshPayload,
+    JWT_SECRET,
+    { expiresIn: /** @type {import('jsonwebtoken').SignOptions['expiresIn']} */ (REFRESH_TOKEN_EXPIRES) }
+  );
   return {
     token: signAccessToken(user),
-    refreshToken: signRefreshToken(user)
+    refreshToken,
+    refreshJti
   };
 }
 

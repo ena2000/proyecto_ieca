@@ -106,7 +106,7 @@ async function beforeCreateIngreso(body, req) {
   await assertMinisterioPermiteIngresoManual(body);
 }
 
-async function beforeUpdateIngreso(body, current) {
+async function beforeUpdateIngreso(body, _req, current) {
   await assertMovimientoModificable(current);
   if (body?.fecha) await assertPeriodoAbierto(body.fecha);
   if (!current?.esAportacionIglesia) {
@@ -190,7 +190,12 @@ async function aprobarIngreso(id, req) {
 }
 
 async function afterCreateIngreso(created, req) {
-  await notificarIngresoCreado(created, req);
+  try {
+    await notificarIngresoCreado(created, req);
+  } catch (notifErr) {
+    console.error('[ingresos afterCreate notificación]', notifErr);
+  }
+  // Fallos de aportación 33 % no se silencian: el cliente debe enterarse
   return generarAportacionIglesiaPorIngreso(created, req);
 }
 

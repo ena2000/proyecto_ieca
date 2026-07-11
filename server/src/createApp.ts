@@ -46,15 +46,30 @@ function createApp(options: { useMemoryDb?: boolean } = {}) {
   app.use(createCorsMiddleware());
   app.use(express.json({ limit: '10mb' }));
 
-  app.get('/api/health', (_req, res) => {
-    const { smtpConfigured } = require('./config/env');
-    res.json({
-      ok: true,
-      service: 'ieca-server',
-      version: pkg.version,
-      uptimeSeconds: Math.floor(process.uptime()),
-      smtpConfigured: Boolean(smtpConfigured)
-    });
+  app.get('/api/health', async (_req, res) => {
+    try {
+      const { db } = require('./config/firebase');
+      await db.collection('config').doc('sistema').get();
+      const body: Record<string, unknown> = {
+        ok: true,
+        service: 'ieca-server',
+        version: pkg.version,
+        uptimeSeconds: Math.floor(process.uptime())
+      };
+      // smtpConfigured solo fuera de producción (no filtrar info en prod)
+      if (process.env.NODE_ENV !== 'production') {
+        const { smtpConfigured } = require('./config/env');
+        body.smtpConfigured = Boolean(smtpConfigured);
+      }
+      res.json(body);
+    } catch (err) {
+      console.error('[health]', err);
+      res.status(503).json({
+        ok: false,
+        service: 'ieca-server',
+        message: 'Base de datos no disponible'
+      });
+    }
   });
 
   app.use('/api', apiLimiter);

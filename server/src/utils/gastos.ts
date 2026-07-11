@@ -83,7 +83,7 @@ async function beforeCreateGasto(body, req) {
   await assertMinisterioPermiteGastos(body);
 }
 
-async function beforeUpdateGasto(body, current) {
+async function beforeUpdateGasto(body, _req, current) {
   await assertMovimientoModificable(current);
   if (body?.fecha) await assertPeriodoAbierto(body.fecha);
   await assertMinisterioPermiteGastos({ ...current, ...body });
@@ -110,21 +110,47 @@ async function aprobarGasto(id, req) {
     return current;
   }
 
+  if (normalizarEstado(current.estado) === 'rechazado') {
+    const err = new Error('No se puede aprobar un gasto rechazado');
+    err.status = 400;
+    throw err;
+  }
+
+  const { db } = require('../config/firebase');
+  const ref = db.collection(COLLECTION).doc(String(id));
   const actor = await resolveActor(req);
-  const updated = await updateInCollection(
-    COLLECTION,
-    id,
-    stampActualizacion(
-      {
-        estado: 'aprobado',
-        motivoRechazo: null,
-        aprobadoPor: req.user.sub,
-        fechaAprobacion: new Date().toISOString()
-      },
-      actor,
-      current
-    )
+  const stamp = stampActualizacion(
+    {
+      estado: 'aprobado',
+      motivoRechazo: null,
+      aprobadoPor: req.user.sub,
+      fechaAprobacion: new Date().toISOString()
+    },
+    actor,
+    current
   );
+
+  let claimed = false;
+  if (typeof db.runTransaction === 'function') {
+    claimed = await db.runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists) return false;
+      const data = snap.data() || {};
+      if (normalizarEstado(data.estado) === 'aprobado') return false;
+      if (normalizarEstado(data.estado) === 'rechazado') return false;
+      tx.set(ref, stamp, { merge: true });
+      return true;
+    });
+  } else {
+    claimed = true;
+    await updateInCollection(COLLECTION, id, stamp);
+  }
+
+  if (!claimed) {
+    return getById(COLLECTION, id);
+  }
+
+  const updated = await getById(COLLECTION, id);
 
   await notificarResolucionMovimientoLider({
     tipo: 'gasto',

@@ -30,6 +30,12 @@ function collectMovimientosDelPeriodo(items, periodoKey, collection) {
     }));
 }
 
+function contarPendientesDelPeriodo(ingresos, gastos, periodoKey) {
+  const esPendiente = (item) =>
+    fechaToPeriodoKey(item.fecha) === periodoKey && String(item.estado || '') === 'pendiente';
+  return ingresos.filter(esPendiente).length + gastos.filter(esPendiente).length;
+}
+
 async function commitBatches(updates) {
   const chunks = chunkArray(updates, FIRESTORE_BATCH_LIMIT);
   for (const chunk of chunks) {
@@ -63,17 +69,35 @@ async function ejecutarCierreMensual(periodoKey) {
     listCollection('gastos')
   ]);
 
+  const pendientes = contarPendientesDelPeriodo(ingresos, gastos, periodoKey);
+  if (pendientes > 0) {
+    throw new HttpError(
+      409,
+      `No se puede cerrar el periodo: hay ${pendientes} movimiento(s) pendiente(s) de aprobación.`
+    );
+  }
+
   const updates = [
     ...collectMovimientosDelPeriodo(ingresos, periodoKey, 'ingresos'),
     ...collectMovimientosDelPeriodo(gastos, periodoKey, 'gastos')
   ];
 
-  await commitBatches(updates);
-
+  // Config primero: si falla el batch, el periodo ya figura cerrado (fail-closed para nuevos)
   const cerrados = await getPeriodosCerrados();
   const nuevosCerrados = [...new Set([...cerrados, periodoKey])];
   const etiqueta = etiquetaParaMes(periodoKey);
   await setCierreConfig(etiqueta, nuevosCerrados);
+
+  try {
+    await commitBatches(updates);
+  } catch (err) {
+    // Revertir config si no se pudieron marcar los docs
+    await setCierreConfig(
+      cerrados.length ? etiquetaParaMes(cerrados[cerrados.length - 1]) : null,
+      cerrados
+    );
+    throw err;
+  }
 
   return {
     ultimoCierre: etiqueta,
@@ -87,5 +111,6 @@ module.exports = {
   FIRESTORE_BATCH_LIMIT,
   chunkArray,
   collectMovimientosDelPeriodo,
+  contarPendientesDelPeriodo,
   ejecutarCierreMensual
 };

@@ -63,16 +63,18 @@ describe('signToken / JWT', () => {
     assert.equal(payload.ministerioId, 2);
   });
 
-  it('signTokenPair devuelve access y refresh distintos', () => {
+  it('signTokenPair devuelve access, refresh y refreshJti', () => {
     const user = { id: 1, rol: ROLES.ADMIN, ministerioId: null };
-    const { token, refreshToken } = signTokenPair(user);
+    const { token, refreshToken, refreshJti } = signTokenPair(user);
     assert.notEqual(token, refreshToken);
+    assert.ok(refreshJti);
 
     const access = verifyAccessToken(token);
     const refresh = verifyRefreshToken(refreshToken);
     assert.equal(access.sub, '1');
     assert.equal(refresh.sub, '1');
     assert.equal(refresh.type, 'refresh');
+    assert.equal(refresh.jti, refreshJti);
   });
 
   it('rechaza refresh token como access token', () => {

@@ -16,19 +16,17 @@ const auditoriaQuerySchema = z.object({
 });
 
 /** Estructura mínima de un respaldo válido; el resto lo valida restoreBackup. */
-const restoreSchema = z
-  .object({
-    version: z.string().min(1).max(20),
-    fecha: z.string().optional(),
-    ingresos: z.array(z.record(z.string(), z.unknown())).optional(),
-    gastos: z.array(z.record(z.string(), z.unknown())).optional(),
-    ministerios: z.array(z.record(z.string(), z.unknown())).optional(),
-    usuarios: z.array(z.record(z.string(), z.unknown())).optional(),
-    notificaciones: z.array(z.record(z.string(), z.unknown())).optional(),
-    ultimoCierre: z.unknown().optional(),
-    periodosCerrados: z.array(z.unknown()).optional()
-  })
-  .passthrough();
+const restoreSchema = z.object({
+  version: z.string().min(1).max(20),
+  fecha: z.string().optional(),
+  ingresos: z.array(z.record(z.string(), z.unknown())),
+  gastos: z.array(z.record(z.string(), z.unknown())),
+  ministerios: z.array(z.record(z.string(), z.unknown())),
+  usuarios: z.array(z.record(z.string(), z.unknown())),
+  notificaciones: z.array(z.record(z.string(), z.unknown())).optional(),
+  ultimoCierre: z.unknown().optional(),
+  periodosCerrados: z.array(z.unknown()).optional()
+});
 
 module.exports = {
   cierreSchema,

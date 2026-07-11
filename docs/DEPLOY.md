@@ -83,6 +83,14 @@ firebase deploy --only hosting
 
 Configura rewrites SPA: `**` → `/index.html`.
 
+**Firestore (defensa en profundidad):** el cliente no usa el SDK de Firestore; la API usa Admin SDK. Aun así despliega reglas deny-all:
+
+```bash
+firebase deploy --only firestore:rules
+```
+
+(`firestore.rules` + entrada en `firebase.json`). Los assets JS/CSS hasheados tienen caché `immutable`; `index.html` sigue sin caché.
+
 ---
 
 ## Backend en Render (recomendado)
@@ -303,6 +311,8 @@ npm run deploy:hosting
 | No se ve el ☰ en el teléfono | Frontend sin actualizar o caché | `npm run deploy:hosting`; vacía caché del navegador |
 | Login pegado arriba en móvil | Versión anterior del CSS | Redeploy frontend; ver `auth/login/login.component.scss` |
 | Aportación no se genera | Ingreso no es talento o sin ministerio | Solo cuenta `4105` con ministerio asignado; revisar logs Render al aprobar |
-| **500/503** en forgot-password | SMTP no configurado o credenciales incorrectas | Render → Environment: `SMTP_*`; `/api/health` debe mostrar `smtpConfigured: true` |
+| **500/503** en forgot-password | SMTP no configurado o credenciales incorrectas | Render → Environment: `SMTP_*`; en no-prod `/api/health` muestra `smtpConfigured` |
+| Firestore abierto desde el cliente | Reglas denegadas | Desplegar `firestore.rules` (deny-all): `firebase deploy --only firestore:rules` |
+| UI vieja tras deploy hosting | Caché de assets | `index.html` es `no-cache`; JS/CSS hasheados usan `immutable` en `firebase.json` |
 
 Más detalle: [README principal](../README.md).

@@ -1,10 +1,20 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { db } = require('../config/firebase');
-const { signTokenPair, verifyRefreshToken, authRequired } = require('../middleware/auth');
+const {
+  signTokenPair,
+  verifyRefreshToken,
+  verifyAccessToken,
+  authRequired
+} = require('../middleware/auth');
 const { stripInternalFields } = require('../utils/firestore');
 const { validate } = require('../middleware/validate');
-const { loginLimiter, forgotPasswordLimiter } = require('../middleware/rateLimit');
+const {
+  loginLimiter,
+  forgotPasswordLimiter,
+  resetPasswordLimiter,
+  refreshLimiter
+} = require('../middleware/rateLimit');
 const {
   loginSchema,
   changePasswordSchema,
@@ -18,6 +28,14 @@ const { requestPasswordReset, resetPasswordWithCode } = require('../utils/passwo
 const { smtpConfigured } = require('../config/env');
 
 const router = express.Router();
+
+async function persistRefreshJti(userId, refreshJti) {
+  await db.collection('usuarios').doc(String(userId)).set({ refreshJti }, { merge: true });
+}
+
+async function clearRefreshJti(userId) {
+  await db.collection('usuarios').doc(String(userId)).set({ refreshJti: null }, { merge: true });
+}
 
 router.post('/login', loginLimiter, validate(loginSchema), async (req, res) => {
   const ip = getClientIp(req);
@@ -45,7 +63,7 @@ router.post('/login', loginLimiter, validate(loginSchema), async (req, res) => {
     if (!data.passwordHash) {
       await recordLoginAttempt({ ip, usuario, success: false, reason: 'sin_password' });
       return res.status(401).json({
-        message: 'Usuario sin contraseña configurada. Ejecuta: npm run seed'
+        message: 'Usuario o contraseña incorrectos'
       });
     }
 
@@ -66,7 +84,8 @@ router.post('/login', loginLimiter, validate(loginSchema), async (req, res) => {
     });
 
     void recordLoginAttempt({ ip, usuario, success: true, reason: 'login_ok' });
-    const { token, refreshToken } = signTokenPair(user);
+    const { token, refreshToken, refreshJti } = signTokenPair(user);
+    await persistRefreshJti(user.id, refreshJti);
     return res.json({ token, refreshToken, user });
   } catch (err) {
     console.error('[auth/login]', err);
@@ -75,12 +94,37 @@ router.post('/login', loginLimiter, validate(loginSchema), async (req, res) => {
   }
 });
 
-router.post('/logout', (_req, res) => {
-  res.status(204).send();
+/** Invalida el refresh token del usuario (logout real). */
+router.post('/logout', async (req, res) => {
+  try {
+    let userId = null;
+    if (req.body?.refreshToken) {
+      try {
+        const payload = verifyRefreshToken(req.body.refreshToken);
+        userId = payload.sub;
+      } catch {
+        /* token inválido: igual 204 */
+      }
+    }
+    if (!userId && req.headers.authorization?.startsWith('Bearer ')) {
+      try {
+        const payload = verifyAccessToken(req.headers.authorization.slice(7));
+        userId = payload.sub;
+      } catch {
+        /* ignore */
+      }
+    }
+    if (userId) {
+      await clearRefreshJti(userId);
+    }
+  } catch (err) {
+    console.error('[auth/logout]', err);
+  }
+  return res.status(204).send();
 });
 
 /** Renueva el access token con un refresh token válido. */
-router.post('/refresh', validate(refreshSchema), async (req, res) => {
+router.post('/refresh', refreshLimiter, validate(refreshSchema), async (req, res) => {
   try {
     const { refreshToken } = req.body;
     const payload = verifyRefreshToken(refreshToken);
@@ -102,6 +146,11 @@ router.post('/refresh', validate(refreshSchema), async (req, res) => {
       return res.status(401).json({ message: 'Sesión inválida. Inicia sesión de nuevo.' });
     }
 
+    // Revocación: jti debe coincidir con el almacenado (logout / rotación)
+    if (!data?.refreshJti || payload.jti !== data.refreshJti) {
+      return res.status(401).json({ message: 'Sesión inválida. Inicia sesión de nuevo.' });
+    }
+
     const id = Number(doc.id);
     const user = stripInternalFields({
       id: Number.isNaN(id) ? doc.id : id,
@@ -113,6 +162,7 @@ router.post('/refresh', validate(refreshSchema), async (req, res) => {
     });
 
     const tokens = signTokenPair(user);
+    await persistRefreshJti(user.id, tokens.refreshJti);
     return res.json({ token: tokens.token, refreshToken: tokens.refreshToken, user });
   } catch (err) {
     console.error('[auth/refresh]', err);
@@ -148,7 +198,7 @@ router.post('/forgot-password', forgotPasswordLimiter, validate(forgotPasswordSc
 });
 
 /** Restablecer contraseña con código temporal de 6 dígitos. */
-router.post('/reset-password', validate(resetPasswordSchema), async (req, res) => {
+router.post('/reset-password', resetPasswordLimiter, validate(resetPasswordSchema), async (req, res) => {
   try {
     const { usuario, code, newPassword } = req.body;
     const result = await resetPasswordWithCode({ login: usuario, code, newPassword });
@@ -180,18 +230,8 @@ router.post('/change-password', authRequired, validate(changePasswordSchema), as
     if (!ok) return res.status(401).json({ message: 'Contraseña actual incorrecta' });
 
     const passwordHash = await bcrypt.hash(String(newPassword), 10);
-    await ref.set(
-      {
-        passwordHash,
-        mustChangePassword: false,
-        passwordChangedAt: Date.now()
-      },
-      { merge: true }
-    );
-
-    const id = Number(doc.id);
     const user = stripInternalFields({
-      id: Number.isNaN(id) ? doc.id : id,
+      id: Number.isNaN(Number(doc.id)) ? doc.id : Number(doc.id),
       usuario: data.usuario,
       email: data.email,
       rol: data.rol,
@@ -199,6 +239,16 @@ router.post('/change-password', authRequired, validate(changePasswordSchema), as
       mustChangePassword: false
     });
     const tokens = signTokenPair(user);
+    await ref.set(
+      {
+        passwordHash,
+        mustChangePassword: false,
+        passwordChangedAt: Date.now(),
+        refreshJti: tokens.refreshJti
+      },
+      { merge: true }
+    );
+
     return res.json({ token: tokens.token, refreshToken: tokens.refreshToken, user });
   } catch (err) {
     console.error('[auth/change-password]', err);

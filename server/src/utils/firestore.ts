@@ -6,7 +6,7 @@ function docToEntity(doc) {
 }
 
 function stripInternalFields(data) {
-  const { passwordHash, password, ...rest } = data;
+  const { passwordHash, password, refreshJti, ...rest } = data;
   return rest;
 }
 

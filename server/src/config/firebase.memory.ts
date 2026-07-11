@@ -9,11 +9,12 @@ function getCollection(name) {
   return store.get(name);
 }
 
-function docSnapshot(id, data) {
+function docSnapshot(id, data, ref) {
   return {
     id,
     exists: data != null,
-    data: () => data
+    data: () => data,
+    ref
   };
 }
 
@@ -28,12 +29,13 @@ function querySnapshot(docs) {
 }
 
 function createDocRef(collectionName, docId) {
-  return {
+  /** @type {any} */
+  const ref = {
     id: docId,
     get: async () => {
       const col = getCollection(collectionName);
       const data = col.get(docId);
-      return docSnapshot(docId, data ?? null);
+      return docSnapshot(docId, data ?? null, ref);
     },
     set: async (data, options: { merge?: boolean } = {}) => {
       const col = getCollection(collectionName);
@@ -52,6 +54,7 @@ function createDocRef(collectionName, docId) {
       getCollection(collectionName).delete(docId);
     }
   };
+  return ref;
 }
 
 function createCollectionRef(collectionName) {
@@ -61,9 +64,10 @@ function createCollectionRef(collectionName) {
     },
     async get() {
       const col = getCollection(collectionName);
-      const docs = [...col.entries()].map(([id, data]) =>
-        docSnapshot(id, { ...data })
-      );
+      const docs = [...col.entries()].map(([id, data]) => {
+        const ref = createDocRef(collectionName, id);
+        return docSnapshot(id, { ...data }, ref);
+      });
       return querySnapshot(docs);
     },
     where(field, _op, value) {
@@ -77,7 +81,10 @@ function createCollectionRef(collectionName) {
                 .filter(([, data]) =>
                   filters.every((f) => data[f.field] === f.value)
                 )
-                .map(([id, data]) => docSnapshot(id, { ...data }));
+                .map(([id, data]) => {
+                  const ref = createDocRef(collectionName, id);
+                  return docSnapshot(id, { ...data }, ref);
+                });
               docs = docs.slice(0, n);
               return querySnapshot(docs);
             }
@@ -89,7 +96,10 @@ function createCollectionRef(collectionName) {
             .filter(([, data]) =>
               filters.every((f) => data[f.field] === f.value)
             )
-            .map(([id, data]) => docSnapshot(id, { ...data }));
+            .map(([id, data]) => {
+              const ref = createDocRef(collectionName, id);
+              return docSnapshot(id, { ...data }, ref);
+            });
           return querySnapshot(docs);
         }
       };
@@ -100,9 +110,10 @@ function createCollectionRef(collectionName) {
           return {
             get: async () => {
               const col = getCollection(collectionName);
-              let docs = [...col.entries()].map(([id, data]) =>
-                docSnapshot(id, { ...data })
-              );
+              let docs = [...col.entries()].map(([id, data]) => {
+                const ref = createDocRef(collectionName, id);
+                return docSnapshot(id, { ...data }, ref);
+              });
               docs.sort((a, b) => {
                 const av = a.data()[field];
                 const bv = b.data()[field];

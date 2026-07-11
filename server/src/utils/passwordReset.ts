@@ -17,16 +17,6 @@ function generateCode() {
   return String(crypto.randomInt(100000, 999999));
 }
 
-function maskEmail(email) {
-  const s = String(email || '').trim();
-  const at = s.indexOf('@');
-  if (at <= 1) return 'tu correo';
-  const user = s.slice(0, at);
-  const domain = s.slice(at + 1);
-  const visible = user.slice(0, Math.min(2, user.length));
-  return `${visible}***@${domain}`;
-}
-
 /** @param {unknown} login @returns {Promise<import('../types/firestore.types').UsuarioDoc | null>} */
 async function findUserByLogin(login) {
   const raw = String(login ?? '').trim();
@@ -127,9 +117,8 @@ async function requestPasswordReset(login) {
 
     if (mail.channel === 'email') {
       return {
-        message:
-          `Enviamos un código de 6 dígitos a ${maskEmail(email)}. ` +
-          'Revisa también spam o correo no deseado (válido 15 minutos).',
+        // Mensaje genérico: no revela si el usuario existe ni el email
+        message: MSG_GENERICO,
         codeDispatched: true,
         emailSent: true,
         channel: 'email',
@@ -138,8 +127,7 @@ async function requestPasswordReset(login) {
     }
 
     return {
-      message:
-        'Correo no configurado en el servidor. Usa el código que aparece en pantalla para continuar.',
+      message: MSG_GENERICO,
       codeDispatched: true,
       emailSent: false,
       channel: 'console',
@@ -195,7 +183,12 @@ async function resetPasswordWithCode({ login, code, newPassword }) {
 
   const passwordHash = await bcrypt.hash(String(newPassword), 10);
   await db.collection('usuarios').doc(String(user.id)).set(
-    { passwordHash, mustChangePassword: false, passwordChangedAt: Date.now() },
+    {
+      passwordHash,
+      mustChangePassword: false,
+      passwordChangedAt: Date.now(),
+      refreshJti: null
+    },
     { merge: true }
   );
   await ref.delete();

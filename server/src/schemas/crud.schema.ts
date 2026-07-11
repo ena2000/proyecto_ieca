@@ -12,11 +12,15 @@ function mergeCategoriaLegacy(val) {
   return { ...rest, categoria };
 }
 
+const CUENTAS_INGRESO = ['4101', '4102', '4103', '4104', '4105', '4106'] as const;
+const CUENTAS_GASTO = ['5101', '5102', '5103', '5104', '5105', '5106', '5107'] as const;
+
 const movimientoBase = {
   fecha: z.string().min(1).max(40),
-  descripcion: z.string().trim().min(1, 'Descripción requerida').max(500),
+  descripcion: z.string().trim().min(3, 'Descripción requerida (mín. 3 caracteres)').max(500),
   monto: z.coerce.number().positive('El monto debe ser mayor a 0').max(999_999_999),
-  foto: z.string().max(12_000_000).optional().default(''),
+  // Alineado con express.json limit 10mb
+  foto: z.string().max(10_000_000).optional().default(''),
   ministerio: z.string().trim().min(1).max(200),
   ministerioId: z.coerce.number().int().positive().optional(),
   fechaFormateada: z.string().max(20).optional(),
@@ -25,16 +29,13 @@ const movimientoBase = {
   registradoPor: z.string().max(200).optional()
 };
 
-const cuentaFields = {
-  cuentaCodigo: z.string().trim().min(1).max(20).optional(),
-  cuentaNombre: z.string().trim().min(1).max(120).optional()
-};
-
 const ingresoCreateSchema = z.preprocess(
   mergeCategoriaLegacy,
   z.object({
     ...movimientoBase,
-    ...cuentaFields,
+    ministerioId: z.coerce.number().int().positive('Ministerio requerido'),
+    cuentaCodigo: z.enum(CUENTAS_INGRESO),
+    cuentaNombre: z.string().trim().min(1).max(120).optional(),
     categoria: z.string().trim().min(1).max(100)
   })
 );
@@ -43,14 +44,17 @@ const ingresoUpdateSchema = z.preprocess(
   mergeCategoriaLegacy,
   z.object({
     ...movimientoBase,
-    ...cuentaFields,
+    cuentaCodigo: z.enum(CUENTAS_INGRESO).optional(),
+    cuentaNombre: z.string().trim().min(1).max(120).optional(),
     categoria: z.string().trim().min(1).max(100)
   }).partial()
 );
 
 const gastoCreateSchema = z.object({
   ...movimientoBase,
-  ...cuentaFields,
+  ministerioId: z.coerce.number().int().positive('Ministerio requerido'),
+  cuentaCodigo: z.enum(CUENTAS_GASTO),
+  cuentaNombre: z.string().trim().min(1).max(120).optional(),
   categoria: z.string().trim().min(1).max(100),
   proveedor: z.string().max(200).optional()
 });

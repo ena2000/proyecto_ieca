@@ -113,12 +113,16 @@ async function restoreUsuarios(items) {
   for (const item of items) {
     if (item?.id == null) continue;
     const id = String(item.id);
-    const { id: _ignored, password, ...rest } = item;
+    const { id: _ignored, password, passwordHash: _plantedHash, refreshJti: _jti, ...rest } = item;
     const data = { ...rest };
+    // Nunca aceptar passwordHash del payload (evita plantar hashes conocidos)
+    delete data.passwordHash;
+    delete data.refreshJti;
     if (password) {
       const bcrypt = require('bcryptjs');
       data.passwordHash = await bcrypt.hash(String(password), 10);
-    } else if (!data.passwordHash && existingHashes.has(id)) {
+      data.passwordChangedAt = Date.now();
+    } else if (existingHashes.has(id)) {
       data.passwordHash = existingHashes.get(id);
     }
     delete data.password;

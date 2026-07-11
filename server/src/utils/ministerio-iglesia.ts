@@ -1,14 +1,15 @@
 const { listCollection } = require('./firestore');
 const { MINISTERIO_IGLESIA_NOMBRE } = require('../constants/aportacion-iglesia');
 
+/** Resuelve nombre por id primero; el texto del cliente solo es fallback. */
 async function resolverNombreMinisterio(ministerioId: unknown, ministerioNombre: unknown): Promise<string> {
-  const guardado = String(ministerioNombre ?? '').trim();
-  if (guardado) return guardado;
   const id = Number(ministerioId);
-  if (!Number.isFinite(id)) return '';
-  const ministerios = await listCollection('ministerios');
-  const m = ministerios.find(row => Number(row.id) === id);
-  return String(m?.nombre ?? '').trim();
+  if (Number.isFinite(id) && id > 0) {
+    const ministerios = await listCollection('ministerios');
+    const m = ministerios.find((row) => Number(row.id) === id);
+    if (m?.nombre) return String(m.nombre).trim();
+  }
+  return String(ministerioNombre ?? '').trim();
 }
 
 async function esMinisterioIglesia(ministerioId: unknown, ministerioNombre: unknown): Promise<boolean> {
@@ -44,5 +45,6 @@ async function assertMinisterioPermiteIngresoManual(body: {
 module.exports = {
   assertMinisterioPermiteGastos,
   assertMinisterioPermiteIngresoManual,
-  esMinisterioIglesia
+  esMinisterioIglesia,
+  resolverNombreMinisterio
 };

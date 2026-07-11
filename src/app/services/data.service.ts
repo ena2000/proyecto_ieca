@@ -21,7 +21,7 @@ import { gastoAprobado, gastoPendiente } from '../shared/utils/gasto.util';
 import { ingresoAprobado, ingresoPendiente } from '../shared/utils/ingreso.util';
 import { mesCortoEs } from '../shared/utils/month.util';
 import { resolverNombreMinisterio } from '../shared/utils/movimiento-ministerio.util';
-import { filtrarMinisteriosCatalogo, filtrarMinisteriosRegistroManual, filtrarMinisteriosReportes, esIdMinisterioIglesiaGeneral } from '../shared/constants/ministerios-catalogo.constants';
+import { filtrarMinisteriosRegistroManual, filtrarMinisteriosReportes, esIdMinisterioIglesiaGeneral } from '../shared/constants/ministerios-catalogo.constants';
 import {
   AportacionMinisterioResumen,
   calcularMontoAportacionIngreso,
@@ -34,6 +34,7 @@ export type {
 
 @Injectable({ providedIn: 'root' })
 export class DataService {
+  // --- Estado y streams ---
   private ingresosSubject = new BehaviorSubject<Ingreso[]>([]);
   private gastosSubject = new BehaviorSubject<Gasto[]>([]);
   private ministeriosSubject = new BehaviorSubject<Ministerio[]>([]);
@@ -90,6 +91,7 @@ export class DataService {
       });
   }
 
+  // --- Sync / refresh ---
   private scheduleSync(): void {
     if (this.hydratingBootstrap) return;
     if (this.syncTimer != null) clearTimeout(this.syncTimer);
@@ -150,6 +152,7 @@ export class DataService {
     );
   }
 
+  // --- Bootstrap / caché ---
   /** Una sola petición HTTP para ingresos, gastos, notificaciones, etc. */
   bootstrapRemote(force = false): Promise<boolean> {
     if (environment.useLocalFallback || !this.authService.isAuthenticated()) {
@@ -346,6 +349,7 @@ export class DataService {
     this.dataRevisionSubject.next(this.dataRevisionSubject.getValue() + 1);
   }
 
+  // --- Getters de colecciones ---
   getIngresos(): Observable<Ingreso[]> { return this.ingresos$; }
   getGastos(): Observable<Gasto[]> { return this.gastos$; }
   getMinisterios(): Observable<Ministerio[]> { return this.ministerios$; }
@@ -364,29 +368,7 @@ export class DataService {
   }
   getUsuariosActuales(): Usuario[] { return this.usuariosSubject.getValue(); }
 
-  private gastosAprobadosParaBalance(gastos: Gasto[]): Gasto[] {
-    return gastos.filter(gastoAprobado);
-  }
-
-  private ingresosAprobadosParaBalance(ingresos: Ingreso[]): Ingreso[] {
-    return ingresos.filter(ingresoAprobado);
-  }
-
-  private filterPorMinisterio<T extends { ministerioId?: number }>(
-    items: T[],
-    ministerioId?: number
-  ): T[] {
-    if (ministerioId == null) return items;
-    return items.filter(i => Number(i.ministerioId) === ministerioId);
-  }
-
-  /** Ingreso efectivo para balances: ministerio neto (67%) o aportación iglesia (33%). */
-  private montoIngresoParaBalance(ingreso: Ingreso): number {
-    if (ingreso.esAportacionIglesia) return ingreso.monto || 0;
-    if (ingreso.ministerioId != null) return calcularMontoNetoMinisterio(ingreso);
-    return ingreso.monto || 0;
-  }
-
+  // --- KPIs, gráficos, kardex, aportación ---
   calcularKPIs(ministerioId?: number): KPIs {
     const ingresos = this.ingresosAprobadosParaBalance(
       this.filterPorMinisterio(this.getIngresosActuales(), ministerioId)
@@ -678,6 +660,30 @@ export class DataService {
     const gastos = this.filterPorMinisterio(this.getGastosActuales(), ministerioId)
       .filter(gastoPendiente).length;
     return { ingresos, gastos, total: ingresos + gastos };
+  }
+
+  // --- Helpers privados ---
+  private gastosAprobadosParaBalance(gastos: Gasto[]): Gasto[] {
+    return gastos.filter(gastoAprobado);
+  }
+
+  private ingresosAprobadosParaBalance(ingresos: Ingreso[]): Ingreso[] {
+    return ingresos.filter(ingresoAprobado);
+  }
+
+  private filterPorMinisterio<T extends { ministerioId?: number }>(
+    items: T[],
+    ministerioId?: number
+  ): T[] {
+    if (ministerioId == null) return items;
+    return items.filter(i => Number(i.ministerioId) === ministerioId);
+  }
+
+  /** Ingreso efectivo para balances: ministerio neto (67%) o aportación iglesia (33%). */
+  private montoIngresoParaBalance(ingreso: Ingreso): number {
+    if (ingreso.esAportacionIglesia) return ingreso.monto || 0;
+    if (ingreso.ministerioId != null) return calcularMontoNetoMinisterio(ingreso);
+    return ingreso.monto || 0;
   }
 
   /**
