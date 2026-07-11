@@ -84,3 +84,6 @@ Thumbs.db
 # Python
 __pycache__/
 *.pyc
+
+# Dump temporal del Word de tesis (generado por dump-tesis.py)
+docs/scripts/_tesis_dump.txt
