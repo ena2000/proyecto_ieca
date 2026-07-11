@@ -102,7 +102,7 @@ flowchart LR
   api --> FS
 ```
 
-Tras el login, el frontend carga datos iniciales con **`GET /api/bootstrap`** (una sola petición por rol, con caché en servidor y `sessionStorage`). En producción, login y recuperación de contraseña **despiertan el API** (`api-wake.util.ts`) para mitigar el cold start de Render (plan Free).
+Tras el login, el frontend carga datos iniciales con **`GET /api/bootstrap`** (una sola petición por rol, con caché en servidor y `sessionStorage`). El API en producción corre en Render **plan Starter** (siempre activo; ver [`render.yaml`](render.yaml)).
 
 | Capa | Responsabilidad |
 |------|-----------------|
@@ -162,7 +162,7 @@ proyecto_ieca/
 │   ├── ci.yml                   # Lint + tests + build (PR y push)
 │   ├── release.yml              # Artefactos de despliegue
 │   ├── alertas-email.yml        # Resumen operativo diario por email
-│   └── keep-render-warm.yml     # Ping /api/health cada 10 min (plan Free Render)
+│   └── keep-render-warm.yml     # Opcional (plan Free legacy); cron desactivado en Starter
 ├── docs/
 │   ├── README.md                # Índice de documentación académica y técnica
 │   ├── TESIS-CONSOLIDADO.md     # Índice maestro Capítulo 3
@@ -261,7 +261,7 @@ proyecto_ieca/
 | `loading.util.ts`, `error-message.util.ts` | UX y errores HTTP |
 | `excel-ieca.styles.ts` | Estilos de exportación Excel |
 | `contabilidad-cuenta-form.util.ts` | Validación de cuenta en formularios |
-| `api-wake.util.ts` | Ping a `/health` antes de login (cold start Render) |
+| `api-wake.util.ts` | Ping breve a `/health` antes de login (resiliencia) |
 | `unicidad.util.ts` | Validación de nombres de ministerio y emails duplicados |
 | `movimiento-responsable.util.ts` | `usuarioId` / `registradoPor` en altas de movimientos |
 | `notificacion-filtro.util.ts` | Filtrado de notificaciones por rol y audiencia |
@@ -611,13 +611,14 @@ Sin SMTP en desarrollo, el resumen se imprime en la consola del servidor. Máxim
 
 **Secrets en GitHub (workflow de alertas):** `JWT_SECRET`, `FIREBASE_SERVICE_ACCOUNT_JSON`, `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, etc.
 
-### Cold start en Render (plan Free)
+### Plan Render (producción)
 
-| Mecanismo | Uso |
-|-----------|-----|
-| **GitHub Actions** | [`.github/workflows/keep-render-warm.yml`](.github/workflows/keep-render-warm.yml) — ping a `/api/health` cada 10 min |
-| **Frontend** | `api-wake.util.ts` — ping en login/recuperar contraseña y espera hasta 50 s antes de autenticar |
-| **Plan Starter** | Sin cold start (recomendado para uso real) |
+| Detalle | Valor |
+|---------|--------|
+| **Plan actual** | **Starter** (pago) — siempre activo, sin cold start |
+| **Blueprint** | [`render.yaml`](render.yaml) → `plan: starter` |
+| **Frontend** | `api-wake.util.ts` — ping breve a `/health` en login (resiliencia) |
+| **keep-render-warm** | Cron desactivado; solo hace falta si se volviera al plan Free |
 
 ---
 
@@ -639,7 +640,7 @@ Sin SMTP en desarrollo, el resumen se imprime en la consola del servidor. Máxim
 | Cierre graceful | SIGTERM / SIGINT cierran conexiones antes de salir |
 | Verificación | `npm run verify:prod` + `prestart` antes de `npm start` |
 | Compresión HTTP | `compression` en Express (respuestas JSON) |
-| Hosting API | **Render** (Web Service); `ecosystem.config.cjs` opcional para VPS |
+| Hosting API | **Render** Web Service **Starter** (`render.yaml`); `ecosystem.config.cjs` opcional para VPS |
 | Demo offline | `auth-local.fallback.ts` excluido del build de producción |
 | Secretos | `.env`, `firebase-service-account.json` en `.gitignore` |
 
@@ -795,7 +796,7 @@ Workflows en [`.github/workflows/`](.github/workflows/):
 | `ci.yml` | Push y PR en `main`/`master`/`develop` | Lint, tests y build |
 | `release.yml` | CI exitoso, tag `v*` o manual | Artefactos `www/` y `server/dist` |
 | `alertas-email.yml` | Cron diario | Resumen operativo por email |
-| `keep-render-warm.yml` | Cron cada 10 min | Ping `/api/health` (cold start Render Free) |
+| `keep-render-warm.yml` | Manual (`workflow_dispatch`) | Legacy plan Free; no necesario con Starter |
 
 ### CI — cada push y PR
 
@@ -909,7 +910,7 @@ Resumen: metodología **en cascada (Waterfall)** con seis fases secuenciales —
 | Avisos Ionicons en tests | Limitación Karma headless | No afecta resultado; tests pasan |
 | Release cancelado — CI no exitoso | CI falló en el mismo push | Corrige el workflow **CI** primero; el release se relanzará solo al completar CI en verde |
 | Release manual | CI aún en curso | Usa **workflow_dispatch** o espera a que CI termine |
-| Login muy lento en producción | Cold start de Render (plan Free) | Espera el reintento automático; activa `keep-render-warm.yml` o sube a Starter |
+| Login muy lento en producción | Red, deploy en curso o API caída | Revisa `/api/health` y logs en Render (plan Starter no duerme el servicio) |
 | `smtpConfigured: false` en `/health` | SMTP no configurado en Render | Añade `SMTP_*` en Environment; sin SMTP, forgot-password responde 503 |
 | Saldo o kardex desactualizado tras aprobar | Cache local sin refrescar | Navega de nuevo a Reportes/Ministerios; `DataService` expone `dataRevision$` |
 | Probar sin datos reales | Entorno vacío | Restaura `docs/backup-demo-ieca.json` desde Administración |

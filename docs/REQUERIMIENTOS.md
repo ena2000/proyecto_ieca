@@ -42,7 +42,7 @@ Especificación de requisitos validada con stakeholders de IECA (administrador y
 | RNF-01 | Seguridad | Contraseñas con bcrypt; JWT access/refresh; Helmet; rate limiting. |
 | RNF-02 | Validación | Esquemas Zod en API; guards e interceptors en frontend. |
 | RNF-03 | Usabilidad | Interfaz de escritorio en navegador; sidebar fijo; toasts consistentes; vista estrecha (≤768 px) con menú ☰. |
-| RNF-04 | Disponibilidad | API en Render; frontend en Firebase Hosting; mitigación de cold start (ping periódico + `api-wake` en auth). |
+| RNF-04 | Disponibilidad | API en Render (plan **Starter**, siempre activo); frontend en Firebase Hosting. |
 | RNF-05 | Mantenibilidad | Código modular por capas; utilidades puras testeables. |
 | RNF-06 | Trazabilidad | Auditoría de login y movimientos; exportación CSV. |
 

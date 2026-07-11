@@ -1,6 +1,7 @@
 # Blueprint Render — API IECA
 # https://render.com/docs/blueprint-spec
 #
+# Producción: plan Starter (pago, siempre activo, sin cold start).
 # Render → New → Blueprint → conecta el repo GitHub.
 # Completa en el panel las variables marcadas sync: false.
 

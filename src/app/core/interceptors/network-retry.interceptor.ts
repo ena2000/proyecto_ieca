@@ -6,8 +6,9 @@ import { esperarApiDisponible } from '../../shared/utils/api-wake.util';
 const RETRY_HEADER = 'X-Ieca-Network-Retry';
 
 /**
- * Si Render está despertando, status 0 (o CORS «null» en Firefox) se reintenta una vez
- * tras ping a /health hasta ~55 s.
+ * Si la API no responde (status 0 o CORS «null» en Firefox), reintenta una vez
+ * tras ping a /health. Con plan Starter el servicio no duerme; el reintento cubre
+ * caídas puntuales o deploys.
  */
 export const networkRetryInterceptor: HttpInterceptorFn = (req, next) => {
   if (!environment.production || environment.useLocalFallback || req.headers.has(RETRY_HEADER)) {

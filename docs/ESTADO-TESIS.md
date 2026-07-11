@@ -9,7 +9,7 @@
 
 - **Escritura del cuerpo: ~93 % terminado.**
 - **Falta ~7 %**, centrado en el **juicio de expertos** (Anexo 7 + % de validación), **conclusiones**, **criterios de aceptación/validación** y cierre administrativo (ficha, Anexos 10/12–14).
-- **Software en producción:** frontend https://gestion-ieca.web.app · API https://ieca-api.onrender.com
+- **Software en producción:** frontend https://gestion-ieca.web.app · API https://ieca-api.onrender.com (Render **Starter**)
 
 ---
 

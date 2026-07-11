@@ -251,7 +251,7 @@ La especificación validada agrupa **18 casos de uso** en **4 módulos**. Tabla 
 | RNF-01 | Seguridad | Contraseñas con bcrypt; JWT access/refresh; Helmet; rate limiting. |
 | RNF-02 | Validación | Esquemas Zod en API; guards e interceptors en frontend. |
 | RNF-03 | Usabilidad | Interfaz de escritorio en navegador; sidebar fijo; toasts consistentes; **vista estrecha** (≤768px) con menú ☰ y layout adaptable sin afectar escritorio. |
-| RNF-04 | Disponibilidad | API en Render; frontend en Firebase Hosting; mitigación de cold start (ping periódico + `api-wake` en auth). |
+| RNF-04 | Disponibilidad | API en Render (plan **Starter**, siempre activo); frontend en Firebase Hosting. |
 | RNF-05 | Mantenibilidad | Código modular por capas; utilidades puras testeables. |
 | RNF-06 | Trazabilidad | Auditoría de login y movimientos; exportación CSV. |
 
@@ -634,7 +634,7 @@ Garantizar la operación continua del sistema, corregir incidencias y aplicar me
 |------|-------------|-----------------|
 | **Correctivo** | Reparar fallos | Error en filtro de auditoría, CI roto |
 | **Adaptativo** | Ajustar a cambios del entorno | Nueva URL de API, credenciales Firebase |
-| **Perfectivo** | Mejorar funcionalidad existente | Bootstrap agregado, rol Colaborador, unicidad ministerios/emails, kardex, aportación 33%, vista estrecha (☰), cold start Render, toasts unificados |
+| **Perfectivo** | Mejorar funcionalidad existente | Bootstrap agregado, rol Colaborador, unicidad ministerios/emails, kardex, aportación 33%, vista estrecha (☰), plan Starter en Render, toasts unificados |
 | **Preventivo** | Evitar fallos futuros | Tests de cierre mensual, backup antes de cierre |
 
 ### 8.4 Gestión de incidencias y cambios
@@ -778,7 +778,8 @@ gantt
 - [backup-demo-ieca.json](./backup-demo-ieca.json) — Respaldo JSON de ejemplo para restauración y pruebas de kardex.
 - [.github/workflows/ci.yml](../.github/workflows/ci.yml) — Integración continua.
 - [.github/workflows/release.yml](../.github/workflows/release.yml) — Artefactos de release.
-- [.github/workflows/keep-render-warm.yml](../.github/workflows/keep-render-warm.yml) — Ping periódico al API en Render.
+- [.github/workflows/keep-render-warm.yml](../.github/workflows/keep-render-warm.yml) — Legacy (plan Free); cron desactivado con Starter.
+- [render.yaml](../render.yaml) — Blueprint Render con `plan: starter`.
 
 ---
 

@@ -115,18 +115,16 @@ También puedes usar el blueprint incluido: [`render.yaml`](../render.yaml) → 
 
 | Plan | Comportamiento |
 |------|----------------|
-| **Free** | El servicio **se duerme** tras inactividad; la primera petición puede tardar ~30–60 s (cold start). Mitigaciones incluidas en el proyecto (ver abajo). |
-| **Starter** (recomendado) | Siempre activo, sin cold start. Adecuado para uso real de la iglesia. |
+| **Starter** (producción actual) | Siempre activo, **sin cold start**. Definido en [`render.yaml`](../render.yaml) (`plan: starter`). |
+| **Free** (no usado) | El servicio se duerme tras inactividad; la primera petición puede tardar ~30–60 s. Solo si se bajara de plan. |
 
-#### Mitigación de cold start (plan Free)
+**Producción IECA:** Web Service `ieca-api` en plan **Starter** (pago). No requiere ping periódico ni espera prolongada al login.
 
-| Mecanismo | Descripción |
-|-----------|-------------|
-| [`.github/workflows/keep-render-warm.yml`](../.github/workflows/keep-render-warm.yml) | Ping automático a `https://ieca-api.onrender.com/api/health` cada **10 minutos** |
-| `api-wake.util.ts` (frontend) | Al abrir login/recuperar contraseña, hace ping a `/health` y espera hasta **50 s** antes de autenticar |
-| Plan **Starter** en Render | Elimina el cold start por completo |
-
-> El workflow `keep-render-warm` debe estar activo en GitHub Actions (rama `main`/`master`). Puedes dispararlo manualmente con **workflow_dispatch**.
+| Mecanismo | Estado |
+|-----------|--------|
+| [`render.yaml`](../render.yaml) | `plan: starter` |
+| `api-wake.util.ts` (frontend) | Ping breve a `/health` en login (resiliencia); en Starter responde al instante |
+| [`.github/workflows/keep-render-warm.yml`](../.github/workflows/keep-render-warm.yml) | Desactivado el cron (solo útil en plan Free); queda `workflow_dispatch` por si se necesita |
 
 ### 3. Variables de entorno en Render
 
@@ -298,11 +296,11 @@ npm run deploy:hosting
 
 | Síntoma | Acción |
 |---------|--------|
-| Primera carga muy lenta | Plan Free en Render: cold start | Activa `keep-render-warm.yml`, espera reintento en login o sube a Starter |
+| Primera carga muy lenta | Red, deploy en curso o API caída | Revisa https://ieca-api.onrender.com/api/health y logs en Render (plan Starter no tiene cold start) |
 | Bootstrap lento tras login | Muchos datos en Firestore | Normal en primer acceso; el servidor cachea 60 s (`X-Bootstrap-Cache: HIT`) |
 | Deploy falla en build | Revisa logs; ejecuta `npm run build` en local |
 | `verify:prod` falla | Revisa variables en Render; Firebase JSON en una sola línea |
-| CORS en navegador con código **(null)** en Firefox | Suele ser **Render dormido** o sin red, no CORS mal configurado. Espera 1 min o usa plan Starter. |
+| CORS en navegador con código **(null)** en Firefox | Suele ser sin red o API caída, no CORS mal configurado. Revisa `/api/health` y `CORS_ORIGINS`. |
 | CORS 403 «origen no permitido» | Añade **ambas** URLs de Firebase en `CORS_ORIGINS` (ver abajo) |
 | 401 en todo el API | Unifica `JWT_SECRET`; verifica `passwordHash` en Firestore |
 | 500 genérico en prod | Normal — detalles solo en logs de Render |

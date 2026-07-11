@@ -78,7 +78,7 @@ Detalle completo: [REQUERIMIENTOS.md § Reglas de negocio](./REQUERIMIENTOS.md).
 | Componente | Plataforma |
 |------------|------------|
 | Frontend (panel) | Firebase Hosting — `https://gestion-ieca.web.app` |
-| API REST | Render — `https://ieca-api.onrender.com/api` |
+| API REST | Render **Starter** — `https://ieca-api.onrender.com/api` (siempre activo) |
 | Base de datos | Firebase Firestore |
 
 Guía de despliegue: [DEPLOY.md](./DEPLOY.md).

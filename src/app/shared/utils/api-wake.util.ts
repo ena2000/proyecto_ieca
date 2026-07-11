@@ -7,7 +7,7 @@ function healthUrl(): string {
   return `${base}/health`;
 }
 
-/** Ping /health hasta que responda o se agote el tiempo (Render cold start). */
+/** Ping /health hasta que responda o se agote el tiempo (resiliencia; Starter no tiene cold start). */
 export async function esperarApiDisponible(maxWaitMs = 50_000): Promise<boolean> {
   if (!environment.production || environment.useLocalFallback) {
     return true;

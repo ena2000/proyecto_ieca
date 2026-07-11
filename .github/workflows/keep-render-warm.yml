@@ -1,9 +1,9 @@
-# Evita cold start de Render (plan Free): ping cada 10 minutos.
+# Legacy: solo hacía falta en plan Free (servicio que se duerme).
+# Producción IECA usa plan Starter (render.yaml) — siempre activo, sin cold start.
+# Cron desactivado; queda workflow_dispatch por si se baja de plan.
 name: Keep Render warm
 
 on:
-  schedule:
-    - cron: '*/10 * * * *'
   workflow_dispatch:
 
 jobs:

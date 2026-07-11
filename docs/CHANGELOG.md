@@ -4,6 +4,14 @@ Registro resumido de entregas relevantes para el repositorio. Detalle técnico e
 
 ---
 
+## 2026-07 — Plan Render Starter en producción
+
+- API `ieca-api` en plan **Starter** (pago, siempre activo; `render.yaml`).
+- Documentación (README, DEPLOY, RNF-04, PROPUESTA, METODOLOGIA) alineada: ya no se documenta cold start como escenario de producción.
+- Workflow `keep-render-warm.yml`: cron desactivado (solo `workflow_dispatch` por si se baja de plan).
+
+---
+
 ## 2026-06 — Secciones de tesis validadas (Beneficiarios, Entregables, Propuesta)
 
 ### Documentación
@@ -112,6 +120,6 @@ Registro resumido de entregas relevantes para el repositorio. Detalle técnico e
 |------------|------------|-----------------|
 | Frontend | Firebase Hosting | `npm run deploy:hosting` |
 | API | Render | Push a rama conectada (auto-deploy) |
-| Cold start (Free) | GitHub Actions | Workflow `keep-render-warm.yml` |
+| API (plan Starter) | Render | Siempre activo; blueprint `render.yaml` |
 
 Ver [DEPLOY.md](./DEPLOY.md) para checklist completo.
