@@ -318,20 +318,22 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
           role: 'destructive',
           handler: () => {
             const reader = new FileReader();
-            reader.onload = async (e: ProgressEvent<FileReader>) => {
-              try {
-                const backup = JSON.parse(e.target?.result as string) as BackupIeca;
-                await withLoadingResult(this.loadingController, 'Restaurando respaldo...', () =>
-                  this.administracionService.restaurarBackup(backup)
-                );
-                await this.cargarDatos();
-                await this.mostrarToast('Respaldo restaurado exitosamente', 'success');
-              } catch (err) {
-                await this.mostrarToast(
-                  getHttpErrorMessage(err, 'Error: archivo de respaldo inválido o fallo en el servidor'),
-                  'danger'
-                );
-              }
+            reader.onload = (e: ProgressEvent<FileReader>) => {
+              void (async () => {
+                try {
+                  const backup = JSON.parse(e.target?.result as string) as BackupIeca;
+                  await withLoadingResult(this.loadingController, 'Restaurando respaldo...', () =>
+                    this.administracionService.restaurarBackup(backup)
+                  );
+                  await this.cargarDatos();
+                  await this.mostrarToast('Respaldo restaurado exitosamente', 'success');
+                } catch (err) {
+                  await this.mostrarToast(
+                    getHttpErrorMessage(err, 'Error: archivo de respaldo inválido o fallo en el servidor'),
+                    'danger'
+                  );
+                }
+              })();
             };
             reader.readAsText(file);
           }

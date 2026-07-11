@@ -149,6 +149,7 @@ router.get('/backup', async (_req, res) => {
 router.post('/restore', validate(restoreSchema), async (req, res) => {
   try {
     const snapshot = await restoreBackup(req.body);
+    invalidateBootstrapCache();
     res.json({
       message: 'Respaldo restaurado correctamente',
       backup: snapshot

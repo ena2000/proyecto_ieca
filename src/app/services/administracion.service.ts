@@ -284,8 +284,8 @@ export class AdministracionService {
     }
     await firstValueFrom(this.api.post(API.admin.restore, backup));
     await this.cargarConfigRemota();
-    this.dataService.refreshAllData();
-    this.notificacionesService.recargar();
+    await this.dataService.refreshAllData(true);
+    await this.notificacionesService.recargarAsync();
   }
 
   async limpiarTodosLosDatos(): Promise<void> {
@@ -295,8 +295,8 @@ export class AdministracionService {
     }
     await firstValueFrom(this.api.delete(API.admin.datos));
     this.cierreService.limpiarLocal();
-    this.dataService.refreshAllData();
-    this.notificacionesService.recargar();
+    await this.dataService.refreshAllData(true);
+    await this.notificacionesService.recargarAsync();
   }
 
   private crearBackupLocal(): BackupIeca {

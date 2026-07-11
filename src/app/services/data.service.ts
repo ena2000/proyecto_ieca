@@ -106,20 +106,22 @@ export class DataService {
     this.persistBootstrapSnapshot();
   }
 
-  refreshAllData(force = false): void {
+  /** Recarga datos remotos. Con `force=true` ignora caché en memoria y sessionStorage (p. ej. tras restore). */
+  refreshAllData(force = false): Promise<boolean> {
     if (environment.useLocalFallback) {
       this.ingresosService.reload();
       this.gastosService.reload();
       this.ministeriosService.reload();
       this.usuariosService.reload();
-      return;
+      this.syncFromEntityServices();
+      return Promise.resolve(true);
     }
     if (force) {
       this.bootstrapComplete = false;
       this.lastBootstrapAt = 0;
       this.clearBootstrapStorage();
     }
-    void this.bootstrapRemote(force);
+    return this.bootstrapRemote(force);
   }
 
   /** Recarga movimientos y notificaciones en paralelo (sin bootstrap completo). */
@@ -180,7 +182,8 @@ export class DataService {
   }
 
   private fetchBootstrapFromApi(force = false): Promise<boolean> {
-    if (this.bootstrapInFlight) {
+    // Tras restore/wipe no reutilizar un bootstrap en vuelo (podría traer datos viejos).
+    if (this.bootstrapInFlight && !force) {
       return this.bootstrapInFlight;
     }
 
