@@ -43,8 +43,7 @@ function createDocRef(collectionName, docId) {
     create: async (data) => {
       const col = getCollection(collectionName);
       if (col.has(docId)) {
-        const err = new Error('Document already exists');
-        err.code = 6;
+        const err = Object.assign(new Error('Document already exists'), { code: 6 });
         throw err;
       }
       col.set(docId, { ...data });
