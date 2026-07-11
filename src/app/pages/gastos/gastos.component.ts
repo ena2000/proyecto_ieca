@@ -262,7 +262,7 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   get ministeriosParaFiltro(): Ministerio[] {
-    return this.dataService.getMinisteriosParaCatalogo().sort((a, b) =>
+    return [...this.listaMinisterios].sort((a, b) =>
       (a.nombre ?? '').localeCompare(b.nombre ?? '', 'es')
     );
   }

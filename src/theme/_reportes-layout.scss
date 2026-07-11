@@ -850,21 +850,6 @@
   border-top: 1px solid var(--ieca-border);
 }
 
-.reportes-empty-hint {
-  margin: 0 0 var(--space-4);
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
-  background: #f8fafc;
-  border: 1px dashed var(--ieca-border);
-  color: #475569;
-  font-size: 0.85rem;
-  line-height: 1.45;
-
-  strong {
-    color: #0f172a;
-  }
-}
-
 .kardex-card__head--with-action {
   display: flex;
   justify-content: space-between;

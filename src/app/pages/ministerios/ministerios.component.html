@@ -120,11 +120,7 @@
       <div class="list-section-header">
         <div class="title-box">
           <h2 class="text-blue">Historial de Ministerios</h2>
-          <span class="badge-count">{{
-            vistaMinisterios.length === 0 && hayFiltrosActivos
-              ? 'Sin resultados con estos filtros'
-              : (vistaMinisterios.length + ' registros encontrados')
-          }}</span>
+          <span class="badge-count">{{ vistaMinisterios.length }} registros encontrados</span>
         </div>
         <div class="list-header-actions">
           <button
@@ -228,8 +224,6 @@
         [columns]="columnsMinisterios"
         [data]="vistaMinisterios"
         [actions]="acciones"
-        [emptyMessage]="hayFiltrosActivos ? 'Ningún ministerio con estos filtros' : 'Aún no hay ministerios registrados'"
-        [emptyHint]="hayFiltrosActivos ? 'Prueba limpiar filtros o cambia la búsqueda.' : 'Registra el primer ministerio con el formulario de arriba.'"
         (rowEdit)="editarMinisterio($event)"
         (rowDelete)="eliminarMinisterio($event)"
         (rowLedger)="verKardex($event)">

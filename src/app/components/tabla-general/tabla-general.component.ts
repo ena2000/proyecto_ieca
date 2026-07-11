@@ -72,9 +72,6 @@ export class TablaGeneralComponent implements OnChanges {
   /** Permite editar filas aunque estén aprobadas (p. ej. administrador). */
   @Input() allowEditApproved = false;
   @Input() allowDeleteApproved = false;
-  /** Mensaje cuando no hay filas (p. ej. con filtros activos). */
-  @Input() emptyMessage = 'No se encontraron registros';
-  @Input() emptyHint = '';
   /** Fila en proceso de aprobar/rechazar/eliminar (feedback visible en la tabla). */
   @Input() accionFilaEnCurso: { id: number; tipo: 'aprobar' | 'rechazar' | 'eliminar' } | null = null;
 

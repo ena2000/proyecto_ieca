@@ -376,9 +376,7 @@
             Historial Financiero de Ingresos
           </h2>
           <span class="badge-count">
-            {{ listaFiltradaVista.length === 0 && hayFiltrosActivos
-              ? 'Sin resultados con estos filtros'
-              : (listaFiltradaVista.length + ' registros encontrados') }}
+            {{ listaFiltradaVista.length }} registros encontrados
           </span>
         </div>
         <div class="list-header-actions">
@@ -612,8 +610,6 @@
         [accionFilaEnCurso]="accionFilaEnCurso"
         [allowEditApproved]="authService.isAdministrador()"
         [allowDeleteApproved]="authService.isAdministrador()"
-        [emptyMessage]="hayFiltrosActivos ? 'Ningún ingreso con estos filtros' : 'Aún no hay ingresos registrados'"
-        [emptyHint]="hayFiltrosActivos ? 'Prueba limpiar filtros o cambia el período.' : 'Registra el primer ingreso con el formulario de arriba.'"
         (rowEdit)="editarIngreso($event)"
         (rowDelete)="eliminarIngreso($event)"
         (rowApprove)="aprobarIngreso($event)"
