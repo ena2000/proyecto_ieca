@@ -374,7 +374,9 @@
             Historial Financiero de Gastos
           </h2>
           <span class="badge-count">
-            {{ listaFiltradaVista.length }} registros encontrados
+            {{ listaFiltradaVista.length === 0 && hayFiltrosActivos
+              ? 'Sin resultados con estos filtros'
+              : (listaFiltradaVista.length + ' registros encontrados') }}
           </span>
         </div>
         <div class="list-header-actions">
@@ -608,6 +610,8 @@
         [accionFilaEnCurso]="accionFilaEnCurso"
         [allowEditApproved]="authService.isAdministrador()"
         [allowDeleteApproved]="authService.isAdministrador()"
+        [emptyMessage]="hayFiltrosActivos ? 'Ningún gasto con estos filtros' : 'Aún no hay gastos registrados'"
+        [emptyHint]="hayFiltrosActivos ? 'Prueba limpiar filtros o cambia el período.' : 'Registra el primer gasto con el formulario de arriba.'"
         (rowEdit)="editarGasto($event)"
         (rowDelete)="eliminarGasto($event)"
         (rowApprove)="aprobarGasto($event)"

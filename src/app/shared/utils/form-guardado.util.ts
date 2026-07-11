@@ -9,10 +9,9 @@ export function etiquetaBotonGuardandoFormulario(modoEdicion: boolean): string {
 /** Desplaza la vista al banner `.form-validation-error` del formulario activo. */
 export function scrollAlErrorFormulario(): void {
   requestAnimationFrame(() => {
-    document.querySelector('.form-validation-error')?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'nearest'
-    });
+    const el = document.querySelector('.form-validation-error');
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
   });
 }
 

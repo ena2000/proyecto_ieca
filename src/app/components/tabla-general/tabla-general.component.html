@@ -228,9 +228,10 @@
 
             <div class="empty-state">
 
-              <ion-icon name="folder-open-outline"></ion-icon>
+              <ion-icon name="folder-open-outline" aria-hidden="true"></ion-icon>
 
-              <p>No se encontraron registros</p>
+              <p>{{ emptyMessage }}</p>
+              <p class="empty-state__hint" *ngIf="emptyHint">{{ emptyHint }}</p>
 
             </div>
 

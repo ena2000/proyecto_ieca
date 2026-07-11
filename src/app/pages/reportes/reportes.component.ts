@@ -124,11 +124,16 @@ export class ReportesComponent implements OnInit, OnDestroy, ViewWillEnter {
       await this.dataService.bootstrapRemote();
     }
     this.actualizarVista();
+    // OnPush: primer pintado de totales (evita $0 hasta el primer clic).
+    this.cdr.detectChanges();
   }
 
   ionViewWillEnter(): void {
     if (!this.dataService.hasRemoteData()) {
-      void this.dataService.bootstrapRemote().then(() => this.actualizarVista());
+      void this.dataService.bootstrapRemote().then(() => {
+        this.actualizarVista();
+        this.cdr.detectChanges();
+      });
       return;
     }
     this.actualizarVista();

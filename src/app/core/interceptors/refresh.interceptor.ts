@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { catchError, from, switchMap, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 import { isAuthPublicRequest } from '../../shared/utils/error-message.util';
+import { AUTH_TOKEN_KEY, authStorageGet } from '../../shared/utils/auth-token.storage';
 
 export const refreshInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
@@ -29,7 +30,7 @@ export const refreshInterceptor: HttpInterceptorFn = (req, next) => {
             }
             return throwError(() => error);
           }
-          const token = localStorage.getItem('auth_token');
+          const token = authStorageGet(AUTH_TOKEN_KEY);
           const retry = token
             ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
             : req;

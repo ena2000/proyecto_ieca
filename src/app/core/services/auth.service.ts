@@ -16,6 +16,14 @@ import { ApiService } from './api.service';
 import { API } from '../constants/api.constants';
 import { environment } from '../../../environments/environment';
 import { loginLocalFallback } from './auth-local.fallback';
+import {
+  AUTH_REFRESH_KEY,
+  AUTH_TOKEN_KEY,
+  AUTH_USER_KEY,
+  authStorageClearSession,
+  authStorageGet,
+  authStorageSet
+} from '../../shared/utils/auth-token.storage';
 
 interface LoginResult {
   success: boolean;
@@ -38,9 +46,9 @@ const AUTH_TIMEOUT_MESSAGE =
 @Injectable({ providedIn: 'root' })
 export class AuthService {
 
-  private readonly TOKEN_KEY = 'auth_token';
-  private readonly REFRESH_KEY = 'auth_refresh_token';
-  private readonly USER_KEY  = 'user_data';
+  private readonly TOKEN_KEY = AUTH_TOKEN_KEY;
+  private readonly REFRESH_KEY = AUTH_REFRESH_KEY;
+  private readonly USER_KEY = AUTH_USER_KEY;
 
   private refreshInFlight: Promise<boolean> | null = null;
 
@@ -53,13 +61,13 @@ export class AuthService {
 
   isAuthenticated(): boolean {
     this.purgeStaleSession();
-    return !!localStorage.getItem(this.TOKEN_KEY) && !!this.sessionSubject.getValue();
+    return !!authStorageGet(this.TOKEN_KEY) && !!this.sessionSubject.getValue();
   }
 
   /** Elimina tokens caducados o ilegibles (p. ej. tras redeploy con otro JWT_SECRET). */
   purgeStaleSession(): void {
-    const access = localStorage.getItem(this.TOKEN_KEY);
-    const refresh = localStorage.getItem(this.REFRESH_KEY);
+    const access = authStorageGet(this.TOKEN_KEY);
+    const refresh = authStorageGet(this.REFRESH_KEY);
     if (!access && !refresh) {
       if (this.sessionSubject.getValue()) {
         this.clearSessionStorage();
@@ -145,14 +153,14 @@ export class AuthService {
   /** Renueva el access token usando el refresh token almacenado. */
   refreshAccessToken(): Promise<boolean> {
     if (environment.useLocalFallback) {
-      return Promise.resolve(!!localStorage.getItem(this.TOKEN_KEY));
+      return Promise.resolve(!!authStorageGet(this.TOKEN_KEY));
     }
 
     if (this.refreshInFlight) {
       return this.refreshInFlight;
     }
 
-    const refreshToken = localStorage.getItem(this.REFRESH_KEY);
+    const refreshToken = authStorageGet(this.REFRESH_KEY);
     if (!refreshToken) {
       return Promise.resolve(false);
     }
@@ -164,8 +172,8 @@ export class AuthService {
             this.persistSession(res.token, res.refreshToken, res.user);
             return;
           }
-          localStorage.setItem(this.TOKEN_KEY, res.token);
-          localStorage.setItem(this.REFRESH_KEY, res.refreshToken);
+          authStorageSet(this.TOKEN_KEY, res.token);
+          authStorageSet(this.REFRESH_KEY, res.refreshToken);
         }),
         map(() => true),
         catchError(() => of(false))
@@ -191,8 +199,8 @@ export class AuthService {
       const current = this.getSession();
       if (!current) return;
       const updated: SessionUser = { ...current, mustChangePassword: false };
-      const token = localStorage.getItem(this.TOKEN_KEY) || '';
-      const refreshToken = localStorage.getItem(this.REFRESH_KEY) || '';
+      const token = authStorageGet(this.TOKEN_KEY) || '';
+      const refreshToken = authStorageGet(this.REFRESH_KEY) || '';
       this.persistSession(token, refreshToken, updated);
     });
   }
@@ -241,9 +249,7 @@ export class AuthService {
   }
 
   private clearSessionStorage(): void {
-    localStorage.removeItem(this.TOKEN_KEY);
-    localStorage.removeItem(this.REFRESH_KEY);
-    localStorage.removeItem(this.USER_KEY);
+    authStorageClearSession();
     this.sessionSubject.next(null);
   }
 
@@ -251,15 +257,15 @@ export class AuthService {
     const rol = normalizarRol(user.rol);
     const session: SessionUser = { ...user, rol: rol ?? user.rol };
 
-    localStorage.setItem(this.TOKEN_KEY, token);
-    localStorage.setItem(this.REFRESH_KEY, refreshToken);
-    localStorage.setItem(this.USER_KEY, JSON.stringify(session));
+    authStorageSet(this.TOKEN_KEY, token);
+    authStorageSet(this.REFRESH_KEY, refreshToken);
+    authStorageSet(this.USER_KEY, JSON.stringify(session));
     this.sessionSubject.next(session);
   }
 
   private loadSession(): SessionUser | null {
-    const token = localStorage.getItem(this.TOKEN_KEY);
-    const raw   = localStorage.getItem(this.USER_KEY);
+    const token = authStorageGet(this.TOKEN_KEY);
+    const raw = authStorageGet(this.USER_KEY);
     if (!token || !raw) return null;
     try {
       const parsed = JSON.parse(raw) as SessionUser;

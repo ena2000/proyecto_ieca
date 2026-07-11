@@ -2,10 +2,7 @@ import { MINISTERIO_IGLESIA_NOMBRE } from './aportacion-iglesia.constants';
 
 /**
  * Ministerios que no son áreas operativas (p. ej. Contabilidad).
- * General NO va aquí: se muestra en reportes pero no en formularios manuales.
- *
- * Pendiente (P-02): ocultar General también en filtros/reportes donde no aplique.
- * Ver docs/PENDIENTES-IMPLEMENTACION.md
+ * General NO va aquí: se muestra en reportes pero no en formularios ni filtros de registro.
  */
 export const MINISTERIOS_EXCLUIDOS_CATALOGO: readonly string[] = ['Contabilidad'];
 

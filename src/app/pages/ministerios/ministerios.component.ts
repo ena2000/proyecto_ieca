@@ -295,6 +295,7 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
     if (!this.esFormularioValido) {
       this.formGuardadoError = this.mensajeValidacion;
+      this.cdr.markForCheck();
       await this.mostrarToast(this.formGuardadoError, 'danger', FORM_GUARDADO_TOAST_MS);
       scrollAlErrorFormulario();
       return;
@@ -328,6 +329,7 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
       this.dataService.notifyChanges();
     } catch (error) {
       this.formGuardadoError = getHttpErrorMessage(error, 'Error al guardar');
+      this.cdr.markForCheck();
       await this.mostrarToast(this.formGuardadoError, 'danger', FORM_GUARDADO_TOAST_MS);
       scrollAlErrorFormulario();
     } finally {

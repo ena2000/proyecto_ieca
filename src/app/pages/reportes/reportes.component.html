@@ -232,6 +232,17 @@
         </div>
       </div>
 
+      @if (listaFiltradaVista.length === 0) {
+        <p class="reportes-empty-hint" role="status">
+          No hay movimientos en
+          <strong>{{ etiquetaPeriodoResumen }}</strong>
+          con los filtros actuales.
+          @if (hayFiltrosActivos) {
+            Puedes limpiar filtros o elegir otro mes.
+          }
+        </p>
+      }
+
       <div class="desglose-card desglose-card--ministerio" *ngIf="mostrarDesgloseMinisterio">
         <div class="kardex-card__head">
           <h3 class="desglose-title">Desglose por ministerio</h3>

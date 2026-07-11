@@ -1,9 +1,8 @@
 import { HttpInterceptorFn } from '@angular/common/http';
-
-const TOKEN_KEY = 'auth_token';
+import { AUTH_TOKEN_KEY, authStorageGet } from '../../shared/utils/auth-token.storage';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  const token = localStorage.getItem(TOKEN_KEY);
+  const token = authStorageGet(AUTH_TOKEN_KEY);
   if (!token) {
     return next(req);
   }

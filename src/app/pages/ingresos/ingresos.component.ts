@@ -265,7 +265,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   get ministeriosParaFiltro(): Ministerio[] {
-    return [...this.listaMinisterios].sort((a, b) =>
+    return this.dataService.getMinisteriosParaCatalogo().sort((a, b) =>
       (a.nombre ?? '').localeCompare(b.nombre ?? '', 'es')
     );
   }
@@ -511,6 +511,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
       if (this.periodoFormularioCerrado) {
         this.formGuardadoError =
           `El periodo ${this.etiquetaPeriodoFormulario} está cerrado. No se pueden registrar movimientos.`;
+        this.cdr.markForCheck();
         await this.mostrarToast(this.formGuardadoError, 'warning');
         return;
       }
@@ -518,6 +519,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
       const comprobanteErr = validarTamanoComprobante(this.nuevoIngreso.foto);
       if (comprobanteErr) {
         this.formGuardadoError = comprobanteErr;
+        this.cdr.markForCheck();
         await this.mostrarToast(comprobanteErr, 'danger', FORM_GUARDADO_TOAST_MS);
         return;
       }

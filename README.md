@@ -627,10 +627,12 @@ Sin SMTP en desarrollo, el resumen se imprime en la consola del servidor. Máxim
 | Medida | Detalle |
 |--------|---------|
 | Contraseñas | **bcrypt** en Firestore |
-| JWT | Access **15 min** (`JWT_ACCESS_EXPIRES`) + refresh **7 días** (`JWT_REFRESH_EXPIRES`); claims access: `sub`, `rol`, `ministerioId`, `type: access` |
+| JWT | Access **15 min** + refresh **7 días**; Bearer en cliente (misma arquitectura) |
+| Sesión en navegador | Tokens en **sessionStorage** (se borran al cerrar la ventana); migra desde `localStorage` si había sesión previa |
 | `JWT_SECRET` | Obligatorio, ≥ 32 caracteres; rechaza claves débiles |
 | CORS | Orígenes explícitos (`CORS_ORIGINS`) |
-| Helmet | Cabeceras de seguridad HTTP |
+| Helmet + CSP (API) | Cabeceras de seguridad; CSP estricta en respuestas del API |
+| CSP (Hosting) | Content-Security-Policy + `X-Frame-Options` / `nosniff` / `Referrer-Policy` en Firebase Hosting |
 | Rate limiting | Login: 5 / 15 min por IP; API: 200 / 15 min (prod), 5000 / 15 min (dev); `RATE_LIMIT_API_MAX` |
 | Validación | **Zod** en auth, CRUD, notificaciones, admin |
 | Recuperación | Código 6 dígitos (SMTP o consola en dev) |

@@ -251,7 +251,9 @@
             Usuarios del Sistema
           </h2>
           <span class="badge-count">
-            {{ conteoUsuariosFiltrados }} usuarios encontrados
+            {{ conteoUsuariosFiltrados === 0 && hayFiltrosActivos
+              ? 'Sin resultados con estos filtros'
+              : (conteoUsuariosFiltrados + ' usuarios encontrados') }}
           </span>
         </div>
         <div class="list-header-actions">
@@ -390,6 +392,8 @@
         [data]="listaUsuariosTabla"
         [itemsPerPage]="10"
         [actions]="acciones"
+        [emptyMessage]="hayFiltrosActivos ? 'Ningún usuario con estos filtros' : 'Aún no hay usuarios registrados'"
+        [emptyHint]="hayFiltrosActivos ? 'Prueba limpiar filtros o cambia la búsqueda.' : 'Crea el primer usuario con el formulario de arriba.'"
         (rowEdit)="editarUsuario($event)"
         (rowDelete)="eliminarUsuario($event)">
       </app-tabla-general>
