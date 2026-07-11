@@ -358,7 +358,37 @@
   border-radius: var(--radius-lg);
   background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   overflow: hidden;
-  position: relative;
+}
+
+.periodo-anio-select {
+  flex: 0 0 auto;
+  min-width: 96px;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  border-right: 1px solid var(--ieca-border);
+  --background: transparent;
+
+  ion-select {
+    color: var(--ieca-blue);
+    font-weight: 800;
+    min-width: 72px;
+  }
+}
+
+.periodo-mes-nombre-select {
+  flex: 1 1 auto;
+  min-width: 140px;
+  max-width: 200px;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  --background: transparent;
+
+  ion-select {
+    color: var(--ieca-blue);
+    font-weight: 800;
+  }
 }
 
 .periodo-mes-control__btn {
@@ -529,15 +559,11 @@
 
   .periodo-mes-control {
     width: 100%;
-    max-width: 360px;
+    max-width: 320px;
   }
 
-  .periodo-mes-control__display {
+  .periodo-mes-nombre-select {
     max-width: none;
-
-    &--mes {
-      max-width: none;
-    }
   }
 
   .periodo-mes-select {

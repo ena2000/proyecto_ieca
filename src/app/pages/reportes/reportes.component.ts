@@ -33,9 +33,6 @@ import {
   mesesDelAnioParaReporte,
   anioDesdeFiltroMes,
   componerFiltroMesAnio,
-  puedeAvanzarMesReporte,
-  mesAnteriorReporte,
-  mesSiguienteReporte,
   etiquetaFiltroMovimientoReporte,
   construirEtiquetaFiltroReporte
 } from '../../shared/utils/reportes-filtros.util';
@@ -69,9 +66,9 @@ export class ReportesComponent implements OnInit, OnDestroy, ViewWillEnter {
   listaMinisterios: Pick<Ministerio, 'id' | 'nombre'>[] = [];
   listaFiltradaVista: Reporte[] = [];
   mesesDisponibles: { value: string; label: string }[] = [];
-  aniosDisponibles: number[] = [];
+  aniosDisponibles: string[] = [];
   mesesDelAnio: { value: string; label: string }[] = [];
-  filtroAnio = new Date().getFullYear();
+  filtroAnio = String(new Date().getFullYear());
   desgloseAgregado: DesgloseReporte[] = [];
   desgloseMinisterioVista: DesgloseMinisterioReporte[] = [];
   lineasKardexVista: KardexLinea[] = [];
@@ -224,10 +221,6 @@ export class ReportesComponent implements OnInit, OnDestroy, ViewWillEnter {
     return this.etiquetaMesActivo;
   }
 
-  get puedeAvanzarMes(): boolean {
-    return puedeAvanzarMesReporte(this.filtroMes);
-  }
-
   get hayFiltrosActivos(): boolean {
     return hayFiltrosReporteActivos(this.filtrosReporte);
   }
@@ -240,13 +233,13 @@ export class ReportesComponent implements OnInit, OnDestroy, ViewWillEnter {
     this.aniosDisponibles = aniosDisponiblesDesdeReportes(
       this.listaReportes,
       this.filtroMes || null
-    );
+    ).map(String);
     if (this.filtroMes) {
-      this.filtroAnio = anioDesdeFiltroMes(this.filtroMes);
-      this.mesesDelAnio = mesesDelAnioParaReporte(this.filtroAnio);
+      this.filtroAnio = String(anioDesdeFiltroMes(this.filtroMes));
+      this.mesesDelAnio = mesesDelAnioParaReporte(Number(this.filtroAnio));
     } else {
-      this.filtroAnio = new Date().getFullYear();
-      this.mesesDelAnio = mesesDelAnioParaReporte(this.filtroAnio);
+      this.filtroAnio = String(new Date().getFullYear());
+      this.mesesDelAnio = mesesDelAnioParaReporte(Number(this.filtroAnio));
     }
   }
 
@@ -258,25 +251,12 @@ export class ReportesComponent implements OnInit, OnDestroy, ViewWillEnter {
 
   onAnioCambio(): void {
     const mesActual = Number(this.filtroMes?.slice(5, 7)) || 1;
-    this.filtroMes = componerFiltroMesAnio(this.filtroAnio, mesActual);
+    this.filtroMes = componerFiltroMesAnio(Number(this.filtroAnio), mesActual);
     this.periodoPreset = 'custom';
     this.actualizarVista();
   }
 
   onMesCambio(): void {
-    this.periodoPreset = 'custom';
-    this.actualizarVista();
-  }
-
-  mesAnterior(): void {
-    this.filtroMes = mesAnteriorReporte(this.filtroMes);
-    this.periodoPreset = 'custom';
-    this.actualizarVista();
-  }
-
-  mesSiguiente(): void {
-    if (!this.puedeAvanzarMes) return;
-    this.filtroMes = mesSiguienteReporte(this.filtroMes);
     this.periodoPreset = 'custom';
     this.actualizarVista();
   }

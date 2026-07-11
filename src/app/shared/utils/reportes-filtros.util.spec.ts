@@ -79,22 +79,22 @@ describe('reportes-filtros.util', () => {
     expect(meses.find(m => m.value === '2026-01')?.label).toBe('Enero 2026');
   });
 
-  it('aniosDisponiblesDesdeReportes ofrece al menos 10 años hacia atrás', () => {
+  it('aniosDisponiblesDesdeReportes va desde 2000 hasta el año actual', () => {
     const anios = aniosDisponiblesDesdeReportes(base, null, new Date(2026, 6, 11));
     expect(anios[0]).toBe(2026);
-    expect(anios[anios.length - 1]).toBe(2016);
-    expect(anios).toContain(2024);
+    expect(anios[anios.length - 1]).toBe(2000);
+    expect(anios).toContain(2010);
   });
 
-  it('mesesDelAnioParaReporte no incluye meses futuros del año actual', () => {
-    const meses = mesesDelAnioParaReporte(2026, new Date(2026, 6, 11)); // julio = mes 6 → max 7
-    expect(meses.length).toBe(7);
+  it('mesesDelAnioParaReporte incluye los 12 meses', () => {
+    const meses = mesesDelAnioParaReporte(2026, new Date(2026, 6, 11));
+    expect(meses.length).toBe(12);
     expect(meses[0].label).toBe('Enero');
-    expect(meses[meses.length - 1].value).toBe('2026-07');
+    expect(meses[meses.length - 1].value).toBe('2026-12');
   });
 
-  it('componerFiltroMesAnio ajusta mes si el año no lo admite', () => {
-    expect(componerFiltroMesAnio(2026, 12, new Date(2026, 6, 11))).toBe('2026-07');
+  it('componerFiltroMesAnio respeta cualquier mes del año', () => {
+    expect(componerFiltroMesAnio(2026, 12, new Date(2026, 6, 11))).toBe('2026-12');
     expect(componerFiltroMesAnio(2025, 3, new Date(2026, 6, 11))).toBe('2025-03');
   });
 });

@@ -98,40 +98,34 @@ export function mesesDisponiblesDesdeReportes(
     .map(value => ({ value, label: etiquetaParaMes(value) }));
 }
 
-/** Años del historial (continuo desde el más antiguo con datos hasta hoy). */
+/** Años del selector: desde 2000 hasta el año actual (más recientes primero). */
+export const ANIO_MINIMO_REPORTES = 2000;
+
 export function aniosDisponiblesDesdeReportes(
-  lista: Reporte[],
+  _lista?: Reporte[],
   mesSeleccionado?: string | null,
   hoy: Date = new Date()
 ): number[] {
-  const anios = new Set<number>();
-  anios.add(hoy.getFullYear());
-  lista.forEach(r => {
-    const y = Number(r.mes?.slice(0, 4));
-    if (Number.isFinite(y) && y > 1990 && y < 2100) anios.add(y);
-  });
+  const max = hoy.getFullYear();
+  let min = ANIO_MINIMO_REPORTES;
   const sel = Number(mesSeleccionado?.slice(0, 4));
-  if (Number.isFinite(sel) && sel > 1990 && sel < 2100) anios.add(sel);
-
-  const valores = Array.from(anios);
-  const minFromData = Math.min(...valores);
-  // Al menos 10 años hacia atrás para saltar sin 100 clics de flecha.
-  const min = Math.min(minFromData, hoy.getFullYear() - 10);
-  const max = Math.max(...valores, hoy.getFullYear());
+  // Si hay un mes seleccionado anterior a 2000, lo incluye.
+  if (Number.isFinite(sel) && sel < min && sel > 1900) {
+    min = sel;
+  }
   const out: number[] = [];
   for (let y = max; y >= min; y--) out.push(y);
   return out;
 }
 
-/** Meses de un año (1–12), sin futuros si es el año actual. */
+/** Los 12 meses del año (Enero–Diciembre). */
 export function mesesDelAnioParaReporte(
   anio: number,
   hoy: Date = new Date()
 ): { value: string; label: string }[] {
   if (!Number.isFinite(anio) || anio > hoy.getFullYear()) return [];
-  const maxMes = anio === hoy.getFullYear() ? hoy.getMonth() + 1 : 12;
   const out: { value: string; label: string }[] = [];
-  for (let m = 1; m <= maxMes; m++) {
+  for (let m = 1; m <= 12; m++) {
     const value = `${anio}-${String(m).padStart(2, '0')}`;
     out.push({ value, label: nombreMesDesdeValor(value) });
   }
@@ -140,10 +134,10 @@ export function mesesDelAnioParaReporte(
 
 export function anioDesdeFiltroMes(filtroMes: string, hoy: Date = new Date()): number {
   const y = Number(filtroMes?.slice(0, 4));
-  return Number.isFinite(y) && y > 1990 ? y : hoy.getFullYear();
+  return Number.isFinite(y) && y >= ANIO_MINIMO_REPORTES ? y : hoy.getFullYear();
 }
 
-/** Compone YYYY-MM; si el mes no existe en ese año (futuro), usa el último válido. */
+/** Compone YYYY-MM; si el año no es válido, usa el mes actual. */
 export function componerFiltroMesAnio(
   anio: number,
   mes1a12: number,
@@ -151,9 +145,8 @@ export function componerFiltroMesAnio(
 ): string {
   const meses = mesesDelAnioParaReporte(anio, hoy);
   if (!meses.length) return padMes(hoy);
-  const padded = `${anio}-${String(mes1a12).padStart(2, '0')}`;
-  if (meses.some(m => m.value === padded)) return padded;
-  return meses[meses.length - 1].value;
+  const mes = Math.min(12, Math.max(1, Math.trunc(mes1a12) || 1));
+  return `${anio}-${String(mes).padStart(2, '0')}`;
 }
 
 export function puedeAvanzarMesReporte(filtroMes: string): boolean {
