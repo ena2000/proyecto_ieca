@@ -26,6 +26,13 @@ export function etiquetaParaMes(valor: string): string {
   return `${MESES_ES[indice]} ${anio}`;
 }
 
+/** Solo el nombre del mes (sin año), p. ej. "Julio". */
+export function nombreMesDesdeValor(valor: string): string {
+  const indice = parseInt(valor.split('-')[1] ?? '', 10) - 1;
+  if (indice < 0 || indice > 11) return valor;
+  return MESES_ES[indice];
+}
+
 export function getMesActualLabel(): string {
   const ahora = new Date();
   return `${MESES_ES[ahora.getMonth()]} ${ahora.getFullYear()}`;

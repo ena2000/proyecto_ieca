@@ -72,7 +72,7 @@
 
 @media (min-width: 640px) {
   .filters-layout {
-    grid-template-columns: minmax(0, 1fr) 220px;
+    grid-template-columns: minmax(0, 1.35fr) minmax(220px, 0.85fr);
     grid-template-areas:
       'periodo ministerio'
       'movimiento movimiento';
@@ -358,6 +358,7 @@
   border-radius: var(--radius-lg);
   background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   overflow: hidden;
+  position: relative;
 }
 
 .periodo-mes-control__btn {
@@ -367,6 +368,86 @@
   margin: 0;
   align-self: center;
   flex-shrink: 0;
+}
+
+.periodo-mes-control__display {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding: 0 10px;
+  border: none;
+  border-left: 1px solid var(--ieca-border);
+  background: transparent;
+  color: var(--ieca-blue);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  text-align: left;
+
+  &:hover,
+  &:focus-visible {
+    background: rgba(46, 53, 143, 0.06);
+    outline: none;
+  }
+
+  > ion-icon:first-child {
+    flex-shrink: 0;
+    font-size: 1.05rem;
+    color: var(--ieca-blue);
+  }
+
+  &--anio {
+    min-width: 78px;
+    justify-content: center;
+  }
+
+  &--mes {
+    flex: 1 1 auto;
+    min-width: 120px;
+    max-width: 180px;
+    border-right: 1px solid var(--ieca-border);
+  }
+}
+
+.periodo-mes-hint {
+  margin: var(--space-2) 0 0;
+  font-size: 0.72rem;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+.periodo-mes-control__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.periodo-mes-control__caret {
+  flex-shrink: 0;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+/* ion-select con `trigger`: no debe ocupar espacio ni tapar la etiqueta. */
+.periodo-mes-select-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .periodo-mes-select {
@@ -406,6 +487,17 @@
 
 .ministerio-select-item {
   margin: 0;
+  min-width: 0;
+
+  ion-select {
+    max-width: 100%;
+
+    &::part(text) {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
 }
 
 .periodo-select-item {
@@ -437,7 +529,15 @@
 
   .periodo-mes-control {
     width: 100%;
-    max-width: 320px;
+    max-width: 360px;
+  }
+
+  .periodo-mes-control__display {
+    max-width: none;
+
+    &--mes {
+      max-width: none;
+    }
   }
 
   .periodo-mes-select {

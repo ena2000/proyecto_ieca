@@ -113,6 +113,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   guardando = false;
   formGuardadoError: string | null = null;
 
+  @ViewChild(IonContent) private content?: IonContent;
   @ViewChild('nombreInput') nombreInput?: IonInput;
   @ViewChild('emailInput') emailInput?: IonInput;
   @ViewChild('passwordInput') passwordInput?: IonInput;
@@ -486,16 +487,19 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     this.password = passwordRaw;
   }
 
-  editarUsuario(item: Usuario) {
-    setTimeout(() => {
-      const rol = normalizarRol(item.rol) ?? item.rol;
-      this.nuevoUsuario = { ...item, rol };
-      this.modoEdicion  = true;
-      this.idEditando   = item.id;
-      this.intentoEnvio = false;
-      this.password = '';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, 50);
+  editarUsuario(item: Usuario): void {
+    const rol = normalizarRol(item.rol) ?? item.rol;
+    this.nuevoUsuario = { ...item, rol };
+    this.modoEdicion = true;
+    this.idEditando = item.id;
+    this.intentoEnvio = false;
+    this.formGuardadoError = null;
+    this.password = '';
+    // Recalcular ministerios disponibles con el usuario en edición (OnPush: markForCheck obligatorio).
+    this.cargarMinisterios();
+    this.cdr.markForCheck();
+    void this.content?.scrollToTop(300);
+    setTimeout(() => void this.nombreInput?.setFocus(), 320);
   }
 
   async eliminarUsuario(item: Usuario) {

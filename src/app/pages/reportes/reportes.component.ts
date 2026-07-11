@@ -19,7 +19,7 @@ import {
 import { DataService } from '../../services/data.service';
 import { ReportesService } from '../../services/reportes.service';
 import { AuthService } from '../../core/services/auth.service';
-import { etiquetaParaMes } from '../../shared/utils/month.util';
+import { etiquetaParaMes, nombreMesDesdeValor } from '../../shared/utils/month.util';
 import { formatearMoneda } from '../../shared/utils/currency.util';
 import { registerReportesPageIcons } from '../../shared/utils/reportes-page.icons';
 import {
@@ -29,6 +29,10 @@ import {
   hayFiltrosReporteActivos,
   resolverFiltroMesPorPreset,
   mesesDisponiblesDesdeReportes,
+  aniosDisponiblesDesdeReportes,
+  mesesDelAnioParaReporte,
+  anioDesdeFiltroMes,
+  componerFiltroMesAnio,
   puedeAvanzarMesReporte,
   mesAnteriorReporte,
   mesSiguienteReporte,
@@ -65,6 +69,9 @@ export class ReportesComponent implements OnInit, OnDestroy, ViewWillEnter {
   listaMinisterios: Pick<Ministerio, 'id' | 'nombre'>[] = [];
   listaFiltradaVista: Reporte[] = [];
   mesesDisponibles: { value: string; label: string }[] = [];
+  aniosDisponibles: number[] = [];
+  mesesDelAnio: { value: string; label: string }[] = [];
+  filtroAnio = new Date().getFullYear();
   desgloseAgregado: DesgloseReporte[] = [];
   desgloseMinisterioVista: DesgloseMinisterioReporte[] = [];
   lineasKardexVista: KardexLinea[] = [];
@@ -139,7 +146,11 @@ export class ReportesComponent implements OnInit, OnDestroy, ViewWillEnter {
       nombre: m.nombre
     }));
     this.listaReportes = this.reportesService.generarReportes();
-    this.mesesDisponibles = mesesDisponiblesDesdeReportes(this.listaReportes);
+    this.mesesDisponibles = mesesDisponiblesDesdeReportes(
+      this.listaReportes,
+      this.filtroMes || null
+    );
+    this.sincronizarSelectoresPeriodo();
     this.listaFiltradaVista = filtrarReportes(this.listaReportes, this.filtrosReporte);
     this.totalIngresosFiltrado = this.listaFiltradaVista.reduce(
       (sum, r) => sum + (r.ingresos || 0), 0
@@ -204,6 +215,10 @@ export class ReportesComponent implements OnInit, OnDestroy, ViewWillEnter {
     return this.filtroMes ? etiquetaParaMes(this.filtroMes) : 'Todo el historial';
   }
 
+  get etiquetaMesCorto(): string {
+    return this.filtroMes ? nombreMesDesdeValor(this.filtroMes) : '';
+  }
+
   /** Etiqueta corta para títulos y totales del bloque “período”. */
   get etiquetaPeriodoResumen(): string {
     return this.etiquetaMesActivo;
@@ -221,9 +236,30 @@ export class ReportesComponent implements OnInit, OnDestroy, ViewWillEnter {
     return this.hayFiltrosActivos;
   }
 
+  private sincronizarSelectoresPeriodo(): void {
+    this.aniosDisponibles = aniosDisponiblesDesdeReportes(
+      this.listaReportes,
+      this.filtroMes || null
+    );
+    if (this.filtroMes) {
+      this.filtroAnio = anioDesdeFiltroMes(this.filtroMes);
+      this.mesesDelAnio = mesesDelAnioParaReporte(this.filtroAnio);
+    } else {
+      this.filtroAnio = new Date().getFullYear();
+      this.mesesDelAnio = mesesDelAnioParaReporte(this.filtroAnio);
+    }
+  }
+
   setPeriodo(preset: PeriodoPresetReporte): void {
     this.periodoPreset = preset;
     this.filtroMes = resolverFiltroMesPorPreset(preset);
+    this.actualizarVista();
+  }
+
+  onAnioCambio(): void {
+    const mesActual = Number(this.filtroMes?.slice(5, 7)) || 1;
+    this.filtroMes = componerFiltroMesAnio(this.filtroAnio, mesActual);
+    this.periodoPreset = 'custom';
     this.actualizarVista();
   }
 

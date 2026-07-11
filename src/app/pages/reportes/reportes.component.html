@@ -75,7 +75,7 @@
             </div>
 
             @if (filtroMes) {
-              <div class="periodo-mes-control">
+              <div class="periodo-mes-control" role="group" aria-label="Mes del reporte">
                 <ion-button
                   fill="clear"
                   type="button"
@@ -85,20 +85,62 @@
                   <ion-icon slot="icon-only" name="chevron-back-outline"></ion-icon>
                 </ion-button>
 
-                <ion-item lines="none" class="periodo-select-item periodo-mes-select">
-                  <ion-icon slot="start" name="calendar-outline" class="text-blue"></ion-icon>
-                  <ion-select
-                    interface="popover"
-                    [(ngModel)]="filtroMes"
-                    name="filtroMesSelect"
-                    (ionChange)="onMesCambio()">
-                    <ion-select-option
-                      *ngFor="let m of mesesDisponibles"
-                      [value]="m.value">
-                      {{ m.label }}
-                    </ion-select-option>
-                  </ion-select>
-                </ion-item>
+                <button
+                  type="button"
+                  id="reportes-anio-trigger"
+                  class="periodo-mes-control__display periodo-mes-control__display--anio"
+                  [attr.aria-label]="'Año: ' + filtroAnio">
+                  <span class="periodo-mes-control__label">{{ filtroAnio }}</span>
+                  <ion-icon
+                    name="chevron-down-outline"
+                    class="periodo-mes-control__caret"
+                    aria-hidden="true">
+                  </ion-icon>
+                </button>
+                <ion-select
+                  class="periodo-mes-select-hidden"
+                  trigger="reportes-anio-trigger"
+                  interface="popover"
+                  [(ngModel)]="filtroAnio"
+                  name="filtroAnioSelect"
+                  (ionChange)="onAnioCambio()"
+                  aria-hidden="true"
+                  tabindex="-1">
+                  <ion-select-option
+                    *ngFor="let y of aniosDisponibles"
+                    [value]="y">
+                    {{ y }}
+                  </ion-select-option>
+                </ion-select>
+
+                <button
+                  type="button"
+                  id="reportes-mes-trigger"
+                  class="periodo-mes-control__display periodo-mes-control__display--mes"
+                  [attr.aria-label]="'Mes: ' + etiquetaMesCorto">
+                  <ion-icon name="calendar-outline" aria-hidden="true"></ion-icon>
+                  <span class="periodo-mes-control__label">{{ etiquetaMesCorto }}</span>
+                  <ion-icon
+                    name="chevron-down-outline"
+                    class="periodo-mes-control__caret"
+                    aria-hidden="true">
+                  </ion-icon>
+                </button>
+                <ion-select
+                  class="periodo-mes-select-hidden"
+                  trigger="reportes-mes-trigger"
+                  interface="popover"
+                  [(ngModel)]="filtroMes"
+                  name="filtroMesSelect"
+                  (ionChange)="onMesCambio()"
+                  aria-hidden="true"
+                  tabindex="-1">
+                  <ion-select-option
+                    *ngFor="let m of mesesDelAnio"
+                    [value]="m.value">
+                    {{ m.label }}
+                  </ion-select-option>
+                </ion-select>
 
                 <ion-button
                   fill="clear"
@@ -110,6 +152,7 @@
                   <ion-icon slot="icon-only" name="chevron-forward-outline"></ion-icon>
                 </ion-button>
               </div>
+              <p class="periodo-mes-hint">Elige año y mes, o usa las flechas para el mes de al lado.</p>
             } @else {
               <p class="periodo-historial-hint">
                 <ion-icon name="calendar-outline"></ion-icon>

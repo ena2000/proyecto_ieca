@@ -1,5 +1,5 @@
 import { Reporte } from '../../core/models';
-import { etiquetaParaMes, padMes } from './month.util';
+import { etiquetaParaMes, nombreMesDesdeValor, padMes } from './month.util';
 
 export type FiltroMovimientoReporte = 'todos' | 'ingresos' | 'gastos';
 export type PeriodoPresetReporte = 'todos' | 'este_mes' | 'anterior' | 'custom';
@@ -81,16 +81,79 @@ export function filtrarReportes(
 }
 
 export function mesesDisponiblesDesdeReportes(
-  lista: Reporte[]
+  lista: Reporte[],
+  mesSeleccionado?: string | null
 ): { value: string; label: string }[] {
   const meses = new Set<string>();
   lista.forEach(r => {
     if (r.mes) meses.add(r.mes);
   });
   meses.add(padMes(new Date()));
+  // Incluye el mes del filtro aunque no haya movimientos (evita select vacío).
+  if (mesSeleccionado?.trim()) {
+    meses.add(mesSeleccionado.trim());
+  }
   return Array.from(meses)
     .sort((a, b) => b.localeCompare(a))
     .map(value => ({ value, label: etiquetaParaMes(value) }));
+}
+
+/** Años del historial (continuo desde el más antiguo con datos hasta hoy). */
+export function aniosDisponiblesDesdeReportes(
+  lista: Reporte[],
+  mesSeleccionado?: string | null,
+  hoy: Date = new Date()
+): number[] {
+  const anios = new Set<number>();
+  anios.add(hoy.getFullYear());
+  lista.forEach(r => {
+    const y = Number(r.mes?.slice(0, 4));
+    if (Number.isFinite(y) && y > 1990 && y < 2100) anios.add(y);
+  });
+  const sel = Number(mesSeleccionado?.slice(0, 4));
+  if (Number.isFinite(sel) && sel > 1990 && sel < 2100) anios.add(sel);
+
+  const valores = Array.from(anios);
+  const minFromData = Math.min(...valores);
+  // Al menos 10 años hacia atrás para saltar sin 100 clics de flecha.
+  const min = Math.min(minFromData, hoy.getFullYear() - 10);
+  const max = Math.max(...valores, hoy.getFullYear());
+  const out: number[] = [];
+  for (let y = max; y >= min; y--) out.push(y);
+  return out;
+}
+
+/** Meses de un año (1–12), sin futuros si es el año actual. */
+export function mesesDelAnioParaReporte(
+  anio: number,
+  hoy: Date = new Date()
+): { value: string; label: string }[] {
+  if (!Number.isFinite(anio) || anio > hoy.getFullYear()) return [];
+  const maxMes = anio === hoy.getFullYear() ? hoy.getMonth() + 1 : 12;
+  const out: { value: string; label: string }[] = [];
+  for (let m = 1; m <= maxMes; m++) {
+    const value = `${anio}-${String(m).padStart(2, '0')}`;
+    out.push({ value, label: nombreMesDesdeValor(value) });
+  }
+  return out;
+}
+
+export function anioDesdeFiltroMes(filtroMes: string, hoy: Date = new Date()): number {
+  const y = Number(filtroMes?.slice(0, 4));
+  return Number.isFinite(y) && y > 1990 ? y : hoy.getFullYear();
+}
+
+/** Compone YYYY-MM; si el mes no existe en ese año (futuro), usa el último válido. */
+export function componerFiltroMesAnio(
+  anio: number,
+  mes1a12: number,
+  hoy: Date = new Date()
+): string {
+  const meses = mesesDelAnioParaReporte(anio, hoy);
+  if (!meses.length) return padMes(hoy);
+  const padded = `${anio}-${String(mes1a12).padStart(2, '0')}`;
+  if (meses.some(m => m.value === padded)) return padded;
+  return meses[meses.length - 1].value;
 }
 
 export function puedeAvanzarMesReporte(filtroMes: string): boolean {

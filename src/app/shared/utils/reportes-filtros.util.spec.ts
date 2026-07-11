@@ -2,7 +2,11 @@ import {
   filtrarReportes,
   resolverFiltroMesPorPreset,
   esRegistroIngresoReporte,
-  hayFiltrosReporteActivos
+  hayFiltrosReporteActivos,
+  mesesDisponiblesDesdeReportes,
+  aniosDisponiblesDesdeReportes,
+  mesesDelAnioParaReporte,
+  componerFiltroMesAnio
 } from './reportes-filtros.util';
 import { Reporte } from '../../core/models';
 
@@ -67,5 +71,30 @@ describe('reportes-filtros.util', () => {
         ministerioScopeId: null
       })
     ).toBeTrue();
+  });
+
+  it('mesesDisponiblesDesdeReportes incluye el mes seleccionado aunque no haya datos', () => {
+    const meses = mesesDisponiblesDesdeReportes(base, '2026-01');
+    expect(meses.some(m => m.value === '2026-01')).toBeTrue();
+    expect(meses.find(m => m.value === '2026-01')?.label).toBe('Enero 2026');
+  });
+
+  it('aniosDisponiblesDesdeReportes ofrece al menos 10 años hacia atrás', () => {
+    const anios = aniosDisponiblesDesdeReportes(base, null, new Date(2026, 6, 11));
+    expect(anios[0]).toBe(2026);
+    expect(anios[anios.length - 1]).toBe(2016);
+    expect(anios).toContain(2024);
+  });
+
+  it('mesesDelAnioParaReporte no incluye meses futuros del año actual', () => {
+    const meses = mesesDelAnioParaReporte(2026, new Date(2026, 6, 11)); // julio = mes 6 → max 7
+    expect(meses.length).toBe(7);
+    expect(meses[0].label).toBe('Enero');
+    expect(meses[meses.length - 1].value).toBe('2026-07');
+  });
+
+  it('componerFiltroMesAnio ajusta mes si el año no lo admite', () => {
+    expect(componerFiltroMesAnio(2026, 12, new Date(2026, 6, 11))).toBe('2026-07');
+    expect(componerFiltroMesAnio(2025, 3, new Date(2026, 6, 11))).toBe('2025-03');
   });
 });
