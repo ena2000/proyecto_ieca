@@ -1,5 +1,4 @@
 import { Gasto, Ingreso } from '../../core/models';
-import { categoriaIngreso } from './ingreso.util';
 import { formatearISOaDDMMYYYY } from './date.util';
 import {
   calcularMontoAportacionIglesia,
@@ -27,9 +26,8 @@ export function ingresoEsTalento(
   ingreso: Pick<Ingreso, 'cuentaCodigo' | 'cuentaNombre' | 'categoria'> & { tipo?: string } | null | undefined
 ): boolean {
   if (!ingreso) return false;
-  if (ingreso.cuentaCodigo === CUENTA_INGRESO_TALENTO_CODIGO) return true;
-  const texto = `${ingreso.cuentaNombre ?? ''} ${categoriaIngreso(ingreso)}`.toLowerCase();
-  return texto.includes('talento');
+  // Solo cuenta 4105 (Talento y eventos) activa la aportación del 33 %.
+  return ingreso.cuentaCodigo === CUENTA_INGRESO_TALENTO_CODIGO;
 }
 
 export function ingresoRequiereAportacion(ingreso: Ingreso | null | undefined): boolean {

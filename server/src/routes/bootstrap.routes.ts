@@ -8,11 +8,15 @@ const { filtrarMinisteriosCatalogo } = require('../constants/ministerios-catalog
 const router = express.Router();
 
 function scopeForUser(user) {
-  if (!esColaboradorMinisterio(user?.rol) || user?.ministerioId == null) return null;
+  if (!esColaboradorMinisterio(user?.rol)) return null;
+  if (user?.ministerioId == null || user?.ministerioId === '') {
+    return { field: 'ministerioId', value: -1, denyAll: true };
+  }
   return { field: 'ministerioId', value: Number(user.ministerioId) };
 }
 
 async function listScoped(collection, scope) {
+  if (scope?.denyAll) return [];
   if (scope) {
     return listCollectionByField(collection, scope.field, scope.value);
   }

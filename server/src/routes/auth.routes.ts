@@ -96,6 +96,12 @@ router.post('/refresh', validate(refreshSchema), async (req, res) => {
       return res.status(401).json({ message: 'Usuario inactivo' });
     }
 
+    // Invalidar refresh emitidos antes de un cambio de contraseña
+    const changedAt = Number(data?.passwordChangedAt || 0);
+    if (changedAt > 0 && payload.iat && payload.iat * 1000 < changedAt) {
+      return res.status(401).json({ message: 'Sesión inválida. Inicia sesión de nuevo.' });
+    }
+
     const id = Number(doc.id);
     const user = stripInternalFields({
       id: Number.isNaN(id) ? doc.id : id,
@@ -174,8 +180,26 @@ router.post('/change-password', authRequired, validate(changePasswordSchema), as
     if (!ok) return res.status(401).json({ message: 'Contraseña actual incorrecta' });
 
     const passwordHash = await bcrypt.hash(String(newPassword), 10);
-    await ref.set({ passwordHash, mustChangePassword: false }, { merge: true });
-    return res.status(204).send();
+    await ref.set(
+      {
+        passwordHash,
+        mustChangePassword: false,
+        passwordChangedAt: Date.now()
+      },
+      { merge: true }
+    );
+
+    const id = Number(doc.id);
+    const user = stripInternalFields({
+      id: Number.isNaN(id) ? doc.id : id,
+      usuario: data.usuario,
+      email: data.email,
+      rol: data.rol,
+      ministerioId: data.ministerioId,
+      mustChangePassword: false
+    });
+    const tokens = signTokenPair(user);
+    return res.json({ token: tokens.token, refreshToken: tokens.refreshToken, user });
   } catch (err) {
     console.error('[auth/change-password]', err);
     return res.status(500).json({ message: 'Error al cambiar contraseña' });

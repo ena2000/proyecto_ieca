@@ -10,16 +10,75 @@ function stripInternalFields(data) {
   return rest;
 }
 
-async function getNextId(collection) {
-  const snap = await db.collection(collection).get();
-  if (snap.empty) return 1;
+/**
+ * Inicializa el contador de IDs con el máximo existente (solo si aún no hay doc).
+ * Evita sobrescribir documentos al migrar desde getNextId por escaneo.
+ */
+async function ensureCounterInitialized(collection) {
+  const counterRef = db.collection('_counters').doc(collection);
+  const existing = await counterRef.get();
+  if (existing.exists) return;
 
+  const snap = await db.collection(collection).get();
   let max = 0;
   snap.forEach((doc) => {
     const n = Number(doc.id);
     if (!Number.isNaN(n) && n > max) max = n;
   });
-  return max + 1;
+
+  try {
+    // create falla si otro request ya lo creó (carrera de arranque)
+    if (typeof counterRef.create === 'function') {
+      await counterRef.create({ seq: max });
+    } else {
+      const again = await counterRef.get();
+      if (!again.exists) {
+        await counterRef.set({ seq: max });
+      }
+    }
+  } catch {
+    // Ya inicializado por otra petición concurrente
+  }
+}
+
+/**
+ * ID secuencial atómico vía transacción sobre `_counters/{collection}`.
+ */
+async function allocateNextId(collection) {
+  await ensureCounterInitialized(collection);
+  const counterRef = db.collection('_counters').doc(collection);
+
+  if (typeof db.runTransaction !== 'function') {
+    // Fallback (p. ej. tests sin transacciones): escaneo + set
+    const snap = await db.collection(collection).get();
+    let max = 0;
+    snap.forEach((doc) => {
+      const n = Number(doc.id);
+      if (!Number.isNaN(n) && n > max) max = n;
+    });
+    const next = max + 1;
+    await counterRef.set({ seq: next }, { merge: true });
+    return next;
+  }
+
+  return db.runTransaction(async (tx) => {
+    const counterDoc = await tx.get(counterRef);
+    const next = Number(counterDoc.data()?.seq || 0) + 1;
+    tx.set(counterRef, { seq: next }, { merge: true });
+    return next;
+  });
+}
+
+/** Sincroniza el contador al máximo ID presente (p. ej. tras restore). */
+async function syncCounterToMax(collection) {
+  const snap = await db.collection(collection).get();
+  let max = 0;
+  snap.forEach((doc) => {
+    const n = Number(doc.id);
+    if (!Number.isNaN(n) && n > max) max = n;
+  });
+  await db.collection('_counters').doc(collection).set({ seq: max }, { merge: true });
+  return max;
 }
 
 async function listCollection(collection) {
@@ -43,7 +102,7 @@ async function getById(collection, id) {
 }
 
 async function createInCollection(collection, body) {
-  const nextId = await getNextId(collection);
+  const nextId = await allocateNextId(collection);
   const id = String(nextId);
   const { id: _ignored, ...data } = body;
   await db.collection(collection).doc(id).set(data);
@@ -69,7 +128,14 @@ async function deleteFromCollection(collection, id) {
 }
 
 function formatDateDDMMYYYY(iso) {
-  const date = new Date(iso);
+  if (!iso) return '';
+  const s = String(iso).trim();
+  // Fecha calendario YYYY-MM-DD: no usar Date UTC (desfase de zona)
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+  if (m) {
+    return `${m[3]}/${m[2]}/${m[1]}`;
+  }
+  const date = new Date(s);
   if (Number.isNaN(date.getTime())) return '';
   const dd = String(date.getDate()).padStart(2, '0');
   const mm = String(date.getMonth() + 1).padStart(2, '0');
@@ -86,5 +152,7 @@ module.exports = {
   createInCollection,
   updateInCollection,
   deleteFromCollection,
-  formatDateDDMMYYYY
+  formatDateDDMMYYYY,
+  allocateNextId,
+  syncCounterToMax
 };

@@ -108,7 +108,7 @@ router.patch('/marcar-por-tipo', validate(marcarPorTipoSchema), async (req, res)
 /** PATCH /api/notificaciones/:id/leida */
 router.patch('/:id/leida', validate(idParamSchema, 'params'), async (req, res) => {
   try {
-    const updated = await marcarLeida(req.params.id, req.user.sub);
+    const updated = await marcarLeida(req.params.id, req.user.sub, req.user);
     if (!updated) {
       return res.status(404).json({ message: 'Notificación no encontrada' });
     }

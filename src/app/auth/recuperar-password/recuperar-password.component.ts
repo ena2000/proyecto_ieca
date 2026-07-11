@@ -116,7 +116,6 @@ export class RecuperarPasswordComponent implements OnInit {
   private logEstadoRestablecer(origen: string): void {
     const estado = {
       origen,
-      code: this.code,
       codeLen: this.code.length,
       newPasswordLen: this.newPassword.length,
       confirmPasswordLen: this.confirmPassword.length,
@@ -224,7 +223,7 @@ export class RecuperarPasswordComponent implements OnInit {
       this.cdr.markForCheck();
       console.log(LOG_PREFIX, 'enviando reset-password', {
         usuario: this.usuarioSolicitado,
-        code: this.code.trim(),
+        codeLen: this.code.trim().length,
         newPasswordLen: this.newPassword.length
       });
       const res = await this.auth.resetPassword(

@@ -5,7 +5,7 @@ const { createCorsMiddleware } = require('./middleware/cors');
 const { createHelmetMiddleware } = require('./middleware/helmet');
 const { apiLimiter } = require('./middleware/rateLimit');
 const { errorHandler } = require('./middleware/errorHandler');
-const { authRequired, requireRoles, ROLES } = require('./middleware/auth');
+const { authRequired, requireRoles, requirePasswordChanged, ROLES } = require('./middleware/auth');
 const authRoutes = require('./routes/auth.routes');
 const {
   ministeriosRouter,
@@ -67,14 +67,15 @@ function createApp(options: { useMemoryDb?: boolean } = {}) {
   });
 
   app.use('/api/auth', authRoutes);
+  // Bootstrap permitido aunque deba cambiar contraseña (carga mínima de sesión)
   app.use('/api/bootstrap', authRequired, bootstrapRouter);
-  app.use('/api/ministerios', authRequired, requireRoles([ROLES.ADMIN]), ministeriosRouter);
-  app.use('/api/usuarios', authRequired, requireRoles([ROLES.ADMIN]), usuariosRouter);
-  app.use('/api/ingresos', authRequired, ingresosRouter);
-  app.use('/api/gastos', authRequired, gastosRouter);
-  app.use('/api/notificaciones', authRequired, notificacionesRouter);
-  app.use('/api/cierres', authRequired, cierresRouter);
-  app.use('/api/admin', authRequired, requireRoles([ROLES.ADMIN]), adminRouter);
+  app.use('/api/ministerios', authRequired, requirePasswordChanged, requireRoles([ROLES.ADMIN]), ministeriosRouter);
+  app.use('/api/usuarios', authRequired, requirePasswordChanged, requireRoles([ROLES.ADMIN]), usuariosRouter);
+  app.use('/api/ingresos', authRequired, requirePasswordChanged, ingresosRouter);
+  app.use('/api/gastos', authRequired, requirePasswordChanged, gastosRouter);
+  app.use('/api/notificaciones', authRequired, requirePasswordChanged, notificacionesRouter);
+  app.use('/api/cierres', authRequired, requirePasswordChanged, cierresRouter);
+  app.use('/api/admin', authRequired, requirePasswordChanged, requireRoles([ROLES.ADMIN]), adminRouter);
 
   app.use((_req, res) => {
     res.status(404).json({ message: 'Ruta no encontrada' });

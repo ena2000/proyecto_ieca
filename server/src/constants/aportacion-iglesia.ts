@@ -7,9 +7,8 @@ const MINISTERIO_IGLESIA_NOMBRE = 'General';
 const CUENTA_INGRESO_TALENTO_CODIGO = '4105';
 
 function ingresoEsTalento(ingreso) {
-  if (ingreso?.cuentaCodigo === CUENTA_INGRESO_TALENTO_CODIGO) return true;
-  const texto = `${ingreso?.cuentaNombre ?? ''} ${ingreso?.categoria ?? ingreso?.tipo ?? ''}`.toLowerCase();
-  return texto.includes('talento');
+  // Solo la cuenta 4105 activa la aportación del 33 % (evita falsos positivos por texto).
+  return ingreso?.cuentaCodigo === CUENTA_INGRESO_TALENTO_CODIGO;
 }
 
 function calcularMontoAportacionIglesia(monto: number): number {

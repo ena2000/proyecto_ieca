@@ -96,7 +96,12 @@ async function assertIngresoModificable(req, entity) {
   return { ok: true };
 }
 
-async function beforeCreateIngreso(body) {
+async function beforeCreateIngreso(body, req) {
+  if (req?.user?.rol === ROLES.CONTABLE) {
+    const err = new Error('El contable solo puede consultar ingresos');
+    err.status = 403;
+    throw err;
+  }
   await assertPeriodoAbierto(body?.fecha);
   await assertMinisterioPermiteIngresoManual(body);
 }
@@ -130,21 +135,49 @@ async function aprobarIngreso(id, req) {
     return current;
   }
 
+  if (normalizarEstado(current.estado) === 'rechazado') {
+    const err = new Error('No se puede aprobar un ingreso rechazado');
+    err.status = 400;
+    throw err;
+  }
+
+  const { db } = require('../config/firebase');
+  const ref = db.collection(COLLECTION).doc(String(id));
   const actor = await resolveActor(req);
-  const updated = await updateInCollection(
-    COLLECTION,
-    id,
-    stampActualizacion(
-      {
-        estado: 'aprobado',
-        motivoRechazo: null,
-        aprobadoPor: req.user.sub,
-        fechaAprobacion: new Date().toISOString()
-      },
-      actor,
-      current
-    )
+  const stamp = stampActualizacion(
+    {
+      estado: 'aprobado',
+      motivoRechazo: null,
+      aprobadoPor: req.user.sub,
+      fechaAprobacion: new Date().toISOString()
+    },
+    actor,
+    current
   );
+
+  // Claim atómico: solo un approve concurrente pasa de pendiente → aprobado
+  let claimed = false;
+  if (typeof db.runTransaction === 'function') {
+    claimed = await db.runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists) return false;
+      const data = snap.data() || {};
+      if (normalizarEstado(data.estado) === 'aprobado') return false;
+      if (normalizarEstado(data.estado) === 'rechazado') return false;
+      tx.set(ref, stamp, { merge: true });
+      return true;
+    });
+  } else {
+    claimed = true;
+    await updateInCollection(COLLECTION, id, stamp);
+  }
+
+  if (!claimed) {
+    const latest = await getById(COLLECTION, id);
+    return latest;
+  }
+
+  const updated = await getById(COLLECTION, id);
 
   await notificarResolucionMovimientoLider({
     tipo: 'ingreso',
@@ -174,8 +207,19 @@ async function rechazarIngreso(id, req, motivo) {
     throw err;
   }
 
+  if (normalizarEstado(current.estado) === 'rechazado') {
+    return current;
+  }
+
+  const wasApproved = normalizarEstado(current.estado) === 'aprobado';
   const actor = await resolveActor(req);
   const motivoTxt = motivo ? String(motivo).trim() : 'Sin motivo indicado';
+
+  // Si estaba aprobado (o tenía aportación), revertir el 33 % antes de marcar rechazo
+  if (wasApproved || current.aportacionGenerada || current.ingresoIglesiaId) {
+    await revertirAportacionIglesiaPorIngreso(current);
+  }
+
   const updated = await updateInCollection(
     COLLECTION,
     id,
@@ -184,7 +228,11 @@ async function rechazarIngreso(id, req, motivo) {
         estado: 'rechazado',
         motivoRechazo: motivoTxt,
         rechazadoPor: req.user.sub,
-        fechaRechazo: new Date().toISOString()
+        fechaRechazo: new Date().toISOString(),
+        aportacionGenerada: false,
+        ingresoIglesiaId: null,
+        montoAportacionIglesia: null,
+        montoNetoMinisterio: null
       },
       actor,
       current

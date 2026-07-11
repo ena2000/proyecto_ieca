@@ -51,6 +51,7 @@ function signAccessToken(user) {
     sub: String(user.id),
     rol: normalizarRol(user.rol) ?? user.rol,
     ministerioId: user.ministerioId ?? null,
+    mustChangePassword: !!user.mustChangePassword,
     type: 'access',
     jti: crypto.randomUUID()
   };
@@ -145,6 +146,16 @@ function requireRoles(allowedRoles) {
   };
 }
 
+/** Bloquea el API si el usuario debe cambiar la contraseña temporal. */
+function requirePasswordChanged(req, res, next) {
+  if (req.user?.mustChangePassword) {
+    return res.status(403).json({
+      message: 'Debes cambiar tu contraseña temporal antes de continuar'
+    });
+  }
+  return next();
+}
+
 module.exports = {
   signAccessToken,
   signRefreshToken,
@@ -154,6 +165,7 @@ module.exports = {
   verifyRefreshToken,
   authRequired,
   requireRoles,
+  requirePasswordChanged,
   normalizarRol,
   esColaboradorMinisterio,
   JWT_SECRET,

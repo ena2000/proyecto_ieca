@@ -195,7 +195,7 @@ async function resetPasswordWithCode({ login, code, newPassword }) {
 
   const passwordHash = await bcrypt.hash(String(newPassword), 10);
   await db.collection('usuarios').doc(String(user.id)).set(
-    { passwordHash, mustChangePassword: false },
+    { passwordHash, mustChangePassword: false, passwordChangedAt: Date.now() },
     { merge: true }
   );
   await ref.delete();

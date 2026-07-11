@@ -31,7 +31,21 @@ function smtpErrorMessage(err) {
   return `No se pudo enviar el correo: ${err?.message || 'error desconocido'}`;
 }
 
+/** Tests con Firestore en memoria: mismo flujo sendMail que producción, sin Gmail real. */
+function isTestEmailMode() {
+  return process.env.IECA_USE_MEMORY_DB === 'true';
+}
+
 function getTransporter() {
+  if (isTestEmailMode()) {
+    if (!transporter) {
+      // jsonTransport ejecuta sendMail y responde OK (como SMTP real exitoso)
+      transporter = nodemailer.createTransport({ jsonTransport: true });
+      transporterVerified = true;
+    }
+    return transporter;
+  }
+
   if (!smtpConfigured) return null;
   if (!transporter) {
     transporter = nodemailer.createTransport({
@@ -75,6 +89,9 @@ async function ensureTransporterReady() {
 }
 
 function smtpFromAddress() {
+  if (isTestEmailMode()) {
+    return process.env.SMTP_FROM || process.env.SMTP_USER || 'ieca-test@localhost';
+  }
   const raw = process.env.SMTP_FROM || process.env.SMTP_USER || '';
   return String(raw).trim().replace(/^["']|["']$/g, '');
 }
@@ -82,6 +99,10 @@ function smtpFromAddress() {
 function mailAttachments() {
   const logo = getLogoAttachment();
   return logo ? [logo] : [];
+}
+
+function canDeliverViaSmtp() {
+  return isTestEmailMode() || smtpConfigured;
 }
 
 async function deliverEmail({ to, subject, text, html }) {
@@ -99,7 +120,7 @@ async function deliverEmail({ to, subject, text, html }) {
     attachments: mailAttachments()
   };
 
-  if (smtpConfigured) {
+  if (canDeliverViaSmtp()) {
     try {
       const transport = await ensureTransporterReady();
       await transport.sendMail(payload);
@@ -134,12 +155,12 @@ async function deliverEmail({ to, subject, text, html }) {
 async function sendPasswordResetEmail({ to, usuario, code }) {
   const { subject, text, html } = buildPasswordResetEmail({ usuario, code });
 
-  if (smtpConfigured) {
+  if (canDeliverViaSmtp()) {
     try {
       await deliverEmail({ to, subject, text, html });
       return { sent: true, channel: 'email', devCode: undefined };
     } catch (err) {
-      if (!isProduction) {
+      if (!isProduction && !isTestEmailMode()) {
         console.warn(
           '[email] SMTP falló en desarrollo; mostrando código en consola/pantalla:',
           err?.message || err

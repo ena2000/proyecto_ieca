@@ -92,9 +92,13 @@ const COLLECTIONS_RESET = [
 async function clearCollection(name) {
   const snap = await db.collection(name).get();
   if (snap.empty) return;
-  const batch = db.batch();
-  snap.docs.forEach((d) => batch.delete(d.ref));
-  await batch.commit();
+  const batchSize = 400;
+  const docs = snap.docs;
+  for (let i = 0; i < docs.length; i += batchSize) {
+    const batch = db.batch();
+    docs.slice(i, i + batchSize).forEach((d) => batch.delete(d.ref));
+    await batch.commit();
+  }
 }
 
 /** GET /api/admin/config — estado del sistema (último cierre, etc.). */
@@ -173,10 +177,20 @@ router.delete('/datos', async (_req, res) => {
     for (const name of COLLECTIONS_RESET) {
       await clearCollection(name);
     }
+    await clearCollection('password_resets');
     await db.collection('config').doc('sistema').set(
       { ultimoCierre: null, periodosCerrados: [] },
       { merge: true }
     );
+    // Resetear contadores de ID
+    try {
+      const { syncCounterToMax } = require('../utils/firestore');
+      for (const name of COLLECTIONS_RESET) {
+        await syncCounterToMax(name);
+      }
+    } catch (counterErr) {
+      console.warn('[admin DELETE datos] contadores:', counterErr?.message || counterErr);
+    }
     invalidateBootstrapCache();
     res.json({ message: 'Datos eliminados correctamente' });
   } catch (err) {

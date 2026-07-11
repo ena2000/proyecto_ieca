@@ -173,16 +173,6 @@ export class AdministracionService {
 
   async ejecutarCierreMes(): Promise<void> {
     const fechaCierre = getMesActualLabel();
-
-    this.notificacionesService.registrar({
-      audiencia: 'staff',
-      origenRol: ROLES.ADMIN,
-      tipo: 'cierre',
-      titulo: 'Cierre financiero mensual',
-      mensaje: `Se cerró el periodo ${fechaCierre}. Los movimientos del mes quedan congelados.`,
-      ruta: '/administracion'
-    });
-
     const periodoKey = periodoKeyFromFecha(new Date().toISOString());
 
     if (environment.useLocalFallback) {
@@ -202,6 +192,14 @@ export class AdministracionService {
       localStorage.setItem('gastos', JSON.stringify(gastos));
       this.dataService.refreshAllData();
       this.dataService.notifyChanges();
+      this.notificacionesService.registrar({
+        audiencia: 'staff',
+        origenRol: ROLES.ADMIN,
+        tipo: 'cierre',
+        titulo: 'Cierre financiero mensual',
+        mensaje: `Se cerró el periodo ${fechaCierre}. Los movimientos del mes quedan congelados.`,
+        ruta: '/administracion'
+      });
       return;
     }
 
@@ -215,6 +213,14 @@ export class AdministracionService {
     this.cierreService.sincronizarDesdeApi(res);
     this.dataService.refreshAllData();
     this.dataService.notifyChanges();
+    this.notificacionesService.registrar({
+      audiencia: 'staff',
+      origenRol: ROLES.ADMIN,
+      tipo: 'cierre',
+      titulo: 'Cierre financiero mensual',
+      mensaje: `Se cerró el periodo ${fechaCierre}. Los movimientos del mes quedan congelados.`,
+      ruta: '/administracion'
+    });
   }
 
   async crearBackup(): Promise<BackupIeca> {

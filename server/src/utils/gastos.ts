@@ -73,7 +73,12 @@ async function assertGastoModificable(req, entity) {
   return { ok: true };
 }
 
-async function beforeCreateGasto(body) {
+async function beforeCreateGasto(body, req) {
+  if (req?.user?.rol === ROLES.CONTABLE) {
+    const err = new Error('El contable solo puede consultar gastos');
+    err.status = 403;
+    throw err;
+  }
   await assertPeriodoAbierto(body?.fecha);
   await assertMinisterioPermiteGastos(body);
 }

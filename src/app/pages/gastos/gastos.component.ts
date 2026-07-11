@@ -460,46 +460,46 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
   async registrarGasto(): Promise<void> {
     if (this.registrando) return;
+    this.registrando = true;
+    this.cdr.markForCheck();
 
     this.intentoEnvio = true;
     this.formGuardadoError = null;
-    await this.sincronizarFormularioAntesDeGuardar();
-    this.aplicarAlcanceMinisterioAlFormulario();
-    this.cdr.markForCheck();
-
-    if (this.periodoFormularioCerrado) {
-      this.formGuardadoError =
-        `El periodo ${this.etiquetaPeriodoFormulario} está cerrado. No se pueden registrar movimientos.`;
-      await this.mostrarToast(this.formGuardadoError, 'warning');
-      return;
-    }
-
-    const comprobanteErr = validarTamanoComprobante(this.nuevoGasto.foto);
-    if (comprobanteErr) {
-      this.formGuardadoError = comprobanteErr;
-      await this.mostrarToast(comprobanteErr, 'danger', FORM_GUARDADO_TOAST_MS);
-      return;
-    }
-
-    this.cargarRelaciones();
-    if (!this.esFormularioValido) {
-      this.formGuardadoError = this.mensajeValidacion;
-      await this.mostrarToast(this.formGuardadoError, 'danger', FORM_GUARDADO_TOAST_MS);
-      scrollAlErrorFormulario();
-      this.cdr.markForCheck();
-      return;
-    }
-
-    const fechaFormateada = this.fechaManualForm;
-    const preparado = this.gastosService.resolveRelations(
-      this.normalizarGasto(),
-      this.listaMinisterios,
-      this.listaUsuarios
-    );
-
-    this.registrando = true;
-    this.cdr.markForCheck();
     try {
+      await this.sincronizarFormularioAntesDeGuardar();
+      this.aplicarAlcanceMinisterioAlFormulario();
+      this.cdr.markForCheck();
+
+      if (this.periodoFormularioCerrado) {
+        this.formGuardadoError =
+          `El periodo ${this.etiquetaPeriodoFormulario} está cerrado. No se pueden registrar movimientos.`;
+        await this.mostrarToast(this.formGuardadoError, 'warning');
+        return;
+      }
+
+      const comprobanteErr = validarTamanoComprobante(this.nuevoGasto.foto);
+      if (comprobanteErr) {
+        this.formGuardadoError = comprobanteErr;
+        await this.mostrarToast(comprobanteErr, 'danger', FORM_GUARDADO_TOAST_MS);
+        return;
+      }
+
+      this.cargarRelaciones();
+      if (!this.esFormularioValido) {
+        this.formGuardadoError = this.mensajeValidacion;
+        await this.mostrarToast(this.formGuardadoError, 'danger', FORM_GUARDADO_TOAST_MS);
+        scrollAlErrorFormulario();
+        this.cdr.markForCheck();
+        return;
+      }
+
+      const fechaFormateada = this.fechaManualForm;
+      const preparado = this.gastosService.resolveRelations(
+        this.normalizarGasto(),
+        this.listaMinisterios,
+        this.listaUsuarios
+      );
+
       if (this.modoEdicion && this.idEditando !== null) {
         await firstValueFrom(this.gastosService.update(this.idEditando, preparado, fechaFormateada));
         const msg = this.authService.isLider()

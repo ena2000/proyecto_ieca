@@ -49,7 +49,13 @@ export function labelToPeriodoKey(label: string): string | null {
 
 export function periodoKeyFromFecha(fecha: string | undefined): string | null {
   if (!fecha) return null;
-  const d = new Date(fecha);
+  const s = String(fecha).trim();
+  // YYYY-MM-DD (o ISO que empieza así): usar calendario local, no UTC
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+  if (m) {
+    return `${m[1]}-${m[2]}`;
+  }
+  const d = new Date(s);
   if (Number.isNaN(d.getTime())) return null;
   return padMes(d);
 }

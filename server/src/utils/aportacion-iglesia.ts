@@ -35,12 +35,46 @@ function referenciaIngresoOrigen(ingreso) {
 }
 
 async function generarAportacionIglesiaPorIngreso(ingreso, req) {
-  if (!ingresoRequiereAportacion(ingreso) || !ingresoEstaAprobado(ingreso)) {
-    return ingreso;
+  if (!ingreso || ingreso.esAportacionIglesia) return ingreso;
+  if (!ingresoEstaAprobado(ingreso)) return ingreso;
+  if (!ingresoEsTalento(ingreso)) return ingreso;
+
+  const ministerioId = ingreso.ministerioId;
+  if (ministerioId == null || ministerioId === '') return ingreso;
+  const montoBruto = Number(ingreso.monto);
+  if (!Number.isFinite(montoBruto) || montoBruto <= 0) return ingreso;
+  const montoAportacion = calcularMontoAportacionIglesia(montoBruto);
+  if (montoAportacion <= 0) return ingreso;
+
+  // Idempotencia: ya vinculada
+  if (ingreso.aportacionGenerada && ingreso.ingresoIglesiaId != null) {
+    const existente = await getById('ingresos', ingreso.ingresoIglesiaId);
+    if (existente) return ingreso;
   }
 
-  const montoBruto = Number(ingreso.monto);
-  const montoAportacion = calcularMontoAportacionIglesia(montoBruto);
+  // Idempotencia: buscar aportación previa por origen (evita duplicados en carrera)
+  const origenIdNum = Number(ingreso.id);
+  const candidatos = [];
+  for (const valor of [origenIdNum, String(ingreso.id)]) {
+    if (valor == null || valor === '' || Number.isNaN(Number(valor))) continue;
+    const rows = await listCollectionByField('ingresos', 'ingresoOrigenId', valor);
+    candidatos.push(...rows);
+  }
+  const ya = candidatos.find((r) => r?.esAportacionIglesia);
+  if (ya) {
+    const montoNetoMinisterio = Math.round((montoBruto - montoAportacion) * 100) / 100;
+    return updateInCollection('ingresos', ingreso.id, {
+      aportacionGenerada: true,
+      ingresoIglesiaId: ya.id,
+      montoAportacionIglesia: montoAportacion,
+      montoNetoMinisterio
+    });
+  }
+
+  if (ingreso.aportacionGenerada) {
+    // Flag sin hijo: regenerar
+  }
+
   const montoNetoMinisterio = Math.round((montoBruto - montoAportacion) * 100) / 100;
   const pct = etiquetaPorcentajeAportacion();
   const ministerioNombre = ingreso.ministerio || 'ministerio';
@@ -118,10 +152,29 @@ async function revertirAportacionIglesiaPorIngreso(ingreso) {
 }
 
 async function actualizarAportacionIglesiaPorIngreso(ingreso, _req, previous) {
-  if (!ingreso?.aportacionGenerada || ingreso.ingresoIglesiaId == null) {
-    return ingreso;
+  if (!ingreso) return ingreso;
+
+  // Si dejó de ser talento (p. ej. cambió de cuenta 4105), revertir aportación huérfana
+  if (ingreso.aportacionGenerada || ingreso.ingresoIglesiaId != null) {
+    if (!ingresoEsTalento(ingreso) || !ingresoEstaAprobado(ingreso)) {
+      await revertirAportacionIglesiaPorIngreso(ingreso);
+      return updateInCollection('ingresos', ingreso.id, {
+        aportacionGenerada: false,
+        ingresoIglesiaId: null,
+        montoAportacionIglesia: null,
+        montoNetoMinisterio: null
+      });
+    }
   }
-  if (!ingresoEsTalento(ingreso)) {
+
+  if (!ingreso?.aportacionGenerada || ingreso.ingresoIglesiaId == null) {
+    // Si ahora es talento aprobado y no tiene aportación, generarla
+    if (ingresoEsTalento(ingreso) && ingresoEstaAprobado(ingreso) && !ingreso.esAportacionIglesia) {
+      return generarAportacionIglesiaPorIngreso(
+        { ...ingreso, aportacionGenerada: false },
+        _req
+      );
+    }
     return ingreso;
   }
 

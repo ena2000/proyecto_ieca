@@ -167,9 +167,17 @@ function addUserToLeidas(leidasPor, userId) {
   return Array.from(set);
 }
 
-async function marcarLeida(id, userId) {
+async function marcarLeida(id, userId, user) {
   const current = await getById(COLLECTION, id);
   if (!current) return null;
+  if (user) {
+    const visibleIds = await getVisibleIdsForUser(user);
+    if (!visibleIds.has(String(id))) {
+      const err = new Error('No tienes permisos para esta notificación');
+      err.status = 403;
+      throw err;
+    }
+  }
   const leidasPor = addUserToLeidas(current.leidasPor, userId);
   const updated = await updateInCollection(COLLECTION, id, { leidasPor });
   return toNotificacion(updated);

@@ -210,6 +210,8 @@ describe('API HTTP (integración en memoria)', () => {
     assert.equal(res.body.skipped, false);
     assert.ok(res.body.resumen.pendientes.length >= 1);
     assert.equal(res.body.destinatarios.length, 2);
+    assert.equal(res.body.mailResult.sent, true);
+    assert.equal(res.body.mailResult.channel, 'email');
   });
 
   it('GET /api/admin/auditoria sin filtros devuelve ingresos y gastos', async () => {

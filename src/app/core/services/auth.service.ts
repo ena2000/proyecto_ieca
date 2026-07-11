@@ -179,10 +179,15 @@ export class AuthService {
 
   changePassword(oldPassword: string, newPassword: string): Promise<void> {
     return firstValueFrom(
-      this.api.post<void>(API.auth.changePassword, { oldPassword, newPassword }).pipe(
-        this.withAuthTimeout()
-      )
-    ).then(() => {
+      this.api.post<{ token: string; refreshToken: string; user: SessionUser }>(
+        API.auth.changePassword,
+        { oldPassword, newPassword }
+      ).pipe(this.withAuthTimeout())
+    ).then((res) => {
+      if (res?.token && res?.refreshToken && res?.user) {
+        this.persistSession(res.token, res.refreshToken, res.user);
+        return;
+      }
       const current = this.getSession();
       if (!current) return;
       const updated: SessionUser = { ...current, mustChangePassword: false };

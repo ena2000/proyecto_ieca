@@ -40,10 +40,10 @@ describe('aportacion-iglesia.util', () => {
     expect(calcularMontoAportacionIglesia(150)).toBe(49.5);
   });
 
-  it('detecta ingresos de talento por cuenta o texto legacy', () => {
+  it('detecta ingresos de talento solo por cuenta 4105', () => {
     expect(ingresoEsTalento(ingresoTalento)).toBeTrue();
     expect(ingresoEsTalento(ingresoDiezmo)).toBeFalse();
-    expect(ingresoEsTalento({ ...ingresoDiezmo, cuentaCodigo: undefined, categoria: 'Talento escolar' })).toBeTrue();
+    expect(ingresoEsTalento({ ...ingresoDiezmo, cuentaCodigo: undefined, categoria: 'Talento escolar' })).toBeFalse();
   });
 
   it('solo requiere aportación en ingresos de talento de ministerio', () => {

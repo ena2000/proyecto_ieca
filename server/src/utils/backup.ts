@@ -45,7 +45,7 @@ async function setCierreCompleto(ultimoCierre, periodosCerrados) {
 async function listUsuariosForBackup() {
   const lista = await listCollection('usuarios');
   return lista.map((u) => {
-    const { password, ...rest } = u;
+    const { password, passwordHash, ...rest } = u;
     return rest;
   });
 }
@@ -154,6 +154,12 @@ async function restoreBackup(body) {
     body.ultimoCierre ?? null,
     body.periodosCerrados ?? []
   );
+
+  // Re-sincronizar contadores de ID tras restore
+  const { syncCounterToMax } = require('./firestore');
+  for (const name of [...COLLECTIONS_REPLACE, 'usuarios']) {
+    await syncCounterToMax(name);
+  }
 
   return buildBackup();
 }

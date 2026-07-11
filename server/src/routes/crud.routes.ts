@@ -142,13 +142,21 @@ function createCrudRouter(collection, options: {
     const { esColaboradorMinisterio } = require('../middleware/auth');
     if (!esColaboradorMinisterio(rol)) return null;
     const ministerioId = req.user?.ministerioId;
-    if (ministerioId == null) return null;
+    if (ministerioId == null || ministerioId === '') {
+      // Colaborador sin ministerio: sin acceso a movimientos (no “ver todos”)
+      return { field: scopeField, value: -1, denyAll: true };
+    }
     return { field: scopeField, value: Number(ministerioId) };
   }
 
   function ensureScope(req, body) {
     const scope = getUserScope(req);
     if (!scope) return body;
+    if (scope.denyAll) {
+      const err = new Error('Tu usuario no tiene ministerio asignado. Contacta al administrador.');
+      err.status = 403;
+      throw err;
+    }
     // Fuerza el scope del líder, evita ver/escribir en otro ministerio
     return { ...body, [scope.field]: scope.value };
   }
@@ -156,6 +164,7 @@ function createCrudRouter(collection, options: {
   async function assertScopeAllowed(req, entity) {
     const scope = getUserScope(req);
     if (!scope) return true;
+    if (scope.denyAll) return false;
     return Number(entity?.[scope.field]) === Number(scope.value);
   }
 
@@ -170,6 +179,9 @@ function createCrudRouter(collection, options: {
   router.get('/', async (_req, res) => {
     try {
       const scope = getUserScope(_req);
+      if (scope?.denyAll) {
+        return res.json([]);
+      }
       let lista = scope
         ? await listCollectionByField(collection, scope.field, scope.value)
         : await listCollection(collection);
@@ -197,7 +209,12 @@ function createCrudRouter(collection, options: {
   router.post('/', ...(validateCreate ? [validate(validateCreate)] : []), async (req, res) => {
     try {
       let body = { ...req.body };
-      body = ensureScope(req, body);
+      try {
+        body = ensureScope(req, body);
+      } catch (scopeErr) {
+        const status = scopeErr.status || 403;
+        return res.status(status).json({ message: scopeErr.message || 'Operación no permitida' });
+      }
       if (beforeCreate) {
         try {
           await beforeCreate(body, req);

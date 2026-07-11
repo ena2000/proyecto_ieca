@@ -40,6 +40,15 @@ function createDocRef(collectionName, docId) {
       const prev = col.get(docId) || {};
       col.set(docId, options.merge ? { ...prev, ...data } : { ...data });
     },
+    create: async (data) => {
+      const col = getCollection(collectionName);
+      if (col.has(docId)) {
+        const err = new Error('Document already exists');
+        err.code = 6;
+        throw err;
+      }
+      col.set(docId, { ...data });
+    },
     delete: async () => {
       getCollection(collectionName).delete(docId);
     }
@@ -121,6 +130,18 @@ function createCollectionRef(collectionName) {
 const db = {
   collection(name) {
     return createCollectionRef(name);
+  },
+  async runTransaction(fn) {
+    const tx = {
+      get: (ref) => ref.get(),
+      set: (ref, data, options) => {
+        void ref.set(data, options || {});
+      },
+      update: (ref, data) => {
+        void ref.set(data, { merge: true });
+      }
+    };
+    return fn(tx);
   },
   batch() {
     const ops = [];
