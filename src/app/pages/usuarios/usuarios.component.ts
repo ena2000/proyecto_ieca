@@ -36,6 +36,7 @@ import {
   validarUsuarioForm
 } from '../../shared/utils/liderazgo.util';
 import { resolverNombreMinisterio } from '../../shared/utils/movimiento-ministerio.util';
+import { aIdNumericoONull, mismoIdNumerico } from '../../shared/utils/id-coerce.util';
 import { ROLES, normalizarRol, AppRole } from '../../core/constants/roles.constants';
 import {
   mensajeUsuarioEmailDuplicado,
@@ -272,6 +273,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   }
 
   onFiltroMinisterioChange(): void {
+    this.filtroMinisterioId = aIdNumericoONull(this.filtroMinisterioId);
     this.actualizarVistaUsuarios();
   }
 
@@ -307,7 +309,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
         continue;
       }
 
-      if (this.filtroMinisterioId != null && Number(u.ministerioId) !== this.filtroMinisterioId) {
+      if (this.filtroMinisterioId != null && !mismoIdNumerico(u.ministerioId, this.filtroMinisterioId)) {
         continue;
       }
 
@@ -396,10 +398,12 @@ export class UsuariosComponent implements OnInit, OnDestroy {
 
     this.intentoEnvio = true;
     this.formGuardadoError = null;
+    this.cdr.markForCheck();
     await this.sincronizarFormularioAntesDeGuardar();
 
     if (!this.esFormularioValido) {
       this.formGuardadoError = this.mensajeValidacion;
+      this.cdr.markForCheck();
       await this.mostrarToast(this.formGuardadoError, 'danger', FORM_GUARDADO_TOAST_MS);
       scrollAlErrorFormulario();
       return;
@@ -413,13 +417,19 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     );
     if (errorLiderazgo) {
       this.formGuardadoError = errorLiderazgo;
+      this.cdr.markForCheck();
       await this.mostrarToast(errorLiderazgo, 'danger', FORM_GUARDADO_TOAST_MS);
       scrollAlErrorFormulario();
       return;
     }
 
     const payload = this.prepararPayloadUsuario();
+    // Normaliza ministerioId por si ion-select dejó string.
+    if (payload.ministerioId != null) {
+      payload.ministerioId = aIdNumericoONull(payload.ministerioId) ?? undefined;
+    }
     this.guardando = true;
+    this.cdr.markForCheck();
 
     try {
       if (this.modoEdicion && this.idEditando !== null) {
@@ -465,10 +475,12 @@ export class UsuariosComponent implements OnInit, OnDestroy {
       }
     } catch (error) {
       this.formGuardadoError = getHttpErrorMessage(error, 'Error al guardar');
+      this.cdr.markForCheck();
       await this.mostrarToast(this.formGuardadoError, 'danger', FORM_GUARDADO_TOAST_MS);
       scrollAlErrorFormulario();
     } finally {
       this.guardando = false;
+      this.cdr.markForCheck();
     }
   }
 
@@ -489,7 +501,11 @@ export class UsuariosComponent implements OnInit, OnDestroy {
 
   editarUsuario(item: Usuario): void {
     const rol = normalizarRol(item.rol) ?? item.rol;
-    this.nuevoUsuario = { ...item, rol };
+    this.nuevoUsuario = {
+      ...item,
+      rol,
+      ministerioId: aIdNumericoONull(item.ministerioId) ?? undefined
+    };
     this.modoEdicion = true;
     this.idEditando = item.id;
     this.intentoEnvio = false;
@@ -516,6 +532,8 @@ export class UsuariosComponent implements OnInit, OnDestroy {
               await withLoading(this.loadingController, 'Eliminando usuario...', async () => {
                 await firstValueFrom(this.usuariosService.delete(item.id));
               });
+              this.dataService.notifyChanges();
+              this.cdr.markForCheck();
               this.mostrarToast('Usuario eliminado', 'warning');
             } catch (error) {
               const msg = error instanceof Error ? error.message : 'Error al eliminar';
@@ -542,6 +560,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     this.intentoEnvio = false;
     this.formGuardadoError = null;
     this.password = '';
+    this.cdr.markForCheck();
   }
 
   cargarMinisterios() {

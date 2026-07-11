@@ -190,7 +190,7 @@ export class AdministracionService {
       const gastos   = marcarMes(this.dataService.getGastosActuales());
       localStorage.setItem('ingresos', JSON.stringify(ingresos));
       localStorage.setItem('gastos', JSON.stringify(gastos));
-      this.dataService.refreshAllData();
+      await this.dataService.refreshAllData(true);
       this.dataService.notifyChanges();
       this.notificacionesService.registrar({
         audiencia: 'staff',
@@ -211,7 +211,7 @@ export class AdministracionService {
       }>(API.admin.cierre, { periodo: fechaCierre })
     );
     this.cierreService.sincronizarDesdeApi(res);
-    this.dataService.refreshAllData();
+    await this.dataService.refreshAllData(true);
     this.dataService.notifyChanges();
     this.notificacionesService.registrar({
       audiencia: 'staff',

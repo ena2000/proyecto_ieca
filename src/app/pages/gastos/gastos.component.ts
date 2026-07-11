@@ -25,7 +25,7 @@ import { procesarComprobante, esComprobantePdf } from '../../shared/utils/compro
 import { presentIecaToast } from '../../shared/utils/toast.util';
 import { estadoGasto, etiquetaEstadoGasto, gastoAprobado, gastoPendiente } from '../../shared/utils/gasto.util';
 import { registerMovimientoPageIcons } from '../../shared/utils/movimiento-page.icons';
-import { filtrarMovimientos, hayFiltrosMovimientoActivos, hayFiltrosMovimientoAvanzadosActivos, FiltrosMovimiento, FiltroEstadoMovimiento, itemsEnAlcanceMinisterio } from '../../shared/utils/movimiento-filtros.util';
+import { filtrarMovimientos, hayFiltrosMovimientoActivos, hayFiltrosMovimientoAvanzadosActivos, FiltrosMovimiento, FiltroEstadoMovimiento, itemsEnAlcanceMinisterio, normalizarFiltroMinisterioId } from '../../shared/utils/movimiento-filtros.util';
 import {
   formatearEntradaFechaManual,
   isoDesdeFechaManualDDMMYYYY,
@@ -120,6 +120,7 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
   @ViewChild('montoInput') montoInput?: IonInput;
   @ViewChild('descripcionInput') descripcionInput?: IonInput;
   @ViewChild('fechaInput') fechaInput?: IonInput;
+  @ViewChild(IonContent) private content?: IonContent;
 
   fechaManualForm = '';
   listaMinisterios: Ministerio[] = [];
@@ -296,6 +297,7 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   onFiltroMinisterioChange(): void {
+    this.filtroMinisterioId = normalizarFiltroMinisterioId(this.filtroMinisterioId);
     this.onFiltrosChange();
   }
 
@@ -627,7 +629,7 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
       this.intentoEnvio = false;
       this.aplicarResponsableAlFormulario();
       this.cdr.markForCheck();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      void this.content?.scrollToTop(300);
     }, 50);
   }
 

@@ -16,6 +16,7 @@ const {
   marcarLeidasPorTipo
 } = require('../utils/notificaciones');
 const { ROLES } = require('../middleware/auth');
+const { invalidateBootstrapCache } = require('../utils/bootstrapCache');
 
 const router = express.Router();
 
@@ -63,6 +64,7 @@ router.post('/', requireStaffNotifRole, validate(createNotificacionSchema), asyn
       audiencia: 'staff',
       origenRol: ROLES.ADMIN
     });
+    invalidateBootstrapCache();
     res.status(201).json(created);
   } catch (err) {
     console.error('[notificaciones POST]', err);

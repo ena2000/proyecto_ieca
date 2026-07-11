@@ -1,3 +1,5 @@
+import { aIdNumericoONull, mismoIdNumerico } from './id-coerce.util';
+
 export type MovimientoEstadoFiltro = 'pendiente' | 'aprobado' | 'rechazado';
 export type FiltroEstadoMovimiento = 'todos' | MovimientoEstadoFiltro;
 
@@ -50,12 +52,17 @@ export function itemsEnAlcanceMinisterio<T extends { ministerioId?: number }>(
   filtroMinisterioId: number | null
 ): T[] {
   if (ministerioScopeId != null) {
-    return items.filter(i => Number(i.ministerioId) === ministerioScopeId);
+    return items.filter(i => mismoIdNumerico(i.ministerioId, ministerioScopeId));
   }
   if (filtroMinisterioId != null) {
-    return items.filter(i => Number(i.ministerioId) === filtroMinisterioId);
+    return items.filter(i => mismoIdNumerico(i.ministerioId, filtroMinisterioId));
   }
   return items;
+}
+
+/** Normaliza el id del filtro de ministerio tras ion-select (string → number). */
+export function normalizarFiltroMinisterioId(valor: unknown): number | null {
+  return aIdNumericoONull(valor);
 }
 
 export function filtrarMovimientos<T extends { fecha: string; monto?: number | null; ministerioId?: number }>(

@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import localeEs from '@angular/common/locales/es';
 import {
   IonHeader, IonToolbar, IonButtons, IonTitle, IonContent,
-  IonIcon, IonButton, ToastController, IonLabel, IonItem,
+  IonIcon, ToastController, IonLabel, IonItem,
   IonSelect, IonSelectOption
 } from '@ionic/angular/standalone';
 import { Subject, combineLatest } from 'rxjs';
@@ -36,6 +36,7 @@ import {
   etiquetaFiltroMovimientoReporte,
   construirEtiquetaFiltroReporte
 } from '../../shared/utils/reportes-filtros.util';
+import { aIdNumericoONull, mismoIdNumerico } from '../../shared/utils/id-coerce.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
 import { esMinisterioIglesiaGeneral } from '../../shared/constants/ministerios-catalogo.constants';
 
@@ -52,7 +53,7 @@ registerReportesPageIcons();
   imports: [
     CommonModule, FormsModule,
     IonHeader, IonToolbar, IonButtons, IonTitle, IonContent,
-    IonIcon, IonButton, IonLabel, IonItem, IonSelect, IonSelectOption,
+    IonIcon, IonLabel, IonItem, IonSelect, IonSelectOption,
     NotificacionesBellComponent, ToolbarMenuButtonComponent
   ],
   providers: [ToastController],
@@ -61,6 +62,7 @@ registerReportesPageIcons();
 export class ReportesComponent implements OnInit, OnDestroy, ViewWillEnter {
   readonly formatearMoneda = formatearMoneda;
   readonly esMinisterioIglesiaGeneral = esMinisterioIglesiaGeneral;
+  readonly mismoIdMinisterio = mismoIdNumerico;
 
   listaReportes: Reporte[] = [];
   listaMinisterios: Pick<Ministerio, 'id' | 'nombre'>[] = [];
@@ -273,6 +275,7 @@ export class ReportesComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   onFiltroMinisterioChange(): void {
+    this.filtroMinisterioId = aIdNumericoONull(this.filtroMinisterioId);
     this.actualizarVista();
   }
 
@@ -286,7 +289,7 @@ export class ReportesComponent implements OnInit, OnDestroy, ViewWillEnter {
 
   seleccionarMinisterioParaKardex(ministerioId: number): void {
     if (this.filtroMinisterioBloqueado) return;
-    this.filtroMinisterioId = ministerioId;
+    this.filtroMinisterioId = aIdNumericoONull(ministerioId);
     this.actualizarVista();
   }
 
@@ -334,7 +337,7 @@ export class ReportesComponent implements OnInit, OnDestroy, ViewWillEnter {
         etiquetaMesActivo: this.etiquetaMesActivo,
         filtroMinisterioId: this.filtroMinisterioId,
         ministerioScopeId: this.ministerioScopeId,
-        nombreMinisterio: this.listaMinisterios.find(m => m.id === this.filtroMinisterioId)?.nombre,
+        nombreMinisterio: this.listaMinisterios.find(m => mismoIdNumerico(m.id, this.filtroMinisterioId))?.nombre,
         searchTerm: this.searchTerm,
         filtroMovimiento: this.filtroMovimiento
       }),

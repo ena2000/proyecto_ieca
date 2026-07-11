@@ -264,7 +264,7 @@
             type="button"
             class="desglose-ministerio-row"
             *ngFor="let item of desgloseMinisterioVista"
-            [class.desglose-ministerio-row--active]="filtroMinisterioId === item.ministerioId"
+            [class.desglose-ministerio-row--active]="mismoIdMinisterio(filtroMinisterioId, item.ministerioId)"
             [class.desglose-ministerio-row--static]="filtroMinisterioBloqueado"
             (click)="seleccionarMinisterioParaKardex(item.ministerioId)">
             <div class="col-ministerio">

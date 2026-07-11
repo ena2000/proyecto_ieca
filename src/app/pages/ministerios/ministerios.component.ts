@@ -28,6 +28,7 @@ import { NotificacionesBellComponent } from 'src/app/components/notificaciones-b
 import { ToolbarMenuButtonComponent } from 'src/app/components/toolbar-menu-button/toolbar-menu-button.component';
 import { Ministerio, Usuario, KardexLinea } from '../../core/models';
 import { DataService } from '../../services/data.service';
+import { aIdNumericoONull, mismoIdNumerico } from '../../shared/utils/id-coerce.util';
 import { MinisteriosService } from '../../services/ministerios.service';
 import { withLoading, getHttpErrorMessage } from '../../shared/utils/loading.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
@@ -64,6 +65,7 @@ registerLocaleData(localeEs);
 })
 export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
+  @ViewChild(IonContent) private content?: IonContent;
   @ViewChild('nombreInput') nombreInput?: IonInput;
 
   listaUsuarios: Usuario[] = [];
@@ -211,6 +213,7 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   onFiltrosChange(): void {
+    this.filtroColaboradorId = aIdNumericoONull(this.filtroColaboradorId);
     this.actualizarVista();
   }
 
@@ -242,7 +245,7 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
     if (this.filtroColaboradorId !== null) {
       const uid = this.filtroColaboradorId;
       filtrados = filtrados.filter(m =>
-        colaboradoresEnMinisterio(m.id, this.listaUsuarios).some(u => Number(u.id) === uid)
+        colaboradoresEnMinisterio(m.id, this.listaUsuarios).some(u => mismoIdNumerico(u.id, uid))
       );
     }
 
@@ -348,7 +351,7 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
       this.idEditando      = item.id;
       this.intentoEnvio    = false;
       this.actualizarVista();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      void this.content?.scrollToTop(300);
     }, 50);
   }
 
@@ -366,6 +369,7 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
               await withLoading(this.loadingController, 'Eliminando ministerio...', async () => {
                 await firstValueFrom(this.ministeriosService.delete(item.id));
               });
+              this.dataService.notifyChanges();
               this.mostrarToast('Registro eliminado', 'warning');
             } catch (error) {
               const msg = error instanceof Error ? error.message : 'Error al eliminar';
