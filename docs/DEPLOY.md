@@ -136,7 +136,7 @@ En el panel del servicio → **Environment**:
 | `JWT_SECRET` | Sí | Genera con `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"` |
 | `CORS_ORIGINS` | Sí | `https://gestion-ieca.web.app,https://gestion-ieca.firebaseapp.com` (sin espacios, sin `/` final) |
 | `FIREBASE_SERVICE_ACCOUNT_JSON` | Sí | Contenido **completo** del JSON de Firebase (una sola línea) |
-| `JWT_ACCESS_EXPIRES` | No | `15m` (por defecto) |
+| `JWT_ACCESS_EXPIRES` | No | `8h` (por defecto en código / `render.yaml`) |
 | `JWT_REFRESH_EXPIRES` | No | `7d` (por defecto) |
 | `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` | **Sí** (producción) | Sin esto, **recuperar contraseña devuelve 503**. Ver [SMTP en Render](#smtp-en-render-recuperación-y-alertas) |
 | `ALERTAS_CRON_ENABLED` | No | `true` si quieres cron de alertas en el mismo proceso |

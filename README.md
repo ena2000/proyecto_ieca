@@ -262,7 +262,9 @@ proyecto_ieca/
 | `excel-ieca.styles.ts` | Estilos de exportación Excel |
 | `contabilidad-cuenta-form.util.ts` | Validación de cuenta en formularios |
 | `api-wake.util.ts` | Ping breve a `/health` antes de login (resiliencia) |
-| `unicidad.util.ts` | Validación de nombres de ministerio y emails duplicados |
+| `unicidad.util.ts` | Unicidad de ministerios (incl. equivalentes «ministerio de…») y emails |
+| `ministerio-nombre.util.ts` | Longitud, letras y anti-spam en nombres de ministerio |
+| `movimiento-fecha.util.ts` | Fechas de movimiento: máx. hoy; filtros desde/hasta |
 | `movimiento-responsable.util.ts` | `usuarioId` / `registradoPor` en altas de movimientos |
 | `notificacion-filtro.util.ts` | Filtrado de notificaciones por rol y audiencia |
 | **Aportación iglesia** | |
@@ -369,7 +371,7 @@ PORT=3000
 JWT_SECRET=
 
 # Tokens (opcional): access corto + refresh largo
-# JWT_ACCESS_EXPIRES=15m
+# JWT_ACCESS_EXPIRES=8h
 # JWT_REFRESH_EXPIRES=7d
 
 # Producción: orígenes del frontend (separados por coma)
@@ -627,12 +629,12 @@ Sin SMTP en desarrollo, el resumen se imprime en la consola del servidor. Máxim
 | Medida | Detalle |
 |--------|---------|
 | Contraseñas | **bcrypt** en Firestore |
-| JWT | Access **15 min** + refresh **7 días**; Bearer en cliente (misma arquitectura) |
-| Sesión en navegador | Tokens en **sessionStorage** (se borran al cerrar la ventana); migra desde `localStorage` si había sesión previa |
+| JWT | Access **8 h** + refresh **7 días** (`JWT_ACCESS_EXPIRES` / `JWT_REFRESH_EXPIRES`); Bearer en cliente |
+| Sesión en navegador | Tokens en **sessionStorage** (se borran al cerrar la ventana); se renueva al volver a la pestaña; migra desde `localStorage` si había sesión previa |
 | `JWT_SECRET` | Obligatorio, ≥ 32 caracteres; rechaza claves débiles |
 | CORS | Orígenes explícitos (`CORS_ORIGINS`) |
 | Helmet + CSP (API) | Cabeceras de seguridad; CSP estricta en respuestas del API |
-| Cabeceras (Hosting) | `X-Frame-Options` / `nosniff` / `Referrer-Policy` / `Permissions-Policy` en Firebase Hosting |
+| Cabeceras (Hosting) | `X-Frame-Options` / `nosniff` / `Referrer-Policy` / `Permissions-Policy` en Firebase Hosting (sin CSP en HTML: evita romper el CSS de Angular) |
 | Rate limiting | Login: 5 / 15 min por IP; API: 200 / 15 min (prod), 5000 / 15 min (dev); `RATE_LIMIT_API_MAX` |
 | Validación | **Zod** en auth, CRUD, notificaciones, admin |
 | Recuperación | Código 6 dígitos (SMTP o consola en dev) |

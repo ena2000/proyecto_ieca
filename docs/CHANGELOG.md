@@ -4,6 +4,17 @@ Registro resumido de entregas relevantes para el repositorio. Detalle técnico e
 
 ---
 
+## 2026-07 — Validaciones, sesión y estabilidad (panel)
+
+- **Ministerios:** límite de caracteres, letras obligatorias, anti-spam; unicidad con equivalentes («ministerio de Alabanza» ≈ «Alabanza»); fix del flash falso «ya existe» tras crear.
+- **Ingresos/gastos:** fecha máxima = hoy (cliente + API); periodos cerrados sin cambio (meses abiertos del pasado siguen permitidos).
+- **Sesión:** access JWT **8 h** + refresh **7 d** en `sessionStorage`; renovación al volver a la pestaña; mensaje claro si la sesión expiró.
+- **Hosting:** cabeceras de seguridad sin CSP en HTML (evita panel sin estilos); build sin `inlineCritical` problemático.
+- **Navegación:** recuperación si falla un chunk lazy tras deploy; alias `/admin` → `/administracion`.
+- Docs: README, DEPLOY, REQUERIMIENTOS (RF-15), METODOLOGIA alineados.
+
+---
+
 ## 2026-07 — Plan Render Starter en producción
 
 - API `ieca-api` en plan **Starter** (pago, siempre activo; `render.yaml`).

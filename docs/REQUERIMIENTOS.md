@@ -31,7 +31,8 @@ Especificación de requisitos validada con stakeholders de IECA (administrador y
 | RF-11 | Notificaciones | Alertas de pendientes y eventos del sistema por usuario. |
 | RF-12 | Aportación iglesia | Al aprobar ingreso de talento (cuenta `4105`) con ministerio: 33 % automático a `General`; ministerio retiene 67 %; movimiento automático no editable. |
 | RF-13 | Carga inicial (bootstrap) | `GET /api/bootstrap` agrega datos por rol en una petición; caché servidor y cliente. |
-| RF-14 | Unicidad | Nombres de ministerio y emails de usuario sin duplicados (normalización sin tildes). |
+| RF-14 | Unicidad | Nombres de ministerio y emails sin duplicados (tildes/mayúsculas; equivalentes «ministerio de Alabanza» ≈ «Alabanza»). |
+| RF-15 | Fechas de movimiento | Ingresos/gastos: la fecha no puede ser posterior a hoy; periodos cerrados no admiten altas ni cambios. |
 
 ---
 
@@ -55,6 +56,7 @@ Especificación de requisitos validada con stakeholders de IECA (administrador y
 - El **contable** consulta movimientos y reportes y recibe alertas por correo, pero **no** ejecuta aprobaciones.
 - Los totales **del período** en Reportes respetan el filtro de mes, ministerio y tipo; el **saldo disponible** y el **kardex** son **históricos** (todos los aprobados del ministerio, sin filtro de mes).
 - Los **periodos cerrados** impiden altas, ediciones y borrados en ese mes.
+- La **fecha del movimiento** no puede ser futura (máximo el día de hoy); meses abiertos del pasado sí se permiten hasta el cierre.
 - Los **colaboradores** solo ven y operan sobre su `ministerioId` (cuando está asignado).
 - El rol en Firestore es **`Colaborador`**; el valor legacy `Lider/CoLider` sigue aceptándose en login y API.
 - La **aportación iglesia (33 %)** aplica solo a ingresos de cuenta **4105** (talento) con ministerio asignado; genera un ingreso en `General` al aprobar; al borrar el origen se elimina el ingreso vinculado.

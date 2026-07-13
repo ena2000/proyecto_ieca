@@ -229,7 +229,8 @@ La especificación validada agrupa **18 casos de uso** en **4 módulos**. Tabla 
 | RF-11 | Notificaciones | Alertas de pendientes y eventos del sistema por usuario. |
 | RF-12 | Aportación iglesia | Al aprobar ingreso de **talento** (`4105`) con ministerio: **33%** automático a `General`; ministerio retiene **67%**; movimiento automático no editable. |
 | RF-13 | Carga inicial (bootstrap) | `GET /api/bootstrap` agrega datos por rol en una petición; caché servidor y cliente para reducir latencia. |
-| RF-14 | Unicidad | Nombres de ministerio y emails de usuario sin duplicados (normalización sin tildes). |
+| RF-14 | Unicidad | Nombres de ministerio y emails sin duplicados (tildes/mayúsculas; equivalentes «ministerio de…»). |
+| RF-15 | Fechas de movimiento | Fecha ≤ hoy; periodos cerrados bloquean altas y cambios. |
 
 ### 3.5 Reglas de negocio clave
 
@@ -238,6 +239,7 @@ La especificación validada agrupa **18 casos de uso** en **4 módulos**. Tabla 
 - El **contable** consulta movimientos y reportes y recibe alertas por correo, pero **no** ejecuta aprobaciones.
 - Los totales **del período** en Reportes respetan el filtro de mes, ministerio y tipo; el **saldo disponible** y el **kardex** son **históricos** (todos los aprobados del ministerio, sin filtro de mes).
 - Los **periodos cerrados** impiden altas, ediciones y borrados en ese mes.
+- La **fecha del movimiento** no puede ser futura; meses abiertos del pasado se permiten hasta el cierre.
 - Los **colaboradores** solo ven y operan sobre su `ministerioId` (cuando está asignado).
 - El rol en Firestore es **`Colaborador`**; el valor legacy `Lider/CoLider` sigue aceptándose en login y API.
 - El **cierre mensual** procesa movimientos por lotes (hasta 500 operaciones por lote en Firestore).
@@ -379,7 +381,7 @@ flowchart LR
 
 ### 4.7 Diseño de seguridad
 
-- **Autenticación:** JWT access (15 min) + refresh (7 días).
+- **Autenticación:** JWT access (8 h) + refresh (7 días); tokens en `sessionStorage`.
 - **Autorización:** `requireRoles` en API; `authGuard` y `roleGuard` en rutas.
 - **Validación de entrada:** Zod en auth, CRUD, notificaciones y admin.
 - **Protección HTTP:** Helmet, CORS explícito, rate limiting en login y API.
@@ -709,7 +711,8 @@ flowchart LR
 |-----------|--------|----------------|--------|
 | RF-02 Ingresos | `pages/ingresos`, CRUD API, aportación 33% | `ingresos.component`, `aportacion-iglesia.util`, `movimiento-responsable.util`, `server/utils/ingresos.ts` | `movimiento-filtros.util.spec.ts`, `aportacion-iglesia.util.spec.ts`, `movimiento-responsable.util.spec.ts`, manual por rol |
 | RF-13 Bootstrap | `bootstrap.routes`, `bootstrapCache` | `DataService.bootstrapRemote`, `api.constants` | `http.integration.test.js`, manual tras login |
-| RF-14 Unicidad | Validación en ministerios/usuarios | `unicidad.util`, `server/utils/unicidad.ts` | `unicidad.util.spec.ts`, `unicidad.test.js` |
+| RF-14 Unicidad | Validación en ministerios/usuarios | `unicidad.util`, `ministerio-nombre`, `server/utils/unicidad.ts` | `unicidad.util.spec.ts`, `unicidad.test.js` |
+| RF-15 Fechas | Fecha ≤ hoy + periodos cerrados | `movimiento-fecha.util`, `cierre.ts` | `movimiento-validacion.util.spec.ts` |
 | RF-08 Reportes | `pages/reportes`, `ReportesService`, kardex y aportación en `DataService` | `reportes.component`, `reportes-filtros.util` | `reportes-filtros.util.spec.ts`, manual kardex/Excel/aportación |
 | RF-09 Cierre | `admin.routes`, `cierre-mensual.ts` | Panel administración | `cierre-mensual.test.js`, `http.integration.test.js` |
 | RF-01 Auth | JWT, guards | `auth.routes`, `authGuard` | `auth.test.js`, login manual |
