@@ -79,13 +79,13 @@ async function beforeCreateGasto(body, req) {
     err.status = 403;
     throw err;
   }
-  await assertPeriodoAbierto(body?.fecha);
+  await assertPeriodoAbierto(body?.fecha, body?.fechaFormateada);
   await assertMinisterioPermiteGastos(body);
 }
 
 async function beforeUpdateGasto(body, _req, current) {
   await assertMovimientoModificable(current);
-  if (body?.fecha) await assertPeriodoAbierto(body.fecha);
+  if (body?.fecha) await assertPeriodoAbierto(body.fecha, body?.fechaFormateada);
   await assertMinisterioPermiteGastos({ ...current, ...body });
 }
 

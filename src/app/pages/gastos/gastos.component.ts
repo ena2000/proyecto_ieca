@@ -32,7 +32,10 @@ import {
   actualizarDesdeFechaNativa,
   aplicarFechaManualFiltro,
   actualizarEstadoFiltroFechaMovimiento,
-  CampoFechaMovimiento
+  CampoFechaMovimiento,
+  hoyLocalYYYYMMDD,
+  esFechaMovimientoFutura,
+  MENSAJE_FECHA_MOVIMIENTO_FUTURA
 } from '../../shared/utils/movimiento-fecha.util';
 import {
   leerValorIonInput,
@@ -112,6 +115,7 @@ const GASTO_VACIO = (): Gasto => {
 })
 export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
   readonly isoToDateInputValue = isoToDateInputValue;
+  readonly fechaMaximaInput = hoyLocalYYYYMMDD();
 
   @ViewChild('dateInputForm') dateInputForm?: ElementRef<HTMLInputElement>;
   @ViewChild('dateInputDesde') dateInputDesde?: ElementRef<HTMLInputElement>;
@@ -471,6 +475,13 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
       await this.sincronizarFormularioAntesDeGuardar();
       this.aplicarAlcanceMinisterioAlFormulario();
       this.cdr.markForCheck();
+
+      if (esFechaMovimientoFutura(this.fechaManualForm, this.nuevoGasto.fecha)) {
+        this.formGuardadoError = MENSAJE_FECHA_MOVIMIENTO_FUTURA;
+        this.cdr.markForCheck();
+        await this.mostrarToast(this.formGuardadoError, 'warning');
+        return;
+      }
 
       if (this.periodoFormularioCerrado) {
         this.formGuardadoError =
@@ -889,6 +900,7 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
       descripcion: this.nuevoGasto.descripcion,
       monto: this.nuevoGasto.monto,
       fechaManualForm: this.fechaManualForm,
+      fechaIso: this.nuevoGasto.fecha,
       cuentaCodigo: this.nuevoGasto.cuentaCodigo,
       ministerioId: this.nuevoGasto.ministerioId,
       listaMinisteriosLength: this.listaMinisterios.length,
@@ -901,6 +913,7 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
       descripcion: this.nuevoGasto.descripcion,
       monto: this.nuevoGasto.monto,
       fechaManualForm: this.fechaManualForm,
+      fechaIso: this.nuevoGasto.fecha,
       cuentaCodigo: this.nuevoGasto.cuentaCodigo,
       ministerioId: this.nuevoGasto.ministerioId,
       listaMinisteriosLength: this.listaMinisterios.length,

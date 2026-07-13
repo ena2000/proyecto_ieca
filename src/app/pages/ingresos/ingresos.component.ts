@@ -32,7 +32,10 @@ import {
   actualizarDesdeFechaNativa,
   aplicarFechaManualFiltro,
   actualizarEstadoFiltroFechaMovimiento,
-  CampoFechaMovimiento
+  CampoFechaMovimiento,
+  hoyLocalYYYYMMDD,
+  esFechaMovimientoFutura,
+  MENSAJE_FECHA_MOVIMIENTO_FUTURA
 } from '../../shared/utils/movimiento-fecha.util';
 import { accionesTablaMovimiento } from '../../shared/utils/movimiento-acciones.util';
 import {
@@ -113,6 +116,7 @@ const INGRESO_VACIO = (): Ingreso => {
 })
 export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
   readonly isoToDateInputValue = isoToDateInputValue;
+  readonly fechaMaximaInput = hoyLocalYYYYMMDD();
 
   @ViewChild('dateInputForm') dateInputForm?: ElementRef<HTMLInputElement>;
   @ViewChild('dateInputDesde') dateInputDesde?: ElementRef<HTMLInputElement>;
@@ -508,6 +512,13 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
       this.aplicarAlcanceMinisterioAlFormulario();
       this.cdr.markForCheck();
 
+      if (esFechaMovimientoFutura(this.fechaManualForm, this.nuevoIngreso.fecha)) {
+        this.formGuardadoError = MENSAJE_FECHA_MOVIMIENTO_FUTURA;
+        this.cdr.markForCheck();
+        await this.mostrarToast(this.formGuardadoError, 'warning');
+        return;
+      }
+
       if (this.periodoFormularioCerrado) {
         this.formGuardadoError =
           `El periodo ${this.etiquetaPeriodoFormulario} está cerrado. No se pueden registrar movimientos.`;
@@ -889,6 +900,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
       descripcion: this.nuevoIngreso.descripcion,
       monto,
       fechaManualForm: this.fechaManualForm,
+      fechaIso: this.nuevoIngreso.fecha,
       cuentaCodigo: this.nuevoIngreso.cuentaCodigo,
       ministerioId: this.nuevoIngreso.ministerioId,
       listaMinisteriosLength: this.listaMinisterios.length,
@@ -902,6 +914,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
       descripcion: this.nuevoIngreso.descripcion,
       monto,
       fechaManualForm: this.fechaManualForm,
+      fechaIso: this.nuevoIngreso.fecha,
       cuentaCodigo: this.nuevoIngreso.cuentaCodigo,
       ministerioId: this.nuevoIngreso.ministerioId,
       listaMinisteriosLength: this.listaMinisterios.length,

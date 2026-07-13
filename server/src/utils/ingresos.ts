@@ -102,13 +102,13 @@ async function beforeCreateIngreso(body, req) {
     err.status = 403;
     throw err;
   }
-  await assertPeriodoAbierto(body?.fecha);
+  await assertPeriodoAbierto(body?.fecha, body?.fechaFormateada);
   await assertMinisterioPermiteIngresoManual(body);
 }
 
 async function beforeUpdateIngreso(body, _req, current) {
   await assertMovimientoModificable(current);
-  if (body?.fecha) await assertPeriodoAbierto(body.fecha);
+  if (body?.fecha) await assertPeriodoAbierto(body.fecha, body?.fechaFormateada);
   if (!current?.esAportacionIglesia) {
     await assertMinisterioPermiteIngresoManual({ ...current, ...body });
   }

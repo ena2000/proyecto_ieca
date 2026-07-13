@@ -49,7 +49,39 @@ async function isPeriodoCerrado(periodoKey) {
   return cerrados.includes(periodoKey);
 }
 
-async function assertPeriodoAbierto(fecha) {
+async function assertFechaNoFutura(fecha, fechaFormateada) {
+  let ymd = null;
+  const formateada = String(fechaFormateada ?? '').trim();
+  const dmy = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(formateada);
+  if (dmy) {
+    ymd = `${dmy[3]}-${dmy[2]}-${dmy[1]}`;
+  } else {
+    const raw = String(fecha ?? '').trim();
+    const iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(raw);
+    if (iso) {
+      ymd = `${iso[1]}-${iso[2]}-${iso[3]}`;
+    }
+  }
+  if (!ymd) return;
+
+  // Zona típica Centroamérica (evita falsos positivos por UTC en Render).
+  const tz = process.env.APP_TIMEZONE || 'America/Costa_Rica';
+  const hoy = new Intl.DateTimeFormat('en-CA', {
+    timeZone: tz,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(new Date());
+
+  if (ymd > hoy) {
+    const err = new Error('La fecha no puede ser posterior a hoy.');
+    err.status = 400;
+    throw err;
+  }
+}
+
+async function assertPeriodoAbierto(fecha, fechaFormateada) {
+  await assertFechaNoFutura(fecha, fechaFormateada);
   const key = fechaToPeriodoKey(fecha);
   if (!key) return;
   if (await isPeriodoCerrado(key)) {
@@ -87,6 +119,7 @@ module.exports = {
   setCierreConfig,
   isPeriodoCerrado,
   assertPeriodoAbierto,
+  assertFechaNoFutura,
   assertMovimientoModificable,
   entityBloqueadoPorCierre
 };

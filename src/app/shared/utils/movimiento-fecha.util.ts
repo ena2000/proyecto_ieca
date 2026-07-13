@@ -19,6 +19,49 @@ export function isoDesdeFechaManualDDMMYYYY(val: string): string | null {
   return dateObj.toISOString();
 }
 
+/** Fecha local de hoy como YYYY-MM-DD (para `max` del input date). */
+export function hoyLocalYYYYMMDD(hoy: Date = new Date()): string {
+  const y = hoy.getFullYear();
+  const m = String(hoy.getMonth() + 1).padStart(2, '0');
+  const d = String(hoy.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+/** Extrae YYYY-MM-DD desde ISO, YYYY-MM-DD o DD/MM/AAAA. */
+export function yyyyMmDdDesdeValorFecha(valor?: string | null): string | null {
+  const raw = String(valor ?? '').trim();
+  if (!raw) return null;
+
+  const dmy = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(raw);
+  if (dmy) {
+    return `${dmy[3]}-${dmy[2]}-${dmy[1]}`;
+  }
+
+  const ymd = /^(\d{4})-(\d{2})-(\d{2})/.exec(raw);
+  if (ymd) {
+    return `${ymd[1]}-${ymd[2]}-${ymd[3]}`;
+  }
+
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return null;
+  return hoyLocalYYYYMMDD(d);
+}
+
+/** True si la fecha del movimiento es posterior a hoy (día local). */
+export function esFechaMovimientoFutura(
+  fechaManual?: string | null,
+  fechaIso?: string | null,
+  hoy: Date = new Date()
+): boolean {
+  const ymd =
+    yyyyMmDdDesdeValorFecha(fechaManual) ?? yyyyMmDdDesdeValorFecha(fechaIso);
+  if (!ymd) return false;
+  return ymd > hoyLocalYYYYMMDD(hoy);
+}
+
+export const MENSAJE_FECHA_MOVIMIENTO_FUTURA =
+  'La fecha no puede ser posterior a hoy.';
+
 export interface ActualizacionFechaNativa {
   fechaManualForm?: string;
   fechaManualDesde?: string;

@@ -56,4 +56,13 @@ describe('movimiento-validacion.util', () => {
     expect(esFormularioMovimientoValido({ ...valido, cuentaCodigo: '' })).toBeFalse();
     expect(mensajeValidacionMovimiento({ ...valido, cuentaCodigo: '' })).toMatch(/cuenta/i);
   });
+
+  it('rechaza fecha futura', () => {
+    const futuro = {
+      ...valido,
+      fechaManualForm: '01/01/2099'
+    };
+    expect(esFormularioMovimientoValido(futuro)).toBeFalse();
+    expect(mensajeValidacionMovimiento(futuro)).toMatch(/posterior a hoy/i);
+  });
 });

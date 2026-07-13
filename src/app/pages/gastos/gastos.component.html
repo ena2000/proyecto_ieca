@@ -108,6 +108,7 @@
               type="date"
               class="ieca-date-picker-hidden"
               [value]="isoToDateInputValue(nuevoGasto.fecha)"
+              [max]="fechaMaximaInput"
               (change)="onNativeDateChange($any($event.target).value, 'form')"
               aria-label="Seleccionar fecha del gasto" />
           </div>

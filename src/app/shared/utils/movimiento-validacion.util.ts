@@ -1,7 +1,13 @@
+import {
+  esFechaMovimientoFutura,
+  MENSAJE_FECHA_MOVIMIENTO_FUTURA
+} from './movimiento-fecha.util';
+
 export interface ValidacionFormularioMovimiento {
   descripcion?: string;
   monto: number | null;
   fechaManualForm: string;
+  fechaIso?: string;
   cuentaCodigo?: string;
   ministerioId?: number;
   listaMinisteriosLength: number;
@@ -23,6 +29,7 @@ export function esFormularioMovimientoValido(v: ValidacionFormularioMovimiento):
     Number.isFinite(monto) &&
     monto > 0 &&
     v.fechaManualForm.length === 10 &&
+    !esFechaMovimientoFutura(v.fechaManualForm, v.fechaIso) &&
     (!ministerioRequerido || v.ministerioId != null) &&
     ministerioOk
   );
@@ -44,6 +51,9 @@ export function mensajeValidacionMovimiento(v: ValidacionFormularioMovimiento): 
   }
   if (v.fechaManualForm.length !== 10) {
     return 'Ingresa una fecha válida (DD/MM/AAAA).';
+  }
+  if (esFechaMovimientoFutura(v.fechaManualForm, v.fechaIso)) {
+    return MENSAJE_FECHA_MOVIMIENTO_FUTURA;
   }
   return 'Por favor, completa los campos obligatorios correctamente.';
 }
