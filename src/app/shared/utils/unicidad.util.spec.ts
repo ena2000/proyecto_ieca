@@ -1,5 +1,6 @@
 import { Ministerio, Usuario } from '../../core/models';
 import {
+  claveMinisterioNombre,
   ministerioNombreDuplicado,
   normalizarTextoUnico,
   usuarioEmailDuplicado
@@ -20,10 +21,22 @@ describe('unicidad.util', () => {
     expect(normalizarTextoUnico('  JÓVenes  ')).toBe('jovenes');
   });
 
+  it('unifica prefijos ministerio de / alabanza', () => {
+    expect(claveMinisterioNombre('Alabanza')).toBe('alabanza');
+    expect(claveMinisterioNombre('ministerio de alabanza')).toBe('alabanza');
+    expect(claveMinisterioNombre('El Ministerio de Alabanza')).toBe('alabanza');
+    expect(claveMinisterioNombre('Ministerio Alabanza')).toBe('alabanza');
+  });
+
   it('detecta ministerio duplicado sin distinguir mayúsculas', () => {
     expect(ministerioNombreDuplicado('jovenes', ministerios)?.id).toBe(1);
     expect(ministerioNombreDuplicado('Nuevo', ministerios)).toBeNull();
     expect(ministerioNombreDuplicado('Jóvenes', ministerios, 1)).toBeNull();
+  });
+
+  it('detecta duplicado equivalente con prefijo ministerio de', () => {
+    expect(ministerioNombreDuplicado('ministerio de alabanza', ministerios)?.id).toBe(2);
+    expect(ministerioNombreDuplicado('Ministerio de Jóvenes', ministerios)?.id).toBe(1);
   });
 
   it('detecta email duplicado sin distinguir mayúsculas', () => {

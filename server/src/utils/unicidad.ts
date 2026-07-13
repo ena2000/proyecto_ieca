@@ -2,7 +2,7 @@ const { listCollection } = require('./firestore');
 const { normalizeEmail } = require('./email-normalize');
 const { esMinisterioExcluidoCatalogo } = require('../constants/ministerios-catalogo');
 
-function normalizarTextoUnico(value: unknown): string {
+function normalizarTextoUnico(value) {
   return String(value ?? '')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -11,14 +11,44 @@ function normalizarTextoUnico(value: unknown): string {
     .trim();
 }
 
-function crearErrorUnicidad(message: string, status = 409) {
+const PREFIJOS_MINISTERIO = [
+  /^el ministerio de(?:l)?\s+/,
+  /^ministerio de(?:l)?\s+/,
+  /^ministerio\s+/,
+  /^area de(?:l)?\s+/,
+  /^departamento de(?:l)?\s+/,
+  /^depto\.?\s+(?:de\s+)?/,
+  /^grupo de(?:l)?\s+/,
+  /^equipo de(?:l)?\s+/
+];
+
+/** Clave comparable: sin tildes/mayúsculas y sin prefijos tipo «ministerio de». */
+function claveMinisterioNombre(value) {
+  let clave = normalizarTextoUnico(value);
+  if (!clave) return '';
+
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const re of PREFIJOS_MINISTERIO) {
+      const next = clave.replace(re, '').trim();
+      if (next !== clave) {
+        clave = next;
+        changed = true;
+      }
+    }
+  }
+  return clave;
+}
+
+function crearErrorUnicidad(message, status = 409) {
   const err = new Error(message);
   err.status = status;
   return err;
 }
 
-async function assertMinisterioNombreUnico(nombre: unknown, excludeId: number | null = null) {
-  const clave = normalizarTextoUnico(nombre);
+async function assertMinisterioNombreUnico(nombre, excludeId = null) {
+  const clave = claveMinisterioNombre(nombre);
   if (!clave) return;
 
   if (esMinisterioExcluidoCatalogo(String(nombre))) {
@@ -30,15 +60,17 @@ async function assertMinisterioNombreUnico(nombre: unknown, excludeId: number | 
   const ministerios = await listCollection('ministerios');
   const duplicado = ministerios.find(m => {
     if (excludeId != null && Number(m.id) === Number(excludeId)) return false;
-    return normalizarTextoUnico(m.nombre) === clave;
+    return claveMinisterioNombre(m.nombre) === clave;
   });
 
   if (duplicado) {
-    throw crearErrorUnicidad(`Ya existe un ministerio con el nombre "${duplicado.nombre}".`);
+    throw crearErrorUnicidad(
+      `Ya existe un ministerio con el nombre "${duplicado.nombre}" (o uno equivalente).`
+    );
   }
 }
 
-async function assertUsuarioEmailUnico(email: unknown, excludeId: number | null = null) {
+async function assertUsuarioEmailUnico(email, excludeId = null) {
   const clave = normalizeEmail(email);
   if (!clave) return;
 
@@ -53,7 +85,7 @@ async function assertUsuarioEmailUnico(email: unknown, excludeId: number | null 
   }
 }
 
-async function assertUsuarioLoginUnico(usuario: unknown, excludeId: number | null = null) {
+async function assertUsuarioLoginUnico(usuario, excludeId = null) {
   const clave = normalizarTextoUnico(usuario);
   if (!clave) return;
 
@@ -70,6 +102,7 @@ async function assertUsuarioLoginUnico(usuario: unknown, excludeId: number | nul
 
 module.exports = {
   normalizarTextoUnico,
+  claveMinisterioNombre,
   assertMinisterioNombreUnico,
   assertUsuarioEmailUnico,
   assertUsuarioLoginUnico
