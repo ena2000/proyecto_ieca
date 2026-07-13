@@ -61,8 +61,24 @@ const gastoCreateSchema = z.object({
 
 const gastoUpdateSchema = gastoCreateSchema.partial();
 
+const {
+  MINISTERIO_NOMBRE_MAX,
+  MINISTERIO_NOMBRE_MIN,
+  validarNombreMinisterio
+} = require('../utils/ministerio-nombre');
+
 const ministerioCreateSchema = z.object({
-  nombre: z.string().trim().min(1, 'Nombre requerido').max(200),
+  nombre: z
+    .string()
+    .trim()
+    .min(MINISTERIO_NOMBRE_MIN, `El nombre debe tener al menos ${MINISTERIO_NOMBRE_MIN} caracteres`)
+    .max(MINISTERIO_NOMBRE_MAX, `El nombre no puede superar ${MINISTERIO_NOMBRE_MAX} caracteres`)
+    .superRefine((val, ctx) => {
+      const err = validarNombreMinisterio(val);
+      if (err) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: err });
+      }
+    }),
   estado: z.string().trim().min(1).max(50),
   hldrId: z.coerce.number().int().positive().nullable().optional(),
   coLiderId: z.coerce.number().int().positive().nullable().optional()

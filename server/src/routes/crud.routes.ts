@@ -42,6 +42,7 @@ const {
   sincronizarLideresMinisterio
 } = require('../utils/liderazgo');
 const { normalizeEmail } = require('../utils/email-normalize');
+const { validarNombreMinisterio } = require('../utils/ministerio-nombre');
 const {
   assertMinisterioNombreUnico,
   assertUsuarioEmailUnico,
@@ -389,6 +390,12 @@ async function beforeCreateMinisterio(body) {
   if (body.nombre != null) {
     body.nombre = String(body.nombre).trim();
   }
+  const nombreErr = validarNombreMinisterio(body.nombre);
+  if (nombreErr) {
+    const err = new Error(nombreErr);
+    err.status = 400;
+    throw err;
+  }
   await assertMinisterioNombreUnico(body.nombre, null);
   await validarMinisterioLiderazgo(body, null);
 }
@@ -396,6 +403,12 @@ async function beforeCreateMinisterio(body) {
 async function beforeUpdateMinisterio(body, _req, current) {
   if (body.nombre != null) {
     body.nombre = String(body.nombre).trim();
+    const nombreErr = validarNombreMinisterio(body.nombre);
+    if (nombreErr) {
+      const err = new Error(nombreErr);
+      err.status = 400;
+      throw err;
+    }
     await assertMinisterioNombreUnico(body.nombre, current?.id ?? null);
   }
   await validarMinisterioLiderazgo(body, current?.id ?? null);

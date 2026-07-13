@@ -50,7 +50,13 @@ export function normalizarRol(rol?: string | null): AppRole | null {
 
 export function puedeAccederRuta(rol: AppRole | null, ruta: string): boolean {
   if (!rol) return false;
-  const path = ruta.split('?')[0];
+  let path = ruta.split('?')[0];
+  if (path.length > 1 && path.endsWith('/')) {
+    path = path.slice(0, -1);
+  }
+  if (path === '/admin') {
+    path = '/administracion';
+  }
   return (RUTAS_POR_ROL[rol] ?? []).includes(path);
 }
 

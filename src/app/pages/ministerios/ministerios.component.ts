@@ -43,6 +43,10 @@ import {
   mensajeMinisterioDuplicado,
   ministerioNombreDuplicado
 } from '../../shared/utils/unicidad.util';
+import {
+  MINISTERIO_NOMBRE_MAX,
+  validarNombreMinisterio
+} from '../../shared/utils/ministerio-nombre.util';
 
 registerLocaleData(localeEs);
 
@@ -84,7 +88,9 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
   vistaMinisterios: Array<Ministerio & { colaboradoresNombre: string; saldo: number }> = [];
   formularioValido = false;
   guardando = false;
+  eliminando = false;
   formGuardadoError: string | null = null;
+  readonly nombreMaxLength = MINISTERIO_NOMBRE_MAX;
 
   searchTerm:           string = '';
   filtroColaboradorId: number | null = null;
@@ -313,14 +319,16 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
           id: this.idEditando,
           fechaFormateada: existente?.fechaFormateada
         }));
+        this.resetFormulario();
         await this.mostrarToast('Registro actualizado exitosamente', 'success');
       } else {
         const { id, fecha, fechaFormateada, hldrId, coLiderId, liderNombre, coLiderNombre, ...datos } = this.nuevoMinisterio;
         await firstValueFrom(this.ministeriosService.create(datos));
+        // Reset inmediato: evita el flash falso de «ya existe» mientras el toast está visible.
+        this.resetFormulario();
         await this.mostrarToast('Registro creado exitosamente', 'success');
       }
 
-      this.resetFormulario();
       refrescarListaTrasMutacion(
         () => this.ministeriosService.getAll(),
         lista => { this.listaMinisterios = lista; },
@@ -358,6 +366,8 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   async eliminarMinisterio(item: Ministerio) {
+    if (this.eliminando) return;
+
     const alert = await this.alertController.create({
       header:  'Confirmar eliminación',
       message: `¿Estás seguro de eliminar el ministerio "${item.nombre?.trim() || 'sin nombre'}"?`,
@@ -366,22 +376,34 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
         {
           text:    'Eliminar',
           role:    'destructive',
-          handler: async () => {
-            try {
-              await withLoading(this.loadingController, 'Eliminando ministerio...', async () => {
-                await firstValueFrom(this.ministeriosService.delete(item.id));
-              });
-              this.dataService.notifyChanges();
-              this.mostrarToast('Registro eliminado', 'warning');
-            } catch (error) {
-              const msg = error instanceof Error ? error.message : 'Error al eliminar';
-              this.mostrarToast(msg, 'danger');
-            }
+          handler: () => {
+            // Cierra el alert al instante; el borrado corre fuera (evita UI congelada).
+            void this.ejecutarEliminacionMinisterio(item);
           }
         }
       ]
     });
     await alert.present();
+  }
+
+  private async ejecutarEliminacionMinisterio(item: Ministerio): Promise<void> {
+    if (this.eliminando) return;
+    this.eliminando = true;
+    this.cdr.markForCheck();
+    try {
+      await withLoading(this.loadingController, 'Eliminando ministerio...', async () => {
+        await firstValueFrom(this.ministeriosService.delete(item.id));
+      });
+      this.dataService.notifyChanges();
+      this.actualizarVista();
+      await this.mostrarToast('Registro eliminado', 'warning');
+    } catch (error) {
+      const msg = getHttpErrorMessage(error, 'Error al eliminar');
+      await this.mostrarToast(msg, 'danger');
+    } finally {
+      this.eliminando = false;
+      this.cdr.markForCheck();
+    }
   }
 
   resetFormulario() {
@@ -407,7 +429,7 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   get esFormularioValido(): boolean {
-    if (this.nuevoMinisterio.nombre?.trim().length < 3) return false;
+    if (validarNombreMinisterio(this.nuevoMinisterio.nombre)) return false;
     if (this.nombreMinisterioDuplicado) return false;
     return true;
   }
@@ -421,12 +443,15 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   get mensajeValidacion(): string {
-    if (this.nuevoMinisterio.nombre?.trim().length < 3) {
-      return 'El nombre del ministerio debe tener al menos 3 caracteres.';
-    }
+    const nombreErr = validarNombreMinisterio(this.nuevoMinisterio.nombre);
+    if (nombreErr) return nombreErr;
     if (this.nombreMinisterioDuplicado) {
       return mensajeMinisterioDuplicado(this.nombreMinisterioDuplicado);
     }
-    return 'Revisa los datos del ministerio.';
+    return 'Completa los campos requeridos.';
+  }
+
+  get validacionNombreError(): string | null {
+    return validarNombreMinisterio(this.nuevoMinisterio.nombre);
   }
 }

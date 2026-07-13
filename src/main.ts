@@ -16,9 +16,8 @@ export const appConfig: ApplicationConfig = {
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
     provideIonicAngular(),
     provideRouter(routes, withPreloading(NoPreloading)),
-    // Orden: auth → error → refresh → networkRetry → backend.
-    // En la respuesta, networkRetry/refresh ven el 401 ANTES que error lo convierta,
-    // así el refresh puede renovar el token en silencio.
+    // Orden (petición): auth → error → refresh → networkRetry → backend.
+    // En la respuesta, networkRetry/refresh ven el 401 ANTES que error lo convierta.
     provideHttpClient(withInterceptors([
       authInterceptor,
       errorInterceptor,

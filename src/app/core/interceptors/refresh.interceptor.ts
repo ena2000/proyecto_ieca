@@ -26,9 +26,13 @@ export const refreshInterceptor: HttpInterceptorFn = (req, next) => {
           if (!ok) {
             auth.logout();
             if (!router.url.startsWith('/login')) {
-              void router.navigate(['/login']);
+              void router.navigate(['/login'], {
+                queryParams: { sesion: 'expirada' }
+              });
             }
-            return throwError(() => error);
+            return throwError(
+              () => new Error('Tu sesión expiró. Vuelve a iniciar sesión.')
+            );
           }
           const token = authStorageGet(AUTH_TOKEN_KEY);
           const retry = token

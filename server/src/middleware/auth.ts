@@ -38,7 +38,7 @@ function esColaboradorMinisterio(rol) {
   return normalizarRol(rol) === ROLES.COLABORADOR;
 }
 
-const ACCESS_TOKEN_EXPIRES = process.env.JWT_ACCESS_EXPIRES || '15m';
+const ACCESS_TOKEN_EXPIRES = process.env.JWT_ACCESS_EXPIRES || '8h';
 const REFRESH_TOKEN_EXPIRES = process.env.JWT_REFRESH_EXPIRES || '7d';
 
 /**

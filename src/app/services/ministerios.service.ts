@@ -7,7 +7,8 @@ import { ApiService } from '../core/services/api.service';
 import { API } from '../core/constants/api.constants';
 import { environment } from '../../environments/environment';
 import { ministerioNombreDuplicado, mensajeMinisterioDuplicado } from '../shared/utils/unicidad.util';
-import { withMutationTimeout } from '../shared/utils/http-mutation.util';
+import { validarNombreMinisterio } from '../shared/utils/ministerio-nombre.util';
+import { withMutationTimeout, API_DELETE_TIMEOUT_MS } from '../shared/utils/http-mutation.util';
 import { filtrarMinisteriosCatalogo } from '../shared/constants/ministerios-catalogo.constants';
 import { fusionarMovimientosTrasBootstrap } from '../shared/utils/movimiento-list-merge.util';
 import {
@@ -78,7 +79,8 @@ export class MinisteriosService {
           this.persist(this.getAll().filter(m => Number(m.id) !== id));
           this.syncListaEnSegundoPlano();
         })
-      )
+      ),
+      API_DELETE_TIMEOUT_MS
     );
   }
 
@@ -113,6 +115,10 @@ export class MinisteriosService {
   }
 
   private createLocal(ministerio: Omit<Ministerio, 'id' | 'fecha' | 'fechaFormateada'>): Ministerio {
+    const nombreErr = validarNombreMinisterio(ministerio.nombre);
+    if (nombreErr) {
+      throw new Error(nombreErr);
+    }
     const duplicado = ministerioNombreDuplicado(ministerio.nombre, this.getAll());
     if (duplicado) {
       throw new Error(mensajeMinisterioDuplicado(duplicado));
@@ -129,6 +135,10 @@ export class MinisteriosService {
   }
 
   private updateLocal(id: number, ministerio: Ministerio): Ministerio {
+    const nombreErr = validarNombreMinisterio(ministerio.nombre);
+    if (nombreErr) {
+      throw new Error(nombreErr);
+    }
     const duplicado = ministerioNombreDuplicado(ministerio.nombre, this.getAll(), id);
     if (duplicado) {
       throw new Error(mensajeMinisterioDuplicado(duplicado));

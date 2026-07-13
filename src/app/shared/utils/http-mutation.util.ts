@@ -4,12 +4,18 @@ import { catchError, timeout } from 'rxjs/operators';
 /** Render free tier puede tardar ~60s en despertar; margen para subida con comprobante. */
 export const API_MUTATION_TIMEOUT_MS = 120_000;
 
+/** Deletes y mutaciones livianas: no esperar 2 minutos si la API no responde. */
+export const API_DELETE_TIMEOUT_MS = 35_000;
+
 export const API_MUTATION_TIMEOUT_MESSAGE =
   'La operación tardó demasiado. Espera un momento e inténtalo de nuevo.';
 
-export function withMutationTimeout<T>(source: Observable<T>): Observable<T> {
+export function withMutationTimeout<T>(
+  source: Observable<T>,
+  ms = API_MUTATION_TIMEOUT_MS
+): Observable<T> {
   return source.pipe(
-    timeout({ each: API_MUTATION_TIMEOUT_MS }),
+    timeout({ each: ms }),
     catchError(err => {
       if (err instanceof TimeoutError) {
         return throwError(() => new Error(API_MUTATION_TIMEOUT_MESSAGE));

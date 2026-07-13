@@ -2,18 +2,19 @@ import { Component, HostListener, OnInit } from '@angular/core';
 import { IonApp, IonRouterOutlet } from '@ionic/angular/standalone';
 import { SlidebarComponent } from './components/slidebar/slidebar.component';
 import { CommonModule } from '@angular/common';
-import { Router, NavigationEnd } from '@angular/router';
+import { Router, NavigationEnd, NavigationError } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { SidebarUiService } from './core/services/sidebar-ui.service';
+import { AuthService } from './core/services/auth.service';
 import { despertarApiEnSegundoPlano } from './shared/utils/api-wake.util';
 import { environment } from '../environments/environment';
 import { addIcons } from 'ionicons';
-import { 
-  gridOutline, businessOutline, cashOutline, 
-  trendingDownOutline, barChartOutline, peopleOutline, 
+import {
+  gridOutline, businessOutline, cashOutline,
+  trendingDownOutline, barChartOutline, peopleOutline,
   logOutOutline, chevronDownOutline, menuOutline,
-  settingsOutline, // <--- Agregamos este para Administración
-  calendarOutline, // <--- Agregamos estos para que se vean en toda la app
+  settingsOutline,
+  calendarOutline,
   documentTextOutline,
   cloudUploadOutline,
   saveOutline,
@@ -29,14 +30,16 @@ import {
   shield
 } from 'ionicons/icons';
 
+const CHUNK_RELOAD_KEY = 'ieca_chunk_reload';
+
 @Component({
   selector: 'app-root',
   templateUrl: 'app.component.html',
   standalone: true,
   imports: [
-    IonApp, 
-    IonRouterOutlet, 
-    SlidebarComponent, 
+    IonApp,
+    IonRouterOutlet,
+    SlidebarComponent,
     CommonModule
   ],
 })
@@ -46,10 +49,10 @@ export class AppComponent implements OnInit {
 
   constructor(
     private router: Router,
+    private auth: AuthService,
     readonly sidebarUi: SidebarUiService
   ) {
-    // 1. Registro de Iconos (Dentro del constructor)
-    addIcons({ 
+    addIcons({
       'grid-outline': gridOutline,
       'business-outline': businessOutline,
       'cash-outline': cashOutline,
@@ -59,7 +62,7 @@ export class AppComponent implements OnInit {
       'log-out-outline': logOutOutline,
       'chevron-down-outline': chevronDownOutline,
       'menu-outline': menuOutline,
-      'settings-outline': settingsOutline, // Icono para Administración
+      'settings-outline': settingsOutline,
       'calendar-outline': calendarOutline,
       'document-text-outline': documentTextOutline,
       'cloud-upload-outline': cloudUploadOutline,
@@ -76,11 +79,22 @@ export class AppComponent implements OnInit {
       shield
     });
 
- // 2. Lógica mejorada para detectar la ruta inicial y cambios
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
-    ).subscribe((event: any) => {
+    ).subscribe((event: NavigationEnd) => {
       this.actualizarVisibilidadMenu(event.urlAfterRedirects || event.url);
+      try {
+        sessionStorage.removeItem(CHUNK_RELOAD_KEY);
+      } catch {
+        /* ignore */
+      }
+    });
+
+    // Tras un deploy, un chunk viejo puede fallar al abrir Administración u otra página.
+    this.router.events.pipe(
+      filter((event): event is NavigationError => event instanceof NavigationError)
+    ).subscribe(event => {
+      this.recuperarNavegacionFallida(event);
     });
   }
 
@@ -88,9 +102,9 @@ export class AppComponent implements OnInit {
     if (environment.production && !environment.useLocalFallback) {
       despertarApiEnSegundoPlano();
     }
+    void this.auth.refreshAccessToken();
   }
 
-  /** Rutas de autenticación: sin sidebar (solo contenido de la pantalla). */
   private readonly rutasSinMenu = ['/login', '/recuperar-password', '/cambiar-password'];
 
   private actualizarVisibilidadMenu(url: string) {
@@ -99,6 +113,31 @@ export class AppComponent implements OnInit {
     if (!this.mostrarMenu) {
       this.sidebarUi.closeMobile();
     }
+  }
+
+  private recuperarNavegacionFallida(event: NavigationError): void {
+    const msg = String(event.error?.message ?? event.error ?? '');
+    const esChunk =
+      /Loading chunk|Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module/i.test(
+        msg
+      );
+    if (!esChunk) return;
+
+    let already = false;
+    try {
+      already = sessionStorage.getItem(CHUNK_RELOAD_KEY) === '1';
+    } catch {
+      already = false;
+    }
+    if (already) return;
+
+    try {
+      sessionStorage.setItem(CHUNK_RELOAD_KEY, '1');
+    } catch {
+      /* ignore */
+    }
+    const target = event.url || '/dashboard';
+    window.location.assign(target.startsWith('/') ? target : `/${target}`);
   }
 
   @HostListener('document:click', ['$event'])
@@ -119,5 +158,13 @@ export class AppComponent implements OnInit {
     if (!this.sidebarUi.isMobileViewport()) {
       this.sidebarUi.closeMobile();
     }
+  }
+
+  /** Renueva el access token al volver a la pestaña (evita “token inválido” tras idle). */
+  @HostListener('document:visibilitychange')
+  onVisibilityChange(): void {
+    if (document.visibilityState !== 'visible') return;
+    if (!this.auth.isAuthenticated()) return;
+    void this.auth.refreshAccessToken();
   }
 }

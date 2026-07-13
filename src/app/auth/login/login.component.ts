@@ -37,6 +37,14 @@ export class LoginComponent implements OnInit {
   async ngOnInit(): Promise<void> {
     this.authService.purgeStaleSession();
 
+    const sesion = new URLSearchParams(window.location.search).get('sesion')
+      || this.router.parseUrl(this.router.url).queryParams['sesion'];
+    if (sesion === 'expirada') {
+      this.authError = 'Tu sesión expiró. Vuelve a iniciar sesión.';
+      void presentIecaToast(this.toastCtrl, this.authError, 'warning', 4200);
+      void this.router.navigate(['/login'], { replaceUrl: true });
+    }
+
     if (this.authService.isAuthenticated()) {
       const ok = await this.dataService.bootstrapRemote();
       if (ok && this.authService.isAuthenticated()) {

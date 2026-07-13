@@ -764,6 +764,10 @@
   .col-ministerio {
     font-weight: 700;
     color: #0f172a;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .col-cantidad {

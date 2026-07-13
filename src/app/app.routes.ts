@@ -55,6 +55,7 @@ export const routes: Routes = [
       import('./pages/administracion/administracion.component').then(m => m.AdministracionComponent),
     canActivate: [authGuard, roleGuard]
   },
+  { path: 'admin', redirectTo: 'administracion', pathMatch: 'full' },
 
   { path: '**', redirectTo: 'login' }
 ];

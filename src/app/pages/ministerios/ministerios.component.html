@@ -32,13 +32,13 @@
         <div class="input-group">
           <ion-label
             class="ieca-label"
-            [class.text-danger]="intentoEnvio && nuevoMinisterio.nombre.trim().length < 3">
+            [class.text-danger]="intentoEnvio && !esFormularioValido">
             Nombre del ministerio *
           </ion-label>
           <ion-item
             lines="none"
             class="ieca-input-item ieca-input"
-            [class.error-border]="intentoEnvio && nuevoMinisterio.nombre.trim().length < 3">
+            [class.error-border]="intentoEnvio && !!validacionNombreError">
             <ion-icon slot="start" name="options-outline" class="text-blue"></ion-icon>
             <ion-input
               #nombreInput
@@ -47,13 +47,17 @@
               (ionInput)="onNombreInput($event)"
               (ngModelChange)="onFormularioChange()"
               name="nombre"
+              [maxlength]="nombreMaxLength"
               placeholder="Ej. Alabanza y Adoración...">
             </ion-input>
           </ion-item>
-          <small class="error-text" *ngIf="intentoEnvio && nuevoMinisterio.nombre.trim().length < 3">
-            Ingresa un nombre válido.
+          <small class="hint-text" *ngIf="!intentoEnvio">
+            Máximo {{ nombreMaxLength }} caracteres. Solo letras, números y espacios.
           </small>
-          <small class="error-text" *ngIf="intentoEnvio && nuevoMinisterio.nombre.trim().length >= 3 && nombreMinisterioDuplicado">
+          <small class="error-text" *ngIf="intentoEnvio && validacionNombreError">
+            {{ validacionNombreError }}
+          </small>
+          <small class="error-text" *ngIf="intentoEnvio && !validacionNombreError && nombreMinisterioDuplicado">
             Ya existe un ministerio con ese nombre.
           </small>
         </div>
