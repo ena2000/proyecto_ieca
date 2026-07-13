@@ -42,6 +42,13 @@ import {
   mensajeUsuarioEmailDuplicado,
   usuarioEmailDuplicado
 } from '../../shared/utils/unicidad.util';
+import {
+  esEmailValido,
+  esPasswordValida,
+  mensajeErrorEmail,
+  mensajeErrorNombrePersona,
+  mensajeErrorPassword
+} from '../../shared/utils/usuario-validacion.util';
 
 registerLocaleData(localeEs);
 
@@ -615,10 +622,9 @@ export class UsuariosComponent implements OnInit, OnDestroy {
 
   get esFormularioValido(): boolean {
     const base =
-      this.nuevoUsuario.nombre?.trim().length >= 3 &&
-      this.nuevoUsuario.email?.trim().length  >= 5 &&
-      this.nuevoUsuario.email?.includes('@') &&
-      (this.password.trim() ? this.password.trim().length >= 6 : true);
+      !mensajeErrorNombrePersona(this.nuevoUsuario.nombre) &&
+      esEmailValido(this.nuevoUsuario.email) &&
+      (this.password.trim() ? esPasswordValida(this.password) : true);
 
     if (!base) return false;
     if (!this.nuevoUsuario.rol || !this.rolesUsuario.includes(this.nuevoUsuario.rol)) return false;
@@ -640,15 +646,27 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     );
   }
 
+  /** Error de email al intentar enviar (formato + proveedor conocido). */
+  get emailFormError(): string | null {
+    if (!this.intentoEnvio) return null;
+    return mensajeErrorEmail(this.nuevoUsuario.email);
+  }
+
   get mensajeValidacion(): string {
     if (this.emailUsuarioDuplicado) {
       return mensajeUsuarioEmailDuplicado(this.emailUsuarioDuplicado);
     }
-    return validarUsuarioForm(
-      this.nuevoUsuario,
-      this.listaMinisterios,
-      this.listaUsuarios,
-      this.modoEdicion ? this.idEditando : null
-    ) ?? 'Completa los campos obligatorios correctamente.';
+    return (
+      mensajeErrorNombrePersona(this.nuevoUsuario.nombre) ||
+      mensajeErrorEmail(this.nuevoUsuario.email) ||
+      (this.password.trim() ? mensajeErrorPassword(this.password) : null) ||
+      validarUsuarioForm(
+        this.nuevoUsuario,
+        this.listaMinisterios,
+        this.listaUsuarios,
+        this.modoEdicion ? this.idEditando : null
+      ) ||
+      'Completa los campos obligatorios correctamente.'
+    );
   }
 }

@@ -31,6 +31,7 @@ import {
 import { ACCESOS_RAPIDOS_ADMIN } from './administracion-accesos.constants';
 import { formatearMoneda } from '../../shared/utils/currency.util';
 import { getMesActualLabel, periodoKeyFromFecha } from '../../shared/utils/month.util';
+import { mensajeErrorBackupIeca } from '../../shared/utils/usuario-validacion.util';
 
 registerAdministracionPageIcons();
 
@@ -308,6 +309,18 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
     const file = input.files?.[0];
     if (!file) return;
 
+    if (!file.name.toLowerCase().endsWith('.json')) {
+      await this.mostrarToast('Selecciona un archivo .json de respaldo IECA.', 'warning');
+      input.value = '';
+      return;
+    }
+    // ~15 MB tope razonable en cliente antes de parsear
+    if (file.size > 15 * 1024 * 1024) {
+      await this.mostrarToast('El archivo de respaldo es demasiado grande.', 'warning');
+      input.value = '';
+      return;
+    }
+
     const alert = await this.alertController.create({
       header: '⚠️ Restaurar Backup',
       message: 'Esto reemplazará todos los datos actuales con los del archivo de respaldo. ¿Confirmas?',
@@ -321,9 +334,20 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
             reader.onload = (e: ProgressEvent<FileReader>) => {
               void (async () => {
                 try {
-                  const backup = JSON.parse(e.target?.result as string) as BackupIeca;
+                  let backup: unknown;
+                  try {
+                    backup = JSON.parse(e.target?.result as string);
+                  } catch {
+                    await this.mostrarToast('El archivo no contiene JSON válido.', 'danger');
+                    return;
+                  }
+                  const estructuraErr = mensajeErrorBackupIeca(backup);
+                  if (estructuraErr) {
+                    await this.mostrarToast(estructuraErr, 'danger');
+                    return;
+                  }
                   await withLoadingResult(this.loadingController, 'Restaurando respaldo...', () =>
-                    this.administracionService.restaurarBackup(backup)
+                    this.administracionService.restaurarBackup(backup as BackupIeca)
                   );
                   await this.cargarDatos();
                   await this.mostrarToast('Respaldo restaurado exitosamente', 'success');

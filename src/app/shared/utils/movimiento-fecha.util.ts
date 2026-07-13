@@ -10,14 +10,31 @@ export function formatearEntradaFechaManual(raw: string): string {
   return val;
 }
 
-/** Convierte DD/MM/AAAA a ISO o null si es inválida. */
+/** Convierte DD/MM/AAAA a ISO o null si es inválida (incluye día/mes inexistentes). */
 export function isoDesdeFechaManualDDMMYYYY(val: string): string | null {
-  if (val.length !== 10) return null;
+  if (!esFechaCalendarioValidaDDMMYYYY(val)) return null;
   const parts = val.split('/');
   const dateObj = new Date(+parts[2], +parts[1] - 1, +parts[0]);
-  if (isNaN(dateObj.getTime())) return null;
   return dateObj.toISOString();
 }
+
+/** True si DD/MM/AAAA es un día de calendario real (rechaza 31/02, etc.). */
+export function esFechaCalendarioValidaDDMMYYYY(val: string): boolean {
+  if (String(val || '').length !== 10) return false;
+  const parts = val.split('/');
+  if (parts.length !== 3) return false;
+  const dd = Number(parts[0]);
+  const mm = Number(parts[1]);
+  const yyyy = Number(parts[2]);
+  if (!Number.isInteger(dd) || !Number.isInteger(mm) || !Number.isInteger(yyyy)) return false;
+  if (yyyy < 2000 || yyyy > 2100 || mm < 1 || mm > 12 || dd < 1 || dd > 31) return false;
+  const d = new Date(yyyy, mm - 1, dd);
+  return d.getFullYear() === yyyy && d.getMonth() === mm - 1 && d.getDate() === dd;
+}
+
+export const MENSAJE_FECHA_CALENDARIO_INVALIDA =
+  'La fecha no es válida (revisa día y mes).';
+
 
 /** Fecha local de hoy como YYYY-MM-DD (para `max` del input date). */
 export function hoyLocalYYYYMMDD(hoy: Date = new Date()): string {

@@ -20,6 +20,11 @@ describe('movimiento-validacion.util', () => {
     expect(mensajeValidacionMovimiento({ ...valido, monto: 0 })).toMatch(/monto válido/i);
   });
 
+  it('rechaza monto excesivo', () => {
+    expect(esFormularioMovimientoValido({ ...valido, monto: 1_000_000_000 })).toBeFalse();
+    expect(mensajeValidacionMovimiento({ ...valido, monto: 1_000_000_000 })).toMatch(/superar/i);
+  });
+
   it('exige ministerio si hay lista y no hay alcance fijo', () => {
     expect(
       esFormularioMovimientoValido({
@@ -48,8 +53,9 @@ describe('movimiento-validacion.util', () => {
     ).toBeTrue();
   });
 
-  it('rechaza descripción corta', () => {
+  it('rechaza descripción corta o con tags', () => {
     expect(esFormularioMovimientoValido({ ...valido, descripcion: 'ab' })).toBeFalse();
+    expect(esFormularioMovimientoValido({ ...valido, descripcion: 'ok <script>' })).toBeFalse();
   });
 
   it('exige cuenta contable', () => {
@@ -64,5 +70,15 @@ describe('movimiento-validacion.util', () => {
     };
     expect(esFormularioMovimientoValido(futuro)).toBeFalse();
     expect(mensajeValidacionMovimiento(futuro)).toMatch(/posterior a hoy/i);
+  });
+
+  it('rechaza fecha de calendario inválida', () => {
+    const imposible = { ...valido, fechaManualForm: '31/02/2026' };
+    expect(esFormularioMovimientoValido(imposible)).toBeFalse();
+    expect(mensajeValidacionMovimiento(imposible)).toMatch(/no es válida|día y mes/i);
+  });
+
+  it('rechaza solo espacios en descripción', () => {
+    expect(esFormularioMovimientoValido({ ...valido, descripcion: '     ' })).toBeFalse();
   });
 });

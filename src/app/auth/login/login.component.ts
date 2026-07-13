@@ -70,9 +70,16 @@ export class LoginComponent implements OnInit {
 
     const u = this.usuario.trim();
     const p = this.password;
+    const passwordErr = p.trim().length < 6
+      ? (!p.trim() && p.length > 0
+        ? 'La contraseña no puede ser solo espacios.'
+        : null)
+      : null;
 
-    if (u.length < 4 || p.length < 6) {
-      this.authError = 'Completa usuario (mín. 4 caracteres) y contraseña (mín. 6).';
+    if (u.length < 4 || p.trim().length < 6) {
+      this.authError =
+        passwordErr ||
+        'Completa usuario (mín. 4 caracteres) y contraseña (mín. 6).';
       await this.presentToast(this.authError, 'warning');
       return;
     }
@@ -143,7 +150,8 @@ export class LoginComponent implements OnInit {
   get passwordError(): string | null {
     if (!this.submitted) return null;
     if (!this.password) return 'La contraseña es obligatoria.';
-    if (this.password.length < 6) return 'Mínimo 6 caracteres.';
+    if (!this.password.trim()) return 'La contraseña no puede ser solo espacios.';
+    if (this.password.trim().length < 6) return 'Mínimo 6 caracteres.';
     return null;
   }
 }

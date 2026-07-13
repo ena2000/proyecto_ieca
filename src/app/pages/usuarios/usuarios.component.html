@@ -83,13 +83,13 @@
         <div class="input-group">
           <ion-label
             class="ieca-label"
-            [class.text-danger]="intentoEnvio && (!nuevoUsuario.email || !nuevoUsuario.email.includes('@'))">
+            [class.text-danger]="!!emailFormError">
             Email *
           </ion-label>
           <ion-item
             lines="none"
             class="ieca-input-item ieca-input"
-            [class.error-border]="intentoEnvio && (!nuevoUsuario.email || !nuevoUsuario.email.includes('@'))">
+            [class.error-border]="!!emailFormError">
             <ion-icon
               slot="start"
               name="options-outline"
@@ -100,13 +100,16 @@
               type="email"
               [(ngModel)]="nuevoUsuario.email"
               name="email"
-              placeholder="Ej. usuario@iglesia.com...">
+              placeholder="Ej. nombre@gmail.com">
             </ion-input>
           </ion-item>
+          <small class="hint-text" *ngIf="!emailFormError">
+            Gmail, Outlook, Hotmail, Yahoo u otros conocidos. También ieca.demo / ieca.com (pruebas).
+          </small>
           <small
             class="error-text"
-            *ngIf="intentoEnvio && (!nuevoUsuario.email || !nuevoUsuario.email.includes('@'))">
-            Ingresa un email válido.
+            *ngIf="emailFormError">
+            {{ emailFormError }}
           </small>
         </div>
 

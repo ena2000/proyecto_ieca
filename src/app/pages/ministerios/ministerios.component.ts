@@ -47,6 +47,7 @@ import {
   MINISTERIO_NOMBRE_MAX,
   validarNombreMinisterio
 } from '../../shared/utils/ministerio-nombre.util';
+import { esEstadoMinisterioValido } from '../../shared/utils/usuario-validacion.util';
 
 registerLocaleData(localeEs);
 
@@ -430,6 +431,7 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
   get esFormularioValido(): boolean {
     if (validarNombreMinisterio(this.nuevoMinisterio.nombre)) return false;
+    if (!esEstadoMinisterioValido(this.nuevoMinisterio.estado)) return false;
     if (this.nombreMinisterioDuplicado) return false;
     return true;
   }
@@ -445,6 +447,9 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
   get mensajeValidacion(): string {
     const nombreErr = validarNombreMinisterio(this.nuevoMinisterio.nombre);
     if (nombreErr) return nombreErr;
+    if (!esEstadoMinisterioValido(this.nuevoMinisterio.estado)) {
+      return 'Selecciona un estado válido (Activo, Pausado o Inactivo).';
+    }
     if (this.nombreMinisterioDuplicado) {
       return mensajeMinisterioDuplicado(this.nombreMinisterioDuplicado);
     }

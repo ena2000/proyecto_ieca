@@ -8,6 +8,7 @@ import { presentIecaToast } from '../../shared/utils/toast.util';
 import { leerValorIonInputAsync } from '../../shared/utils/movimiento-form-sync.util';
 import { FORM_GUARDADO_TOAST_MS, scrollAlErrorFormulario } from '../../shared/utils/form-guardado.util';
 import { despertarApiEnSegundoPlano } from '../../shared/utils/api-wake.util';
+import { esPasswordValida, mensajeErrorPassword } from '../../shared/utils/usuario-validacion.util';
 
 @Component({
   selector: 'app-cambiar-password',
@@ -66,9 +67,21 @@ export class CambiarPasswordComponent implements OnInit {
       return;
     }
 
+    const oldP = String(this.form.value.oldPassword ?? '');
+    const newP = String(this.form.value.newPassword ?? '');
+    const passErr =
+      mensajeErrorPassword(oldP, 6, 'contraseña actual') ||
+      mensajeErrorPassword(newP, 6, 'nueva contraseña');
+    if (passErr || !esPasswordValida(oldP) || !esPasswordValida(newP)) {
+      this.formGuardadoError = passErr || 'La contraseña no puede ser solo espacios.';
+      await this.toast(this.formGuardadoError, 'danger', FORM_GUARDADO_TOAST_MS);
+      scrollAlErrorFormulario();
+      return;
+    }
+
     this.guardando = true;
     try {
-      await this.auth.changePassword(this.form.value.oldPassword, this.form.value.newPassword);
+      await this.auth.changePassword(oldP, newP.trim());
       await this.toast('Contraseña actualizada. ¡Listo!', 'success');
       await this.navCtrl.navigateRoot(this.auth.getRutaPorDefecto(), { animated: false });
     } catch (err) {

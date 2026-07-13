@@ -8,6 +8,7 @@ import { getHttpErrorMessage } from '../../shared/utils/error-message.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
 import { leerValorIonInput } from '../../shared/utils/movimiento-form-sync.util';
 import { despertarApiEnSegundoPlano, esperarApiDisponible } from '../../shared/utils/api-wake.util';
+import { esPasswordValida } from '../../shared/utils/usuario-validacion.util';
 
 type Paso = 'solicitar' | 'restablecer';
 type LoadingFase = 'conectando' | 'enviando' | 'actualizando';
@@ -65,9 +66,9 @@ export class RecuperarPasswordComponent implements OnInit {
   get puedeRestablecer(): boolean {
     return (
       /^\d{6}$/.test(this.code.trim()) &&
-      this.newPassword.length >= 6 &&
-      this.confirmPassword.length >= 6 &&
-      this.newPassword === this.confirmPassword
+      esPasswordValida(this.newPassword) &&
+      esPasswordValida(this.confirmPassword) &&
+      this.newPassword.trim() === this.confirmPassword.trim()
     );
   }
 
@@ -81,13 +82,16 @@ export class RecuperarPasswordComponent implements OnInit {
     if (!/^\d{6}$/.test(code)) {
       return `Código del correo: ${code.length}/6 dígitos`;
     }
-    if (this.newPassword.length < 6) {
-      return `Nueva contraseña: mínimo 6 caracteres (llevas ${this.newPassword.length})`;
+    if (!esPasswordValida(this.newPassword)) {
+      if (this.newPassword && !this.newPassword.trim()) {
+        return 'La nueva contraseña no puede ser solo espacios';
+      }
+      return `Nueva contraseña: mínimo 6 caracteres (llevas ${this.newPassword.trim().length})`;
     }
-    if (this.confirmPassword.length < 6) {
+    if (!esPasswordValida(this.confirmPassword)) {
       return 'Debes repetir la misma contraseña en «Confirmar contraseña»';
     }
-    if (this.mismatch) {
+    if (this.newPassword.trim() !== this.confirmPassword.trim()) {
       return 'Las dos contraseñas deben ser iguales';
     }
     return '';

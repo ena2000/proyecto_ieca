@@ -1,7 +1,9 @@
 const { z } = require('zod');
+const { esEmailProveedorConocido } = require('../utils/email-proveedor');
 
 const ROLES = z.enum(['Administrador', 'Contable', 'Colaborador', 'Lider/CoLider']);
 const ESTADOS_USUARIO = z.enum(['Activo', 'Inactivo']).optional();
+const ESTADOS_MINISTERIO = z.enum(['Activo', 'Pausado', 'Inactivo']);
 const COMPROBANTE = z.enum(['imagen', 'pdf']).optional();
 
 /** Unifica `tipo` legacy de ingresos → `categoria`. */
@@ -12,18 +14,78 @@ function mergeCategoriaLegacy(val) {
   return { ...rest, categoria };
 }
 
-const CUENTAS_INGRESO = ['4101', '4102', '4103', '4104', '4105', '4106'] as const;
-const CUENTAS_GASTO = ['5101', '5102', '5103', '5104', '5105', '5106', '5107'] as const;
+const CUENTAS_INGRESO = ['4101', '4102', '4103', '4104', '4105', '4106'];
+const CUENTAS_GASTO = ['5101', '5102', '5103', '5104', '5105', '5106', '5107'];
+
+function esFechaCalendarioValidaDesdeFormateada(fechaFormateada) {
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(fechaFormateada ?? '').trim());
+  if (!m) return false;
+  const dd = Number(m[1]);
+  const mm = Number(m[2]);
+  const yyyy = Number(m[3]);
+  if (yyyy < 2000 || yyyy > 2100 || mm < 1 || mm > 12 || dd < 1 || dd > 31) return false;
+  const d = new Date(yyyy, mm - 1, dd);
+  return d.getFullYear() === yyyy && d.getMonth() === mm - 1 && d.getDate() === dd;
+}
+
+function esFechaIsoODiaValida(fecha) {
+  const raw = String(fecha ?? '').trim();
+  if (!raw) return false;
+  const ymd = /^(\d{4})-(\d{2})-(\d{2})/.exec(raw);
+  if (ymd) {
+    const yyyy = Number(ymd[1]);
+    const mm = Number(ymd[2]);
+    const dd = Number(ymd[3]);
+    if (yyyy < 2000 || yyyy > 2100 || mm < 1 || mm > 12 || dd < 1 || dd > 31) return false;
+    const d = new Date(yyyy, mm - 1, dd);
+    return d.getFullYear() === yyyy && d.getMonth() === mm - 1 && d.getDate() === dd;
+  }
+  const d = new Date(raw);
+  return !Number.isNaN(d.getTime());
+}
+
+const fotoSchema = z
+  .string()
+  .max(10_000_000)
+  .optional()
+  .default('')
+  .refine(
+    (v) =>
+      !v ||
+      v === '' ||
+      /^data:image\/(jpeg|jpg|png|webp);base64,/i.test(v) ||
+      /^data:application\/pdf;base64,/i.test(v),
+    { message: 'El comprobante debe ser imagen (JPEG/PNG/WebP) o PDF válido.' }
+  );
 
 const movimientoBase = {
-  fecha: z.string().min(1).max(40),
-  descripcion: z.string().trim().min(3, 'Descripción requerida (mín. 3 caracteres)').max(500),
+  fecha: z
+    .string()
+    .min(1, 'Fecha requerida')
+    .max(40)
+    .refine((v) => esFechaIsoODiaValida(v), {
+      message: 'La fecha no es válida.'
+    }),
+  descripcion: z
+    .string()
+    .trim()
+    .min(3, 'Descripción requerida (mín. 3 caracteres)')
+    .max(500)
+    .refine((v) => !/[<>]/.test(v), {
+      message: 'La descripción contiene caracteres no permitidos.'
+    }),
   monto: z.coerce.number().positive('El monto debe ser mayor a 0').max(999_999_999),
-  // Alineado con express.json limit 10mb
-  foto: z.string().max(10_000_000).optional().default(''),
+  foto: fotoSchema,
   ministerio: z.string().trim().min(1).max(200),
   ministerioId: z.coerce.number().int().positive().optional(),
-  fechaFormateada: z.string().max(20).optional(),
+  fechaFormateada: z
+    .string()
+    .max(20)
+    .optional()
+    .refine(
+      (v) => v == null || v === '' || esFechaCalendarioValidaDesdeFormateada(v),
+      { message: 'La fecha formateada no es válida (revisa día y mes).' }
+    ),
   comprobanteTipo: COMPROBANTE,
   usuarioId: z.coerce.number().int().positive().optional(),
   registradoPor: z.string().max(200).optional()
@@ -79,7 +141,7 @@ const ministerioCreateSchema = z.object({
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: err });
       }
     }),
-  estado: z.string().trim().min(1).max(50),
+  estado: ESTADOS_MINISTERIO,
   hldrId: z.coerce.number().int().positive().nullable().optional(),
   coLiderId: z.coerce.number().int().positive().nullable().optional()
 });
@@ -87,13 +149,29 @@ const ministerioCreateSchema = z.object({
 const ministerioUpdateSchema = ministerioCreateSchema.partial();
 
 const usuarioCreateSchema = z.object({
-  nombre: z.string().trim().min(1, 'Nombre requerido').max(200),
-  email: z.string().trim().email('Email inválido').max(200),
+  nombre: z
+    .string()
+    .trim()
+    .min(3, 'Nombre requerido (mín. 3 caracteres)')
+    .max(200)
+    .refine((v) => !/[<>]/.test(v), { message: 'El nombre contiene caracteres no permitidos.' }),
+  email: z
+    .string()
+    .trim()
+    .email('Email inválido')
+    .max(200)
+    .refine((v) => esEmailProveedorConocido(v), {
+      message: 'Usa un correo de Gmail, Outlook, Hotmail, Yahoo u otro proveedor conocido.'
+    }),
   rol: ROLES,
   estado: ESTADOS_USUARIO,
   ministerioId: z.coerce.number().int().positive().nullable().optional(),
-  usuario: z.string().trim().min(1).max(50).optional(),
-  password: z.string().min(6).max(128).optional()
+  usuario: z
+    .string()
+    .trim()
+    .regex(/^[a-z0-9._]{3,50}$/i, 'Usuario: solo letras, números, punto o guion bajo (3-50).')
+    .optional(),
+  password: z.string().trim().min(6).max(128).optional()
 });
 
 const usuarioUpdateSchema = usuarioCreateSchema.partial();

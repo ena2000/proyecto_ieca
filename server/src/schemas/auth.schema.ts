@@ -2,7 +2,11 @@ const { z } = require('zod');
 
 const loginSchema = z.object({
   usuario: z.string().trim().min(1, 'Usuario requerido').max(50),
-  password: z.string().min(1, 'Contraseña requerida').max(128)
+  password: z
+    .string()
+    .min(1, 'Contraseña requerida')
+    .max(128)
+    .refine((v) => v.trim().length > 0, { message: 'La contraseña no puede ser solo espacios.' })
 });
 
 const changePasswordSchema = z.object({
