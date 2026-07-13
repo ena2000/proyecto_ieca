@@ -7,6 +7,8 @@ export interface Notificacion {
   titulo: string;
   mensaje: string;
   ruta?: string;
+  /** Id del ingreso/gasto relacionado (para abrir ese registro). */
+  entityId?: number | string;
   fecha: string;
   /** staff = admin/contable; colaborador = resolución de movimientos del ministerio. */
   audiencia?: NotificacionAudiencia;

@@ -8,7 +8,7 @@ import { presentIecaToast } from '../../shared/utils/toast.util';
 import { leerValorIonInputAsync } from '../../shared/utils/movimiento-form-sync.util';
 import { FORM_GUARDADO_TOAST_MS, scrollAlErrorFormulario } from '../../shared/utils/form-guardado.util';
 import { despertarApiEnSegundoPlano } from '../../shared/utils/api-wake.util';
-import { esPasswordValida, mensajeErrorPassword } from '../../shared/utils/usuario-validacion.util';
+import { esPasswordValida, mensajeErrorPassword, mensajeErrorPasswordActual, PASSWORD_MIN, PASSWORD_HINT } from '../../shared/utils/usuario-validacion.util';
 
 @Component({
   selector: 'app-cambiar-password',
@@ -24,6 +24,7 @@ export class CambiarPasswordComponent implements OnInit {
   showConfirm = false;
   guardando = false;
   formGuardadoError: string | null = null;
+  readonly passwordHint = PASSWORD_HINT;
 
   @ViewChild('oldPasswordInput') oldPasswordInput?: IonInput;
   @ViewChild('newPasswordInput') newPasswordInput?: IonInput;
@@ -38,9 +39,9 @@ export class CambiarPasswordComponent implements OnInit {
 
   ngOnInit(): void {
     this.form = this.fb.group({
-      oldPassword: ['', [Validators.required, Validators.minLength(6)]],
-      newPassword: ['', [Validators.required, Validators.minLength(6)]],
-      confirmPassword: ['', [Validators.required, Validators.minLength(6)]],
+      oldPassword: ['', [Validators.required]],
+      newPassword: ['', [Validators.required, Validators.minLength(PASSWORD_MIN)]],
+      confirmPassword: ['', [Validators.required, Validators.minLength(PASSWORD_MIN)]],
     });
     despertarApiEnSegundoPlano();
   }
@@ -57,23 +58,25 @@ export class CambiarPasswordComponent implements OnInit {
     this.formGuardadoError = null;
     await this.sincronizarFormularioAntesDeGuardar();
 
-    if (this.form.invalid || this.mismatch) {
+    const oldP = String(this.form.value.oldPassword ?? '');
+    const newP = String(this.form.value.newPassword ?? '');
+    const confirmP = String(this.form.value.confirmPassword ?? '');
+
+    if (this.mismatch || newP.trim() !== confirmP.trim()) {
       this.form.markAllAsTouched();
-      this.formGuardadoError = this.mismatch
-        ? 'Las contraseñas nuevas no coinciden.'
-        : 'Revisa los campos. Cada contraseña debe tener al menos 6 caracteres.';
+      this.formGuardadoError = 'Las contraseñas nuevas no coinciden.';
       await this.toast(this.formGuardadoError, 'danger', FORM_GUARDADO_TOAST_MS);
       scrollAlErrorFormulario();
       return;
     }
 
-    const oldP = String(this.form.value.oldPassword ?? '');
-    const newP = String(this.form.value.newPassword ?? '');
     const passErr =
-      mensajeErrorPassword(oldP, 6, 'contraseña actual') ||
-      mensajeErrorPassword(newP, 6, 'nueva contraseña');
-    if (passErr || !esPasswordValida(oldP) || !esPasswordValida(newP)) {
-      this.formGuardadoError = passErr || 'La contraseña no puede ser solo espacios.';
+      mensajeErrorPasswordActual(oldP) ||
+      mensajeErrorPassword(newP, PASSWORD_MIN, 'nueva contraseña');
+    if (passErr || !esPasswordValida(newP)) {
+      this.form.markAllAsTouched();
+      this.formGuardadoError =
+        passErr || `La nueva contraseña no cumple la política (${PASSWORD_HINT}).`;
       await this.toast(this.formGuardadoError, 'danger', FORM_GUARDADO_TOAST_MS);
       scrollAlErrorFormulario();
       return;

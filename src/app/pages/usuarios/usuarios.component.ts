@@ -143,6 +143,8 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   readonly ROL_COLABORADOR = ROLES.COLABORADOR;
   readonly isRolSinMinisterio = isRolSinMinisterio;
   readonly ROLES_CATALOGO = ROLES;
+  readonly esPasswordValida = esPasswordValida;
+  readonly mensajeErrorPassword = mensajeErrorPassword;
 
   constructor(
     private toastController: ToastController,

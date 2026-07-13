@@ -53,8 +53,10 @@
 
         <tr
           *ngFor="let row of pagedData"
+          [attr.data-row-id]="row.id"
           [class.editing-row]="isEditing(row)"
-          [class.resolving-row]="filaEnProcesoResolucion(row)">
+          [class.resolving-row]="filaEnProcesoResolucion(row)"
+          [class.highlighted-row]="isHighlighted(row)">
 
           <!-- =====================================================
                COLUMNAS DINÁMICAS

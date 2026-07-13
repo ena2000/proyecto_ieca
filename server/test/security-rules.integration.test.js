@@ -71,7 +71,7 @@ describe('API seguridad y reglas (integración)', () => {
     const changed = await request(app)
       .post('/api/auth/change-password')
       .set('Authorization', `Bearer ${token}`)
-      .send({ oldPassword: '123456', newPassword: 'nueva456' });
+      .send({ oldPassword: '123456', newPassword: 'Iglesia2026' });
     assert.equal(changed.status, 200);
     assert.equal(changed.body.user.mustChangePassword, false);
     assert.ok(changed.body.token);

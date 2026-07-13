@@ -1,5 +1,6 @@
 const { z } = require('zod');
 const { esEmailProveedorConocido } = require('../utils/email-proveedor');
+const { passwordNuevaSchema } = require('./auth.schema');
 
 const ROLES = z.enum(['Administrador', 'Contable', 'Colaborador', 'Lider/CoLider']);
 const ESTADOS_USUARIO = z.enum(['Activo', 'Inactivo']).optional();
@@ -171,7 +172,7 @@ const usuarioCreateSchema = z.object({
     .trim()
     .regex(/^[a-z0-9._]{3,50}$/i, 'Usuario: solo letras, números, punto o guion bajo (3-50).')
     .optional(),
-  password: z.string().trim().min(6).max(128).optional()
+  password: passwordNuevaSchema.optional()
 });
 
 const usuarioUpdateSchema = usuarioCreateSchema.partial();

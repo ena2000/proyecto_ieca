@@ -67,13 +67,23 @@ const {
 const crypto = require('crypto');
 
 function generateTempPassword(length = 10) {
-  // Evita caracteres confusos; CSPRNG (no Math.random)
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789@#$';
-  let out = '';
-  for (let i = 0; i < length; i++) {
-    out += chars[crypto.randomInt(0, chars.length)];
+  // Evita caracteres confusos; CSPRNG; siempre incluye letra y número (política IECA).
+  const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+  const digits = '23456789';
+  const special = '@#$';
+  const all = letters + digits + special;
+  const chars = [
+    letters[crypto.randomInt(0, letters.length)],
+    digits[crypto.randomInt(0, digits.length)]
+  ];
+  for (let i = chars.length; i < length; i++) {
+    chars.push(all[crypto.randomInt(0, all.length)]);
   }
-  return out;
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = crypto.randomInt(0, i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+  return chars.join('');
 }
 
 function slugifyUsuario(input) {

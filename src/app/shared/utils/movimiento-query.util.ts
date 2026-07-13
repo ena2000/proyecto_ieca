@@ -22,3 +22,14 @@ export function limpiarQueryPendientes(route: ActivatedRoute, router: Router): v
     replaceUrl: true
   });
 }
+
+/** Quita `?id=` tras enfocar el registro desde una notificación. */
+export function limpiarQueryIdRegistro(route: ActivatedRoute, router: Router): void {
+  if (!route.snapshot.queryParamMap.has('id')) return;
+  void router.navigate([], {
+    relativeTo: route,
+    queryParams: { id: null },
+    queryParamsHandling: 'merge',
+    replaceUrl: true
+  });
+}

@@ -27,10 +27,15 @@ describe('usuario-validacion.util', () => {
     expect(mensajeErrorNombrePersona('<script>')).toMatch(/solo letras|no permitidos/i);
   });
 
-  it('rechaza contraseñas vacías o solo espacios', () => {
-    expect(esPasswordValida('abcdef')).toBeTrue();
+  it('exige contraseña con longitud, letra y número', () => {
+    expect(esPasswordValida('abcdef')).toBeFalse();
+    expect(esPasswordValida('12345678')).toBeFalse();
+    expect(esPasswordValida('abcdefgh')).toBeFalse();
     expect(esPasswordValida('      ')).toBeFalse();
+    expect(esPasswordValida('Iglesia1')).toBeTrue();
     expect(mensajeErrorPassword('   ')).toMatch(/espacios/i);
+    expect(mensajeErrorPassword('soloLetras')).toMatch(/número/i);
+    expect(mensajeErrorPassword('12345678')).toMatch(/letra|predecible/i);
   });
 
   it('valida estructura mínima de backup', () => {

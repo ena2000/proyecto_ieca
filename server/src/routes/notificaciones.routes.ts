@@ -55,12 +55,13 @@ router.get('/', async (req, res) => {
 /** POST /api/notificaciones — crear (cierre mensual, etc.; solo staff). */
 router.post('/', requireStaffNotifRole, validate(createNotificacionSchema), async (req, res) => {
   try {
-    const { tipo, titulo, mensaje, ruta } = req.body;
+    const { tipo, titulo, mensaje, ruta, entityId } = req.body;
     const created = await createNotificacion({
       tipo,
       titulo,
       mensaje,
       ruta,
+      entityId,
       audiencia: 'staff',
       origenRol: ROLES.ADMIN
     });

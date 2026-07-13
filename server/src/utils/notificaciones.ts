@@ -34,6 +34,10 @@ function toNotificacion(entity) {
     titulo: entity.titulo,
     mensaje: entity.mensaje,
     ruta: entity.ruta || undefined,
+    entityId:
+      entity.entityId != null && entity.entityId !== ''
+        ? entity.entityId
+        : undefined,
     fecha: entity.fecha,
     audiencia: normalizarAudiencia(entity.audiencia || 'staff'),
     ministerioId:
@@ -102,11 +106,16 @@ async function trimNotificaciones() {
   );
 }
 
+function pathnameRuta(ruta) {
+  return String(ruta || '').split('?')[0];
+}
+
 async function createNotificacion({
   tipo,
   titulo,
   mensaje,
   ruta,
+  entityId = null,
   audiencia = 'staff',
   ministerioId = null,
   actorUserId = null,
@@ -124,6 +133,8 @@ async function createNotificacion({
     titulo: String(titulo ?? '').trim(),
     mensaje: String(mensaje ?? '').trim(),
     ruta: ruta ? String(ruta) : null,
+    entityId:
+      entityId != null && entityId !== '' ? entityId : null,
     audiencia: aud,
     ministerioId:
       ministerioId != null && ministerioId !== '' ? Number(ministerioId) : null,
@@ -201,11 +212,11 @@ async function marcarTodasLeidas(userId, user) {
 async function marcarLeidasPorRuta(userId, ruta, user) {
   const lista = await listCollection(COLLECTION);
   const uid = String(userId);
-  const target = String(ruta);
+  const target = pathnameRuta(ruta);
   const visibleIds = await getVisibleIdsForUser(user);
   await Promise.all(
     lista
-      .filter((n) => n.ruta === target && visibleIds.has(String(n.id)))
+      .filter((n) => pathnameRuta(n.ruta) === target && visibleIds.has(String(n.id)))
       .map(async (n) => {
         const leidasPor = addUserToLeidas(n.leidasPor, uid);
         await updateInCollection(COLLECTION, n.id, { leidasPor });

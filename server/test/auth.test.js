@@ -30,11 +30,36 @@ describe('auth.schema (Zod)', () => {
     assert.equal(r.success, false);
   });
 
+  it('rechaza nueva contraseña sin número o sin letra', () => {
+    assert.equal(
+      changePasswordSchema.safeParse({
+        oldPassword: '123456',
+        newPassword: 'sololetras'
+      }).success,
+      false
+    );
+    assert.equal(
+      changePasswordSchema.safeParse({
+        oldPassword: '123456',
+        newPassword: '12345678'
+      }).success,
+      false
+    );
+  });
+
+  it('acepta nueva contraseña con letra y número', () => {
+    const r = changePasswordSchema.safeParse({
+      oldPassword: '123456',
+      newPassword: 'Iglesia2026'
+    });
+    assert.equal(r.success, true);
+  });
+
   it('exige código de 6 dígitos en reset-password', () => {
     const r = resetPasswordSchema.safeParse({
       usuario: 'admin',
       code: '12345',
-      newPassword: 'nueva123'
+      newPassword: 'Iglesia2026'
     });
     assert.equal(r.success, false);
   });

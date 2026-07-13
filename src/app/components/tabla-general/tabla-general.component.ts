@@ -74,6 +74,8 @@ export class TablaGeneralComponent implements OnChanges {
   @Input() allowDeleteApproved = false;
   /** Fila en proceso de aprobar/rechazar/eliminar (feedback visible en la tabla). */
   @Input() accionFilaEnCurso: { id: number; tipo: 'aprobar' | 'rechazar' | 'eliminar' } | null = null;
+  /** Resalta la fila abierta desde una notificación. */
+  @Input() highlightRowId: number | string | null = null;
 
   // =========================================================
   // OUTPUTS
@@ -135,6 +137,32 @@ export class TablaGeneralComponent implements OnChanges {
         this.currentPage = 1;
       }
     }
+
+    if (changes['highlightRowId'] || changes['data']) {
+      this.irAPaginaDeFila(this.highlightRowId);
+      if (this.highlightRowId != null) {
+        queueMicrotask(() => this.scrollAFilaResaltada());
+      }
+    }
+  }
+
+  isHighlighted(row: any): boolean {
+    if (this.highlightRowId == null || this.highlightRowId === '') return false;
+    return String(row?.id) === String(this.highlightRowId);
+  }
+
+  private irAPaginaDeFila(id: number | string | null | undefined): void {
+    if (id == null || id === '') return;
+    const idx = this.data.findIndex(r => String(r?.id) === String(id));
+    if (idx < 0) return;
+    this.currentPage = Math.floor(idx / this.itemsPerPage) + 1;
+  }
+
+  private scrollAFilaResaltada(): void {
+    const id = String(this.highlightRowId ?? '').replace(/["\\]/g, '');
+    if (!id) return;
+    const el = document.querySelector(`tr[data-row-id="${id}"]`);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
   // =========================================================

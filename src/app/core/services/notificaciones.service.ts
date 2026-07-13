@@ -12,12 +12,14 @@ import { environment } from '../../../environments/environment';
 import { AppRole } from '../constants/roles.constants';
 import { filtrarNotificacionesParaSesion } from '../../shared/utils/notificacion-filtro.util';
 import { normalizarAudiencia } from '../../shared/utils/notificacion-audiencia.util';
+import { pathnameNotificacion } from '../../shared/utils/notificacion-ruta.util';
 
 export interface NuevaNotificacion {
   tipo: NotificacionTipo;
   titulo: string;
   mensaje: string;
   ruta?: string;
+  entityId?: number | string;
   audiencia?: NotificacionAudiencia;
   ministerioId?: number;
   actorUserId?: string;
@@ -197,6 +199,7 @@ export class NotificacionesService {
       titulo: datos.titulo,
       mensaje: datos.mensaje,
       ruta: datos.ruta,
+      entityId: datos.entityId,
       audiencia: datos.audiencia ?? 'staff',
       origenRol: datos.origenRol,
       ministerioId: datos.ministerioId,
@@ -209,8 +212,9 @@ export class NotificacionesService {
   }
 
   private marcarLeidasPorRutaLocal(usuarioId: string, ruta: string): void {
+    const target = pathnameNotificacion(ruta);
     const lista = this.getLista().map(n => {
-      if (n.ruta !== ruta) return n;
+      if (pathnameNotificacion(n.ruta) !== target) return n;
       const leidas = new Set((n.leidasPor ?? []).map(String));
       leidas.add(String(usuarioId));
       return { ...n, leidasPor: Array.from(leidas) };
@@ -270,6 +274,7 @@ export class NotificacionesService {
       titulo: n.titulo,
       mensaje: n.mensaje,
       ruta: n.ruta,
+      entityId: n.entityId != null && n.entityId !== '' ? n.entityId : undefined,
       fecha: n.fecha,
       audiencia: normalizarAudiencia(n.audiencia),
       ministerioId: n.ministerioId != null ? Number(n.ministerioId) : undefined,

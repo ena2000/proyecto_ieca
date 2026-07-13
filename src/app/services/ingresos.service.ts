@@ -32,6 +32,7 @@ import {
   prependRegistroUnico,
   reemplazarRegistroEnLista
 } from '../shared/utils/entity-crud.util';
+import { rutaNotificacionRegistro } from '../shared/utils/notificacion-ruta.util';
 
 @Injectable({ providedIn: 'root' })
 export class IngresosService {
@@ -416,7 +417,8 @@ export class IngresosService {
         mensaje:
           `${ingreso.ministerio || 'General'} · ${ingreso.descripcion || 'Sin descripción'} · ` +
           `$ ${(ingreso.monto || 0).toFixed(2)} — fue modificado y sigue pendiente de revisión.`,
-        ruta: '/ingresos'
+        entityId: ingreso.id,
+        ruta: rutaNotificacionRegistro('ingreso', ingreso.id)
       });
       return;
     }
@@ -431,7 +433,8 @@ export class IngresosService {
         mensaje:
           `${ingreso.ministerio || 'General'} · ${ingreso.descripcion || 'Sin descripción'} · ` +
           `$ ${(ingreso.monto || 0).toFixed(2)} — fue modificado por administración o contable.`,
-        ruta: '/ingresos'
+        entityId: ingreso.id,
+        ruta: rutaNotificacionRegistro('ingreso', ingreso.id)
       });
     }
   }
@@ -451,7 +454,8 @@ export class IngresosService {
         actorUserId: actor,
         titulo: 'Ingreso eliminado',
         mensaje: `${base} — fue eliminado por un colaborador del ministerio.`,
-        ruta: '/ingresos'
+        entityId: ingreso.id,
+        ruta: rutaNotificacionRegistro('ingreso', ingreso.id)
       });
       return;
     }
@@ -464,7 +468,8 @@ export class IngresosService {
         actorUserId: actor,
         titulo: 'Tu ingreso fue eliminado',
         mensaje: `${base} — fue eliminado por administración o contable.`,
-        ruta: '/ingresos'
+        entityId: ingreso.id,
+        ruta: rutaNotificacionRegistro('ingreso', ingreso.id)
       });
     }
   }
@@ -479,7 +484,8 @@ export class IngresosService {
       mensaje:
         `${ingreso.ministerio || 'General'} · ${ingreso.descripcion || 'Sin descripción'} · ` +
         `$ ${(ingreso.monto || 0).toFixed(2)} — corregido tras rechazo, requiere nueva revisión.`,
-      ruta: '/ingresos'
+      entityId: ingreso.id,
+      ruta: rutaNotificacionRegistro('ingreso', ingreso.id)
     });
   }
 
@@ -492,7 +498,8 @@ export class IngresosService {
         actorUserId: this.actorId(),
         titulo: 'Ingreso pendiente de aprobación',
         mensaje: `${nuevo.ministerio || 'General'} · ${nuevo.descripcion} · $ ${(nuevo.monto || 0).toFixed(2)}`,
-        ruta: '/ingresos'
+        entityId: nuevo.id,
+        ruta: rutaNotificacionRegistro('ingreso', nuevo.id)
       });
     }
   }
@@ -516,7 +523,8 @@ export class IngresosService {
         estado === 'aprobado'
           ? `${base} — fue aprobado.`
           : `${base} — fue rechazado. Motivo: ${motivoTxt}`,
-      ruta: '/ingresos'
+      entityId: ingreso.id,
+      ruta: rutaNotificacionRegistro('ingreso', ingreso.id)
     });
   }
 

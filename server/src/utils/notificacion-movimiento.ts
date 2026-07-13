@@ -16,13 +16,31 @@ function origenRolReq(req) {
   return req?.user?.rol ?? null;
 }
 
-function rutaTipo(tipo) {
-  return tipo === 'gasto' ? '/gastos' : '/ingresos';
+function entityIdOf(movimiento) {
+  if (movimiento?.id == null || movimiento.id === '') return null;
+  const n = Number(movimiento.id);
+  return Number.isFinite(n) ? n : String(movimiento.id);
+}
+
+function rutaTipo(tipo, movimiento) {
+  const base = tipo === 'gasto' ? '/gastos' : '/ingresos';
+  const id = entityIdOf(movimiento);
+  if (id == null) return base;
+  return `${base}?id=${encodeURIComponent(String(id))}`;
 }
 
 function etiquetaTipo(tipo, minuscula = false) {
   const e = tipo === 'gasto' ? 'Gasto' : 'Ingreso';
   return minuscula ? e.toLowerCase() : e;
+}
+
+function payloadMovimiento(tipo, movimiento, extra = {}) {
+  return {
+    tipo,
+    entityId: entityIdOf(movimiento),
+    ruta: rutaTipo(tipo, movimiento),
+    ...extra
+  };
 }
 
 /** Avisa al colaborador del ministerio (no al administrador que aprobó/rechazó). */
@@ -31,30 +49,26 @@ async function notificarResolucionMovimientoColaborador({ tipo, estado, movimien
   if (ministerioId == null || ministerioId === '') return null;
 
   const etiqueta = etiquetaTipo(tipo, true);
-  const ruta = rutaTipo(tipo);
   const actor = actorUserId(req);
+  const base = payloadMovimiento(tipo, movimiento, {
+    audiencia: 'colaborador',
+    ministerioId: Number(ministerioId),
+    actorUserId: actor
+  });
 
   if (estado === 'aprobado') {
     return createNotificacion({
-      tipo,
-      audiencia: 'colaborador',
-      ministerioId: Number(ministerioId),
-      actorUserId: actor,
+      ...base,
       titulo: `Tu ${etiqueta} fue aprobado`,
-      mensaje: mensajeMovimiento(movimiento, 'fue aprobado.'),
-      ruta
+      mensaje: mensajeMovimiento(movimiento, 'fue aprobado.')
     });
   }
 
   const motivoTxt = motivo ? String(motivo).trim() : 'Sin motivo indicado';
   return createNotificacion({
-    tipo,
-    audiencia: 'colaborador',
-    ministerioId: Number(ministerioId),
-    actorUserId: actor,
+    ...base,
     titulo: `Tu ${etiqueta} fue rechazado`,
-    mensaje: mensajeMovimiento(movimiento, `fue rechazado. Motivo: ${motivoTxt}`),
-    ruta
+    mensaje: mensajeMovimiento(movimiento, `fue rechazado. Motivo: ${motivoTxt}`)
   });
 }
 
@@ -62,16 +76,16 @@ async function notificarResolucionMovimientoColaborador({ tipo, estado, movimien
 async function notificarMovimientoReenviadoStaff({ tipo, movimiento, req }) {
   const etiqueta = etiquetaTipo(tipo);
   return createNotificacion({
-    tipo,
-    audiencia: 'staff',
-    origenRol: ROLES.COLABORADOR,
-    actorUserId: actorUserId(req),
+    ...payloadMovimiento(tipo, movimiento, {
+      audiencia: 'staff',
+      origenRol: ROLES.COLABORADOR,
+      actorUserId: actorUserId(req)
+    }),
     titulo: `${etiqueta} corregido (pendiente de aprobación)`,
     mensaje: mensajeMovimiento(
       movimiento,
       'fue corregido tras un rechazo y requiere nueva revisión.'
-    ),
-    ruta: rutaTipo(tipo)
+    )
   });
 }
 
@@ -87,16 +101,16 @@ async function notificarMovimientoModificado({ tipo, movimiento, req, current })
       return notificarMovimientoReenviadoStaff({ tipo, movimiento, req });
     }
     return createNotificacion({
-      tipo,
-      audiencia: 'staff',
-      origenRol: ROLES.COLABORADOR,
-      actorUserId: actor,
+      ...payloadMovimiento(tipo, movimiento, {
+        audiencia: 'staff',
+        origenRol: ROLES.COLABORADOR,
+        actorUserId: actor
+      }),
       titulo: `${etiquetaTipo(tipo)} actualizado (pendiente de aprobación)`,
       mensaje: mensajeMovimiento(
         movimiento,
         'fue modificado y sigue pendiente de revisión.'
-      ),
-      ruta: rutaTipo(tipo)
+      )
     });
   }
 
@@ -104,16 +118,16 @@ async function notificarMovimientoModificado({ tipo, movimiento, req, current })
     const ministerioId = movimiento.ministerioId;
     if (ministerioId == null || ministerioId === '') return null;
     return createNotificacion({
-      tipo,
-      audiencia: 'colaborador',
-      ministerioId: Number(ministerioId),
-      actorUserId: actor,
+      ...payloadMovimiento(tipo, movimiento, {
+        audiencia: 'colaborador',
+        ministerioId: Number(ministerioId),
+        actorUserId: actor
+      }),
       titulo: `Tu ${etiquetaTipo(tipo, true)} fue modificado`,
       mensaje: mensajeMovimiento(
         movimiento,
         'fue modificado por administración o contable.'
-      ),
-      ruta: rutaTipo(tipo)
+      )
     });
   }
 
@@ -127,13 +141,13 @@ async function notificarMovimientoEliminado({ tipo, movimiento, req }) {
 
   if (esColaboradorMinisterio(rol)) {
     return createNotificacion({
-      tipo,
-      audiencia: 'staff',
-      origenRol: ROLES.COLABORADOR,
-      actorUserId: actor,
+      ...payloadMovimiento(tipo, movimiento, {
+        audiencia: 'staff',
+        origenRol: ROLES.COLABORADOR,
+        actorUserId: actor
+      }),
       titulo: `${etiquetaTipo(tipo)} eliminado`,
-      mensaje: mensajeMovimiento(movimiento, 'fue eliminado por un colaborador del ministerio.'),
-      ruta: rutaTipo(tipo)
+      mensaje: mensajeMovimiento(movimiento, 'fue eliminado por un colaborador del ministerio.')
     });
   }
 
@@ -141,16 +155,16 @@ async function notificarMovimientoEliminado({ tipo, movimiento, req }) {
     const ministerioId = movimiento.ministerioId;
     if (ministerioId == null || ministerioId === '') return null;
     return createNotificacion({
-      tipo,
-      audiencia: 'colaborador',
-      ministerioId: Number(ministerioId),
-      actorUserId: actor,
+      ...payloadMovimiento(tipo, movimiento, {
+        audiencia: 'colaborador',
+        ministerioId: Number(ministerioId),
+        actorUserId: actor
+      }),
       titulo: `Tu ${etiquetaTipo(tipo, true)} fue eliminado`,
       mensaje: mensajeMovimiento(
         movimiento,
         'fue eliminado por administración o contable.'
-      ),
-      ruta: rutaTipo(tipo)
+      )
     });
   }
 
@@ -166,13 +180,13 @@ async function notificarMovimientoCreado({ tipo, movimiento, req }) {
 
   if (esColaboradorMinisterio(rol) && movimiento.estado === 'pendiente') {
     return createNotificacion({
-      tipo,
-      audiencia: 'staff',
-      origenRol: ROLES.COLABORADOR,
-      actorUserId: actor,
+      ...payloadMovimiento(tipo, movimiento, {
+        audiencia: 'staff',
+        origenRol: ROLES.COLABORADOR,
+        actorUserId: actor
+      }),
       titulo: `${etiqueta} pendiente de aprobación`,
-      mensaje: base.replace(/ — $/, ''),
-      ruta: rutaTipo(tipo)
+      mensaje: base.replace(/ — $/, '')
     });
   }
 
@@ -180,23 +194,23 @@ async function notificarMovimientoCreado({ tipo, movimiento, req }) {
     const ministerioId = movimiento.ministerioId;
     if (ministerioId != null && ministerioId !== '') {
       return createNotificacion({
-        tipo,
-        audiencia: 'colaborador',
-        ministerioId: Number(ministerioId),
-        actorUserId: actor,
+        ...payloadMovimiento(tipo, movimiento, {
+          audiencia: 'colaborador',
+          ministerioId: Number(ministerioId),
+          actorUserId: actor
+        }),
         titulo: `Nuevo ${etiquetaTipo(tipo, true)} registrado`,
-        mensaje: mensajeMovimiento(movimiento, 'fue registrado por administración.'),
-        ruta: rutaTipo(tipo)
+        mensaje: mensajeMovimiento(movimiento, 'fue registrado por administración.')
       });
     }
     return createNotificacion({
-      tipo,
-      audiencia: 'staff',
-      origenRol: origenRolReq(req),
-      actorUserId: actor,
+      ...payloadMovimiento(tipo, movimiento, {
+        audiencia: 'staff',
+        origenRol: origenRolReq(req),
+        actorUserId: actor
+      }),
       titulo: `Nuevo ${etiqueta.toLowerCase()}`,
-      mensaje: base.replace(/ — $/, ''),
-      ruta: rutaTipo(tipo)
+      mensaje: base.replace(/ — $/, '')
     });
   }
 

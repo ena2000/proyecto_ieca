@@ -609,6 +609,7 @@
         [data]="listaFiltradaVista"
         [actions]="acciones"
         [accionFilaEnCurso]="accionFilaEnCurso"
+        [highlightRowId]="highlightRowId"
         [allowEditApproved]="authService.isAdministrador()"
         [allowDeleteApproved]="authService.isAdministrador()"
         (rowEdit)="editarIngreso($event)"

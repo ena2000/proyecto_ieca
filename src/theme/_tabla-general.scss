@@ -91,6 +91,22 @@ app-tabla-general {
   border-left: 4px solid #10b981;
 }
 
+.highlighted-row {
+  background: rgba(46, 53, 143, 0.1) !important;
+  border-left: 4px solid var(--ieca-blue, #2e358f);
+  animation: ieca-row-pulse 1.4s ease-in-out 2;
+}
+
+@keyframes ieca-row-pulse {
+  0%,
+  100% {
+    background: rgba(46, 53, 143, 0.08);
+  }
+  50% {
+    background: rgba(46, 53, 143, 0.18);
+  }
+}
+
 /* =========================================================
    BADGES
 ========================================================= */

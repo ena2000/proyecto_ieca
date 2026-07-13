@@ -18,6 +18,7 @@ import { withMutationTimeout } from '../shared/utils/http-mutation.util';
 import { stampAuditoriaLocal, stampAuditoriaActualizacionLocal } from '../shared/utils/audit.util';
 import { AuthService } from '../core/services/auth.service';
 import { ROLES } from '../core/constants/roles.constants';
+import { rutaNotificacionRegistro } from '../shared/utils/notificacion-ruta.util';
 
 @Injectable({ providedIn: 'root' })
 export class GastosService {
@@ -292,7 +293,8 @@ export class GastosService {
         mensaje:
           `${gasto.ministerio || 'General'} · ${gasto.descripcion || 'Sin descripción'} · ` +
           `$ ${(gasto.monto || 0).toFixed(2)} — fue modificado y sigue pendiente de revisión.`,
-        ruta: '/gastos'
+        entityId: gasto.id,
+        ruta: rutaNotificacionRegistro('gasto', gasto.id)
       });
       return;
     }
@@ -307,7 +309,8 @@ export class GastosService {
         mensaje:
           `${gasto.ministerio || 'General'} · ${gasto.descripcion || 'Sin descripción'} · ` +
           `$ ${(gasto.monto || 0).toFixed(2)} — fue modificado por administración o contable.`,
-        ruta: '/gastos'
+        entityId: gasto.id,
+        ruta: rutaNotificacionRegistro('gasto', gasto.id)
       });
     }
   }
@@ -327,7 +330,8 @@ export class GastosService {
         actorUserId: actor,
         titulo: 'Gasto eliminado',
         mensaje: `${base} — fue eliminado por un colaborador del ministerio.`,
-        ruta: '/gastos'
+        entityId: gasto.id,
+        ruta: rutaNotificacionRegistro('gasto', gasto.id)
       });
       return;
     }
@@ -340,7 +344,8 @@ export class GastosService {
         actorUserId: actor,
         titulo: 'Tu gasto fue eliminado',
         mensaje: `${base} — fue eliminado por administración o contable.`,
-        ruta: '/gastos'
+        entityId: gasto.id,
+        ruta: rutaNotificacionRegistro('gasto', gasto.id)
       });
     }
   }
@@ -355,7 +360,8 @@ export class GastosService {
       mensaje:
         `${gasto.ministerio || 'General'} · ${gasto.descripcion || 'Sin descripción'} · ` +
         `$ ${(gasto.monto || 0).toFixed(2)} — corregido tras rechazo, requiere nueva revisión.`,
-      ruta: '/gastos'
+      entityId: gasto.id,
+      ruta: rutaNotificacionRegistro('gasto', gasto.id)
     });
   }
 
@@ -372,7 +378,8 @@ export class GastosService {
         actorUserId: actor,
         titulo: 'Gasto pendiente de aprobación',
         mensaje: base,
-        ruta: '/gastos'
+        entityId: nuevo.id,
+        ruta: rutaNotificacionRegistro('gasto', nuevo.id)
       });
     }
   }
@@ -396,7 +403,8 @@ export class GastosService {
         estado === 'aprobado'
           ? `${base} — fue aprobado.`
           : `${base} — fue rechazado. Motivo: ${motivoTxt}`,
-      ruta: '/gastos'
+      entityId: gasto.id,
+      ruta: rutaNotificacionRegistro('gasto', gasto.id)
     });
   }
 

@@ -1,4 +1,11 @@
 const { z } = require('zod');
+const { refinePasswordNueva } = require('../utils/password-politica');
+
+const passwordNuevaSchema = z
+  .string()
+  .trim()
+  .max(128)
+  .superRefine((v, ctx) => refinePasswordNueva(v, ctx));
 
 const loginSchema = z.object({
   usuario: z.string().trim().min(1, 'Usuario requerido').max(50),
@@ -11,7 +18,7 @@ const loginSchema = z.object({
 
 const changePasswordSchema = z.object({
   oldPassword: z.string().min(1, 'Contraseña actual requerida').max(128),
-  newPassword: z.string().trim().min(6, 'La nueva contraseña debe tener al menos 6 caracteres').max(128)
+  newPassword: passwordNuevaSchema
 });
 
 const forgotPasswordSchema = z.object({
@@ -21,7 +28,7 @@ const forgotPasswordSchema = z.object({
 const resetPasswordSchema = z.object({
   usuario: z.string().trim().min(1, 'Usuario o email requerido').max(200),
   code: z.string().trim().regex(/^\d{6}$/, 'El código debe tener 6 dígitos'),
-  newPassword: z.string().trim().min(6, 'La nueva contraseña debe tener al menos 6 caracteres').max(128)
+  newPassword: passwordNuevaSchema
 });
 
 const refreshSchema = z.object({
@@ -33,5 +40,6 @@ module.exports = {
   changePasswordSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
-  refreshSchema
+  refreshSchema,
+  passwordNuevaSchema
 };

@@ -2,9 +2,32 @@
 
 export const USUARIO_NOMBRE_MIN = 3;
 export const USUARIO_NOMBRE_MAX = 200;
-export const PASSWORD_MIN = 6;
+/** Longitud mínima al crear o cambiar contraseña. */
+export const PASSWORD_MIN = 8;
+export const PASSWORD_MAX = 128;
+export const PASSWORD_HINT =
+  'Mín. 8 caracteres, con al menos una letra y un número';
 
 const NOMBRE_PERSONA = /^[\p{L}\s.'-]+$/u;
+
+/** Contraseñas demasiado obvias (comparación en minúsculas). */
+const PASSWORDS_DEBILES = new Set([
+  '12345678',
+  '123456789',
+  'password',
+  'password1',
+  'password12',
+  'password123',
+  'qwerty12',
+  'qwerty123',
+  'abcdefgh',
+  'abcdefg1',
+  '11111111',
+  '00000000',
+  'ieca1234',
+  'admin123',
+  'usuario1'
+]);
 
 /**
  * Dominios de correo permitidos (proveedores conocidos).
@@ -92,9 +115,17 @@ export function mensajeErrorNombrePersona(nombre: unknown): string | null {
   return null;
 }
 
-/** Contraseña con caracteres reales (rechaza solo espacios). */
+/** Contraseña al crear/cambiar: longitud, letra, número; rechaza solo espacios y claves obvias. */
 export function esPasswordValida(password: unknown, min = PASSWORD_MIN): boolean {
-  return String(password ?? '').trim().length >= min;
+  return mensajeErrorPassword(password, min) === null;
+}
+
+/** Solo comprueba que haya texto real (p. ej. contraseña actual al cambiar). */
+export function mensajeErrorPasswordActual(password: unknown): string | null {
+  const raw = String(password ?? '');
+  if (!raw) return 'La contraseña actual es obligatoria.';
+  if (!raw.trim()) return 'La contraseña actual no puede ser solo espacios.';
+  return null;
 }
 
 export function mensajeErrorPassword(
@@ -103,9 +134,24 @@ export function mensajeErrorPassword(
   etiqueta = 'contraseña'
 ): string | null {
   const raw = String(password ?? '');
+  const t = raw.trim();
   if (!raw) return `La ${etiqueta} es obligatoria.`;
-  if (!raw.trim()) return `La ${etiqueta} no puede ser solo espacios.`;
-  if (raw.trim().length < min) return `La ${etiqueta} debe tener al menos ${min} caracteres.`;
+  if (!t) return `La ${etiqueta} no puede ser solo espacios.`;
+  if (t.length < min) {
+    return `La ${etiqueta} debe tener al menos ${min} caracteres.`;
+  }
+  if (t.length > PASSWORD_MAX) {
+    return `La ${etiqueta} no puede superar ${PASSWORD_MAX} caracteres.`;
+  }
+  if (!/[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/.test(t)) {
+    return `La ${etiqueta} debe incluir al menos una letra.`;
+  }
+  if (!/[0-9]/.test(t)) {
+    return `La ${etiqueta} debe incluir al menos un número.`;
+  }
+  if (PASSWORDS_DEBILES.has(t.toLowerCase())) {
+    return `Elige una ${etiqueta} menos predecible.`;
+  }
   return null;
 }
 

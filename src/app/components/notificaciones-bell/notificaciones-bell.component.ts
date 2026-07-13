@@ -15,6 +15,7 @@ import { takeUntil } from 'rxjs/operators';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificacionesService } from '../../core/services/notificaciones.service';
 import { Notificacion } from '../../core/models/notificacion.model';
+import { rutaNotificacionRegistro } from '../../shared/utils/notificacion-ruta.util';
 
 @Component({
   selector: 'app-notificaciones-bell',
@@ -89,6 +90,14 @@ export class NotificacionesBellComponent implements OnInit, OnDestroy {
     this.noLeidas = this.notificacionesService.getNoLeidasCount(uid, rol, ministerioId);
   }
 
+  get noLeidasLista(): Notificacion[] {
+    return this.lista.filter(n => this.esNoLeida(n));
+  }
+
+  get leidasLista(): Notificacion[] {
+    return this.lista.filter(n => !this.esNoLeida(n));
+  }
+
   esNoLeida(n: Notificacion): boolean {
     const uid = this.authService.getSession()?.id ?? '';
     return uid ? !this.notificacionesService.estaLeidaPor(n, uid) : false;
@@ -161,8 +170,16 @@ export class NotificacionesBellComponent implements OnInit, OnDestroy {
     this.popoverAbierto = false;
     await this.popoverRef?.dismiss();
 
-    if (n.ruta) {
-      void this.router.navigateByUrl(n.ruta);
+    const destino =
+      n.ruta ||
+      (n.tipo === 'cierre'
+        ? '/administracion'
+        : n.entityId != null
+          ? rutaNotificacionRegistro(n.tipo, n.entityId)
+          : null);
+
+    if (destino) {
+      void this.router.navigateByUrl(destino);
     }
   }
 

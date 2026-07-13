@@ -53,7 +53,8 @@ import {
   perteneceAlcanceMinisterio,
   aplicarMinisterioAlMovimiento
 } from '../../shared/utils/movimiento-ministerio.util';
-import { leerFiltroEstadoDesdeRuta, limpiarQueryPendientes } from '../../shared/utils/movimiento-query.util';
+import { leerFiltroEstadoDesdeRuta, limpiarQueryPendientes, limpiarQueryIdRegistro } from '../../shared/utils/movimiento-query.util';
+import { leerIdRegistroDesdeQuery } from '../../shared/utils/notificacion-ruta.util';
 import { esFormularioMovimientoValido, mensajeValidacionMovimiento } from '../../shared/utils/movimiento-validacion.util';
 import { estaPendienteParaAprobacion, resolverEstadoAlGuardar } from '../../shared/utils/movimiento-estado.util';
 import {
@@ -157,6 +158,8 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
   registrando = false;
   formGuardadoError: string | null = null;
   accionFilaEnCurso: AccionFilaEnCurso | null = null;
+  highlightRowId: number | string | null = null;
+  private highlightClearTimer: ReturnType<typeof setTimeout> | null = null;
   readonly etiquetaAccionFilaEnCurso = etiquetaAccionFilaEnCurso;
 
   readonly cuentasGasto = CUENTAS_GASTO_OPCIONES;
@@ -198,10 +201,14 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
       .subscribe(list => {
         this.listaGastos = list;
         this.actualizarVista();
+        this.intentarEnfocarRegistroDesdeRuta();
       });
     this.dataService.dataRevision$
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => this.actualizarVista());
+    this.route.queryParamMap
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.intentarEnfocarRegistroDesdeRuta());
     void this.inicializarDatos();
   }
 
@@ -211,10 +218,15 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
     }
     this.cargarRelaciones();
     this.actualizarVista();
+    this.intentarEnfocarRegistroDesdeRuta();
     this.cdr.markForCheck();
   }
 
   ngOnDestroy(): void {
+    if (this.highlightClearTimer) {
+      clearTimeout(this.highlightClearTimer);
+      this.highlightClearTimer = null;
+    }
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -228,10 +240,12 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
       void this.dataService.bootstrapRemote().then(() => {
         this.cargarRelaciones();
         this.actualizarVista();
+        this.intentarEnfocarRegistroDesdeRuta();
       });
     } else {
       this.cargarRelaciones();
       this.actualizarVista();
+      this.intentarEnfocarRegistroDesdeRuta();
     }
   }
 
@@ -432,6 +446,44 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
     ]);
     limpiarQueryPendientes(this.route, this.router);
     this.actualizarVista();
+    this.cdr.markForCheck();
+  }
+
+  /** Abre/resalta el gasto indicado en `?id=` (desde notificaciones). */
+  private intentarEnfocarRegistroDesdeRuta(): void {
+    const id = leerIdRegistroDesdeQuery(this.route.snapshot.queryParamMap.get('id'));
+    if (!id) return;
+    if (!this.listaGastos.length && !this.dataService.hasRemoteData()) return;
+
+    const item = this.listaGastos.find(g => String(g.id) === id);
+    if (!item) {
+      if (this.listaGastos.length > 0) {
+        void this.mostrarToast('Ese gasto ya no está disponible.', 'warning');
+        limpiarQueryIdRegistro(this.route, this.router);
+      }
+      return;
+    }
+
+    this.searchTerm = '';
+    this.filtroFechaInicio = '';
+    this.filtroFechaFin = '';
+    this.fechaManualDesde = '';
+    this.fechaManualHasta = '';
+    this.filtroMontoMin = null;
+    this.filtroMontoMax = null;
+    this.filtroEstado = 'todos';
+    this.filtroMinisterioId = null;
+    this.mostrarFiltrosAvanzados = false;
+    this.highlightRowId = item.id ?? id;
+    this.actualizarVista();
+    limpiarQueryIdRegistro(this.route, this.router);
+
+    if (this.highlightClearTimer) clearTimeout(this.highlightClearTimer);
+    this.highlightClearTimer = setTimeout(() => {
+      this.highlightRowId = null;
+      this.highlightClearTimer = null;
+      this.cdr.markForCheck();
+    }, 4500);
     this.cdr.markForCheck();
   }
 
