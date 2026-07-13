@@ -36,7 +36,7 @@ describe('ministerios-catalogo.constants', () => {
     expect(filtrarMinisteriosRegistroManual(lista).map(m => m.nombre)).toEqual(['Adolescentes']);
   });
 
-  it('reportes incluye General pero no Contabilidad', () => {
+  it('reportes incluye General (aportación) pero no Contabilidad', () => {
     const lista = [
       { id: 1, nombre: 'Adolescentes' },
       { id: 7, nombre: 'Contabilidad' },

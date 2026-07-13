@@ -124,16 +124,11 @@ export class ReportesComponent implements OnInit, OnDestroy, ViewWillEnter {
       await this.dataService.bootstrapRemote();
     }
     this.actualizarVista();
-    // OnPush: primer pintado de totales (evita $0 hasta el primer clic).
-    this.cdr.detectChanges();
   }
 
   ionViewWillEnter(): void {
     if (!this.dataService.hasRemoteData()) {
-      void this.dataService.bootstrapRemote().then(() => {
-        this.actualizarVista();
-        this.cdr.detectChanges();
-      });
+      void this.dataService.bootstrapRemote().then(() => this.actualizarVista());
       return;
     }
     this.actualizarVista();
@@ -144,11 +139,32 @@ export class ReportesComponent implements OnInit, OnDestroy, ViewWillEnter {
     this.destroy$.complete();
   }
 
-  private actualizarVista(): void {
-    this.listaMinisterios = this.dataService.getMinisteriosParaReportes().map(m => ({
+  /** Compara ids de ministerio (number/string/null) para que ion-select no pierda la selección. */
+  compareMinisterioId = (a: unknown, b: unknown): boolean => {
+    if (a == null && b == null) return true;
+    if (a == null || b == null) return false;
+    return Number(a) === Number(b);
+  };
+
+  private actualizarListaMinisterios(): void {
+    const next = this.dataService.getMinisteriosParaReportes().map(m => ({
       id: m.id,
       nombre: m.nombre
     }));
+    const igual =
+      next.length === this.listaMinisterios.length &&
+      next.every(
+        (m, i) =>
+          Number(m.id) === Number(this.listaMinisterios[i]?.id) &&
+          String(m.nombre ?? '') === String(this.listaMinisterios[i]?.nombre ?? '')
+      );
+    if (!igual) {
+      this.listaMinisterios = next;
+    }
+  }
+
+  private actualizarVista(): void {
+    this.actualizarListaMinisterios();
     this.listaReportes = this.reportesService.generarReportes();
     this.mesesDisponibles = mesesDisponiblesDesdeReportes(
       this.listaReportes,
@@ -164,11 +180,17 @@ export class ReportesComponent implements OnInit, OnDestroy, ViewWillEnter {
     );
     this.totalSaldoFiltrado = this.totalIngresosFiltrado - this.totalGastosFiltrado;
     this.desgloseAgregado = this.reportesService.calcularDesglose(this.listaFiltradaVista);
-    const ministerioDesgloseId = this.filtroMinisterioId ?? this.ministerioScopeId ?? null;
+
+    // Desglose por ministerio: respeta periodo/tipo, pero NO colapsa al filtrar un ministerio
+    // (solo se resalta la fila y se muestra el kardex). Evita el “reset” de la tabla.
+    const reportesDesglose = filtrarReportes(this.listaReportes, {
+      ...this.filtrosReporte,
+      filtroMinisterioId: null
+    });
     this.desgloseMinisterioVista = this.reportesService.calcularDesglosePorMinisterio(
-      this.listaFiltradaVista,
+      reportesDesglose,
       this.listaMinisterios,
-      ministerioDesgloseId,
+      this.ministerioScopeId,
       {
         mesPeriodo: this.filtroMes || null,
         incluirAportacion: this.esAdministrador
@@ -196,7 +218,11 @@ export class ReportesComponent implements OnInit, OnDestroy, ViewWillEnter {
       this.lineasKardexVista = [];
       this.saldoDisponibleMinisterio = 0;
     }
+    // OnPush + Ionic: diferir el pintado evita $0 al entrar y errores en ngOnInit.
     this.cdr.markForCheck();
+    queueMicrotask(() => {
+      this.cdr.detectChanges();
+    });
   }
 
   private get filtrosReporte() {

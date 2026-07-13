@@ -39,6 +39,16 @@ export function ministeriosEnAlcance(
   return filtrarMinisteriosRegistroManual(lista);
 }
 
+/** Filtros de listado (ingresos/gastos): sin Contabilidad ni General. */
+export function ministeriosParaFiltroListado(
+  lista: Ministerio[],
+  ministerioScopeId: number | null
+): Ministerio[] {
+  return ministeriosEnAlcance(lista, ministerioScopeId).sort((a, b) =>
+    (a.nombre ?? '').localeCompare(b.nombre ?? '', 'es')
+  );
+}
+
 export function perteneceAlcanceMinisterio(
   item: { ministerioId?: number },
   ministerioScopeId: number | null

@@ -41,7 +41,8 @@ import { accionesTablaMovimiento } from '../../shared/utils/movimiento-acciones.
 import {
   ministeriosEnAlcance,
   perteneceAlcanceMinisterio,
-  aplicarMinisterioAlMovimiento
+  aplicarMinisterioAlMovimiento,
+  ministeriosParaFiltroListado
 } from '../../shared/utils/movimiento-ministerio.util';
 import { leerFiltroEstadoDesdeRuta, limpiarQueryPendientes, limpiarQueryIdRegistro } from '../../shared/utils/movimiento-query.util';
 import { leerIdRegistroDesdeQuery } from '../../shared/utils/notificacion-ruta.util';
@@ -283,9 +284,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   get ministeriosParaFiltro(): Ministerio[] {
-    return [...this.listaMinisterios].sort((a, b) =>
-      (a.nombre ?? '').localeCompare(b.nombre ?? '', 'es')
-    );
+    return ministeriosParaFiltroListado(this.listaMinisterios, this.ministerioScopeId);
   }
 
   get hayFiltrosAvanzadosActivos(): boolean {

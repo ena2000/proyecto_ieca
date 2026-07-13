@@ -121,13 +121,14 @@
 
           <section class="filters-section filters-section--ministerio">
             <ion-label class="filter-label">Ministerio</ion-label>
-            <p class="filter-hint">Filtra totales y desgloses. Para ver el kardex, elige un ministerio aquí o en la tabla de abajo.</p>
+            <p class="filter-hint">Filtra totales del período y abre el kardex. El desglose por ministerio se mantiene visible.</p>
             <ion-item lines="none" class="periodo-select-item ministerio-select-item">
               <ion-icon slot="start" name="business-outline" class="text-blue"></ion-icon>
               <ion-select
                 interface="popover"
-                    [(ngModel)]="filtroMinisterioId"
-                    (ngModelChange)="onFiltroMinisterioChange()"
+                [(ngModel)]="filtroMinisterioId"
+                (ngModelChange)="onFiltroMinisterioChange()"
+                [compareWith]="compareMinisterioId"
                 name="filtroMinisterioId"
                 [disabled]="filtroMinisterioBloqueado"
                 placeholder="Todos los ministerios">
