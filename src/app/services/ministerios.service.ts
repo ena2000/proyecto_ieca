@@ -69,15 +69,29 @@ export class MinisteriosService {
   }
 
   delete(id: number): Observable<void> {
+    const numId = Number(id);
+    if (!Number.isFinite(numId) || numId <= 0) {
+      return new Observable(sub => {
+        sub.error(new Error('Identificador de ministerio inválido.'));
+      });
+    }
     if (environment.useLocalFallback) {
-      this.deleteLocal(id);
+      this.deleteLocal(numId);
       return of(undefined);
     }
     return withMutationTimeout(
-      this.api.delete(`${API.ministerios}/${id}`).pipe(
+      this.api.delete(`${API.ministerios}/${numId}`).pipe(
         tap(() => {
-          this.persist(this.getAll().filter(m => Number(m.id) !== id));
-          this.syncListaEnSegundoPlano();
+          // Quitar al instante (comparación numérica: el id puede venir como string desde Firestore).
+          this.persist(this.getAll().filter(m => Number(m.id) !== numId));
+          // Confiar en el servidor: un merge con lista local podría “revivir” el borrado.
+          void firstValueFrom(
+            this.api.get<Ministerio[]>(API.ministerios).pipe(
+              tap(lista => {
+                this.ministeriosSubject.next(filtrarMinisteriosCatalogo(lista));
+              })
+            )
+          ).catch(err => console.error('[MinisteriosService] reload tras delete:', err));
         })
       ),
       API_DELETE_TIMEOUT_MS
@@ -149,7 +163,8 @@ export class MinisteriosService {
   }
 
   private deleteLocal(id: number): void {
-    this.persist(this.getAll().filter(m => m.id !== id));
+    const numId = Number(id);
+    this.persist(this.getAll().filter(m => Number(m.id) !== numId));
   }
 
   private nextId(): number {

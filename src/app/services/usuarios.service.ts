@@ -72,15 +72,25 @@ export class UsuariosService {
   }
 
   delete(id: number): Observable<void> {
+    const numId = Number(id);
+    if (!Number.isFinite(numId) || numId <= 0) {
+      return new Observable(sub => {
+        sub.error(new Error('Identificador de usuario inválido.'));
+      });
+    }
     if (environment.useLocalFallback) {
-      this.deleteLocal(id);
+      this.deleteLocal(numId);
       return of(undefined);
     }
     return withMutationTimeout(
-      this.api.delete(`${API.usuarios}/${id}`).pipe(
+      this.api.delete(`${API.usuarios}/${numId}`).pipe(
         tap(() => {
-          this.persist(this.getAll().filter(u => Number(u.id) !== id));
-          this.syncListaEnSegundoPlano();
+          this.persist(this.getAll().filter(u => Number(u.id) !== numId));
+          void firstValueFrom(
+            this.api.get<Usuario[]>(API.usuarios).pipe(
+              tap(lista => this.usuariosSubject.next(lista))
+            )
+          ).catch(err => console.error('[UsuariosService] reload tras delete:', err));
         })
       )
     );
@@ -136,7 +146,8 @@ export class UsuariosService {
   }
 
   private deleteLocal(id: number): void {
-    this.persist(this.getAll().filter(u => u.id !== id));
+    const numId = Number(id);
+    this.persist(this.getAll().filter(u => Number(u.id) !== numId));
   }
 
   private nextId(): number {

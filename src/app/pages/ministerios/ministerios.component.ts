@@ -389,11 +389,16 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
   private async ejecutarEliminacionMinisterio(item: Ministerio): Promise<void> {
     if (this.eliminando) return;
+    const id = Number(item.id);
+    if (!Number.isFinite(id) || id <= 0) {
+      await this.mostrarToast('No se pudo identificar el ministerio.', 'danger');
+      return;
+    }
     this.eliminando = true;
     this.cdr.markForCheck();
     try {
       await withLoading(this.loadingController, 'Eliminando ministerio...', async () => {
-        await firstValueFrom(this.ministeriosService.delete(item.id));
+        await firstValueFrom(this.ministeriosService.delete(id));
       });
       this.dataService.notifyChanges();
       this.actualizarVista();
