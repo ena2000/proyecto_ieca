@@ -385,7 +385,8 @@ function createCrudRouter(collection, options: {
       const deleted = await deleteFromCollection(collection, req.params.id);
       if (!deleted) return res.status(404).json({ message: 'No encontrado' });
       invalidateBootstrapCache();
-      res.status(204).send();
+      // 200 + JSON: algunos clientes fallan al parsear cuerpo vacío de 204.
+      res.status(200).json({ ok: true, id: String(req.params.id) });
     } catch (err) {
       console.error(`[${collection} DELETE]`, err);
       res.status(500).json({ message: 'Error al eliminar registro' });

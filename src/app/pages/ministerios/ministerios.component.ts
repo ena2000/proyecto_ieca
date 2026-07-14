@@ -33,6 +33,7 @@ import { MinisteriosService } from '../../services/ministerios.service';
 import { withLoading, getHttpErrorMessage } from '../../shared/utils/loading.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
 import { leerValorIonInput, leerValorIonInputAsync } from '../../shared/utils/movimiento-form-sync.util';
+import { confirmarAccionDestructiva } from '../../shared/utils/confirmacion-alerta.util';
 import { FORM_GUARDADO_TOAST_MS, scrollAlErrorFormulario, refrescarListaTrasMutacion } from '../../shared/utils/form-guardado.util';
 import {
   colaboradoresEnMinisterio,
@@ -366,49 +367,47 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
     }, 50);
   }
 
-  async eliminarMinisterio(item: Ministerio) {
+  async eliminarMinisterio(item: Ministerio): Promise<void> {
     if (this.eliminando) return;
 
-    const alert = await this.alertController.create({
-      header:  'Confirmar eliminación',
-      message: `¿Estás seguro de eliminar el ministerio "${item.nombre?.trim() || 'sin nombre'}"?`,
-      buttons: [
-        { text: 'Cancelar', role: 'cancel' },
-        {
-          text:    'Eliminar',
-          role:    'destructive',
-          handler: () => {
-            // Cierra el alert al instante; el borrado corre fuera (evita UI congelada).
-            void this.ejecutarEliminacionMinisterio(item);
-          }
-        }
-      ]
-    });
-    await alert.present();
-  }
-
-  private async ejecutarEliminacionMinisterio(item: Ministerio): Promise<void> {
-    if (this.eliminando) return;
     const id = Number(item.id);
     if (!Number.isFinite(id) || id <= 0) {
       await this.mostrarToast('No se pudo identificar el ministerio.', 'danger');
       return;
     }
+
+    const confirmado = await confirmarAccionDestructiva(this.alertController, {
+      header: 'Confirmar eliminación',
+      message: `¿Estás seguro de eliminar el ministerio "${item.nombre?.trim() || 'sin nombre'}"?`
+    });
+    if (!confirmado) return;
+
+    const listaAntes = [...this.listaMinisterios];
     this.eliminando = true;
-    this.cdr.markForCheck();
+    // Optimista en la vista: desaparece de la tabla al confirmar.
+    this.listaMinisterios = this.listaMinisterios.filter(m => Number(m.id) !== id);
+    this.actualizarVista();
+    this.cdr.detectChanges();
+
     try {
       await withLoading(this.loadingController, 'Eliminando ministerio...', async () => {
         await firstValueFrom(this.ministeriosService.delete(id));
       });
+      refrescarListaTrasMutacion(
+        () => this.ministeriosService.getAll(),
+        lista => { this.listaMinisterios = lista; },
+        () => this.actualizarVista()
+      );
       this.dataService.notifyChanges();
-      this.actualizarVista();
       await this.mostrarToast('Registro eliminado', 'warning');
     } catch (error) {
+      this.listaMinisterios = listaAntes;
+      this.actualizarVista();
       const msg = getHttpErrorMessage(error, 'Error al eliminar');
       await this.mostrarToast(msg, 'danger');
     } finally {
       this.eliminando = false;
-      this.cdr.markForCheck();
+      this.cdr.detectChanges();
     }
   }
 

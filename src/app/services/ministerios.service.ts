@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, firstValueFrom, of } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { BehaviorSubject, Observable, firstValueFrom, of, throwError } from 'rxjs';
+import { catchError, tap } from 'rxjs/operators';
 import { Ministerio } from '../core/models';
 import { formatearISOaDDMMYYYY } from '../shared/utils/date.util';
 import { ApiService } from '../core/services/api.service';
@@ -22,6 +22,8 @@ export class MinisteriosService {
   private readonly STORAGE_KEY = 'ministerios';
   private ministeriosSubject = new BehaviorSubject<Ministerio[]>([]);
   readonly ministerios$: Observable<Ministerio[]> = this.ministeriosSubject.asObservable();
+  /** Evita que bootstrap/merge “revivan” un ministerio recién borrado. */
+  private readonly idsEliminados = new Set<number>();
 
   constructor(private api: ApiService) {
     if (environment.useLocalFallback) {
@@ -30,8 +32,10 @@ export class MinisteriosService {
   }
 
   hydrate(lista: Ministerio[]): void {
-    const visible = filtrarMinisteriosCatalogo(lista);
-    const merged = fusionarMovimientosTrasBootstrap(visible, this.getAll());
+    const visible = this.sinEliminados(filtrarMinisteriosCatalogo(lista));
+    const merged = this.sinEliminados(
+      fusionarMovimientosTrasBootstrap(visible, this.sinEliminados(this.getAll()))
+    );
     this.ministeriosSubject.next(merged);
   }
 
@@ -47,6 +51,8 @@ export class MinisteriosService {
       this.api.post<Ministerio>(API.ministerios, ministerio).pipe(
         tap(nuevo => {
           const completo = completarRegistroTrasMutacion(nuevo, ministerio);
+          const id = Number(completo.id);
+          if (Number.isFinite(id) && id > 0) this.idsEliminados.delete(id);
           this.persist(prependRegistroUnico(completo, this.getAll()));
         })
       )
@@ -54,14 +60,15 @@ export class MinisteriosService {
   }
 
   update(id: number, ministerio: Ministerio): Observable<Ministerio> {
+    const numId = Number(id);
     if (environment.useLocalFallback) {
-      return of(this.updateLocal(id, ministerio));
+      return of(this.updateLocal(numId, ministerio));
     }
     return withMutationTimeout(
-      this.api.put<Ministerio>(`${API.ministerios}/${id}`, ministerio).pipe(
+      this.api.put<Ministerio>(`${API.ministerios}/${numId}`, ministerio).pipe(
         tap(actualizado => {
-          const completo = completarRegistroTrasMutacion(actualizado, ministerio, id);
-          this.persist(this.getAll().map(m => (Number(m.id) === id ? completo : m)));
+          const completo = completarRegistroTrasMutacion(actualizado, ministerio, numId);
+          this.persist(this.getAll().map(m => (Number(m.id) === numId ? completo : m)));
           this.syncListaEnSegundoPlano();
         })
       )
@@ -71,27 +78,35 @@ export class MinisteriosService {
   delete(id: number): Observable<void> {
     const numId = Number(id);
     if (!Number.isFinite(numId) || numId <= 0) {
-      return new Observable(sub => {
-        sub.error(new Error('Identificador de ministerio inválido.'));
-      });
+      return throwError(() => new Error('Identificador de ministerio inválido.'));
     }
     if (environment.useLocalFallback) {
       this.deleteLocal(numId);
       return of(undefined);
     }
+
+    const listaAntes = this.getAll();
+    this.idsEliminados.add(numId);
+    // Optimista: sale de la UI al instante.
+    this.persist(listaAntes.filter(m => Number(m.id) !== numId));
+
     return withMutationTimeout(
       this.api.delete(`${API.ministerios}/${numId}`).pipe(
         tap(() => {
-          // Quitar al instante (comparación numérica: el id puede venir como string desde Firestore).
-          this.persist(this.getAll().filter(m => Number(m.id) !== numId));
-          // Confiar en el servidor: un merge con lista local podría “revivir” el borrado.
           void firstValueFrom(
             this.api.get<Ministerio[]>(API.ministerios).pipe(
               tap(lista => {
-                this.ministeriosSubject.next(filtrarMinisteriosCatalogo(lista));
+                this.ministeriosSubject.next(
+                  this.sinEliminados(filtrarMinisteriosCatalogo(lista))
+                );
               })
             )
           ).catch(err => console.error('[MinisteriosService] reload tras delete:', err));
+        }),
+        catchError(err => {
+          this.idsEliminados.delete(numId);
+          this.persist(listaAntes);
+          return throwError(() => err);
         })
       ),
       API_DELETE_TIMEOUT_MS
@@ -114,9 +129,11 @@ export class MinisteriosService {
     return firstValueFrom(
       this.api.get<Ministerio[]>(API.ministerios).pipe(
         tap(lista => {
-          const merged = fusionarMovimientosTrasBootstrap(
-            filtrarMinisteriosCatalogo(lista),
-            this.getAll()
+          const merged = this.sinEliminados(
+            fusionarMovimientosTrasBootstrap(
+              this.sinEliminados(filtrarMinisteriosCatalogo(lista)),
+              this.sinEliminados(this.getAll())
+            )
           );
           this.ministeriosSubject.next(merged);
         })
@@ -126,6 +143,11 @@ export class MinisteriosService {
 
   private syncListaEnSegundoPlano(): void {
     void this.reloadAsync().catch(() => undefined);
+  }
+
+  private sinEliminados(lista: Ministerio[]): Ministerio[] {
+    if (this.idsEliminados.size === 0) return lista;
+    return lista.filter(m => !this.idsEliminados.has(Number(m.id)));
   }
 
   private createLocal(ministerio: Omit<Ministerio, 'id' | 'fecha' | 'fechaFormateada'>): Ministerio {
@@ -158,12 +180,13 @@ export class MinisteriosService {
       throw new Error(mensajeMinisterioDuplicado(duplicado));
     }
     const actualizado = { ...ministerio, id };
-    this.persist(this.getAll().map(m => (m.id === id ? actualizado : m)));
+    this.persist(this.getAll().map(m => (Number(m.id) === Number(id) ? actualizado : m)));
     return actualizado;
   }
 
   private deleteLocal(id: number): void {
     const numId = Number(id);
+    this.idsEliminados.add(numId);
     this.persist(this.getAll().filter(m => Number(m.id) !== numId));
   }
 
@@ -173,7 +196,7 @@ export class MinisteriosService {
   }
 
   private persist(lista: Ministerio[]): void {
-    const visible = filtrarMinisteriosCatalogo(lista);
+    const visible = this.sinEliminados(filtrarMinisteriosCatalogo(lista));
     if (environment.useLocalFallback) {
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(visible));
     }
@@ -187,7 +210,7 @@ export class MinisteriosService {
       return;
     }
     try {
-      this.ministeriosSubject.next(JSON.parse(data));
+      this.ministeriosSubject.next(this.sinEliminados(JSON.parse(data)));
     } catch {
       this.ministeriosSubject.next([]);
     }

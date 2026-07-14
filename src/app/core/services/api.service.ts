@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -38,7 +39,10 @@ export class ApiService {
   }
 
   delete(path: string): Observable<void> {
-    return this.http.delete<void>(this.url(path));
+    // observe:'response' evita errores al parsear cuerpo vacío (HTTP 204).
+    return this.http
+      .delete(this.url(path), { observe: 'response', responseType: 'text' })
+      .pipe(map(() => undefined));
   }
 
   private toParams(params?: Record<string, string | number | boolean>): HttpParams | undefined {
