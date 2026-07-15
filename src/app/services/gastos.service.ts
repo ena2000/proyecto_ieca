@@ -37,8 +37,12 @@ export class GastosService {
     }
   }
 
-  hydrate(lista: Gasto[]): void {
+  hydrate(lista: Gasto[], opts?: { replace?: boolean }): void {
     const normalizados = lista.map(normalizarGasto);
+    if (opts?.replace) {
+      this.gastosSubject.next(normalizados);
+      return;
+    }
     const merged = fusionarMovimientosTrasBootstrap(normalizados, this.getAll());
     this.gastosSubject.next(merged);
   }

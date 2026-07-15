@@ -51,6 +51,12 @@ async function main() {
   const backup = generateRandomBackup({ seed });
   const { restoreBackup } = require('../src/utils/backup');
   await restoreBackup(backup);
+  try {
+    const { invalidateBootstrapCache } = require('../src/utils/bootstrapCache');
+    invalidateBootstrapCache();
+  } catch {
+    /* si el API no está cargado en este proceso, no hay caché en memoria que invalidar */
+  }
 
   if (hasFlag('--save-backup')) {
     const outPath = path.join(__dirname, '../../docs/backup-demo-ieca.json');

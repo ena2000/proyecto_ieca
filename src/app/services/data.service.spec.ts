@@ -48,6 +48,7 @@ function crearMocks() {
     ministerios$: ministeriosSubject.asObservable(),
     getAll: () => ministerios,
     reload: jasmine.createSpy('reloadMinisterios'),
+    clearEliminadosRecientes: jasmine.createSpy('clearEliminadosRecientes'),
     hydrate: (lista: Ministerio[]) => {
       ministerios = lista;
       ministeriosSubject.next(ministerios);

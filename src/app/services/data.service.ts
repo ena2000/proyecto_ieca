@@ -116,11 +116,6 @@ export class DataService {
       this.syncFromEntityServices();
       return Promise.resolve(true);
     }
-    if (force) {
-      this.bootstrapComplete = false;
-      this.lastBootstrapAt = 0;
-      this.clearBootstrapStorage();
-    }
     return this.bootstrapRemote(force);
   }
 
@@ -161,6 +156,11 @@ export class DataService {
       return Promise.resolve(true);
     }
 
+    if (force) {
+      // Login / restore / wipe: tirar zombis de sessionStorage y memoria antes del GET.
+      this.resetEntityCaches();
+    }
+
     const memoryFresh = !force && this.bootstrapComplete &&
       Date.now() - this.lastBootstrapAt < this.bootstrapTtlMs;
     if (memoryFresh) {
@@ -187,15 +187,23 @@ export class DataService {
       return this.bootstrapInFlight;
     }
 
-    this.bootstrapInFlight = firstValueFrom(
+    const request = firstValueFrom(
       this.api.get<BootstrapResponse>(API.bootstrap)
     )
       .then(payload => {
+        // Si hubo otro force más reciente, ignorar esta respuesta.
+        if (this.bootstrapInFlight !== request) {
+          return true;
+        }
         this.applyBootstrap(payload);
-        this.writeBootstrapStorage(payload);
+        // Guardar el estado ya reconciliado (sin “resucitar” borrados vía payload crudo).
+        this.persistBootstrapSnapshot();
         return true;
       })
       .catch(err => {
+        if (this.bootstrapInFlight !== request) {
+          return false;
+        }
         if (isUnauthorizedHttpError(err)) {
           this.authService.logout();
           return false;
@@ -207,10 +215,13 @@ export class DataService {
         return false;
       })
       .finally(() => {
-        this.bootstrapInFlight = null;
+        if (this.bootstrapInFlight === request) {
+          this.bootstrapInFlight = null;
+        }
       });
 
-    return this.bootstrapInFlight;
+    this.bootstrapInFlight = request;
+    return request;
   }
 
   private bootstrapStorageKey(): string {
@@ -286,10 +297,11 @@ export class DataService {
   private applyBootstrap(payload: BootstrapResponse): void {
     this.hydratingBootstrap = true;
     try {
-      if (payload.ingresos) this.ingresosService.hydrate(payload.ingresos);
-      if (payload.gastos) this.gastosService.hydrate(payload.gastos);
-      if (payload.ministerios) this.ministeriosService.hydrate(payload.ministerios);
-      if (payload.usuarios) this.usuariosService.hydrate(payload.usuarios);
+      // replace: el servidor manda la verdad; el merge conservador dejaba zombis tras wipe/seed.
+      if (payload.ingresos) this.ingresosService.hydrate(payload.ingresos, { replace: true });
+      if (payload.gastos) this.gastosService.hydrate(payload.gastos, { replace: true });
+      if (payload.ministerios) this.ministeriosService.hydrate(payload.ministerios, { replace: true });
+      if (payload.usuarios) this.usuariosService.hydrate(payload.usuarios, { replace: true });
       if (payload.notificaciones) this.notificacionesService.hydrate(payload.notificaciones);
       this.bootstrapComplete = true;
       this.lastBootstrapAt = Date.now();
@@ -307,7 +319,9 @@ export class DataService {
     this.notificacionesService.recargar();
   }
 
-  private clearRemoteCache(): void {
+  /** Limpia memoria + sessionStorage de listas (logout, wipe, restore, login forzado). */
+  private resetEntityCaches(): void {
+    this.bootstrapInFlight = null;
     this.bootstrapComplete = false;
     this.lastBootstrapAt = 0;
     this.lastIngresosRef = null;
@@ -316,12 +330,17 @@ export class DataService {
     this.lastUsuariosRef = null;
     this.saldoMinisterioCache.clear();
     this.clearBootstrapStorage();
-    this.ingresosService.hydrate([]);
-    this.gastosService.hydrate([]);
-    this.ministeriosService.hydrate([]);
-    this.usuariosService.hydrate([]);
+    this.ministeriosService.clearEliminadosRecientes();
+    this.ingresosService.hydrate([], { replace: true });
+    this.gastosService.hydrate([], { replace: true });
+    this.ministeriosService.hydrate([], { replace: true });
+    this.usuariosService.hydrate([], { replace: true });
     this.notificacionesService.hydrate([]);
     this.syncFromEntityServices();
+  }
+
+  private clearRemoteCache(): void {
+    this.resetEntityCaches();
   }
 
   private syncFromEntityServices(): void {

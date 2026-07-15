@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { BehaviorSubject, Observable, firstValueFrom, of, throwError } from 'rxjs';
-import { catchError, tap } from 'rxjs/operators';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { Ministerio } from '../core/models';
 import { formatearISOaDDMMYYYY } from '../shared/utils/date.util';
 import { ApiService } from '../core/services/api.service';
@@ -20,27 +21,44 @@ import {
 export class MinisteriosService {
 
   private readonly STORAGE_KEY = 'ministerios';
+  /** Tombstones en sessionStorage para que un bootstrap viejo no “resucite” tras navegar. */
+  private readonly ELIMINADOS_KEY = 'ieca_ministerios_eliminados';
   private ministeriosSubject = new BehaviorSubject<Ministerio[]>([]);
   readonly ministerios$: Observable<Ministerio[]> = this.ministeriosSubject.asObservable();
   /** Evita que bootstrap/merge “revivan” un ministerio recién borrado. */
   private readonly idsEliminados = new Set<number>();
 
   constructor(private api: ApiService) {
+    this.cargarTombstones();
     if (environment.useLocalFallback) {
       this.loadFromStorage();
     }
   }
 
-  hydrate(lista: Ministerio[]): void {
+  hydrate(lista: Ministerio[], opts?: { replace?: boolean }): void {
     const visible = this.sinEliminados(filtrarMinisteriosCatalogo(lista));
+    if (opts?.replace) {
+      this.ministeriosSubject.next(visible);
+      return;
+    }
     const merged = this.sinEliminados(
-      fusionarMovimientosTrasBootstrap(visible, this.sinEliminados(this.getAll()))
+      fusionarMovimientosTrasBootstrap(
+        visible,
+        this.sinEliminados(this.getAll()),
+        this.idsEliminados
+      )
     );
     this.ministeriosSubject.next(merged);
   }
 
   getAll(): Ministerio[] {
     return this.ministeriosSubject.getValue();
+  }
+
+  /** Limpia tombstones al cerrar sesión (evita filtrar IDs de otro usuario). */
+  clearEliminadosRecientes(): void {
+    this.idsEliminados.clear();
+    this.guardarTombstones();
   }
 
   create(ministerio: Omit<Ministerio, 'id' | 'fecha' | 'fechaFormateada'>): Observable<Ministerio> {
@@ -52,7 +70,10 @@ export class MinisteriosService {
         tap(nuevo => {
           const completo = completarRegistroTrasMutacion(nuevo, ministerio);
           const id = Number(completo.id);
-          if (Number.isFinite(id) && id > 0) this.idsEliminados.delete(id);
+          if (Number.isFinite(id) && id > 0) {
+            this.idsEliminados.delete(id);
+            this.guardarTombstones();
+          }
           this.persist(prependRegistroUnico(completo, this.getAll()));
         })
       )
@@ -86,25 +107,40 @@ export class MinisteriosService {
     }
 
     const listaAntes = this.getAll();
-    this.idsEliminados.add(numId);
+    this.marcarEliminado(numId);
     // Optimista: sale de la UI al instante.
     this.persist(listaAntes.filter(m => Number(m.id) !== numId));
 
     return withMutationTimeout(
       this.api.delete(`${API.ministerios}/${numId}`).pipe(
-        tap(() => {
-          void firstValueFrom(
-            this.api.get<Ministerio[]>(API.ministerios).pipe(
-              tap(lista => {
-                this.ministeriosSubject.next(
-                  this.sinEliminados(filtrarMinisteriosCatalogo(lista))
-                );
-              })
-            )
-          ).catch(err => console.error('[MinisteriosService] reload tras delete:', err));
+        // Confirma borrado real: GET por id debe responder 404.
+        switchMap(() => this.api.get<Ministerio>(`${API.ministerios}/${numId}`).pipe(
+          map(() => {
+            throw new Error(
+              'El ministerio sigue registrado en el servidor. No se pudo eliminar de forma permanente.'
+            );
+          }),
+          catchError(err => {
+            // 404 = borrado confirmado en Firestore.
+            if (err instanceof HttpErrorResponse && err.status === 404) {
+              return of(undefined);
+            }
+            return throwError(() => err);
+          })
+        )),
+        switchMap(() => this.api.get<Ministerio[]>(API.ministerios)),
+        map(lista => {
+          const cruda = filtrarMinisteriosCatalogo(lista ?? []);
+          if (cruda.some(m => Number(m.id) === numId)) {
+            throw new Error(
+              'El ministerio sigue registrado en el servidor. No se pudo eliminar de forma permanente.'
+            );
+          }
+          this.ministeriosSubject.next(this.sinEliminados(cruda));
         }),
         catchError(err => {
           this.idsEliminados.delete(numId);
+          this.guardarTombstones();
           this.persist(listaAntes);
           return throwError(() => err);
         })
@@ -132,7 +168,8 @@ export class MinisteriosService {
           const merged = this.sinEliminados(
             fusionarMovimientosTrasBootstrap(
               this.sinEliminados(filtrarMinisteriosCatalogo(lista)),
-              this.sinEliminados(this.getAll())
+              this.sinEliminados(this.getAll()),
+              this.idsEliminados
             )
           );
           this.ministeriosSubject.next(merged);
@@ -145,9 +182,37 @@ export class MinisteriosService {
     void this.reloadAsync().catch(() => undefined);
   }
 
+  private marcarEliminado(id: number): void {
+    this.idsEliminados.add(id);
+    this.guardarTombstones();
+  }
+
   private sinEliminados(lista: Ministerio[]): Ministerio[] {
     if (this.idsEliminados.size === 0) return lista;
     return lista.filter(m => !this.idsEliminados.has(Number(m.id)));
+  }
+
+  private cargarTombstones(): void {
+    try {
+      const raw = sessionStorage.getItem(this.ELIMINADOS_KEY);
+      if (!raw) return;
+      const ids = JSON.parse(raw) as unknown;
+      if (!Array.isArray(ids)) return;
+      for (const value of ids) {
+        const id = Number(value);
+        if (Number.isFinite(id) && id > 0) this.idsEliminados.add(id);
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  private guardarTombstones(): void {
+    try {
+      sessionStorage.setItem(this.ELIMINADOS_KEY, JSON.stringify([...this.idsEliminados]));
+    } catch {
+      /* ignore */
+    }
   }
 
   private createLocal(ministerio: Omit<Ministerio, 'id' | 'fecha' | 'fechaFormateada'>): Ministerio {
@@ -185,9 +250,8 @@ export class MinisteriosService {
   }
 
   private deleteLocal(id: number): void {
-    const numId = Number(id);
-    this.idsEliminados.add(numId);
-    this.persist(this.getAll().filter(m => Number(m.id) !== numId));
+    this.marcarEliminado(Number(id));
+    this.persist(this.getAll().filter(m => Number(m.id) !== Number(id)));
   }
 
   private nextId(): number {

@@ -51,8 +51,12 @@ export class IngresosService {
     }
   }
 
-  hydrate(lista: Ingreso[]): void {
+  hydrate(lista: Ingreso[], opts?: { replace?: boolean }): void {
     const normalizados = lista.map(normalizarIngreso);
+    if (opts?.replace) {
+      this.ingresosSubject.next(normalizados);
+      return;
+    }
     const merged = fusionarMovimientosTrasBootstrap(normalizados, this.getAll());
     this.ingresosSubject.next(merged);
   }

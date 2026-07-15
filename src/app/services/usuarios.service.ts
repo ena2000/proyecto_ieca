@@ -29,7 +29,11 @@ export class UsuariosService {
     }
   }
 
-  hydrate(lista: Usuario[]): void {
+  hydrate(lista: Usuario[], opts?: { replace?: boolean }): void {
+    if (opts?.replace) {
+      this.usuariosSubject.next(lista ?? []);
+      return;
+    }
     const merged = fusionarMovimientosTrasBootstrap(lista, this.getAll());
     this.usuariosSubject.next(merged);
   }

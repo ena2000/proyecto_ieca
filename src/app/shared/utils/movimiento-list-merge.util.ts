@@ -28,20 +28,21 @@ function esAportacionServidorVinculadaALocal<T extends MovimientoMerge>(
 /** Conserva registros locales recientes si un bootstrap o reload aún no los trae o viene desactualizado. */
 export function fusionarMovimientosTrasBootstrap<T extends MovimientoMerge>(
   desdeServidor: T[],
-  locales: T[]
+  locales: T[],
+  /** IDs borrados en cliente: nunca revivir aunque el bootstrap/API aún los traiga. */
+  idsExcluidos?: ReadonlySet<number>
 ): T[] {
   const localIds = idsLocales(locales);
-  const hayIdsNuevosSoloEnLocal = locales.some(
-    item => item.id != null && !desdeServidor.some(s => Number(s.id) === Number(item.id))
-  );
 
   const porId = new Map<number, T>();
   for (const item of desdeServidor) {
     if (item.id == null) continue;
     const id = Number(item.id);
     if (!Number.isFinite(id) || id <= 0) continue;
-    // Tras eliminar localmente, no revivir filas que el servidor aún devuelve por caché/latencia.
-    if (locales.length > 0 && !hayIdsNuevosSoloEnLocal && !localIds.has(id)) {
+    if (idsExcluidos?.has(id)) continue;
+    // No revivir filas que ya no están en local (borrado optimista / caché vieja).
+    // Excepción: aportación 33 % generada en servidor vinculada a un origen local.
+    if (locales.length > 0 && !localIds.has(id)) {
       if (esAportacionServidorVinculadaALocal(item, localIds)) {
         porId.set(id, item);
       }

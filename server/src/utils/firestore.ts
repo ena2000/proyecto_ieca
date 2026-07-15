@@ -1,8 +1,13 @@
 const { db } = require('../config/firebase');
 
 function docToEntity(doc) {
-  const id = Number(doc.id);
-  return { id: Number.isNaN(id) ? doc.id : id, ...doc.data() };
+  const rawId = Number(doc.id);
+  const id = Number.isNaN(rawId) ? doc.id : rawId;
+  // Nunca dejar que un campo `id` dentro del documento pise el ID real de Firestore:
+  // si no, DELETE /:id puede borrar otro doc (o ninguno) y el registro “vuelve” al refrescar.
+  const data = doc.data() || {};
+  const { id: _ignored, ...rest } = data;
+  return { ...rest, id };
 }
 
 function stripInternalFields(data) {

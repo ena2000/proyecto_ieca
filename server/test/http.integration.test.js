@@ -285,6 +285,50 @@ describe('API HTTP (integración en memoria)', () => {
     assert.ok(res.body.id);
   });
 
+  it('DELETE /api/ministerios/:id elimina de forma permanente', async () => {
+    const hash = await bcrypt.hash('123456', 4);
+    seedMemoryCollection('usuarios', [
+      {
+        id: 1,
+        usuario: 'admin',
+        rol: 'Administrador',
+        estado: 'Activo',
+        passwordHash: hash
+      }
+    ]);
+    // Simula documentos legacy con `id` dentro del payload (no debe impedir el borrado).
+    seedMemoryCollection('ministerios', [
+      {
+        id: 7,
+        nombre: 'JOVENES',
+        estado: 'Activo',
+        fecha: '2026-01-01T00:00:00.000Z'
+      }
+    ]);
+
+    const login = await request(app)
+      .post('/api/auth/login')
+      .send({ usuario: 'admin', password: '123456' });
+    const token = login.body.token;
+
+    const del = await request(app)
+      .delete('/api/ministerios/7')
+      .set('Authorization', `Bearer ${token}`);
+    assert.equal(del.status, 200);
+    assert.equal(del.body.ok, true);
+
+    const getOne = await request(app)
+      .get('/api/ministerios/7')
+      .set('Authorization', `Bearer ${token}`);
+    assert.equal(getOne.status, 404);
+
+    const list = await request(app)
+      .get('/api/ministerios')
+      .set('Authorization', `Bearer ${token}`);
+    assert.equal(list.status, 200);
+    assert.equal(list.body.some((m) => Number(m.id) === 7), false);
+  });
+
   it('POST /api/usuarios permite Líder/CoLíder sin ministerio', async () => {
     const hash = await bcrypt.hash('123456', 4);
     seedMemoryCollection('usuarios', [
