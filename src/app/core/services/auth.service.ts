@@ -38,7 +38,7 @@ export interface ForgotPasswordResponse {
   devCode?: string;
 }
 
-const AUTH_REQUEST_TIMEOUT_MS = 90_000;
+const AUTH_REQUEST_TIMEOUT_MS = 35_000;
 const RESET_PASSWORD_TIMEOUT_MS = 60_000;
 const AUTH_TIMEOUT_MESSAGE =
   'La operación tardó demasiado. Espera un momento e inténtalo de nuevo.';

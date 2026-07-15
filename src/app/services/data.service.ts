@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, firstValueFrom, merge } from 'rxjs';
-import { distinctUntilChanged } from 'rxjs/operators';
+import { distinctUntilChanged, timeout } from 'rxjs/operators';
 import {
   Ingreso, Gasto, Ministerio, Usuario, Movimiento, KPIs, MesData, KardexLinea,
   BootstrapResponse
@@ -32,6 +32,8 @@ export type {
   Ingreso, Gasto, Ministerio, Usuario, Movimiento, KPIs, MesData, KardexLinea
 } from '../core/models';
 
+const BOOTSTRAP_TIMEOUT_MS = 40_000;
+
 @Injectable({ providedIn: 'root' })
 export class DataService {
   // --- Estado y streams ---
@@ -55,6 +57,8 @@ export class DataService {
   private readonly bootstrapTtlMs = 300_000;
   private readonly bootstrapStorageTtlMs = 600_000;
   private hydratingBootstrap = false;
+  /** Evita que session$ dispare un bootstrap en paralelo al login forzado. */
+  private bootstrapForceInProgress = false;
   private readonly saldoMinisterioCache = new Map<number, number>();
   private lastIngresosRef: Ingreso[] | null = null;
   private lastGastosRef: Gasto[] | null = null;
@@ -82,7 +86,7 @@ export class DataService {
       .pipe(distinctUntilChanged((a, b) => (a?.id ?? null) === (b?.id ?? null)))
       .subscribe(session => {
         if (session) {
-          if (!this.bootstrapComplete) {
+          if (!this.bootstrapComplete && !this.bootstrapForceInProgress) {
             void this.bootstrapRemote();
           }
           return;
@@ -157,6 +161,7 @@ export class DataService {
     }
 
     if (force) {
+      this.bootstrapForceInProgress = true;
       // Login / restore / wipe: tirar zombis de sessionStorage y memoria antes del GET.
       this.resetEntityCaches();
     }
@@ -165,6 +170,7 @@ export class DataService {
       Date.now() - this.lastBootstrapAt < this.bootstrapTtlMs;
     if (memoryFresh) {
       this.syncFromEntityServices();
+      if (force) this.bootstrapForceInProgress = false;
       return Promise.resolve(true);
     }
 
@@ -178,7 +184,9 @@ export class DataService {
       }
     }
 
-    return this.fetchBootstrapFromApi(force);
+    return this.fetchBootstrapFromApi(force).finally(() => {
+      if (force) this.bootstrapForceInProgress = false;
+    });
   }
 
   private fetchBootstrapFromApi(force = false): Promise<boolean> {
@@ -188,7 +196,9 @@ export class DataService {
     }
 
     const request = firstValueFrom(
-      this.api.get<BootstrapResponse>(API.bootstrap)
+      this.api.get<BootstrapResponse>(API.bootstrap).pipe(
+        timeout({ first: BOOTSTRAP_TIMEOUT_MS })
+      )
     )
       .then(payload => {
         // Si hubo otro force más reciente, ignorar esta respuesta.
@@ -340,6 +350,7 @@ export class DataService {
   }
 
   private clearRemoteCache(): void {
+    this.bootstrapForceInProgress = false;
     this.resetEntityCaches();
   }
 

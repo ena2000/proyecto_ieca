@@ -21,7 +21,7 @@ export const networkRetryInterceptor: HttpInterceptorFn = (req, next) => {
         return throwError(() => error);
       }
 
-      return from(esperarApiDisponible(55_000)).pipe(
+      return from(esperarApiDisponible(20_000)).pipe(
         switchMap(ok => {
           if (!ok) {
             return throwError(() => error);
