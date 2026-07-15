@@ -124,6 +124,8 @@ function createCrudRouter(collection, options: {
   allowPassword?: boolean;
   generatePasswordOnCreate?: boolean;
   canModify?: Function;
+  /** Solo DELETE (p. ej. no borrar ministerio con historial). */
+  canDelete?: Function;
   beforeCreate?: Function;
   beforeUpdate?: Function;
   audit?: boolean;
@@ -142,6 +144,7 @@ function createCrudRouter(collection, options: {
     allowPassword,
     generatePasswordOnCreate,
     canModify,
+    canDelete,
     beforeCreate,
     beforeUpdate,
     audit,
@@ -378,6 +381,13 @@ function createCrudRouter(collection, options: {
         }
       }
 
+      if (canDelete) {
+        const perm = await canDelete(req, current);
+        if (!perm.ok) {
+          return res.status(403).json({ message: perm.message || 'No se puede eliminar' });
+        }
+      }
+
       if (afterDelete) {
         await afterDelete(current, req);
       }
@@ -431,6 +441,46 @@ async function afterSaveMinisterio(ministerio) {
   }
 }
 
+/** Impide borrar un ministerio con historial (ingresos, gastos o usuarios asignados). */
+async function assertMinisterioPuedeEliminarse(_req, ministerio) {
+  const id = Number(ministerio?.id);
+  if (!Number.isFinite(id) || id <= 0) {
+    return { ok: false, message: 'Ministerio inválido.' };
+  }
+
+  const [ingresos, gastos, usuarios] = await Promise.all([
+    listCollectionByField('ingresos', 'ministerioId', id),
+    listCollectionByField('gastos', 'ministerioId', id),
+    listCollectionByField('usuarios', 'ministerioId', id)
+  ]);
+
+  // Datos legacy a veces guardaron ministerioId como string.
+  const [ingresosStr, gastosStr, usuariosStr] = await Promise.all([
+    ingresos.length ? Promise.resolve([]) : listCollectionByField('ingresos', 'ministerioId', String(id)),
+    gastos.length ? Promise.resolve([]) : listCollectionByField('gastos', 'ministerioId', String(id)),
+    usuarios.length ? Promise.resolve([]) : listCollectionByField('usuarios', 'ministerioId', String(id))
+  ]);
+
+  const nIngresos = ingresos.length || ingresosStr.length;
+  const nGastos = gastos.length || gastosStr.length;
+  const nUsuarios = usuarios.length || usuariosStr.length;
+
+  if (nIngresos > 0 || nGastos > 0 || nUsuarios > 0) {
+    const partes = [];
+    if (nIngresos > 0) partes.push(`${nIngresos} ingreso(s)`);
+    if (nGastos > 0) partes.push(`${nGastos} gasto(s)`);
+    if (nUsuarios > 0) partes.push(`${nUsuarios} usuario(s)`);
+    return {
+      ok: false,
+      message:
+        `No se puede eliminar este ministerio porque tiene historial (${partes.join(', ')}). ` +
+        'Márcalo como Inactivo para conservarlo.'
+    };
+  }
+
+  return { ok: true };
+}
+
 async function beforeCreateUsuario(body) {
   if (body.email != null) {
     body.email = normalizeEmail(body.email) ?? body.email;
@@ -473,7 +523,8 @@ const ministeriosRouter = createCrudRouter('ministerios', {
   beforeCreate: beforeCreateMinisterio,
   beforeUpdate: beforeUpdateMinisterio,
   afterCreate: afterSaveMinisterio,
-  afterUpdate: afterSaveMinisterio
+  afterUpdate: afterSaveMinisterio,
+  canDelete: assertMinisterioPuedeEliminarse
 });
 
 // --- Router: usuarios ---

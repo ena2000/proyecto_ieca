@@ -380,9 +380,15 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
       return;
     }
 
+    const bloqueo = this.mensajeBloqueoEliminacionMinisterio(id);
+    if (bloqueo) {
+      await this.mostrarToast(bloqueo, 'warning', 4200);
+      return;
+    }
+
     const confirmado = await confirmarAccionDestructiva(this.alertController, {
       header: 'Confirmar eliminación',
-      message: `¿Estás seguro de eliminar el ministerio "${item.nombre?.trim() || 'sin nombre'}"?`
+      message: `¿Estás seguro de eliminar el ministerio "${item.nombre?.trim() || 'sin nombre'}"? Solo se permite si no tiene historial.`
     });
     if (!confirmado) return;
 
@@ -403,11 +409,38 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
       this.listaMinisterios = listaAntes;
       this.actualizarVista();
       const msg = getHttpErrorMessage(error, 'Error al eliminar');
-      await this.mostrarToast(msg, 'danger');
+      await this.mostrarToast(msg, 'danger', 4200);
     } finally {
       this.accionFilaEnCurso = null;
       this.cdr.detectChanges();
     }
+  }
+
+  /** Conserva historial: no borrar si hay ingresos, gastos o usuarios ligados. */
+  private mensajeBloqueoEliminacionMinisterio(ministerioId: number): string | null {
+    const id = Number(ministerioId);
+    const nIngresos = this.dataService
+      .getIngresosActuales()
+      .filter(i => Number(i.ministerioId) === id).length;
+    const nGastos = this.dataService
+      .getGastosActuales()
+      .filter(g => Number(g.ministerioId) === id).length;
+    const nUsuarios = this.dataService
+      .getUsuariosActuales()
+      .filter(u => Number(u.ministerioId) === id).length;
+
+    if (nIngresos === 0 && nGastos === 0 && nUsuarios === 0) {
+      return null;
+    }
+
+    const partes: string[] = [];
+    if (nIngresos > 0) partes.push(`${nIngresos} ingreso(s)`);
+    if (nGastos > 0) partes.push(`${nGastos} gasto(s)`);
+    if (nUsuarios > 0) partes.push(`${nUsuarios} usuario(s)`);
+    return (
+      `No se puede eliminar: tiene historial (${partes.join(', ')}). ` +
+      'Márcalo como Inactivo para conservarlo.'
+    );
   }
 
   resetFormulario() {

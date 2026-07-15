@@ -329,6 +329,54 @@ describe('API HTTP (integración en memoria)', () => {
     assert.equal(list.body.some((m) => Number(m.id) === 7), false);
   });
 
+  it('DELETE /api/ministerios/:id bloquea si tiene ingresos (historial)', async () => {
+    const hash = await bcrypt.hash('123456', 4);
+    seedMemoryCollection('usuarios', [
+      {
+        id: 1,
+        usuario: 'admin',
+        rol: 'Administrador',
+        estado: 'Activo',
+        passwordHash: hash
+      }
+    ]);
+    seedMemoryCollection('ministerios', [
+      {
+        id: 8,
+        nombre: 'ALABANZA',
+        estado: 'Activo',
+        fecha: '2026-01-01T00:00:00.000Z'
+      }
+    ]);
+    seedMemoryCollection('ingresos', [
+      {
+        id: 1,
+        ministerioId: 8,
+        monto: 100,
+        descripcion: 'Ofrenda',
+        estado: 'aprobado',
+        fecha: '2026-01-15T00:00:00.000Z'
+      }
+    ]);
+
+    const login = await request(app)
+      .post('/api/auth/login')
+      .send({ usuario: 'admin', password: '123456' });
+
+    const del = await request(app)
+      .delete('/api/ministerios/8')
+      .set('Authorization', `Bearer ${login.body.token}`);
+
+    assert.equal(del.status, 403);
+    assert.match(String(del.body.message || ''), /historial|Inactivo/i);
+
+    const getOne = await request(app)
+      .get('/api/ministerios/8')
+      .set('Authorization', `Bearer ${login.body.token}`);
+    assert.equal(getOne.status, 200);
+    assert.equal(getOne.body.nombre, 'ALABANZA');
+  });
+
   it('POST /api/usuarios permite Líder/CoLíder sin ministerio', async () => {
     const hash = await bcrypt.hash('123456', 4);
     seedMemoryCollection('usuarios', [
