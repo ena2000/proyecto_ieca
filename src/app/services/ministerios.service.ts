@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, firstValueFrom, of, throwError } from 'rxjs';
-import { catchError, map, switchMap, tap } from 'rxjs/operators';
+import { tap } from 'rxjs/operators';
 import { Ministerio } from '../core/models';
 import { formatearISOaDDMMYYYY } from '../shared/utils/date.util';
 import { ApiService } from '../core/services/api.service';
@@ -11,7 +11,6 @@ import { validarNombreMinisterio } from '../shared/utils/ministerio-nombre.util'
 import { withMutationTimeout, API_DELETE_TIMEOUT_MS } from '../shared/utils/http-mutation.util';
 import { filtrarMinisteriosCatalogo } from '../shared/constants/ministerios-catalogo.constants';
 import { fusionarMovimientosTrasBootstrap } from '../shared/utils/movimiento-list-merge.util';
-import { confirmarEliminacionEnServidor } from '../shared/utils/confirm-delete.util';
 import {
   completarRegistroTrasMutacion,
   prependRegistroUnico
@@ -106,32 +105,11 @@ export class MinisteriosService {
       return of(undefined);
     }
 
-    const listaAntes = this.getAll();
-
     return withMutationTimeout(
       this.api.delete(`${API.ministerios}/${numId}`).pipe(
-        confirmarEliminacionEnServidor(
-          this.api,
-          API.ministerios,
-          numId,
-          'El ministerio sigue registrado en el servidor. No se pudo eliminar de forma permanente.'
-        ),
-        switchMap(() => this.api.get<Ministerio[]>(API.ministerios)),
-        map(lista => {
-          const cruda = filtrarMinisteriosCatalogo(lista ?? []);
-          if (cruda.some(m => Number(m.id) === numId)) {
-            throw new Error(
-              'El ministerio sigue registrado en el servidor. No se pudo eliminar de forma permanente.'
-            );
-          }
+        tap(() => {
           this.marcarEliminado(numId);
-          this.ministeriosSubject.next(this.sinEliminados(cruda));
-        }),
-        catchError(err => {
-          this.idsEliminados.delete(numId);
-          this.guardarTombstones();
-          this.persist(listaAntes);
-          return throwError(() => err);
+          this.persist(this.getAll().filter(m => Number(m.id) !== numId));
         })
       ),
       API_DELETE_TIMEOUT_MS

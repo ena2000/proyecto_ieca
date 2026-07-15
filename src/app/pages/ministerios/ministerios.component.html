@@ -224,10 +224,18 @@
         </div>
       </div>
 
+      @if (accionFilaEnCurso) {
+        <div class="form-accion-en-curso" role="status" aria-live="polite">
+          <ion-spinner name="crescent"></ion-spinner>
+          <span>{{ etiquetaAccionFilaEnCurso(accionFilaEnCurso.tipo) }}</span>
+        </div>
+      }
+
       <app-tabla-general
         [columns]="columnsMinisterios"
         [data]="vistaMinisterios"
         [actions]="acciones"
+        [accionFilaEnCurso]="accionFilaEnCurso"
         (rowEdit)="editarMinisterio($event)"
         (rowDelete)="eliminarMinisterio($event)"
         (rowLedger)="verKardex($event)">

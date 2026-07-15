@@ -8,7 +8,6 @@ import { environment } from '../../environments/environment';
 import { mensajeUsuarioEmailDuplicado, usuarioEmailDuplicado } from '../shared/utils/unicidad.util';
 import { withMutationTimeout, API_DELETE_TIMEOUT_MS } from '../shared/utils/http-mutation.util';
 import { fusionarMovimientosTrasBootstrap } from '../shared/utils/movimiento-list-merge.util';
-import { confirmarEliminacionEnServidor } from '../shared/utils/confirm-delete.util';
 import {
   completarRegistroTrasMutacion,
   prependRegistroUnico
@@ -89,12 +88,6 @@ export class UsuariosService {
     }
     return withMutationTimeout(
       this.api.delete(`${API.usuarios}/${numId}`).pipe(
-        confirmarEliminacionEnServidor(
-          this.api,
-          API.usuarios,
-          numId,
-          'El usuario sigue registrado en el servidor. No se pudo eliminar de forma permanente.'
-        ),
         tap(() => {
           this.persist(this.getAll().filter(u => Number(u.id) !== numId));
         })

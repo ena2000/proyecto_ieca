@@ -390,11 +390,19 @@
         </div>
       </div>
 
+      @if (accionFilaEnCurso) {
+        <div class="form-accion-en-curso" role="status" aria-live="polite">
+          <ion-spinner name="crescent"></ion-spinner>
+          <span>{{ etiquetaAccionFilaEnCurso(accionFilaEnCurso.tipo) }}</span>
+        </div>
+      }
+
       <app-tabla-general
         [columns]="columnsUsuarios"
         [data]="listaUsuariosTabla"
         [itemsPerPage]="10"
         [actions]="acciones"
+        [accionFilaEnCurso]="accionFilaEnCurso"
         (rowEdit)="editarUsuario($event)"
         (rowDelete)="eliminarUsuario($event)">
       </app-tabla-general>

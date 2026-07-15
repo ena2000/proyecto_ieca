@@ -8,9 +8,8 @@ import { takeUntil } from 'rxjs/operators';
 import {
   IonHeader, IonToolbar, IonButtons, IonTitle, IonContent,
   IonIcon, IonItem, IonLabel, IonInput, IonButton, IonSearchbar,
-  ToastController, AlertController, IonSelect, IonSelectOption
+  ToastController, AlertController, IonSelect, IonSelectOption, IonSpinner
 } from '@ionic/angular/standalone';
-import { LoadingController } from '@ionic/angular';
 
 import { addIcons } from 'ionicons';
 import {
@@ -25,10 +24,15 @@ import { ToolbarMenuButtonComponent } from 'src/app/components/toolbar-menu-butt
 import { Usuario, Ministerio } from '../../core/models';
 import { DataService } from '../../services/data.service';
 import { UsuariosService, UsuarioPayload, UsuarioCreateResponse } from '../../services/usuarios.service';
-import { withLoading, getHttpErrorMessage } from '../../shared/utils/loading.util';
+import { getHttpErrorMessage } from '../../shared/utils/loading.util';
 import { leerValorIonInputAsync } from '../../shared/utils/movimiento-form-sync.util';
 import { FORM_GUARDADO_TOAST_MS, scrollAlErrorFormulario, refrescarListaTrasMutacion } from '../../shared/utils/form-guardado.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
+import { confirmarAccionDestructiva } from '../../shared/utils/confirmacion-alerta.util';
+import {
+  AccionFilaEnCurso,
+  etiquetaAccionFilaEnCurso
+} from '../../shared/utils/movimiento-accion.util';
 import {
   isRolSinMinisterio,
   ministeriosParaColaborador,
@@ -74,11 +78,12 @@ registerLocaleData(localeEs);
     IonSearchbar,
     IonSelect,
     IonSelectOption,
+    IonSpinner,
     TablaGeneralComponent,
     NotificacionesBellComponent,
     ToolbarMenuButtonComponent
   ],
-  providers: [ToastController, AlertController, LoadingController]
+  providers: [ToastController, AlertController]
 })
 export class UsuariosComponent implements OnInit, OnDestroy {
 
@@ -119,7 +124,9 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   fotoSeleccionada: string | null = null;
   contrasenaTemporal: { usuario: string; password: string; temporal: boolean } | null = null;
   guardando = false;
+  accionFilaEnCurso: AccionFilaEnCurso | null = null;
   formGuardadoError: string | null = null;
+  readonly etiquetaAccionFilaEnCurso = etiquetaAccionFilaEnCurso;
 
   @ViewChild(IonContent) private content?: IonContent;
   @ViewChild('nombreInput') nombreInput?: IonInput;
@@ -149,7 +156,6 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   constructor(
     private toastController: ToastController,
     private alertController: AlertController,
-    private loadingController: LoadingController,
     private dataService: DataService,
     private usuariosService: UsuariosService,
     private cdr: ChangeDetectorRef
@@ -527,32 +533,43 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     setTimeout(() => void this.nombreInput?.setFocus(), 320);
   }
 
-  async eliminarUsuario(item: Usuario) {
-    const alert = await this.alertController.create({
-      header:  'Confirmar eliminación',
-      message: `¿Estás seguro de eliminar al usuario "${item.nombre?.trim() || item.email || 'sin nombre'}"?`,
-      buttons: [
-        { text: 'Cancelar', role: 'cancel' },
-        {
-          text:    'Eliminar',
-          role:    'destructive',
-          handler: async () => {
-            try {
-              await withLoading(this.loadingController, 'Eliminando usuario...', async () => {
-                await firstValueFrom(this.usuariosService.delete(item.id));
-              });
-              this.dataService.notifyChanges();
-              this.cdr.markForCheck();
-              this.mostrarToast('Usuario eliminado', 'warning');
-            } catch (error) {
-              const msg = error instanceof Error ? error.message : 'Error al eliminar';
-              this.mostrarToast(msg, 'danger');
-            }
-          }
-        }
-      ]
+  async eliminarUsuario(item: Usuario): Promise<void> {
+    if (this.accionFilaEnCurso) return;
+
+    const id = Number(item.id);
+    if (!Number.isFinite(id) || id <= 0) {
+      await this.mostrarToast('No se pudo identificar el usuario.', 'danger');
+      return;
+    }
+
+    const confirmado = await confirmarAccionDestructiva(this.alertController, {
+      header: 'Confirmar eliminación',
+      message: `¿Estás seguro de eliminar al usuario "${item.nombre?.trim() || item.email || 'sin nombre'}"?`
     });
-    await alert.present();
+    if (!confirmado) return;
+
+    const listaAntes = [...this.listaUsuarios];
+    this.accionFilaEnCurso = { id, tipo: 'eliminar' };
+    this.cdr.markForCheck();
+
+    try {
+      await firstValueFrom(this.usuariosService.delete(id));
+      refrescarListaTrasMutacion(
+        () => this.usuariosService.getAll(),
+        lista => { this.listaUsuarios = lista; },
+        () => this.actualizarVistaUsuarios()
+      );
+      this.dataService.notifyChanges();
+      await this.mostrarToast('Usuario eliminado', 'warning');
+    } catch (error) {
+      this.listaUsuarios = listaAntes;
+      this.actualizarVistaUsuarios();
+      const msg = getHttpErrorMessage(error, 'Error al eliminar');
+      await this.mostrarToast(msg, 'danger');
+    } finally {
+      this.accionFilaEnCurso = null;
+      this.cdr.markForCheck();
+    }
   }
 
   resetFormulario() {

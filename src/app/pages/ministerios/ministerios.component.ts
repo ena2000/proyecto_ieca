@@ -10,11 +10,11 @@ import {
   IonHeader, IonToolbar, IonButtons, IonTitle, IonContent,
   IonIcon, IonItem, IonLabel, IonInput, IonButton,
   IonSearchbar, IonSelect, IonSelectOption,
-  IonModal,
+  IonModal, IonSpinner,
   ToastController
 } from '@ionic/angular/standalone';
 
-import { AlertController, LoadingController } from '@ionic/angular';
+import { AlertController } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import {
   documentTextOutline, saveOutline, notificationsOutline,
@@ -30,11 +30,15 @@ import { Ministerio, Usuario, KardexLinea } from '../../core/models';
 import { DataService } from '../../services/data.service';
 import { aIdNumericoONull, mismoIdNumerico } from '../../shared/utils/id-coerce.util';
 import { MinisteriosService } from '../../services/ministerios.service';
-import { withLoading, getHttpErrorMessage } from '../../shared/utils/loading.util';
+import { getHttpErrorMessage } from '../../shared/utils/loading.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
 import { leerValorIonInput, leerValorIonInputAsync } from '../../shared/utils/movimiento-form-sync.util';
 import { confirmarAccionDestructiva } from '../../shared/utils/confirmacion-alerta.util';
 import { FORM_GUARDADO_TOAST_MS, scrollAlErrorFormulario, refrescarListaTrasMutacion } from '../../shared/utils/form-guardado.util';
+import {
+  AccionFilaEnCurso,
+  etiquetaAccionFilaEnCurso
+} from '../../shared/utils/movimiento-accion.util';
 import {
   colaboradoresEnMinisterio,
   esRolColaborador,
@@ -62,11 +66,11 @@ registerLocaleData(localeEs);
     FormsModule,
     IonHeader, IonToolbar, IonButtons, IonTitle, IonContent,
     IonIcon, IonItem, IonLabel, IonInput, IonButton,
-    IonSearchbar, IonSelect, IonSelectOption, IonModal,
+    IonSearchbar, IonSelect, IonSelectOption, IonModal, IonSpinner,
     TablaGeneralComponent,
     NotificacionesBellComponent, ToolbarMenuButtonComponent
   ],
-  providers: [AlertController, ToastController, LoadingController],
+  providers: [AlertController, ToastController],
   changeDetection: ChangeDetectionStrategy.Default
 })
 export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
@@ -90,9 +94,10 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
   vistaMinisterios: Array<Ministerio & { colaboradoresNombre: string; saldo: number }> = [];
   formularioValido = false;
   guardando = false;
-  eliminando = false;
+  accionFilaEnCurso: AccionFilaEnCurso | null = null;
   formGuardadoError: string | null = null;
   readonly nombreMaxLength = MINISTERIO_NOMBRE_MAX;
+  readonly etiquetaAccionFilaEnCurso = etiquetaAccionFilaEnCurso;
 
   searchTerm:           string = '';
   filtroColaboradorId: number | null = null;
@@ -114,7 +119,6 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
   constructor(
     private alertController: AlertController,
     private toastController: ToastController,
-    private loadingController: LoadingController,
     private dataService: DataService,
     private ministeriosService: MinisteriosService,
     private cdr: ChangeDetectorRef
@@ -368,7 +372,7 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   async eliminarMinisterio(item: Ministerio): Promise<void> {
-    if (this.eliminando) return;
+    if (this.accionFilaEnCurso) return;
 
     const id = Number(item.id);
     if (!Number.isFinite(id) || id <= 0) {
@@ -382,13 +386,12 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
     });
     if (!confirmado) return;
 
-    this.eliminando = true;
+    const listaAntes = [...this.listaMinisterios];
+    this.accionFilaEnCurso = { id, tipo: 'eliminar' };
     this.cdr.detectChanges();
 
     try {
-      await withLoading(this.loadingController, 'Eliminando ministerio...', async () => {
-        await firstValueFrom(this.ministeriosService.delete(id));
-      });
+      await firstValueFrom(this.ministeriosService.delete(id));
       refrescarListaTrasMutacion(
         () => this.ministeriosService.getAll(),
         lista => { this.listaMinisterios = lista; },
@@ -397,12 +400,12 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
       this.dataService.notifyChanges();
       await this.mostrarToast('Registro eliminado', 'warning');
     } catch (error) {
-      this.listaMinisterios = this.ministeriosService.getAll();
+      this.listaMinisterios = listaAntes;
       this.actualizarVista();
       const msg = getHttpErrorMessage(error, 'Error al eliminar');
       await this.mostrarToast(msg, 'danger');
     } finally {
-      this.eliminando = false;
+      this.accionFilaEnCurso = null;
       this.cdr.detectChanges();
     }
   }
