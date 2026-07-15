@@ -3,13 +3,18 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule, ToastController } from '@ionic/angular';
 import { Router, RouterLink } from '@angular/router';
+import { addIcons } from 'ionicons';
+import {
+  alertCircle,
+  arrowForwardCircle,
+  eyeOffOutline,
+  eyeOutline
+} from 'ionicons/icons';
 import { AuthService } from '../../core/services/auth.service';
 import { DataService } from '../../services/data.service';
 import { getHttpErrorMessage } from '../../shared/utils/error-message.util';
 import { presentIecaToast } from '../../shared/utils/toast.util';
 import { despertarApiEnSegundoPlano, esperarApiDisponible } from '../../shared/utils/api-wake.util';
-
-const LOGIN_FLOW_TIMEOUT_MS = 45_000;
 
 @Component({
   selector: 'app-login',
@@ -29,13 +34,23 @@ export class LoginComponent implements OnInit {
   /** Error de credenciales o servidor; visible en el formulario (no solo toast). */
   authError: string | null = null;
 
+  /** Descarta resultados de un intento anterior si el usuario vuelve a pulsar. */
+  private loginAttempt = 0;
+
   constructor(
     private toastCtrl: ToastController,
     private router: Router,
     private authService: AuthService,
     private dataService: DataService,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) {
+    addIcons({
+      'alert-circle': alertCircle,
+      'arrow-forward-circle': arrowForwardCircle,
+      'eye-outline': eyeOutline,
+      'eye-off-outline': eyeOffOutline
+    });
+  }
 
   async ngOnInit(): Promise<void> {
     this.authService.purgeStaleSession();
@@ -81,8 +96,6 @@ export class LoginComponent implements OnInit {
 
     this.submitted = true;
     this.authError = null;
-
-    // Releer del DOM por si el autofill no disparó ionInput.
     this.syncCredencialesDesdeDom();
 
     const u = this.usuario.trim();
@@ -101,14 +114,17 @@ export class LoginComponent implements OnInit {
       return;
     }
 
+    const attempt = ++this.loginAttempt;
     this.isLoading = true;
     this.conectandoServidor = true;
     this.cargandoDatos = false;
     this.cdr.detectChanges();
 
     try {
-      await this.withTimeout(this.ejecutarLogin(u, p), LOGIN_FLOW_TIMEOUT_MS);
+      await this.ejecutarLogin(u, p, attempt);
     } catch (error) {
+      if (attempt !== this.loginAttempt) return;
+      this.liberarLoading();
       this.authError = getHttpErrorMessage(
         error,
         error instanceof Error && error.message
@@ -117,15 +133,23 @@ export class LoginComponent implements OnInit {
       );
       await this.presentToast(this.authError, 'danger', 4500);
     } finally {
-      this.isLoading = false;
-      this.conectandoServidor = false;
-      this.cargandoDatos = false;
-      this.cdr.detectChanges();
+      if (attempt === this.loginAttempt) {
+        this.liberarLoading();
+      }
     }
   }
 
-  private async ejecutarLogin(u: string, p: string): Promise<void> {
-    const apiListo = await esperarApiDisponible(20_000);
+  private liberarLoading(): void {
+    this.isLoading = false;
+    this.conectandoServidor = false;
+    this.cargandoDatos = false;
+    this.cdr.detectChanges();
+  }
+
+  private async ejecutarLogin(u: string, p: string, attempt: number): Promise<void> {
+    // Starter no tiene cold start largo; 8s basta para un bache puntual.
+    const apiListo = await esperarApiDisponible(8_000);
+    if (attempt !== this.loginAttempt) return;
     if (!apiListo) {
       throw new Error(
         'El servidor no respondió a tiempo. Espera un momento y vuelve a intentar.'
@@ -136,8 +160,10 @@ export class LoginComponent implements OnInit {
     this.cdr.detectChanges();
 
     const result = await this.authService.login(u, p);
+    if (attempt !== this.loginAttempt) return;
 
     if (!result.success) {
+      this.liberarLoading();
       this.authError = result.mensaje || 'Usuario o contraseña incorrectos.';
       await this.presentToast(this.authError, 'danger', 4500);
       return;
@@ -149,53 +175,41 @@ export class LoginComponent implements OnInit {
     this.cdr.detectChanges();
 
     const bootstrapOk = await this.dataService.bootstrapRemote(true);
+    if (attempt !== this.loginAttempt) return;
 
     if (!this.authService.isAuthenticated()) {
+      this.liberarLoading();
       this.authError = 'Tu sesión expiró. Vuelve a iniciar sesión.';
       await this.presentToast(this.authError, 'warning', 4500);
       return;
     }
     if (!bootstrapOk) {
+      this.liberarLoading();
       this.authError = 'No se pudieron cargar los datos. Intenta de nuevo.';
       await this.presentToast(this.authError, 'danger', 4500);
       return;
     }
 
+    this.liberarLoading();
     void this.router.navigateByUrl(destino, { replaceUrl: true });
     void this.presentToast(`¡Bienvenido ${user?.usuario}!`, 'success');
   }
 
   private syncCredencialesDesdeDom(): void {
-    const userEl = document.getElementById('login-usuario') as HTMLInputElement | null;
-    const passEl = document.getElementById('login-password') as HTMLInputElement | null;
-    const userVal = userEl?.value;
-    const passVal = passEl?.value;
+    const userHost = document.getElementById('login-usuario');
+    const passHost = document.getElementById('login-password');
+    const userVal =
+      (userHost as HTMLInputElement | null)?.value ??
+      userHost?.querySelector?.('input')?.value;
+    const passVal =
+      (passHost as HTMLInputElement | null)?.value ??
+      passHost?.querySelector?.('input')?.value;
     if (typeof userVal === 'string' && userVal.length) {
       this.usuario = userVal;
     }
     if (typeof passVal === 'string' && passVal.length) {
       this.password = passVal;
     }
-  }
-
-  private withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-    return new Promise<T>((resolve, reject) => {
-      const timer = setTimeout(() => {
-        reject(new Error(
-          'El inicio de sesión tardó demasiado. Revisa tu conexión e inténtalo de nuevo.'
-        ));
-      }, ms);
-      promise.then(
-        value => {
-          clearTimeout(timer);
-          resolve(value);
-        },
-        err => {
-          clearTimeout(timer);
-          reject(err);
-        }
-      );
-    });
   }
 
   async presentToast(msj: string, color: string, duration = 2600): Promise<void> {

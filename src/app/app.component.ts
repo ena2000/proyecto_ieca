@@ -26,6 +26,7 @@ import {
   mailOutline,
   checkmarkCircle,
   informationCircle,
+  alertCircle,
   warning,
   shield
 } from 'ionicons/icons';
@@ -75,6 +76,7 @@ export class AppComponent implements OnInit {
       'mail-outline': mailOutline,
       'checkmark-circle': checkmarkCircle,
       'information-circle': informationCircle,
+      'alert-circle': alertCircle,
       warning,
       shield
     });
