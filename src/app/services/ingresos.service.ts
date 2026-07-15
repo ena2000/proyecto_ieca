@@ -12,6 +12,7 @@ import { AuthService } from '../core/services/auth.service';
 import { ROLES } from '../core/constants/roles.constants';
 import { formatearISOaDDMMYYYY } from '../shared/utils/date.util';
 import { withMutationTimeout } from '../shared/utils/http-mutation.util';
+import { confirmarEliminacionEnServidor } from '../shared/utils/confirm-delete.util';
 import {
   crearIngresoIglesiaPorAportacion,
   ingresoEstaAprobadoParaAportacion,
@@ -109,12 +110,18 @@ export class IngresosService {
       return of(undefined);
     }
     return withMutationTimeout(
-      this.api.delete(`${API.ingresos.base}/${numId}`)
-    ).pipe(
-      tap(() => {
-        this.persist(filtrarIngresosTrasEliminarOrigen(this.getAll(), numId));
-        this.notificacionesService.recargar();
-      })
+      this.api.delete(`${API.ingresos.base}/${numId}`).pipe(
+        confirmarEliminacionEnServidor(
+          this.api,
+          API.ingresos.base,
+          numId,
+          'El ingreso sigue registrado en el servidor. No se pudo eliminar de forma permanente.'
+        ),
+        tap(() => {
+          this.persist(filtrarIngresosTrasEliminarOrigen(this.getAll(), numId));
+          this.notificacionesService.recargar();
+        })
+      )
     );
   }
 

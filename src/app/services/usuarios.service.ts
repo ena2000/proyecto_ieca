@@ -6,8 +6,9 @@ import { ApiService } from '../core/services/api.service';
 import { API } from '../core/constants/api.constants';
 import { environment } from '../../environments/environment';
 import { mensajeUsuarioEmailDuplicado, usuarioEmailDuplicado } from '../shared/utils/unicidad.util';
-import { withMutationTimeout } from '../shared/utils/http-mutation.util';
+import { withMutationTimeout, API_DELETE_TIMEOUT_MS } from '../shared/utils/http-mutation.util';
 import { fusionarMovimientosTrasBootstrap } from '../shared/utils/movimiento-list-merge.util';
+import { confirmarEliminacionEnServidor } from '../shared/utils/confirm-delete.util';
 import {
   completarRegistroTrasMutacion,
   prependRegistroUnico
@@ -88,15 +89,17 @@ export class UsuariosService {
     }
     return withMutationTimeout(
       this.api.delete(`${API.usuarios}/${numId}`).pipe(
+        confirmarEliminacionEnServidor(
+          this.api,
+          API.usuarios,
+          numId,
+          'El usuario sigue registrado en el servidor. No se pudo eliminar de forma permanente.'
+        ),
         tap(() => {
           this.persist(this.getAll().filter(u => Number(u.id) !== numId));
-          void firstValueFrom(
-            this.api.get<Usuario[]>(API.usuarios).pipe(
-              tap(lista => this.usuariosSubject.next(lista))
-            )
-          ).catch(err => console.error('[UsuariosService] reload tras delete:', err));
         })
-      )
+      ),
+      API_DELETE_TIMEOUT_MS
     );
   }
 

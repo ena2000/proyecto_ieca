@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
 import { BehaviorSubject, Observable, firstValueFrom, of, throwError } from 'rxjs';
 import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { Ministerio } from '../core/models';
@@ -12,6 +11,7 @@ import { validarNombreMinisterio } from '../shared/utils/ministerio-nombre.util'
 import { withMutationTimeout, API_DELETE_TIMEOUT_MS } from '../shared/utils/http-mutation.util';
 import { filtrarMinisteriosCatalogo } from '../shared/constants/ministerios-catalogo.constants';
 import { fusionarMovimientosTrasBootstrap } from '../shared/utils/movimiento-list-merge.util';
+import { confirmarEliminacionEnServidor } from '../shared/utils/confirm-delete.util';
 import {
   completarRegistroTrasMutacion,
   prependRegistroUnico
@@ -107,27 +107,15 @@ export class MinisteriosService {
     }
 
     const listaAntes = this.getAll();
-    this.marcarEliminado(numId);
-    // Optimista: sale de la UI al instante.
-    this.persist(listaAntes.filter(m => Number(m.id) !== numId));
 
     return withMutationTimeout(
       this.api.delete(`${API.ministerios}/${numId}`).pipe(
-        // Confirma borrado real: GET por id debe responder 404.
-        switchMap(() => this.api.get<Ministerio>(`${API.ministerios}/${numId}`).pipe(
-          map(() => {
-            throw new Error(
-              'El ministerio sigue registrado en el servidor. No se pudo eliminar de forma permanente.'
-            );
-          }),
-          catchError(err => {
-            // 404 = borrado confirmado en Firestore.
-            if (err instanceof HttpErrorResponse && err.status === 404) {
-              return of(undefined);
-            }
-            return throwError(() => err);
-          })
-        )),
+        confirmarEliminacionEnServidor(
+          this.api,
+          API.ministerios,
+          numId,
+          'El ministerio sigue registrado en el servidor. No se pudo eliminar de forma permanente.'
+        ),
         switchMap(() => this.api.get<Ministerio[]>(API.ministerios)),
         map(lista => {
           const cruda = filtrarMinisteriosCatalogo(lista ?? []);
@@ -136,6 +124,7 @@ export class MinisteriosService {
               'El ministerio sigue registrado en el servidor. No se pudo eliminar de forma permanente.'
             );
           }
+          this.marcarEliminado(numId);
           this.ministeriosSubject.next(this.sinEliminados(cruda));
         }),
         catchError(err => {

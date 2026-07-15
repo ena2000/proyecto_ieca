@@ -382,11 +382,7 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
     });
     if (!confirmado) return;
 
-    const listaAntes = [...this.listaMinisterios];
     this.eliminando = true;
-    // Optimista en la vista: desaparece de la tabla al confirmar.
-    this.listaMinisterios = this.listaMinisterios.filter(m => Number(m.id) !== id);
-    this.actualizarVista();
     this.cdr.detectChanges();
 
     try {
@@ -401,7 +397,7 @@ export class MinisteriosComponent implements OnInit, OnDestroy, ViewWillEnter {
       this.dataService.notifyChanges();
       await this.mostrarToast('Registro eliminado', 'warning');
     } catch (error) {
-      this.listaMinisterios = listaAntes;
+      this.listaMinisterios = this.ministeriosService.getAll();
       this.actualizarVista();
       const msg = getHttpErrorMessage(error, 'Error al eliminar');
       await this.mostrarToast(msg, 'danger');

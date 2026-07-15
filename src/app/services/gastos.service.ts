@@ -15,6 +15,7 @@ import {
   reemplazarRegistroEnLista
 } from '../shared/utils/entity-crud.util';
 import { withMutationTimeout } from '../shared/utils/http-mutation.util';
+import { confirmarEliminacionEnServidor } from '../shared/utils/confirm-delete.util';
 import { stampAuditoriaLocal, stampAuditoriaActualizacionLocal } from '../shared/utils/audit.util';
 import { AuthService } from '../core/services/auth.service';
 import { ROLES } from '../core/constants/roles.constants';
@@ -90,12 +91,18 @@ export class GastosService {
       return of(undefined);
     }
     return withMutationTimeout(
-      this.api.delete(`${API.gastos.base}/${numId}`)
-    ).pipe(
-      tap(() => {
-        this.persist(this.getAll().filter(g => Number(g.id) !== numId));
-        this.notificacionesService.recargar();
-      })
+      this.api.delete(`${API.gastos.base}/${numId}`).pipe(
+        confirmarEliminacionEnServidor(
+          this.api,
+          API.gastos.base,
+          numId,
+          'El gasto sigue registrado en el servidor. No se pudo eliminar de forma permanente.'
+        ),
+        tap(() => {
+          this.persist(this.getAll().filter(g => Number(g.id) !== numId));
+          this.notificacionesService.recargar();
+        })
+      )
     );
   }
 

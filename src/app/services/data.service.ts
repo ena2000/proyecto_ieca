@@ -178,9 +178,10 @@ export class DataService {
       const stored = this.readBootstrapStorage();
       if (stored) {
         this.applyBootstrap(stored.payload);
-        // Siempre reconciliar con el servidor (evita lista vieja tras F5).
-        void this.fetchBootstrapFromApi(false);
-        return Promise.resolve(true);
+        // Esperar al servidor: si no, un F5 puede mostrar un borrado “fantasma” desde sessionStorage.
+        return this.fetchBootstrapFromApi(false).finally(() => {
+          if (force) this.bootstrapForceInProgress = false;
+        });
       }
     }
 
