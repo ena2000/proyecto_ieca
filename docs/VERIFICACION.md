@@ -28,7 +28,7 @@ Para validar la propuesta tecnológica se utilizaron dos estrategias complementa
 
 | Criterio | Estrategia | Resultado |
 |----------|------------|-----------|
-| Cumplimiento de RF | 185 casos automatizados + 8 manuales | 185 pass + 8 verificados |
+| Cumplimiento de RF | 188 casos automatizados + 8 manuales | 188 pass + 8 verificados |
 | Reglas de negocio (33 %, cierre, roles) | Unitarias e integración | Superado |
 | Seguridad (JWT, bcrypt, roles) | `auth.test.js` + manuales | Superado |
 | Integración frontend–backend | Supertest + bootstrap | Superado |
@@ -61,7 +61,7 @@ No se aplica en este repositorio el marco Delphi / juicio de expertos como evide
 | # | Resultado | Detalle |
 |---|-----------|---------|
 | R-1 | Sistema implementado y desplegado | Angular/Ionic + Node/Express + Firestore; Firebase Hosting + Render |
-| R-2 | Pruebas automatizadas (jul 2026) | Frontend 117/117 · Backend 68/68 · Total 185/185 (100 %) |
+| R-2 | Pruebas automatizadas (jul 2026) | Frontend 118/118 · Backend 70/70 · Total 188/188 (100 %) |
 | R-3 | Pruebas de aceptación | 8 casos manuales CP-M01…CP-M08 verificados |
 | R-4 | Caso ingreso #13 | Andrés Quinde — $182 bruto — saldo kardex **$41,94** — [IMPLEMENTACION.md](./IMPLEMENTACION.md) |
 | R-5 | Cronograma | 7 de 9 etapas completadas (análisis a pruebas) |
@@ -79,9 +79,9 @@ Ejecución documentada: **17 julio 2026** (suite ampliada respecto al snapshot d
 
 | Ámbito | Casos | Herramienta | Resultado |
 |--------|-------|-------------|-----------|
-| Frontend | 117 | Karma + Jasmine + ChromeHeadless (`32` archivos `.spec.ts`) | **117/117 SUCCESS** |
-| Backend | 68 | Node.js test runner + Supertest (`12` archivos `.test.js`) | **68/68 pass** |
-| **Total automatizado** | **185** | GitHub Actions (CI) | **185/185 pass** |
+| Frontend | 118 | Karma + Jasmine + ChromeHeadless (`32` archivos `.spec.ts`) | **118/118 SUCCESS** |
+| Backend | 70 | Node.js test runner + Supertest (`13` archivos `.test.js`) | **70/70 pass** |
+| **Total automatizado** | **188** | GitHub Actions (CI) | **188/188 pass** |
 | Manuales | 8 | Navegador escritorio | **CP-M01…CP-M08 verificados** |
 
 ### Frontend
@@ -113,7 +113,7 @@ Comando: `npm run test:ci`
 | `http-mutation.util.spec.ts` | 2 | OK |
 | `id-coerce.util.spec.ts` | 2 | OK |
 | Componentes (login, gastos, reportes, admin, ministerios, usuarios, dashboard, slidebar, modal, tabla) | 10 | OK |
-| **Total** | **117** | **SUCCESS** |
+| **Total** | **118** | **SUCCESS** |
 
 ### Backend
 
@@ -124,6 +124,7 @@ Comando: `cd server && npm test`
 | `http.integration.test.js` | 14 | OK |
 | `auth.test.js` (schema Zod, JWT, requireRoles) | 12 | OK |
 | `security-rules.integration.test.js` | 11 | OK |
+| `aportacion-constantes.test.js` | 2 | OK |
 | `periodo.test.js` | 7 | OK |
 | `env.production.test.js` | 6 | OK |
 | `email-templates.test.js` | 4 | OK |
@@ -133,7 +134,7 @@ Comando: `cd server && npm test`
 | `liderazgo.test.js` | 2 | OK |
 | `rate-limit.test.js` | 2 | OK |
 | `unicidad.test.js` | 1 | OK |
-| **Total** | **68** | **68 pass** |
+| **Total** | **70** | **70 pass** |
 
 ---
 

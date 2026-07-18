@@ -16,7 +16,7 @@ Este archivo y el resto de `docs/` mantienen la **verdad del repositorio** (cód
 ## Resumen rápido
 
 - **Escritura del cuerpo (Word enviado):** ~93 % en el momento del envío.
-- **Repositorio:** requisitos, 18 CU, verificación **185/185**, diagramas y despliegue alineados.
+- **Repositorio:** requisitos, 18 CU, verificación **188/188**, diagramas y despliegue alineados.
 - **Validación en repo:** técnica + aceptación (V-01…V-08) — ver [ANEXO-7-VALIDACION-PROTOTIPO.md](./ANEXO-7-VALIDACION-PROTOTIPO.md). No se documenta Delphi en `docs/`.
 - **Software en producción:** frontend https://gestion-ieca.web.app · API https://ieca-api.onrender.com (Render **Starter**)
 
@@ -35,7 +35,7 @@ Este archivo y el resto de `docs/` mantienen la **verdad del repositorio** (cód
 - [x] Resultados de encuesta diagnóstica
 - [x] Anexos de contenido académico / técnicos según Word enviado
 - [x] Referencias, Bibliografía, Abreviaturas, Simbología
-- [x] Prototipo desplegado y verificado (**117** FE + **68** BE = **185/185**; smoke producción OK)
+- [x] Prototipo desplegado y verificado (**118** FE + **70** BE = **188/188**; smoke producción OK)
 
 ### Congelado hasta devolución del revisor (solo Word)
 

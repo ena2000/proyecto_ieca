@@ -12,25 +12,25 @@ La validación del prototipo no utiliza juicio de expertos ni experimentación c
 
 | Estrategia | Descripción | Evidencia |
 |------------|-------------|-----------|
-| Pruebas unitarias frontend | 117 casos (Karma + Jasmine) | [VERIFICACION.md](./VERIFICACION.md) §3 |
-| Pruebas backend | 68 casos (Node test runner); 68 en verde | [VERIFICACION.md](./VERIFICACION.md) §3 |
+| Pruebas unitarias frontend | 118 casos (Karma + Jasmine) | [VERIFICACION.md](./VERIFICACION.md) §3 |
+| Pruebas backend | 70 casos (Node test runner); 70 en verde | [VERIFICACION.md](./VERIFICACION.md) §3 |
 | Pruebas de integración HTTP | Supertest sobre API Express | `http.integration.test.js`, `security-rules.integration.test.js` |
 | Pruebas de reglas de negocio | Aportación 33 %, roles, cierre | CP-M03; specs de aportación / cierre |
 | Pruebas de aceptación manuales | 8 casos por rol (CP-M01 a CP-M08) | [VERIFICACION.md](./VERIFICACION.md) §4 · criterios V-01…V-08 |
 | Diagnóstico previo | Entrevista + encuesta n = 5 | [RESULTADOS-ENCUESTA-DIAGNOSTICA.md](./RESULTADOS-ENCUESTA-DIAGNOSTICA.md) |
 
-**Total pruebas automatizadas:** 185 (117 + 68). **Casos manuales:** 8. **CI:** GitHub Actions (lint, pruebas, build).
+**Total pruebas automatizadas:** 188 (118 + 70). **Casos manuales:** 8. **CI:** GitHub Actions (lint, pruebas, build).
 
 ### Criterio de aceptación
 
 El prototipo se considera validado cuando:
 
-1. Las pruebas automatizadas críticas superan en CI (**185/185**).
+1. Las pruebas automatizadas críticas superan en CI (**188/188**).
 2. Los casos manuales CP-M01 a CP-M08 quedan verificados con administrador, contable y colaborador.
 3. La regla de aportación del 33 % se verifica en código y en el caso real del ingreso de talento ([IMPLEMENTACION.md](./IMPLEMENTACION.md), saldo kardex **$41,94**).
 
 ### Resultado
 
-El sistema superó las 185 pruebas automatizadas y los 8 casos manuales de aceptación. La integración continua ejecuta verificación en cada cambio del repositorio. Los hallazgos del diagnóstico (registro manual, necesidad de sistema web centralizado) quedaron atendidos en los módulos implementados.
+El sistema superó las 188 pruebas automatizadas y los 8 casos manuales de aceptación. La integración continua ejecuta verificación en cada cambio del repositorio. Los hallazgos del diagnóstico (registro manual, necesidad de sistema web centralizado) quedaron atendidos en los módulos implementados.
 
 *Elaboración: investigadores. Fuente: repositorio del prototipo IECA y [VERIFICACION.md](./VERIFICACION.md).*

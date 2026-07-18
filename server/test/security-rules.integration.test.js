@@ -364,6 +364,11 @@ describe('API seguridad y reglas (integración)', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({ confirmacion: 'ELIMINAR', password: '123456' });
     assert.equal(ok.status, 200);
-    assert.match(String(ok.body.message || ''), /eliminados/i);
+    assert.match(String(ok.body.message || ''), /conserv/i);
+
+    const again = await request(app)
+      .post('/api/auth/login')
+      .send({ usuario: 'admin', password: '123456' });
+    assert.equal(again.status, 200);
   });
 });

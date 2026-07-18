@@ -4,6 +4,13 @@ Registro resumido de entregas relevantes para el repositorio. Detalle técnico e
 
 ---
 
+## 2026-07 — Wipe conserva admin; alineación 33 %; limpieza repo
+
+- Vaciar datos **conserva** la cuenta del administrador que ejecuta la operación.
+- Constantes 33 % / 4105: comentarios cruzados FE↔BE + test `aportacion-constantes.test.js`.
+- `.firebase/` en `.gitignore` (cache Hosting fuera del repo).
+- Diagrama BD: nombre sin doble espacio; README Capacitor aclarado (sin app móvil entregada).
+
 ## 2026-07 — Robustez (sin cambio de estructura)
 
 - Aportación 33 %: escritura atómica hijo+padre; rollback si falla al crear/aprobar.

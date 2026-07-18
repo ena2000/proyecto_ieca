@@ -73,7 +73,7 @@ Carpeta **[scripts/](./scripts/)** — ver [scripts/README.md](./scripts/README.
 | Concepto | Valor |
 |----------|-------|
 | Casos de uso | 18 en 4 módulos |
-| Pruebas | 117 frontend · 68 backend · 8 manuales · **68/68** suite server |
+| Pruebas | 118 frontend · 70 backend · 8 manuales · **70/70** suite server |
 | Usuarios demo | ~182 (backup IECA) |
 | Aportación iglesia | 33 % — cuenta **4105** |
 | Caso kardex | $182,00 bruto → saldo **$41,94** |

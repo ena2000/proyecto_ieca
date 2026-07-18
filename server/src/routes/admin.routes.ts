@@ -101,6 +101,20 @@ async function clearCollection(name) {
   }
 }
 
+/** Vacía una colección dejando documentos con los ids indicados. */
+async function clearCollectionKeepingIds(name, keepIds) {
+  const keep = new Set([...keepIds].map((id) => String(id)));
+  const snap = await db.collection(name).get();
+  if (snap.empty) return;
+  const batchSize = 400;
+  const toDelete = snap.docs.filter((d) => !keep.has(String(d.id)));
+  for (let i = 0; i < toDelete.length; i += batchSize) {
+    const batch = db.batch();
+    toDelete.slice(i, i + batchSize).forEach((d) => batch.delete(d.ref));
+    await batch.commit();
+  }
+}
+
 /** GET /api/admin/config — estado del sistema (último cierre, etc.). */
 router.get('/config', async (_req, res) => {
   try {
@@ -189,7 +203,12 @@ router.delete('/datos', validate(wipeDatosSchema), async (req, res) => {
     }
 
     for (const name of COLLECTIONS_RESET) {
-      await clearCollection(name);
+      if (name === 'usuarios') {
+        // Conserva la cuenta del admin que ejecuta el wipe (evita quedar sin acceso)
+        await clearCollectionKeepingIds(name, [userId]);
+      } else {
+        await clearCollection(name);
+      }
     }
     await clearCollection('password_resets');
     await db.collection('config').doc('sistema').set(
@@ -205,7 +224,9 @@ router.delete('/datos', validate(wipeDatosSchema), async (req, res) => {
       console.warn('[admin DELETE datos] contadores:', counterErr?.message || counterErr);
     }
     invalidateBootstrapCache();
-    res.json({ message: 'Datos eliminados correctamente' });
+    res.json({
+      message: 'Datos eliminados correctamente. Se conservó tu cuenta de administrador.'
+    });
   } catch (err) {
     console.error('[admin DELETE datos]', err);
     res.status(500).json({ message: 'Error al eliminar los datos' });

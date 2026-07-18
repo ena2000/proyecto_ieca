@@ -371,7 +371,8 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
   async limpiarTodosLosDatos(): Promise<void> {
     const alert1 = await this.alertController.create({
       header: '🚨 Eliminar todos los datos',
-      message: 'Se borrarán todos los ingresos, gastos, ministerios y usuarios. Esta acción no se puede deshacer.',
+      message:
+        'Se borrarán ingresos, gastos, ministerios y usuarios (excepto tu cuenta de administrador). Esta acción no se puede deshacer.',
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
         {
@@ -380,7 +381,9 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
           handler: async () => {
             const alert2 = await this.alertController.create({
               header: '¿Estás completamente seguro?',
-              message: 'Escribe ELIMINAR y tu contraseña de administrador para confirmar.',
+              message:
+                'Se borrarán ingresos, gastos, ministerios, notificaciones y el resto de usuarios. ' +
+                'Tu cuenta de administrador se conserva. Esta acción no se puede deshacer.',
               inputs: [
                 { name: 'confirmacion', type: 'text', placeholder: 'ELIMINAR' },
                 { name: 'password', type: 'password', placeholder: 'Tu contraseña' }
@@ -403,7 +406,10 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
                       .limpiarTodosLosDatos(String(data.password))
                       .then(() => {
                         void this.cargarDatos();
-                        void this.mostrarToast('Todos los datos han sido eliminados', 'warning');
+                        void this.mostrarToast(
+                          'Datos eliminados. Se conservó tu cuenta de administrador.',
+                          'warning'
+                        );
                       })
                       .catch((err) => {
                         void this.mostrarToast(

@@ -18,6 +18,7 @@ import {
   mapMovimientoAuditoriaCsvRow,
   parseFechaCsvParaOrden
 } from '../shared/utils/auditoria-csv.util';
+import { AUTH_USER_KEY, authStorageGet } from '../shared/utils/auth-token.storage';
 
 const ULTIMO_CIERRE_KEY = 'ultimoCierre';
 const PERIODOS_CERRADOS_KEY = 'periodosCerrados';
@@ -416,9 +417,24 @@ export class AdministracionService {
     localStorage.removeItem('ingresos');
     localStorage.removeItem('gastos');
     localStorage.removeItem('ministerios');
-    localStorage.removeItem('usuarios');
     localStorage.removeItem(ULTIMO_CIERRE_KEY);
     localStorage.removeItem(PERIODOS_CERRADOS_KEY);
+    // Conserva solo el usuario de la sesión actual (admin)
+    try {
+      const raw = authStorageGet(AUTH_USER_KEY);
+      if (raw) {
+        const yo = JSON.parse(raw);
+        if (yo?.id != null) {
+          localStorage.setItem('usuarios', JSON.stringify([yo]));
+        } else {
+          localStorage.removeItem('usuarios');
+        }
+      } else {
+        localStorage.removeItem('usuarios');
+      }
+    } catch {
+      localStorage.removeItem('usuarios');
+    }
     this.cierreService.limpiarLocal();
     this.dataService.refreshAllData();
   }

@@ -10,7 +10,7 @@ Sistema web para la administración financiera de la **Iglesia Evangélica La Al
 |--------|--------|
 | **Web (escritorio)** | Uso principal y despliegue actual: panel administrativo en **navegador de escritorio** (Firebase Hosting + API en Render). |
 | **Vista estrecha (≤768px)** | **Soportada** en navegador (ventana reducida o teléfono vía web): sidebar off-canvas, botón ☰ en la barra superior, tablas con scroll horizontal y login centrado. No es app nativa ni PWA oficial. |
-| **App móvil nativa** | **Fuera de alcance** — Capacitor 8 está en el proyecto como base técnica futura; no hay builds Android/iOS en el flujo de release. |
+| **App móvil nativa** | **Fuera de alcance.** No hay app Android/iOS publicada. Capacitor figura en dependencias solo como base técnica opcional a futuro; el producto entregado es **web de escritorio**. |
 
 Los estilos responsive (`src/theme/_mobile-narrow.scss`, media queries `max-width: 768px`) **no alteran** el layout de escritorio (`min-width: 769px`).
 
@@ -148,7 +148,7 @@ En desarrollo, las peticiones a `/api` se redirigen al backend con `src/proxy.co
 | Frontend | Angular 20, Ionic 8, TypeScript, SCSS, Chart.js |
 | Backend | Node.js 20+, **TypeScript**, Express 5, JWT, bcryptjs, Zod, Helmet, compression |
 | Base de datos | Firebase Firestore |
-| Móvil (futuro) | Capacitor 8 + UI responsive; despliegue móvil no activo; base lista para una fase posterior |
+| Móvil (futuro, no entregado) | Capacitor puede usarse después; **no forma parte del alcance ni del despliegue actual** |
 | Exportación | xlsx, xlsx-js-style |
 | CI/CD | GitHub Actions (lint, test, build, artefactos de release) |
 
@@ -683,7 +683,7 @@ Sin SMTP en desarrollo, el resumen se imprime en la consola del servidor. Máxim
 | `npm run email:prueba` | Envía un correo de prueba (SMTP) |
 | `npm run render:setup` | Ayuda para configurar variables en Render |
 | `npm run typecheck` | Comprobación TypeScript sin emitir (`tsc --noEmit`) |
-| `npm test` | 68 tests en 12 archivos (unitarios + HTTP en memoria) |
+| `npm test` | 70 tests en 13 archivos (unitarios + HTTP en memoria) |
 | `npm run test:integration` | Solo tests HTTP (Supertest) |
 
 ---
@@ -726,9 +726,9 @@ En el servidor de producción:
 
 | Ámbito | Cantidad | Herramienta |
 |--------|----------|-------------|
-| Frontend | **117** casos (`32` archivos `.spec.ts`) | Karma + Jasmine + ChromeHeadless |
-| Backend | **68** casos (`12` archivos `.test.js`) | Node.js test runner + Supertest |
-| **Total** | **185** | Replicado en GitHub Actions |
+| Frontend | **118** casos (`32` archivos `.spec.ts`) | Karma + Jasmine + ChromeHeadless |
+| Backend | **70** casos (`13` archivos `.test.js`) | Node.js test runner + Supertest |
+| **Total** | **188** | Replicado en GitHub Actions |
 
 ### Frontend
 

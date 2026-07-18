@@ -1,4 +1,9 @@
-/** Porcentaje de cada ingreso de ministerio que se transfiere al fondo de la iglesia. */
+/**
+ * Constantes de aportación iglesia (backend).
+ * DEBE coincidir con `src/app/shared/constants/aportacion-iglesia.constants.ts`
+ * (porcentaje 0.33, cuenta talento 4105, ministerio General).
+ * Ver test en `server/test/aportacion-constantes.test.js`.
+ */
 const APORTACION_IGLESIA_PORCENTAJE = 0.33;
 
 const MINISTERIO_IGLESIA_NOMBRE = 'General';

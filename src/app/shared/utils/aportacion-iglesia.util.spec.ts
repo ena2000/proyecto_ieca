@@ -1,4 +1,9 @@
-import { calcularMontoAportacionIglesia } from '../constants/aportacion-iglesia.constants';
+import {
+  APORTACION_IGLESIA_PORCENTAJE,
+  CUENTA_INGRESO_TALENTO_CODIGO,
+  MINISTERIO_IGLESIA_NOMBRE,
+  calcularMontoAportacionIglesia
+} from '../constants/aportacion-iglesia.constants';
 import {
   calcularMontoNetoMinisterio,
   crearIngresoIglesiaPorAportacion,
@@ -12,6 +17,13 @@ import {
 import { Ingreso } from '../../core/models';
 
 describe('aportacion-iglesia.util', () => {
+  it('constantes FE alineadas con la regla institucional (tambi?n fijada en BE)', () => {
+    expect(APORTACION_IGLESIA_PORCENTAJE).toBe(0.33);
+    expect(CUENTA_INGRESO_TALENTO_CODIGO).toBe('4105');
+    expect(MINISTERIO_IGLESIA_NOMBRE).toBe('General');
+    expect(calcularMontoAportacionIglesia(182)).toBe(60.06);
+  });
+
   const ingresoTalento: Ingreso = {
     id: 10,
     fecha: '2026-06-01T12:00:00.000Z',
