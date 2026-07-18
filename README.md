@@ -683,7 +683,7 @@ Sin SMTP en desarrollo, el resumen se imprime en la consola del servidor. Máxim
 | `npm run email:prueba` | Envía un correo de prueba (SMTP) |
 | `npm run render:setup` | Ayuda para configurar variables en Render |
 | `npm run typecheck` | Comprobación TypeScript sin emitir (`tsc --noEmit`) |
-| `npm test` | 49 tests en 9 archivos (unitarios + HTTP en memoria) |
+| `npm test` | 68 tests en 12 archivos (unitarios + HTTP en memoria) |
 | `npm run test:integration` | Solo tests HTTP (Supertest) |
 
 ---
@@ -726,9 +726,9 @@ En el servidor de producción:
 
 | Ámbito | Cantidad | Herramienta |
 |--------|----------|-------------|
-| Frontend | **46** casos (`19` archivos `.spec.ts`) | Karma + Jasmine + ChromeHeadless |
-| Backend | **49** casos (`9` archivos `.test.js`) | Node.js test runner + Supertest |
-| **Total** | **95** | Replicado en GitHub Actions |
+| Frontend | **117** casos (`32` archivos `.spec.ts`) | Karma + Jasmine + ChromeHeadless |
+| Backend | **68** casos (`12` archivos `.test.js`) | Node.js test runner + Supertest |
+| **Total** | **185** | Replicado en GitHub Actions |
 
 ### Frontend
 
@@ -874,7 +874,7 @@ npm run deploy:hosting
 | [docs/REQUERIMIENTOS.md](docs/REQUERIMIENTOS.md) | Requisitos funcionales y no funcionales |
 | [docs/BENEFICIARIOS.md](docs/BENEFICIARIOS.md) | Beneficiarios directos e indirectos |
 | [docs/CASOS-DE-USO.md](docs/CASOS-DE-USO.md) | 18 casos de uso en 4 módulos |
-| [docs/VERIFICACION.md](docs/VERIFICACION.md) | Validación y verificación (95 pruebas + 8 manuales) |
+| [docs/VERIFICACION.md](docs/VERIFICACION.md) | Validación y verificación (185 pruebas + 8 manuales) |
 | [docs/ENTREGABLES.md](docs/ENTREGABLES.md) | EDT — entregables por fase |
 | [docs/PROPUESTA.md](docs/PROPUESTA.md) | Propuesta de solución |
 | [docs/IMPLEMENTACION.md](docs/IMPLEMENTACION.md) | Caso ingreso #13, 33 %, kardex $41,94 |

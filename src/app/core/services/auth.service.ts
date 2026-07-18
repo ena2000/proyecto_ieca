@@ -145,7 +145,10 @@ export class AuthService {
 
   logout(): void {
     if (!environment.useLocalFallback) {
-      this.api.post(API.auth.logout, {}).subscribe({ error: () => undefined });
+      const refreshToken = authStorageGet(this.REFRESH_KEY);
+      this.api
+        .post(API.auth.logout, refreshToken ? { refreshToken } : {})
+        .subscribe({ error: () => undefined });
     }
     this.clearSessionStorage();
   }

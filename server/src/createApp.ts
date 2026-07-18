@@ -44,7 +44,7 @@ function createApp(options: { useMemoryDb?: boolean } = {}) {
   app.use(createHelmetMiddleware());
   app.use(compression());
   app.use(createCorsMiddleware());
-  app.use(express.json({ limit: '10mb' }));
+  app.use(express.json({ limit: '2mb' }));
 
   app.get('/api/health', async (_req, res) => {
     try {

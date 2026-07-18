@@ -1,6 +1,8 @@
 # Anexo 18 — Diccionario de datos Firestore (borrador para tesis)
 
-Contenido listo para pegar en Word cuando lo pidas.  
+Contenido de referencia del repo (diccionario Firestore).
+
+> **Word congelado:** no pegar en la plantilla hasta la devolución del revisor.  
 **Ubicación en tesis:** sección ANEXOS, después de Anexo 17 (Manual de usuario).
 
 ---

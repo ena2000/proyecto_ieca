@@ -18,13 +18,15 @@ Detalle tabular: [CASOS-DE-USO.md](../CASOS-DE-USO.md)
 
 ---
 
-## Arquitectura
+## Arquitectura y capas
 
 | Archivo | Uso en documento |
 |---------|------------------|
 | [DIAGRAMA DE ARQUITECTURA - REDUCIDO.png](./DIAGRAMA%20DE%20ARQUITECTURA%20-%20REDUCIDO.png) | Figura principal (capas cliente–API–Firestore) |
 | [DIAGRAMA DE ARQUITECTURA - COMPLETO.png](./DIAGRAMA%20DE%20ARQUITECTURA%20-%20COMPLETO.png) | Anexo con detalle ampliado |
-| [DIAGRAMA DE ARQUITECTURA DE LA BASE DE DATOS.png](./DIAGRAMA%20DE%20ARQUITECTURA%20DE%20LA%20%20BASE%20DE%20DATOS.png) | Colecciones Firestore y relaciones |
+| [DIAGRAMA DE CAPAS- REDUCIDO.png](./DIAGRAMA%20DE%20CAPAS-%20REDUCIDO.png) | Vista de capas (reducido) |
+| [DIAGRAMA DE CAPAS- COMPLETO.png](./DIAGRAMA%20DE%20CAPAS-%20COMPLETO.png) | Vista de capas (completo) |
+| [DIAGRAMA DE ARQUITECTURA DE LA  BASE DE DATOS.png](./DIAGRAMA%20DE%20ARQUITECTURA%20DE%20LA%20%20BASE%20DE%20DATOS.png) | Colecciones Firestore y relaciones |
 
 ---
 
@@ -34,8 +36,8 @@ Detalle tabular: [CASOS-DE-USO.md](../CASOS-DE-USO.md)
 |---------|------------------|
 | [DIAGRAMA DE CLASES - REDUCIDO.png](./DIAGRAMA%20DE%20CLASES%20-%20REDUCIDO.png) | Modelo de dominio simplificado |
 | [DIAGRAMA DE CLASES - COMPLETO.png](./DIAGRAMA%20DE%20CLASES%20-%20COMPLETO.png) | Anexo completo |
-| [DIAGRAMA DE ESTADO - REDUCIDO.png](./DIAGRAMA%20DE%20ESTADO%20-%20REDUCIDO.png) | Estados de movimientos (pendiente/aprobado/rechazado) |
-| [DIAGRAMA DE ESTADO - COMPLETO.png](./DIAGRAMA%20DE%20ESTADO%20-%20COMPLETO.png) | Anexo con transiciones ampliadas |
+| [DIAGRAMA DE ESTADO - REDUCIDO.png](./DIAGRAMA%20DE%20ESTADO%20-%20REDUCIDO.png) | Estados de movimientos (pendiente/aprobado/rechazado) — Cap. III |
+| [DIAGRAMA DE ESTADO - COMPLETO.png](./DIAGRAMA%20DE%20ESTADO%20-%20COMPLETO.png) | Anexo con roles, guardas y nota de periodo cerrado |
 
 ---
 
@@ -44,5 +46,7 @@ Detalle tabular: [CASOS-DE-USO.md](../CASOS-DE-USO.md)
 | Archivo | Descripción |
 |---------|-------------|
 | [cronograma-ieca.gan](./cronograma-ieca.gan) | Proyecto GanttProject — etapas análisis, diseño, implementación, pruebas y entrega |
+| [cronograma-ieca.png](./cronograma-ieca.png) | Exportación PNG del Gantt |
+| [cronograma-tabla-anexo1.md](./cronograma-tabla-anexo1.md) | Tabla de fechas para Anexo 1 |
 
 Versión Mermaid en [METODOLOGIA.md](../METODOLOGIA.md) §14.

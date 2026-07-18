@@ -26,7 +26,7 @@
 
 ### Requisitos
 
-[REQUERIMIENTOS.md](./REQUERIMIENTOS.md) — RF-01…RF-14, RNF-01…RNF-06, actores, reglas de negocio.
+[REQUERIMIENTOS.md](./REQUERIMIENTOS.md) — RF-01…RF-15, RNF-01…RNF-06, actores, reglas de negocio.
 
 ### Beneficiarios
 
@@ -38,7 +38,7 @@
 
 ### Validación y verificación
 
-[VERIFICACION.md](./VERIFICACION.md) — Criterios V-01…V-08, resultados R-1…R-6, 46/46 frontend, 48/49 backend, CP-M01…CP-M08.
+[VERIFICACION.md](./VERIFICACION.md) — Criterios V-01…V-08, resultados R-1…R-6, 117/117 frontend, 67/67 backend, CP-M01…CP-M08.
 
 ### Entregables y propuesta
 
@@ -52,14 +52,14 @@
 
 ## Metodología de investigación
 
-[METODOLOGIA-INVESTIGACION.md](./METODOLOGIA-INVESTIGACION.md) — Población N = 183, muestra n = 5.
+[METODOLOGIA-INVESTIGACION.md](./METODOLOGIA-INVESTIGACION.md) — Población N = 183, muestra n = 5. (Dataset demo: 182 usuarios — distinto de N.)
 
 ---
 
-## Scripts Word (titulación)
+## Validación del prototipo
 
-Ver [scripts/README.md](./scripts/README.md).
+[ANEXO-7-VALIDACION-PROTOTIPO.md](./ANEXO-7-VALIDACION-PROTOTIPO.md) — verificación técnica + aceptación (sin Delphi en el repo).
 
 ---
 
-*Última consolidación: junio 2026.*
+*Última consolidación: 17 julio 2026. Word de tesis en revisión: no sincronizar automáticamente.*

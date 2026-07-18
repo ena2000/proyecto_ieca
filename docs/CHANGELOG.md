@@ -4,6 +4,30 @@ Registro resumido de entregas relevantes para el repositorio. Detalle técnico e
 
 ---
 
+## 2026-07 — Robustez (sin cambio de estructura)
+
+- Aportación 33 %: escritura atómica hijo+padre; rollback si falla al crear/aprobar.
+- Wipe admin: exige texto `ELIMINAR` + contraseña del administrador.
+- Logout: envía `refreshToken` para invalidar sesión en servidor.
+- Comprobantes: límite API ~600 KB data URL / body JSON 2 MB; PDF cliente ~350 KB.
+- Suite backend: **68** tests en verde.
+
+## 2026-07 — Consistencia docs (Word congelado en revisión)
+
+- Word de tesis **no se modifica** desde el repo mientras esté en revisión.
+- Validación unificada en repo: técnica + aceptación ([ANEXO-7](./ANEXO-7-VALIDACION-PROTOTIPO.md)); sin Delphi en `docs/`.
+- `diagramas/README.md`: CAPAS, cronograma PNG, clases completo renombrado; sin links `.puml` inexistentes.
+- RF-15 en índices; población N = 183 vs demo 182 aclarado; R-03 Render **Starter**.
+- Trazabilidad RF→CU→prueba ampliada en `VERIFICACION.md` / `CASOS-DE-USO.md`.
+
+## 2026-07 — Conteo de pruebas actualizado
+
+- Suite vigente: **117** frontend (`32` `.spec.ts`) + **67** backend (`12` `.test.js`) = **184** (100 % pass; CI).
+- Documentación alineada: `VERIFICACION.md`, `METODOLOGIA.md`, README, `ESTADO-TESIS.md` y anexos relacionados.
+- El snapshot de junio (46 + 49 = 95) queda como histórico en esta entrada de 2026-06.
+
+---
+
 ## 2026-07 — Validaciones, sesión y estabilidad (panel)
 
 - **Ministerios:** límite de caracteres, letras obligatorias, anti-spam; unicidad con equivalentes («ministerio de Alabanza» ≈ «Alabanza»); fix del flash falso «ya existe» tras crear.

@@ -92,7 +92,7 @@ El **prototipo** está construido y desplegado. Su funcionamiento se evidencia e
 | Evidencia | Detalle |
 |-----------|---------|
 | **Caso ingreso #13** | Andrés Quinde — $182,00 bruto — saldo kardex **$41,94** — [IMPLEMENTACION.md](./IMPLEMENTACION.md) |
-| **Pruebas automatizadas** | 95 casos (46 frontend + 49 backend) — 94 pass |
+| **Pruebas automatizadas** | 184 casos (117 frontend + 67 backend) — 184 pass |
 | **Aceptación manual** | 8 casos CP-M01…CP-M08 verificados |
 | **Dataset demo** | `backup-demo-ieca.json` — 182 usuarios según lista IECA 2024 |
 

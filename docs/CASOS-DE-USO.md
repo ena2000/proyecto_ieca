@@ -61,7 +61,7 @@ Carpeta [diagramas/](./diagramas/):
 | Casos de uso | Requisitos relacionados |
 |--------------|-------------------------|
 | CU-01, CU-02, CU-03 | RF-01 |
-| CU-04, CU-05, CU-06, CU-07 | RF-02, RF-03, RF-04, RF-12 |
+| CU-04, CU-05, CU-06, CU-07 | RF-02, RF-03, RF-04, RF-12, RF-15 |
 | CU-08 | RF-07 |
 | CU-09 | RF-08 |
 | CU-10, CU-11 | RF-05, RF-06, RF-14 |
@@ -69,6 +69,7 @@ Carpeta [diagramas/](./diagramas/):
 | CU-13, CU-14, CU-15 | RF-10 |
 | CU-16 | RF-11 |
 | CU-17, CU-18 | RF-02, RF-03, RF-04 |
+| CU-01 (bootstrap) | RF-13 |
 
 Detalle de requisitos: [REQUERIMIENTOS.md](./REQUERIMIENTOS.md).  
 Verificación asociada: [VERIFICACION.md § Trazabilidad](./VERIFICACION.md#trazabilidad-requisito--caso-de-uso--prueba).

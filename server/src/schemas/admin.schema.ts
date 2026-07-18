@@ -28,8 +28,18 @@ const restoreSchema = z.object({
   periodosCerrados: z.array(z.unknown()).optional()
 });
 
+/** Confirmación reforzada para vaciar datos (step-up con contraseña). */
+const wipeDatosSchema = z.object({
+  confirmacion: z
+    .string()
+    .trim()
+    .refine((v) => v === 'ELIMINAR', { message: 'Debes confirmar escribiendo ELIMINAR' }),
+  password: z.string().min(1, 'Contraseña requerida').max(128)
+});
+
 module.exports = {
   cierreSchema,
   auditoriaQuerySchema,
-  restoreSchema
+  restoreSchema,
+  wipeDatosSchema
 };

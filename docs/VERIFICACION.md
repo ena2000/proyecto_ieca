@@ -1,6 +1,6 @@
 # Validación y verificación — Gestión Financiera IECA
 
-Resultados de la fase de pruebas (Fase 4 de la metodología en cascada). Ejecución documentada: **14–15 junio 2026**.
+Resultados de la fase de pruebas (Fase 4 de la metodología en cascada). Ejecución documentada: **17 julio 2026** (conteo actualizado respecto al snapshot de junio 2026).
 
 Documentos relacionados: [CASOS-DE-USO.md](./CASOS-DE-USO.md) · [REQUERIMIENTOS.md](./REQUERIMIENTOS.md) · [IMPLEMENTACION.md](./IMPLEMENTACION.md)
 
@@ -28,7 +28,7 @@ Para validar la propuesta tecnológica se utilizaron dos estrategias complementa
 
 | Criterio | Estrategia | Resultado |
 |----------|------------|-----------|
-| Cumplimiento de RF | 95 casos automatizados + 8 manuales | 94 pass + 8 verificados |
+| Cumplimiento de RF | 185 casos automatizados + 8 manuales | 185 pass + 8 verificados |
 | Reglas de negocio (33 %, cierre, roles) | Unitarias e integración | Superado |
 | Seguridad (JWT, bcrypt, roles) | `auth.test.js` + manuales | Superado |
 | Integración frontend–backend | Supertest + bootstrap | Superado |
@@ -48,9 +48,11 @@ Para validar la propuesta tecnológica se utilizaron dos estrategias complementa
 
 Los casos CP-M01 a CP-M08 (sección 4) respaldan V-01 a V-08.
 
-### 1.3 Marco académico — Juicio de expertos (referencia)
+### 1.3 Criterio de aceptación del prototipo
 
-Selección de 12–15 expertos, Método Delphi, concordancia de Kendall y Chi-cuadrado (p ≤ 0,05). Criterios sugeridos: cumplimiento de requisitos, arquitectura, reglas de negocio, usabilidad en escritorio, viabilidad institucional (escala 1–5).
+Alineado con [ANEXO-7-VALIDACION-PROTOTIPO.md](./ANEXO-7-VALIDACION-PROTOTIPO.md): el prototipo se acepta por **verificación técnica** (184 pruebas automatizadas en CI) y **pruebas de aceptación** (CP-M01…CP-M08 / V-01…V-08), más la coherencia de la regla del 33 % en el caso documentado ([IMPLEMENTACION.md](./IMPLEMENTACION.md)).
+
+No se aplica en este repositorio el marco Delphi / juicio de expertos como evidencia de validación del producto.
 
 ---
 
@@ -59,7 +61,7 @@ Selección de 12–15 expertos, Método Delphi, concordancia de Kendall y Chi-cu
 | # | Resultado | Detalle |
 |---|-----------|---------|
 | R-1 | Sistema implementado y desplegado | Angular/Ionic + Node/Express + Firestore; Firebase Hosting + Render |
-| R-2 | Pruebas automatizadas (jun 2026) | Frontend 46/46 · Backend 48/49 · Total 94/95 (98,95 %) |
+| R-2 | Pruebas automatizadas (jul 2026) | Frontend 117/117 · Backend 68/68 · Total 185/185 (100 %) |
 | R-3 | Pruebas de aceptación | 8 casos manuales CP-M01…CP-M08 verificados |
 | R-4 | Caso ingreso #13 | Andrés Quinde — $182 bruto — saldo kardex **$41,94** — [IMPLEMENTACION.md](./IMPLEMENTACION.md) |
 | R-5 | Cronograma | 7 de 9 etapas completadas (análisis a pruebas) |
@@ -71,16 +73,16 @@ Selección de 12–15 expertos, Método Delphi, concordancia de Kendall y Chi-cu
 
 ## 3. Verificación técnica — pruebas automatizadas
 
+Ejecución documentada: **17 julio 2026** (suite ampliada respecto al snapshot de junio 2026).
+
 ### Resumen ejecutivo
 
 | Ámbito | Casos | Herramienta | Resultado |
 |--------|-------|-------------|-----------|
-| Frontend | 46 | Karma + Jasmine + ChromeHeadless | **46/46 SUCCESS** |
-| Backend | 49 | Node.js test runner + Supertest | **48/49 pass** |
-| **Total automatizado** | **95** | GitHub Actions (CI) | **94 pass + 1 condicional** |
+| Frontend | 117 | Karma + Jasmine + ChromeHeadless (`32` archivos `.spec.ts`) | **117/117 SUCCESS** |
+| Backend | 68 | Node.js test runner + Supertest (`12` archivos `.test.js`) | **68/68 pass** |
+| **Total automatizado** | **185** | GitHub Actions (CI) | **185/185 pass** |
 | Manuales | 8 | Navegador escritorio | **CP-M01…CP-M08 verificados** |
-
-El único fallo backend (`POST /api/admin/alertas/enviar`) ocurre sin SMTP en local (503). No afecta la lógica de negocio.
 
 ### Frontend
 
@@ -88,39 +90,50 @@ Comando: `npm run test:ci`
 
 | Archivo de prueba | Casos | Estado |
 |-------------------|-------|--------|
-| `aportacion-iglesia.util.spec.ts` | 8 | OK |
-| `movimiento-filtros.util.spec.ts` | 6 | OK |
-| `movimiento-responsable.util.spec.ts` | 4 | OK |
-| `reportes-filtros.util.spec.ts` | 5 | OK |
-| `unicidad.util.spec.ts` | 3 | OK |
-| `contabilidad-cuenta-form.util.spec.ts` | 4 | OK |
-| `ingreso.util.spec.ts` | 3 | OK |
-| `data.service.spec.ts` | 4 | OK |
-| Componentes (login, ingresos, gastos, reportes, admin, …) | 9 | OK |
-| **Total** | **46** | **SUCCESS** |
+| `aportacion-iglesia.util.spec.ts` | 9 | OK |
+| `movimiento-validacion.util.spec.ts` | 10 | OK |
+| `movimiento-fecha.util.spec.ts` | 8 | OK |
+| `movimiento-filtros.util.spec.ts` | 8 | OK |
+| `data.service.spec.ts` | 7 | OK |
+| `reportes-filtros.util.spec.ts` | 7 | OK |
+| `ministerio-nombre.util.spec.ts` | 6 | OK |
+| `ministerios-catalogo.constants.spec.ts` | 5 | OK |
+| `movimiento-form-sync.util.spec.ts` | 5 | OK |
+| `movimiento-list-merge.util.spec.ts` | 5 | OK |
+| `unicidad.util.spec.ts` | 5 | OK |
+| `auth-token.storage.spec.ts` | 4 | OK |
+| `entity-crud.util.spec.ts` | 4 | OK |
+| `usuario-validacion.util.spec.ts` | 4 | OK |
+| `ingresos.component.spec.ts` | 3 | OK |
+| `jwt.util.spec.ts` | 3 | OK |
+| `movimiento-estado.util.spec.ts` | 3 | OK |
+| `movimiento-responsable.util.spec.ts` | 3 | OK |
+| `app.component.spec.ts` | 2 | OK |
+| `confirmacion-alerta.util.spec.ts` | 2 | OK |
+| `http-mutation.util.spec.ts` | 2 | OK |
+| `id-coerce.util.spec.ts` | 2 | OK |
+| Componentes (login, gastos, reportes, admin, ministerios, usuarios, dashboard, slidebar, modal, tabla) | 10 | OK |
+| **Total** | **117** | **SUCCESS** |
 
 ### Backend
 
 Comando: `cd server && npm test`
 
-| Suite | Casos | Estado |
-|-------|-------|--------|
-| `auth.schema` (Zod) | 4 | OK |
-| `signToken / JWT` | 4 | OK |
-| `requireRoles` | 2 | OK |
-| `cierre-mensual` | 3 | OK |
-| `email-templates` | 4 | OK |
-| `getProductionConfigErrors` | 6 | OK |
-| `API HTTP (integración)` | 12 | 11 OK, 1 fallo SMTP* |
-| `colaboradores de ministerio` | 2 | OK |
-| `labelToPeriodoKey / fechaToPeriodoKey` | 3 | OK |
-| `etiquetaParaMes` | 1 | OK |
-| `entityBloqueadoPorCierre` | 3 | OK |
-| `resumen-operativo` | 4 | OK |
-| `unicidad` | 1 | OK |
-| **Total** | **49** | **48 pass** |
-
-\* En CI con credenciales SMTP el caso pasa; en local sin `SMTP_USER`/`SMTP_PASS` devuelve 503.
+| Archivo / suite | Casos | Estado |
+|-----------------|-------|--------|
+| `http.integration.test.js` | 14 | OK |
+| `auth.test.js` (schema Zod, JWT, requireRoles) | 12 | OK |
+| `security-rules.integration.test.js` | 11 | OK |
+| `periodo.test.js` | 7 | OK |
+| `env.production.test.js` | 6 | OK |
+| `email-templates.test.js` | 4 | OK |
+| `resumen-operativo.test.js` | 4 | OK |
+| `cierre-mensual.test.js` | 3 | OK |
+| `auditoria-csv.test.js` | 2 | OK |
+| `liderazgo.test.js` | 2 | OK |
+| `rate-limit.test.js` | 2 | OK |
+| `unicidad.test.js` | 1 | OK |
+| **Total** | **68** | **68 pass** |
 
 ---
 
@@ -153,7 +166,7 @@ Workflow `.github/workflows/ci.yml` en cada push y PR:
 | Recurso | Contenido |
 |---------|-----------|
 | Ministerios | 22 (lista IECA 2024 + General) |
-| Usuarios | 182 (2 admin, 1 contable, 179 colaboradores) |
+| Usuarios | 182 demo (2 admin, 1 contable, 179 colaboradores); población de investigación N = 183 |
 | Logins staff | `milena.mariscal`, `orbe.jimenez`, `diznarda.quezada` |
 | Colaboradores | Formato `nombre.apellido` · contraseña `123456` |
 | Regenerar | `python docs/scripts/generar-backup-demo-colaboradores.py` |
@@ -165,12 +178,18 @@ Workflow `.github/workflows/ci.yml` en cada push y PR:
 | Requisito | Casos de uso | Verificación |
 |-----------|--------------|--------------|
 | RF-01 Auth | CU-01, CU-02, CU-03 | CP-M01; `auth.test.js` |
-| RF-04 Flujo de aprobación | CU-04, CU-06, CU-07 | CP-M02, CP-M03 |
+| RF-02 / RF-03 Ingresos y gastos | CU-04, CU-05, CU-17, CU-18 | CP-M02; `movimiento-*.util.spec.ts` |
+| RF-04 Flujo de aprobación | CU-04, CU-06, CU-07 | CP-M02, CP-M03; `security-rules.integration.test.js` |
+| RF-05 / RF-06 / RF-14 Ministerios y usuarios | CU-10, CU-11 | `unicidad.util.spec.ts`; `unicidad.test.js` |
+| RF-07 Dashboard | CU-08 | `data.service.spec.ts`; CP-M01 |
 | RF-08 Reportes / kardex | CU-09 | CP-M06, CP-M07; `reportes-filtros.util.spec.ts` |
-| RF-09 Cierre mensual | CU-12 | CP-M05; `cierre-mensual.test.js` |
-| RF-12 Aportación iglesia | CU-06 | CP-M03; `aportacion-iglesia.util.spec.ts` |
+| RF-09 Cierre mensual | CU-12 | CP-M05; `cierre-mensual.test.js`; `periodo.test.js` |
+| RF-10 Administración | CU-13, CU-14, CU-15 | `auditoria-csv.test.js`; alertas / backup (manual + integración) |
+| RF-11 Notificaciones | CU-16 | Integración en sidebar; API notificaciones |
+| RF-12 Aportación iglesia | CU-06 | CP-M03; `aportacion-iglesia.util.spec.ts`; security-rules |
 | RF-13 Bootstrap | CU-01 | CP-M08; `http.integration.test.js` |
-| RNF-01 Seguridad | CU-01 | JWT, bcrypt, rate limit |
+| RF-15 Fechas de movimiento | CU-04, CU-05 | `movimiento-fecha.util.spec.ts`; `movimiento-validacion.util.spec.ts` |
+| RNF-01 Seguridad | CU-01 | JWT, bcrypt, rate limit; `env.production.test.js` |
 
 ---
 

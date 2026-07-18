@@ -1,73 +1,47 @@
 # Guía de anexos — Tesis IECA (Milena)
 
-**Word:** `PLANTILLA DE TESIS - MILENA MARISCAL PONCE.docx`  
-**Ctrl+F en Word:** `ANEXOS` → trabajar en orden del índice.
+**Word:** `PLANTILLA DE TESIS - MILENA MARISCAL PONCE.docx`
+
+> **Congelado:** el Word ya fue enviado a revisión. **No pegar ni reemplazar anexos en Word** hasta la devolución del revisor. Esta guía queda como referencia del repo.
+
+**Ctrl+F en Word (solo tras devolución):** `ANEXOS` → trabajar en orden del índice.
 
 ---
 
 ## Mapa rápido
 
-| Anexo | Título UG | Estado | Qué hacer |
-|-------|-----------|--------|-----------|
-| **1** | Planificación / Gantt | Casi listo | Imagen Gantt + Tabla A.1 fechas (`diagramas/cronograma-tabla-anexo1.md`) |
-| **2** | Geolocalización | Pendiente tuyo | Captura Google Maps IECA La Alborada + dirección |
-| **3** | Carta de autorización | Pendiente tuyo | Carta firmada por pastor/administración IECA |
-| **4** | Fundamentación legal | Revisar | Ya hay LOES/Constitución; quitar texto instructivo de plantilla si sobra |
-| **5** | Criterios éticos | Pegar | Ver `ANEXO-5-CRITERIOS-ETICOS.md` |
-| **6** | Instrumentos recolección | Pegar | Ver `ANEXO-6-INSTRUMENTOS-RECOLECCION.md` |
-| **7** | Validación | Reemplazar | Borrar Delphi/expertos → `ANEXO-7-VALIDACION-PROTOTIPO.md` |
-| **8** | Bases datos estadístico | Opcional | Resumen encuesta o “No aplica — ver Cap. III Tablas 15–21” |
-| **9** | Diagramas casos de uso | Imágenes | 5 PNG en `docs/diagramas/` (ver abajo) |
-| **10** | Acta entrega código | Rellenar | Fechas, nombres, cédula — plantilla ya en Word |
-| **11** | Carta uso software | Si aplica | Solo si empresa externa; IECA puede omitir o carta pastoral |
-| **12** | Fotos | Opcional | Capturas del sistema en uso (sin menores sin autorización) |
-| **13–15** | Certificados UG | Pendiente | Tutor, similitud Turnitin, revisor — los entrega la facultad |
-| **16** | Manual técnico | Pendiente | Desde `docs/` + README |
-| **17** | Manual usuario | Pendiente | Guía por rol |
-| **18** | Diccionario Firestore | Pegar | `ANEXO-18-DICCIONARIO-FIRESTORE.md` + actualizar índice |
+| Anexo | Título UG | Estado (repo) | Qué hacer |
+|-------|-----------|---------------|-----------|
+| **1** | Planificación / Gantt | Referencia lista | `diagramas/cronograma-tabla-anexo1.md` + PNG |
+| **2** | Geolocalización | Según Word enviado | — |
+| **3** | Carta de autorización | Según Word enviado | — |
+| **4** | Fundamentación legal | Según Word enviado | — |
+| **5** | Criterios éticos | `ANEXO-5-CRITERIOS-ETICOS.md` | Referencia repo |
+| **6** | Instrumentos recolección | `ANEXO-6-INSTRUMENTOS-RECOLECCION.md` | N = 183; demo ≠ población |
+| **7** | Validación | `ANEXO-7-VALIDACION-PROTOTIPO.md` | **Validación técnica** (no Delphi) en el repo |
+| **8** | Bases datos estadístico | Opcional | Resumen encuesta o remisión a Cap. III |
+| **9** | Diagramas casos de uso | `docs/diagramas/` | 5 PNG CU |
+| **10+** | Acta / certificados / manuales | Facultad / Word | Solo tras revisión |
 
 ---
 
-## Orden recomendado hoy
+## Validación (Anexo 7) — criterio del repositorio
 
-1. **Anexo 1** — cerrar Gantt + tabla (ya preparado).
-2. **Anexo 6** — encuesta + guía entrevista.
-3. **Anexo 7** — validación por pruebas (no expertos).
-4. **Anexo 9** — insertar diagramas CU.
-5. **Anexo 18** — diccionario Firestore + línea en índice.
-6. **Anexo 5** — criterios éticos.
-7. Resto cuando tengas documentos físicos (3, 10, 13–15).
+En `docs/` la validación del prototipo es por **pruebas automatizadas (184)** + **aceptación (8 casos)**. No se documenta juicio de expertos / Delphi como evidencia del producto.
+
+Si el Word enviado conserva otro formato de Anexo 7, **no se corrige desde aquí** mientras esté en revisión.
 
 ---
 
-## Anexo 9 — archivos a insertar
+## Orden (solo después de la devolución del revisor)
 
-Ruta: `c:\Users\ena\Desktop\proyecto_ieca\docs\diagramas\`
-
-| Orden | Archivo | Pie de figura sugerido |
-|-------|---------|------------------------|
-| 1 | `DIAGRAMA CASOS DE USO 1.png` | Figura A.X — Módulo Seguridad y Acceso |
-| 2 | `DIAGRAMA DE CASOS DE USO 2.png` | Figura A.X — Módulo Gestión Financiera |
-| 3 | `DIAGRAMA DE CASOS DE USO 3.png` | Figura A.X — Módulo Reportes y Analítica |
-| 4 | `DIAGRAMA CASO DE USO 4.png` | Figura A.X — Módulo Administración |
-| 5 | `DIAGRAMA CASOS DE USO INTEGRADO - ANEXO 18.png` | Figura A.X — Casos de uso integrados |
-
-Debajo de cada imagen: *Elaboración: investigadores. Fuente: propia.*
+1. Aplicar observaciones del revisor.
+2. Cerrar anexos administrativos / certificados que pida la facultad.
+3. Actualizar índices (F9).
+4. Opcional: alinear Anexo 7 del Word con `ANEXO-7-VALIDACION-PROTOTIPO.md` **solo si el revisor lo autoriza o lo pide**.
 
 ---
 
-## Índice de anexos — agregar Anexo 18
+## Diagramas CU (referencia)
 
-Después de la línea `Anexo 17. Manual de usuario`, agregar:
-
-`Anexo 18. Diccionario de datos Firestore`
-
-Actualizar numeración de páginas al final (Word: clic derecho en índice → Actualizar campo).
-
----
-
-## Qué borrar de la plantilla
-
-- Anexo 6: “Ejemplo de Ficha de Experimentación” y “Ficha de Observación” (no usaste esas técnicas).
-- Anexo 7: todo el bloque “Juicios de expertos”, Chi-cuadrado, formato de expertos.
-- Anexo 8: texto de SPSS/estudiantes/universidad (es plantilla de otro proyecto) — reemplazar o marcar opcional.
+Ver [diagramas/README.md](./diagramas/README.md).

@@ -2,6 +2,8 @@
 
 Scripts Python (`python-docx`) para generar o actualizar documentos Word en `TITULACION/` y apoyar la plantilla de tesis.
 
+> **Congelado:** la plantilla de tesis ya fue enviada a revisión. **No ejecutar** scripts que modifiquen `PLANTILLA DE TESIS - MILENA MARISCAL PONCE.docx` hasta que el revisor la devuelva.
+
 ## Requisito
 
 ```bash

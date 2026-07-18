@@ -1,7 +1,10 @@
 # Anexos en orden — checklist Word (Milena / IECA)
 
-**Word:** `PLANTILLA DE TESIS - MILENA MARISCAL PONCE.docx`  
-Ir con `Ctrl+F` anexo por anexo. Marca ✓ al terminar cada uno.
+**Word:** `PLANTILLA DE TESIS - MILENA MARISCAL PONCE.docx`
+
+> **Congelado:** Word enviado a revisión — **no editar** hasta la devolución del revisor. Checklist de referencia del repo.
+
+Ir con `Ctrl+F` anexo por anexo **solo tras devolución**. Marca ✓ al terminar cada uno.
 
 ---
 
@@ -72,11 +75,12 @@ Reemplazar contenido vacío por texto en `ANEXO-5-CRITERIOS-ETICOS.md` (7 criter
 
 ## Anexo 7. Validación del prototipo
 
-**Ctrl+F:** `Anexo 7.  Validación de expertos`
+> **Word congelado:** no borrar ni pegar en la plantilla enviada. En el **repo**, la evidencia es [ANEXO-7-VALIDACION-PROTOTIPO.md](./ANEXO-7-VALIDACION-PROTOTIPO.md) (validación técnica + aceptación).
 
-1. En **índice de anexos**: cambiar título a **Anexo 7. Validación del prototipo**
-2. **BORRAR** desde “Juicios de expertos” hasta antes de Anexo 8
-3. **PEGAR** `ANEXO-7-VALIDACION-PROTOTIPO.md`
+**Referencia (solo tras devolución del revisor, si lo pide):**
+
+1. Título: **Anexo 7. Validación del prototipo**
+2. Contenido alineado a `ANEXO-7-VALIDACION-PROTOTIPO.md`
 
 ---
 

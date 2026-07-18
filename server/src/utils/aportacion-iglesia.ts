@@ -114,15 +114,31 @@ async function generarAportacionIglesiaPorIngreso(ingreso, req) {
   };
 
   const childRef = db.collection('ingresos').doc(String(childId));
+  const parentRef = db.collection('ingresos').doc(String(ingreso.id));
+  const parentPatch = {
+    aportacionGenerada: true,
+    ingresoIglesiaId: childId,
+    montoAportacionIglesia: montoAportacion,
+    montoNetoMinisterio
+  };
+
+  // Escritura atómica hijo + vínculo del padre (evita ingreso sin aportación 33 %)
   try {
-    if (typeof childRef.create === 'function') {
+    if (typeof db.batch === 'function') {
+      const batch = db.batch();
+      batch.set(childRef, childData);
+      batch.set(parentRef, parentPatch, { merge: true });
+      await batch.commit();
+    } else if (typeof childRef.create === 'function') {
       await childRef.create(childData);
+      await updateInCollection('ingresos', ingreso.id, parentPatch);
     } else {
       const snap = await childRef.get();
       if (snap.exists) {
         return vincularPadreConAportacion(ingreso, childId, montoBruto, montoAportacion);
       }
       await childRef.set(childData);
+      await updateInCollection('ingresos', ingreso.id, parentPatch);
     }
   } catch {
     // Carrera: otro request creó el doc
@@ -133,12 +149,8 @@ async function generarAportacionIglesiaPorIngreso(ingreso, req) {
     throw new Error('No se pudo generar la aportación del 33 % a la iglesia');
   }
 
-  return updateInCollection('ingresos', ingreso.id, {
-    aportacionGenerada: true,
-    ingresoIglesiaId: childId,
-    montoAportacionIglesia: montoAportacion,
-    montoNetoMinisterio
-  });
+  const linked = await getById('ingresos', ingreso.id);
+  return linked || { ...ingreso, ...parentPatch };
 }
 
 async function eliminarMovimientoSiExiste(collection, id) {

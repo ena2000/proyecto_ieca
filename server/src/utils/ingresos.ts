@@ -1,5 +1,5 @@
 const { ROLES, esColaboradorMinisterio } = require('../middleware/auth');
-const { getById, updateInCollection } = require('./firestore');
+const { getById, updateInCollection, deleteFromCollection } = require('./firestore');
 const {
   notificarResolucionMovimientoLider,
   notificarMovimientoModificado,
@@ -14,7 +14,8 @@ const {
   revertirAportacionIglesiaPorIngreso,
   bloquearEdicionAportacionIglesia,
   actualizarAportacionIglesiaPorIngreso,
-  calcularMontoAportacionIglesia
+  calcularMontoAportacionIglesia,
+  ingresoRequiereAportacion
 } = require('./aportacion-iglesia');
 const { ingresoEsTalento } = require('../constants/aportacion-iglesia');
 
@@ -186,7 +187,24 @@ async function aprobarIngreso(id, req) {
     req
   });
 
-  return generarAportacionIglesiaPorIngreso(updated, req);
+  try {
+    return await generarAportacionIglesiaPorIngreso(updated, req);
+  } catch (aportErr) {
+    // Si falló la aportación, no dejar el ingreso aprobado sin el 33 %
+    if (ingresoRequiereAportacion({ ...updated, aportacionGenerada: false })) {
+      await updateInCollection(COLLECTION, id, {
+        estado: 'pendiente',
+        motivoRechazo: null,
+        aprobadoPor: null,
+        fechaAprobacion: null,
+        aportacionGenerada: false,
+        ingresoIglesiaId: null,
+        montoAportacionIglesia: null,
+        montoNetoMinisterio: null
+      });
+    }
+    throw aportErr;
+  }
 }
 
 async function afterCreateIngreso(created, req) {
@@ -195,8 +213,22 @@ async function afterCreateIngreso(created, req) {
   } catch (notifErr) {
     console.error('[ingresos afterCreate notificación]', notifErr);
   }
-  // Fallos de aportación 33 % no se silencian: el cliente debe enterarse
-  return generarAportacionIglesiaPorIngreso(created, req);
+  try {
+    return await generarAportacionIglesiaPorIngreso(created, req);
+  } catch (aportErr) {
+    // Alta ya aprobada (admin) que exige 33 %: revertir el padre si no se pudo generar el hijo
+    if (
+      ingresoRequiereAportacion({ ...created, aportacionGenerada: false }) &&
+      (!created.estado || created.estado === 'aprobado')
+    ) {
+      try {
+        await deleteFromCollection(COLLECTION, created.id);
+      } catch (delErr) {
+        console.error('[ingresos afterCreate rollback]', delErr);
+      }
+    }
+    throw aportErr;
+  }
 }
 
 async function rechazarIngreso(id, req, motivo) {

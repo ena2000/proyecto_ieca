@@ -1,5 +1,7 @@
 # Resultados encuesta diagnóstica — IECA (borrador para tesis)
 
+> **Word congelado:** no pegar en la plantilla enviada hasta la devolución del revisor.
+
 **Fuente:** `Encuesta diagnóstica - Gestión financiera de los ministerios de la IECA.csv`  
 **Muestra válida:** n = 5 (se excluyó 1 respuesta de prueba del investigador)  
 **Composición:** 3 colaboradores de ministerio, 1 administrador, 1 contable — coherente con Tabla 13.

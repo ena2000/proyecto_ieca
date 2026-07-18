@@ -336,4 +336,34 @@ describe('API seguridad y reglas (integración)', () => {
       .send({ usuario: 'admin', password: '123456' });
     assert.equal(again.status, 200);
   });
+
+  it('DELETE /api/admin/datos exige confirmación y contraseña', async () => {
+    await seedAdmin(seedMemoryCollection);
+    seedMemoryCollection('ingresos', [
+      { id: 1, monto: 10, estado: 'aprobado', descripcion: 'x' }
+    ]);
+
+    const login = await request(app)
+      .post('/api/auth/login')
+      .send({ usuario: 'admin', password: '123456' });
+    const token = login.body.token;
+
+    const sinBody = await request(app)
+      .delete('/api/admin/datos')
+      .set('Authorization', `Bearer ${token}`);
+    assert.equal(sinBody.status, 400);
+
+    const malaPass = await request(app)
+      .delete('/api/admin/datos')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ confirmacion: 'ELIMINAR', password: 'incorrecta' });
+    assert.equal(malaPass.status, 403);
+
+    const ok = await request(app)
+      .delete('/api/admin/datos')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ confirmacion: 'ELIMINAR', password: '123456' });
+    assert.equal(ok.status, 200);
+    assert.match(String(ok.body.message || ''), /eliminados/i);
+  });
 });

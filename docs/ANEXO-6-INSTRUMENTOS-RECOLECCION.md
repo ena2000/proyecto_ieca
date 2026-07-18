@@ -1,7 +1,6 @@
 # Anexo 6 — Instrumentos de recolección de datos
 
-**Word:** `Ctrl+F` → `Anexo 6.  Formatos de técnicas`  
-**Acción:** Reemplazar los “Ejemplo de Formato…” por el contenido de abajo. **Eliminar** fichas de experimentación y observación.
+> **Word congelado** (en revisión): no pegar este contenido en la plantilla hasta la devolución del revisor.
 
 ---
 
@@ -31,8 +30,9 @@
 ### B. Cuestionario — encuesta diagnóstica (Google Forms)
 
 **Título:** Encuesta diagnóstica — Gestión financiera de los ministerios de la IECA  
-**Población:** Personas vinculadas a la gestión financiera de ministerios (N = 182).  
+**Población:** Personas vinculadas a la gestión financiera de ministerios (**N = 183**: 181 del registro IECA 2024 + administrador + contable).  
 **Muestra:** Muestreo intencional n = 5 (3 colaboradores, 1 administrador, 1 contable).  
+**Nota:** el dataset demo del repo (`backup-demo-ieca.json`) tiene **182 usuarios** de prueba; no sustituye a la población de investigación.  
 **Escala:** Opción múltiple; Pregunta 6: Likert 1–5.
 
 | Ítem | Pregunta | Opciones de respuesta |

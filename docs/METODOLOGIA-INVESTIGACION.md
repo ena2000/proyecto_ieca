@@ -26,7 +26,7 @@ En esta sección se presentan la población y muestra, el procesamiento y análi
 
 ### Población
 
-La población en la que se realizó la investigación estuvo conformada por **N = 183 personas** vinculadas a la gestión financiera y operativa de los ministerios de IECA. Como marco de referencia se utilizó el registro institucional **Lista de Líderes y Colaboradores IECA 2024** (*COLABORADORES DE CADA MINISTERIO 2024.xlsx*), integrado por colaboradores y líderes de **20 ministerios**, más el **administrador** y el **contable** del proceso financiero institucional.
+La población en la que se realizó la investigación estuvo conformada por **N = 183 personas** vinculadas a la gestión financiera y operativa de los ministerios de IECA. *(El respaldo demo del software tiene 182 usuarios de prueba; es un dataset distinto de la población de investigación.)* Como marco de referencia se utilizó el registro institucional **Lista de Líderes y Colaboradores IECA 2024** (*COLABORADORES DE CADA MINISTERIO 2024.xlsx*), integrado por colaboradores y líderes de **20 ministerios**, más el **administrador** y el **contable** del proceso financiero institucional.
 
 **Características que tipifican a la población:** conocimiento del proceso contable ministerial; participación en el registro manual de ingresos y gastos; vínculo directo con aprobaciones, reportes o consulta de saldos por ministerio. No se incluyó a la feligresía en general por no participar en el proceso de gestión financiera analizado.
 
@@ -145,7 +145,7 @@ Es decir, la muestra aplicada representa el **2,73 %** de la población (N = 183
 
 El procesamiento de la información fue **manual** en la fase cualitativa: transcripción de entrevistas, codificación de respuestas, elaboración de cuadros de resumen y relación de los hallazgos con la problemática identificada. En la fase cuantitativa fue **mecánico**: tabulación de resultados y verificación del prototipo mediante pruebas de funcionamiento del sistema.
 
-Para el análisis se empleó un enfoque **cualitativo y descriptivo**: codificación de respuestas de las entrevistas (n = 5) y tabulación con frecuencias absolutas y relativas sobre los resultados obtenidos; complementariamente, se registraron frecuencias sobre las pruebas aplicadas al prototipo (95 casos). Los resultados se presentaron en cuadros y gráficos de barras, interpretados en relación con la problemática, los objetivos del proyecto y las necesidades detectadas en el estudio.
+Para el análisis se empleó un enfoque **cualitativo y descriptivo**: codificación de respuestas de las entrevistas (n = 5) y tabulación con frecuencias absolutas y relativas sobre los resultados obtenidos; complementariamente, se registraron frecuencias sobre las pruebas aplicadas al prototipo (184 casos). Los resultados se presentaron en cuadros y gráficos de barras, interpretados en relación con la problemática, los objetivos del proyecto y las necesidades detectadas en el estudio.
 
 El análisis e interpretación se realizó considerando el marco teórico y los objetivos de la investigación. El producto del análisis constituyó conclusiones parciales que sirvieron de insumo para las conclusiones y recomendaciones del proyecto.
 
@@ -159,7 +159,7 @@ El análisis e interpretación se realizó considerando el marco teórico y los 
 | Observación | Registro de campo | Proceso manual actual |
 | Revisión documental | Política y formatos contables IECA | Factibilidad y regla del 33 % |
 | Prueba de aceptación | Casos CP-M01 a CP-M08 | Validación con usuarios |
-| Prueba del prototipo | 95 casos de verificación | Funcionamiento del sistema |
+| Prueba del prototipo | 184 casos de verificación | Funcionamiento del sistema |
 
 Los instrumentos empleados (guía de entrevista y casos de prueba) se incorporan como anexos del proyecto.
 
@@ -194,13 +194,13 @@ A continuación se presenta el análisis de la Pregunta 1 de la guía de entrevi
 
 | Ámbito | Casos ejecutados | Casos superados | Frecuencia relativa |
 |--------|------------------|-----------------|---------------------|
-| Frontend | 46 | 46 | 100,00 % |
-| Backend | 49 | 48 | 97,96 % |
-| **Total** | **95** | **94** | **98,95 %** |
+| Frontend | 117 | 117 | 100,00 % |
+| Backend | 67 | 67 | 100,00 % |
+| **Total** | **184** | **184** | **100,00 %** |
 
 *Nota: Resultados de las pruebas de funcionamiento aplicadas al prototipo. Fuente: investigación propia — proyecto IECA.*
 
-**Análisis:** El 98,95 % de las pruebas fue superado. El único caso pendiente corresponde al envío de alertas por correo en entorno local, sin impacto en el funcionamiento general del sistema. Esto valida la propuesta desarrollada.
+**Análisis:** El 100 % de las pruebas automatizadas fue superado (ejecución 17 jul 2026). Esto valida la propuesta desarrollada.
 
 ---
 

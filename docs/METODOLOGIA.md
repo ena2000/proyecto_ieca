@@ -57,7 +57,7 @@ Se adopta el **modelo en cascada** como metodología principal del proyecto. Est
 |----|-------------|
 | R-01 | **Alcance funcional:** no se incluye app móvil nativa ni integración con software contable externo. |
 | R-02 | **Roles fijos:** solo Administrador, Contable y Colaborador; no hay permisos granulares personalizables. |
-| R-03 | **Presupuesto:** uso de servicios con capa gratuita o de bajo costo (Firebase Spark/Blaze, Render free tier). |
+| R-03 | **Presupuesto:** servicios de bajo costo (Firebase Hosting/Firestore; API en Render plan **Starter**, siempre activo). |
 | R-04 | **Seguridad:** contraseñas almacenadas con bcrypt; JWT con expiración; sin SSO institucional. |
 | R-05 | **Periodos cerrados:** una vez cerrado un mes, no se permiten altas, ediciones ni borrados en ese periodo. |
 | R-06 | **Tiempo:** el cronograma académico delimita las fechas de entrega de cada fase (ver sección 14). |
@@ -69,7 +69,7 @@ Se adopta el **modelo en cascada** como metodología principal del proyecto. Est
 | Concepto | Detalle |
 |----------|---------|
 | **Inversión en licencias** | Cero: stack open source (Angular, Node.js, Express, TypeScript). |
-| **Infraestructura en la nube** | Firebase Hosting (frontend estático) + Render (API Node.js) + Firestore. Plan gratuito o de bajo costo según uso. |
+| **Infraestructura en la nube** | Firebase Hosting (frontend) + Render plan **Starter** (API Node.js) + Firestore. |
 | **Herramientas de desarrollo** | VS Code/Cursor, Git, GitHub (repositorio privado) — sin costo. |
 | **Mantenimiento estimado** | Backups manuales desde el panel admin; monitoreo con health check y CI automatizado. |
 | **Conclusión** | El proyecto es **económicamente viable** para una organización sin presupuesto de TI dedicado. |
@@ -100,7 +100,7 @@ Se adopta el **modelo en cascada** como metodología principal del proyecto. Est
 1. **Aprendizaje autodirigido:** documentación oficial de Angular, Firebase y Express; resolución de incidencias en desarrollo.
 2. **Aprendizaje experiencial:** iteración sobre el dominio contable de IECA (aportación 33 %, kardex, cierre mensual).
 3. **Validación con el usuario:** entrevistas y pruebas manuales con administración y contabilidad para ajustar flujos.
-4. **Aprendizaje por prueba y error controlada:** pruebas automatizadas (95 casos) como red de seguridad ante regresiones.
+4. **Aprendizaje por prueba y error controlada:** pruebas automatizadas (184 casos) como red de seguridad ante regresiones.
 
 ### 1.6 Los tres ambientes fundamentales
 
@@ -146,8 +146,8 @@ flowchart LR
 | Revisión de requisitos | Fase 1 | Admin/contable IECA | Requisitos firmados / validados |
 | Revisión de diseño | Fase 2 | Desarrollador | Coherencia con requisitos |
 | Estándares de código | Fase 3 | Desarrollador | ESLint sin errores; TypeScript estricto |
-| Pruebas unitarias frontend | Fase 4 | Desarrollador + CI | 46 casos en verde |
-| Pruebas backend | Fase 4 | Desarrollador + CI | 49 casos (48 lógica + 1 SMTP opcional) |
+| Pruebas unitarias frontend | Fase 4 | Desarrollador + CI | 117 casos en verde |
+| Pruebas backend | Fase 4 | Desarrollador + CI | 67 casos en verde |
 | Pruebas manuales por rol | Fase 4 | Stakeholders IECA | Flujos críticos verificados |
 | Checklist de despliegue | Fase 5 | Desarrollador | `verify:prod` + health check OK |
 | Mantenimiento correctivo | Fase 6 | Desarrollador | CI en verde tras cada corrección |
@@ -491,47 +491,58 @@ Verificar que el sistema cumple los requisitos, respeta las reglas de negocio y 
 
 ### 6.5 Resumen de cobertura automatizada
 
-| Ámbito | Casos | Herramienta | Resultado (14 jun 2026) |
+| Ámbito | Casos | Herramienta | Resultado (17 jul 2026) |
 |--------|-------|-------------|-------------------------|
-| Frontend | 46 | Karma + Jasmine + ChromeHeadless (`19` archivos `.spec.ts`) | **46/46 SUCCESS** (3,98 s) |
-| Backend | 49 | Node.js test runner + Supertest (`9` archivos `.test.js`) | **48/49 pass** — 1 fallo por SMTP no configurado en entorno local (no afecta lógica de negocio) |
-| **Total** | **95** | Replicado en GitHub Actions (CI) | **94 pass + 1 condicional (email)** |
+| Frontend | 117 | Karma + Jasmine + ChromeHeadless (`32` archivos `.spec.ts`) | **117/117 SUCCESS** |
+| Backend | 67 | Node.js test runner + Supertest (`12` archivos `.test.js`) | **67/67 pass** |
+| **Total** | **184** | Replicado en GitHub Actions (CI) | **184/184 pass** |
 
 #### Resultados detallados — Frontend (`npm run test:ci`)
 
 | Archivo de prueba | Casos | Estado |
 |-------------------|-------|--------|
-| `aportacion-iglesia.util.spec.ts` | 8 | OK |
-| `movimiento-filtros.util.spec.ts` | 6 | OK |
-| `movimiento-responsable.util.spec.ts` | 4 | OK |
-| `reportes-filtros.util.spec.ts` | 5 | OK |
-| `unicidad.util.spec.ts` | 3 | OK |
-| `contabilidad-cuenta-form.util.spec.ts` | 4 | OK |
-| `ingreso.util.spec.ts` | 3 | OK |
-| `data.service.spec.ts` | 4 | OK |
-| Componentes (login, ingresos, gastos, reportes, admin, …) | 9 | OK |
-| **Total** | **46** | **SUCCESS** |
+| `aportacion-iglesia.util.spec.ts` | 9 | OK |
+| `movimiento-validacion.util.spec.ts` | 10 | OK |
+| `movimiento-fecha.util.spec.ts` | 8 | OK |
+| `movimiento-filtros.util.spec.ts` | 8 | OK |
+| `data.service.spec.ts` | 7 | OK |
+| `reportes-filtros.util.spec.ts` | 7 | OK |
+| `ministerio-nombre.util.spec.ts` | 6 | OK |
+| `ministerios-catalogo.constants.spec.ts` | 5 | OK |
+| `movimiento-form-sync.util.spec.ts` | 5 | OK |
+| `movimiento-list-merge.util.spec.ts` | 5 | OK |
+| `unicidad.util.spec.ts` | 5 | OK |
+| `auth-token.storage.spec.ts` | 4 | OK |
+| `entity-crud.util.spec.ts` | 4 | OK |
+| `usuario-validacion.util.spec.ts` | 4 | OK |
+| `ingresos.component.spec.ts` | 3 | OK |
+| `jwt.util.spec.ts` | 3 | OK |
+| `movimiento-estado.util.spec.ts` | 3 | OK |
+| `movimiento-responsable.util.spec.ts` | 3 | OK |
+| `app.component.spec.ts` | 2 | OK |
+| `confirmacion-alerta.util.spec.ts` | 2 | OK |
+| `http-mutation.util.spec.ts` | 2 | OK |
+| `id-coerce.util.spec.ts` | 2 | OK |
+| Componentes (login, gastos, reportes, admin, ministerios, usuarios, dashboard, slidebar, modal, tabla) | 10 | OK |
+| **Total** | **117** | **SUCCESS** |
 
 #### Resultados detallados — Backend (`server/npm test`)
 
-| Suite | Casos | Estado |
-|-------|-------|--------|
-| `auth.schema` (Zod) | 4 | OK |
-| `signToken / JWT` | 4 | OK |
-| `requireRoles` | 2 | OK |
-| `cierre-mensual` | 3 | OK |
-| `email-templates` | 4 | OK |
-| `getProductionConfigErrors` | 6 | OK |
-| `API HTTP (integración)` | 12 | 11 OK, 1 fallo SMTP* |
-| `colaboradores de ministerio` | 2 | OK |
-| `labelToPeriodoKey / fechaToPeriodoKey` | 3 | OK |
-| `etiquetaParaMes` | 1 | OK |
-| `entityBloqueadoPorCierre` | 3 | OK |
-| `resumen-operativo` | 4 | OK |
-| `unicidad` | 1 | OK |
-| **Total** | **49** | **48 pass** |
-
-\* *El caso `POST /api/admin/alertas/enviar` espera SMTP configurado; en CI usa credenciales de prueba. En local sin `SMTP_USER`/`SMTP_PASS` devuelve 503 (comportamiento esperado).*
+| Archivo / suite | Casos | Estado |
+|-----------------|-------|--------|
+| `http.integration.test.js` | 14 | OK |
+| `auth.test.js` (schema Zod, JWT, requireRoles) | 12 | OK |
+| `security-rules.integration.test.js` | 10 | OK |
+| `periodo.test.js` | 7 | OK |
+| `env.production.test.js` | 6 | OK |
+| `email-templates.test.js` | 4 | OK |
+| `resumen-operativo.test.js` | 4 | OK |
+| `cierre-mensual.test.js` | 3 | OK |
+| `auditoria-csv.test.js` | 2 | OK |
+| `liderazgo.test.js` | 2 | OK |
+| `rate-limit.test.js` | 2 | OK |
+| `unicidad.test.js` | 1 | OK |
+| **Total** | **67** | **67 pass** |
 
 #### Casos de prueba manuales (verificación por rol)
 
@@ -754,7 +765,7 @@ gantt
 | 3. Diseño de base de datos | Colecciones Firestore, vistas derivadas | Modelo de datos (§4.5) | Completado |
 | 4. Desarrollo Backend | Express, rutas, utilidades, Zod | `server/src/` | Completado |
 | 5. Desarrollo Frontend | Angular/Ionic, servicios, componentes | `src/app/` | Completado |
-| 6. Pruebas unitarias | 95 casos automatizados + CI | Informe de pruebas (§6) | Completado |
+| 6. Pruebas unitarias | 184 casos automatizados + CI | Informe de pruebas (§6) | Completado |
 | 7. Pruebas de usabilidad | Validación manual por rol | Matriz CP-M01…M08 (§6.5) | Completado |
 | 8. Revisión y entrega | Despliegue producción, documentación | Sistema en Firebase + Render (§7) | En curso |
 | 9. Redacción de tesis | Metodología, implementación, verificación | Documento de titulación | En curso |

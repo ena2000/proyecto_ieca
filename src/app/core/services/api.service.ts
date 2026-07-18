@@ -38,10 +38,14 @@ export class ApiService {
     return this.http.patch<T>(this.url(path), body);
   }
 
-  delete(path: string): Observable<void> {
+  delete(path: string, body?: unknown): Observable<void> {
     // observe:'response' evita errores al parsear cuerpo vacío (HTTP 204).
     return this.http
-      .delete(this.url(path), { observe: 'response', responseType: 'text' })
+      .delete(this.url(path), {
+        body,
+        observe: 'response',
+        responseType: 'text'
+      })
       .pipe(map(() => undefined));
   }
 

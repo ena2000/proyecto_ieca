@@ -34,7 +34,7 @@ Documentos relacionados: [PROPUESTA.md](./PROPUESTA.md) · [REQUERIMIENTOS.md](.
 | **1. Análisis** | Requisitos (RF/RNF), 18 casos de uso, beneficiarios |
 | **2. Diseño** | Diagramas UML, arquitectura, modelo Firestore |
 | **3. Implementación** | Frontend, backend, reglas de negocio (33 %, kardex, cierre) |
-| **4. Verificación** | 95 pruebas automatizadas, 8 manuales, criterios V-01…V-08 |
+| **4. Verificación** | 184 pruebas automatizadas, 8 manuales, criterios V-01…V-08 |
 | **5. Despliegue** | Producción en Firebase + Render, manual DEPLOY |
 | **6. Documentación** | `docs/`, backup demo, índice de tesis |
 

@@ -1,6 +1,6 @@
 import { comprimirImagen, validarArchivoImagen } from './image-upload.util';
 
-const MAX_PDF_BYTES = 5 * 1024 * 1024; // 5 MB
+const MAX_PDF_BYTES = 350 * 1024; // ~350 KB (alineado con límite de data URL)
 const PDF_TYPE = 'application/pdf';
 
 export type ComprobanteTipo = 'imagen' | 'pdf';
@@ -24,7 +24,7 @@ export function esComprobanteImagen(dataUrl: string | null | undefined): boolean
 export function validarComprobante(file: File): ComprobanteValidationResult {
   if (file.type === PDF_TYPE || file.name.toLowerCase().endsWith('.pdf')) {
     if (file.size > MAX_PDF_BYTES) {
-      return { valid: false, error: 'El PDF no debe superar 5 MB.' };
+      return { valid: false, error: 'El PDF no debe superar ~350 KB.' };
     }
     return { valid: true, tipo: 'pdf' };
   }

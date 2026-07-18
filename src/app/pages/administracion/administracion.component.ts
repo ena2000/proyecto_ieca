@@ -380,29 +380,37 @@ export class AdministracionComponent implements OnInit, OnDestroy, ViewWillEnter
           handler: async () => {
             const alert2 = await this.alertController.create({
               header: '¿Estás completamente seguro?',
-              message: 'Escribe ELIMINAR para confirmar.',
-              inputs: [{ name: 'confirmacion', type: 'text', placeholder: 'ELIMINAR' }],
+              message: 'Escribe ELIMINAR y tu contraseña de administrador para confirmar.',
+              inputs: [
+                { name: 'confirmacion', type: 'text', placeholder: 'ELIMINAR' },
+                { name: 'password', type: 'password', placeholder: 'Tu contraseña' }
+              ],
               buttons: [
                 { text: 'Cancelar', role: 'cancel' },
                 {
                   text: 'Eliminar todo',
                   role: 'destructive',
                   handler: (data) => {
-                    if (data.confirmacion === 'ELIMINAR') {
-                      void this.administracionService.limpiarTodosLosDatos()
-                        .then(() => {
-                          void this.cargarDatos();
-                          void this.mostrarToast('Todos los datos han sido eliminados', 'warning');
-                        })
-                        .catch((err) => {
-                          void this.mostrarToast(
-                            getHttpErrorMessage(err, 'No se pudieron eliminar los datos'),
-                            'danger'
-                          );
-                        });
-                    } else {
+                    if (data.confirmacion !== 'ELIMINAR') {
                       void this.mostrarToast('Texto incorrecto, operación cancelada', 'medium');
+                      return;
                     }
+                    if (!data.password?.trim()) {
+                      void this.mostrarToast('Debes indicar tu contraseña', 'medium');
+                      return;
+                    }
+                    void this.administracionService
+                      .limpiarTodosLosDatos(String(data.password))
+                      .then(() => {
+                        void this.cargarDatos();
+                        void this.mostrarToast('Todos los datos han sido eliminados', 'warning');
+                      })
+                      .catch((err) => {
+                        void this.mostrarToast(
+                          getHttpErrorMessage(err, 'No se pudieron eliminar los datos'),
+                          'danger'
+                        );
+                      });
                   }
                 }
               ]

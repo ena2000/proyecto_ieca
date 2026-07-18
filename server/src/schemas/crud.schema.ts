@@ -45,9 +45,12 @@ function esFechaIsoODiaValida(fecha) {
   return !Number.isNaN(d.getTime());
 }
 
+/** Límite alineado con el frontend (~350 KB archivo → ~500 KB data URL). */
+const MAX_FOTO_BASE64_CHARS = 600_000;
+
 const fotoSchema = z
   .string()
-  .max(10_000_000)
+  .max(MAX_FOTO_BASE64_CHARS, 'El comprobante supera el tamaño máximo permitido (~350 KB).')
   .optional()
   .default('')
   .refine(

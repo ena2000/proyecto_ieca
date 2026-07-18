@@ -288,12 +288,17 @@ export class AdministracionService {
     await this.notificacionesService.recargarAsync();
   }
 
-  async limpiarTodosLosDatos(): Promise<void> {
+  async limpiarTodosLosDatos(password: string): Promise<void> {
     if (environment.useLocalFallback) {
       this.limpiarTodosLosDatosLocal();
       return;
     }
-    await firstValueFrom(this.api.delete(API.admin.datos));
+    await firstValueFrom(
+      this.api.delete(API.admin.datos, {
+        confirmacion: 'ELIMINAR',
+        password
+      })
+    );
     this.cierreService.limpiarLocal();
     await this.dataService.refreshAllData(true);
     await this.notificacionesService.recargarAsync();

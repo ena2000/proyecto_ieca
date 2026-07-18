@@ -1,6 +1,8 @@
-# Anexo 1 — Tabla de fechas del cronograma (pegar debajo del Gantt en Word)
+# Anexo 1 — Tabla de fechas del cronograma
 
-**Ubicación en Word:** Anexo 1, después de la figura del cronograma.
+> **Word congelado:** no pegar en la plantilla enviada hasta la devolución del revisor. Contenido de referencia del repo.
+
+**Ubicación en Word (tras revisión):** Anexo 1, después de la figura del cronograma.
 
 **Pie sugerido para la figura:** *Figura X. Cronograma de actividades del proyecto (Gantt). Elaboración: investigadores. Fuente: propia.*
 

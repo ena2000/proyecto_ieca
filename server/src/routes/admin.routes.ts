@@ -1,7 +1,6 @@
 const express = require('express');
 const { validate } = require('../middleware/validate');
-const { cierreSchema, auditoriaQuerySchema, restoreSchema } = require('../schemas/admin.schema');
-const { ROLES } = require('../middleware/auth');
+const { cierreSchema, auditoriaQuerySchema, restoreSchema, wipeDatosSchema } = require('../schemas/admin.schema');
 const { buildBackup, restoreBackup } = require('../utils/backup');
 const {
   getMesActualLabel,
@@ -16,9 +15,10 @@ const { ejecutarCierreMensual } = require('../utils/cierre-mensual');
 const { construirResumenOperativo } = require('../utils/resumen-operativo');
 const { enviarResumenOperativo } = require('../utils/alertas-email');
 const { asyncHandler } = require('../middleware/errorHandler');
-const { listCollection } = require('../utils/firestore');
+const { listCollection, getById } = require('../utils/firestore');
 const { db } = require('../config/firebase');
 const { invalidateBootstrapCache } = require('../utils/bootstrapCache');
+const bcrypt = require('bcryptjs');
 const {
   AUDITORIA_CSV_HEADERS,
   buildMapaNombresUsuarios,
@@ -172,9 +172,22 @@ router.post('/cierre', validate(cierreSchema), asyncHandler(async (req, res) => 
   res.json(result);
 }));
 
-/** DELETE /api/admin/datos — vaciar colecciones principales (solo admin). */
-router.delete('/datos', async (_req, res) => {
+/** DELETE /api/admin/datos — vaciar colecciones principales (solo admin; requiere contraseña). */
+router.delete('/datos', validate(wipeDatosSchema), async (req, res) => {
   try {
+    const userId = req.user?.sub;
+    if (!userId) {
+      return res.status(401).json({ message: 'No autenticado' });
+    }
+    const user = await getById('usuarios', userId);
+    if (!user?.passwordHash) {
+      return res.status(403).json({ message: 'No se pudo verificar la contraseña' });
+    }
+    const okPass = await bcrypt.compare(String(req.body.password), user.passwordHash);
+    if (!okPass) {
+      return res.status(403).json({ message: 'Contraseña incorrecta' });
+    }
+
     for (const name of COLLECTIONS_RESET) {
       await clearCollection(name);
     }
@@ -183,7 +196,6 @@ router.delete('/datos', async (_req, res) => {
       { ultimoCierre: null, periodosCerrados: [] },
       { merge: true }
     );
-    // Resetear contadores de ID
     try {
       const { syncCounterToMax } = require('../utils/firestore');
       for (const name of COLLECTIONS_RESET) {

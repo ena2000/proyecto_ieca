@@ -19,7 +19,7 @@ El estudio de beneficiarios permite ubicar a cada actor, valorar su interés y s
 | **Colaboradores de ministerio** | Registran ingresos y gastos, anexan comprobantes, consultan estado (pendiente/aprobado/rechazado) y saldo en kardex. Sustituyen anotaciones dispersas por trazabilidad digital. |
 | **Administrador** (Milena Mariscal Ponce, Orbe Jimenez) | Aprueba o rechaza movimientos, gestiona usuarios y ministerios, ejecuta cierre mensual, genera respaldos y revisa auditoría. |
 | **Contable** (Diznarda Quezada) | Consulta reportes, analiza totales por ministerio y cuenta, exporta Excel y recibe alertas. No aprueba movimientos. |
-| **Desarrolladora** | Producto operativo, documentado y validado (95 pruebas automatizadas + 8 manuales). |
+| **Desarrolladora** | Producto operativo, documentado y validado (184 pruebas automatizadas + 8 manuales). |
 | **Institución IECA** | Propietaria del sistema (Firebase Hosting + Render); administración financiera centralizada por ministerio. |
 
 Entre los colaboradores se incluyen los **179 usuarios** del respaldo demo según la lista IECA 2024 (`backup-demo-ieca.json`), cada uno asignado a un solo ministerio.
