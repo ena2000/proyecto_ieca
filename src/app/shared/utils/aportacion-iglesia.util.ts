@@ -124,16 +124,21 @@ function descripcionIngresoIglesiaPorAportacion(
 
 export function crearIngresoIglesiaPorAportacion(
   ingreso: Ingreso,
-  id: number,
-  fechaFormateada: string
+  id: number | string,
+  fechaFormateada: string,
+  ministerioIdGeneral?: number | null
 ): Ingreso {
   const montoAportacion = calcularMontoAportacionIglesia(Number(ingreso.monto));
   const pct = etiquetaPorcentajeAportacion();
   const ministerioNombre = ingreso.ministerio || 'ministerio';
   const ref = referenciaIngresoOrigen(ingreso);
+  const idGeneral =
+    ministerioIdGeneral != null && Number.isFinite(Number(ministerioIdGeneral))
+      ? Number(ministerioIdGeneral)
+      : undefined;
 
   return {
-    id,
+    id: id as number,
     fecha: ingreso.fecha,
     fechaFormateada,
     descripcion: descripcionIngresoIglesiaPorAportacion(ministerioNombre, pct, ref),
@@ -143,6 +148,7 @@ export function crearIngresoIglesiaPorAportacion(
     cuentaCodigo: '4101',
     cuentaNombre: 'Ingresos generales',
     ministerio: MINISTERIO_IGLESIA_NOMBRE,
+    ...(idGeneral != null ? { ministerioId: idGeneral } : {}),
     estado: 'aprobado',
     esAportacionIglesia: true,
     ingresoOrigenId: ingreso.id,
@@ -150,7 +156,10 @@ export function crearIngresoIglesiaPorAportacion(
   };
 }
 
-export function marcarIngresoConAportacion(ingreso: Ingreso, ingresoIglesiaId: number): Ingreso {
+export function marcarIngresoConAportacion(
+  ingreso: Ingreso,
+  ingresoIglesiaId: number | string
+): Ingreso {
   const montoAportacionIglesia = calcularMontoAportacionIglesia(Number(ingreso.monto));
   return {
     ...ingreso,
@@ -217,16 +226,18 @@ export function asegurarAportacionIglesiaEnLista(lista: Ingreso[], origen: Ingre
     return lista;
   }
 
-  const iglesiaId = Number(origen.ingresoIglesiaId);
-  if (!Number.isFinite(iglesiaId)) return lista;
+  const iglesiaIdRaw = origen.ingresoIglesiaId as number | string;
+  const iglesiaIdNum = Number(iglesiaIdRaw);
+  const iglesiaId = Number.isFinite(iglesiaIdNum) ? iglesiaIdNum : iglesiaIdRaw;
+  if (iglesiaId == null || iglesiaId === '') return lista;
 
   let base = quitarAportacionesOptimistasDeOrigen(lista, Number(origen.id));
 
   const fechaFormateada = origen.fechaFormateada || formatearISOaDDMMYYYY(origen.fecha);
   const hijo = crearIngresoIglesiaPorAportacion(origen, iglesiaId, fechaFormateada);
-  const idx = base.findIndex(i => Number(i.id) === iglesiaId);
+  const idx = base.findIndex(i => String(i.id) === String(iglesiaId));
   if (idx >= 0) {
-    return base.map(i => (Number(i.id) === iglesiaId ? hijo : i));
+    return base.map(i => (String(i.id) === String(iglesiaId) ? hijo : i));
   }
   return [hijo, ...base];
 }

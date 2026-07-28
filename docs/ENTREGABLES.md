@@ -47,7 +47,6 @@ El archivo `backup-demo-ieca.json` incluye:
 - **22 ministerios** (lista IECA 2024 + General)
 - **182 usuarios** (2 administradores, 1 contable, 179 colaboradores)
 - Ingresos y gastos de prueba para kardex, reportes y flujo de aprobación
-- Regeneración: `python docs/scripts/generar-backup-demo-colaboradores.py`
 
 ---
 

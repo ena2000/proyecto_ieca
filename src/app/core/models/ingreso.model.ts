@@ -31,7 +31,7 @@ export interface Ingreso extends AuditoriaMovimiento {
   aportacionGenerada?: boolean;
   /** @deprecated Ya no se generan gastos; solo para limpiar datos antiguos. */
   gastoAportacionId?: number;
-  ingresoIglesiaId?: number;
+  ingresoIglesiaId?: number | string;
   montoAportacionIglesia?: number;
   /** Parte del ingreso que permanece en el fondo del ministerio (67%). */
   montoNetoMinisterio?: number;

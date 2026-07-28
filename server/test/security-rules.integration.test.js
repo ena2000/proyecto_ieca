@@ -128,7 +128,8 @@ describe('API seguridad y reglas (integración)', () => {
   it('Admin aprueba ingreso talento 4105 y genera aportación 33%', async () => {
     await seedAdmin(seedMemoryCollection);
     seedMemoryCollection('ministerios', [
-      { id: 2, nombre: 'Juventud', estado: 'Activo' }
+      { id: 2, nombre: 'Juventud', estado: 'Activo' },
+      { id: 22, nombre: 'General', estado: 'Activo' }
     ]);
     seedMemoryCollection('ingresos', [
       {
@@ -165,6 +166,9 @@ describe('API seguridad y reglas (integración)', () => {
     const hijo = lista.body.find((r) => r.esAportacionIglesia);
     assert.ok(hijo);
     assert.equal(hijo.monto, 99);
+    assert.equal(hijo.ministerioId, 22);
+    assert.equal(String(hijo.ministerio).toLowerCase(), 'general');
+    assert.equal(Number(hijo.id), Number(apr.body.ingresoIglesiaId));
   });
 
   it('No-admin no puede aprobar gastos (403)', async () => {

@@ -73,13 +73,14 @@ describe('aportacion-iglesia.util', () => {
   });
 
   it('crea ingreso de iglesia vinculado al ingreso origen', () => {
-    const ingresoIglesia = crearIngresoIglesiaPorAportacion(ingresoTalento, 99, '01/06/2026');
+    const ingresoIglesia = crearIngresoIglesiaPorAportacion(ingresoTalento, 99, '01/06/2026', 22);
     expect(ingresoIglesia.monto).toBe(33);
     expect(ingresoIglesia.esAportacionIglesia).toBeTrue();
     expect(ingresoIglesia.ingresoOrigenId).toBe(10);
     expect(ingresoIglesia.ministerio).toBe('General');
+    expect(ingresoIglesia.ministerioId).toBe(22);
     expect(ingresoIglesia.descripcion).toContain('Evento talento');
-    expect(ingresoIglesia.descripcion).toContain('Jóvenes');
+    expect(ingresoIglesia.descripcion).toContain('33%');
     expect(ingresoIglesia.descripcion).not.toContain('ingreso #');
   });
 

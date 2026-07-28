@@ -121,7 +121,9 @@ async function updateInCollection(collection, id, body) {
 
   const { id: _ignored, ...data } = body;
   await ref.set(data, { merge: true });
-  return { id: Number(id), ...doc.data(), ...data };
+  const rawId = Number(id);
+  const normalizedId = Number.isNaN(rawId) ? id : rawId;
+  return { id: normalizedId, ...doc.data(), ...data };
 }
 
 async function deleteFromCollection(collection, id) {

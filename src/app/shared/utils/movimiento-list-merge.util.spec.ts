@@ -69,4 +69,27 @@ describe('fusionarMovimientosTrasBootstrap', () => {
 
     expect(merged.map(i => Number(i.id)).sort()).toEqual([10, 11]);
   });
+
+  it('incorpora aportación legacy con id string aportacion-{origen}', () => {
+    const servidor = [
+      { id: 10, estado: 'aprobado', monto: 100, aportacionGenerada: true, ingresoIglesiaId: 'aportacion-10' },
+      {
+        id: 'aportacion-10',
+        estado: 'aprobado',
+        monto: 33,
+        esAportacionIglesia: true,
+        ingresoOrigenId: 10,
+        ministerio: 'General',
+        ministerioId: 22
+      }
+    ];
+    const locales = [
+      { id: 10, estado: 'aprobado', monto: 100, aportacionGenerada: true, ingresoIglesiaId: 'aportacion-10' }
+    ];
+
+    const merged = fusionarMovimientosTrasBootstrap(servidor, locales);
+
+    expect(merged).toHaveSize(2);
+    expect(merged.some(i => i.esAportacionIglesia && String(i.id) === 'aportacion-10')).toBeTrue();
+  });
 });

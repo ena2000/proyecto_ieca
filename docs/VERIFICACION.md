@@ -50,9 +50,7 @@ Los casos CP-M01 a CP-M08 (sección 4) respaldan V-01 a V-08.
 
 ### 1.3 Criterio de aceptación del prototipo
 
-Alineado con [ANEXO-7-VALIDACION-PROTOTIPO.md](./ANEXO-7-VALIDACION-PROTOTIPO.md): el prototipo se acepta por **verificación técnica** (184 pruebas automatizadas en CI) y **pruebas de aceptación** (CP-M01…CP-M08 / V-01…V-08), más la coherencia de la regla del 33 % en el caso documentado ([IMPLEMENTACION.md](./IMPLEMENTACION.md)).
-
-No se aplica en este repositorio el marco Delphi / juicio de expertos como evidencia de validación del producto.
+El prototipo se acepta por **verificación técnica** (184 pruebas automatizadas en CI) y **pruebas de aceptación** (CP-M01…CP-M08 / V-01…V-08), más la coherencia de la regla del 33 % en el caso documentado ([IMPLEMENTACION.md](./IMPLEMENTACION.md)).
 
 ---
 
@@ -170,7 +168,6 @@ Workflow `.github/workflows/ci.yml` en cada push y PR:
 | Usuarios | 182 demo (2 admin, 1 contable, 179 colaboradores); población de investigación N = 183 |
 | Logins staff | `milena.mariscal`, `orbe.jimenez`, `diznarda.quezada` |
 | Colaboradores | Formato `nombre.apellido` · contraseña `123456` |
-| Regenerar | `python docs/scripts/generar-backup-demo-colaboradores.py` |
 
 ---
 

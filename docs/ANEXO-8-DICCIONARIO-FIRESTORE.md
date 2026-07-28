@@ -1,23 +1,10 @@
-# Anexo 18 — Diccionario de datos Firestore (borrador para tesis)
+# Anexo 8 — Diccionario de datos Firestore
 
-Contenido de referencia del repo (diccionario Firestore).
-
-> **Word congelado:** no pegar en la plantilla hasta la devolución del revisor.  
-**Ubicación en tesis:** sección ANEXOS, después de Anexo 17 (Manual de usuario).
+Contenido de referencia del repo (diccionario Firestore). En el Word forma parte del **Anexo 8. Diagramas de diseño del software y diccionario de datos**.
 
 ---
 
-## Referencia en Capítulo 3 (antes de Figura 12)
-
-**Ctrl+F:** `password_resets: códigos temporales`
-
-Pegar después de la lista de colecciones:
-
-> El detalle del catálogo de colecciones y el diccionario de datos (nombre de campo, tipo y descripción) se documentan en el **Anexo 18**, Tablas A.1 y A.2. En el cuerpo del capítulo se presenta la arquitectura general (Figura 12) y la descripción funcional de cada colección; el anexo complementa el esquema implementado en Firestore según los modelos del frontend y la validación Zod de la API.
-
----
-
-## Anexo 18. Diccionario de datos Firestore
+## Anexo 8. Diccionario de datos Firestore
 
 El presente anexo documenta el esquema lógico de la base de datos NoSQL del prototipo IECA en Firebase Firestore. El identificador del documento (`id`) es numérico secuencial en la mayoría de colecciones, salvo en `notificaciones`, `login_auditoria` y `password_resets`. Las relaciones se modelan por referencia (`ministerioId`, `usuarioId`, `ingresoIglesiaId`, `ingresoOrigenId`). El kardex y el saldo disponible no constituyen colección: se calculan en el cliente a partir de ingresos y gastos aprobados.
 
@@ -88,15 +75,6 @@ La vinculación entre el ingreso de talento y la aportación del 33 % en el mini
 | password_resets | expiresAt | String (ISO) | Vencimiento del código temporal |
 
 *Nota: Esquema según modelos del frontend y validación Zod en la API. Campos opcionales según tipo de movimiento y flujo de aprobación. Fuente: investigación propia.*
-
----
-
-## Checklist al pegar en Word
-
-1. Cap. 3: párrafo de referencia al Anexo 18 (antes de Figura 12).
-2. ANEXOS: bloque completo Anexo 18 después de Anexo 17.
-3. Índice de anexos: agregar **Anexo 18. Diccionario de datos Firestore**.
-4. Tabla 28 (EDT), opcional: Formato del ítem 1.3 → `Capítulo 3 y Anexo 18`.
 
 ---
 

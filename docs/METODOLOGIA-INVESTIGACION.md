@@ -204,4 +204,4 @@ A continuación se presenta el análisis de la Pregunta 1 de la guía de entrevi
 
 ---
 
-*Para insertar en Word: `docs/scripts/agregar-metodologia-investigacion-capitulo3-word.py` · Desarrollo del software: [METODOLOGIA.md](./METODOLOGIA.md).*
+*Desarrollo del software: [METODOLOGIA.md](./METODOLOGIA.md).*

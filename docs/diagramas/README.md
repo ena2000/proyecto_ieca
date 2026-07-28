@@ -12,7 +12,7 @@ Diagramas UML y de arquitectura exportados para el capítulo de diseño de la te
 | [DIAGRAMA DE CASOS DE USO 2.png](./DIAGRAMA%20DE%20CASOS%20DE%20USO%202.png) | Módulo 2 — Gestión Financiera |
 | [DIAGRAMA DE CASOS DE USO 3.png](./DIAGRAMA%20DE%20CASOS%20DE%20USO%203.png) | Módulo 3 — Reportes y Analítica |
 | [DIAGRAMA CASO DE USO 4.png](./DIAGRAMA%20CASO%20DE%20USO%204.png) | Módulo 4 — Administración |
-| [DIAGRAMA CASOS DE USO INTEGRADO - ANEXO 18.png](./DIAGRAMA%20CASOS%20DE%20USO%20INTEGRADO%20-%20ANEXO%2018.png) | Vista integrada (anexo) |
+| [DIAGRAMA CASOS DE USO INTEGRADO - ANEXO 18.png](./DIAGRAMA%20CASOS%20DE%20USO%20INTEGRADO%20-%20ANEXO%2018.png) | Vista integrada (Anexo 8) |
 
 Detalle tabular: [CASOS-DE-USO.md](../CASOS-DE-USO.md)
 

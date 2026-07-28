@@ -165,7 +165,6 @@ proyecto_ieca/
 │   └── keep-render-warm.yml     # Opcional (plan Free legacy); cron desactivado en Starter
 ├── docs/
 │   ├── README.md                # Índice de documentación académica y técnica
-│   ├── TESIS-CONSOLIDADO.md     # Índice maestro Capítulo 3
 │   ├── METODOLOGIA.md           # Metodología en cascada y trazabilidad
 │   ├── REQUERIMIENTOS.md        # RF, RNF y reglas de negocio
 │   ├── BENEFICIARIOS.md         # Beneficiarios directos e indirectos
@@ -175,9 +174,7 @@ proyecto_ieca/
 │   ├── PROPUESTA.md             # Propuesta de solución
 │   ├── IMPLEMENTACION.md        # Caso ingreso #13, kardex
 │   ├── diagramas/               # PNG UML + cronograma Gantt
-│   ├── scripts/                 # Scripts Python para actualizar Word de tesis
 │   ├── DEPLOY.md
-│   ├── CHANGELOG.md
 │   └── backup-demo-ieca.json
 ├── src/                         # Frontend
 │   ├── app/
@@ -865,11 +862,11 @@ npm run deploy:hosting
 
 ### Documentación adicional
 
-Índice completo: **[docs/README.md](docs/README.md)** · **[docs/TESIS-CONSOLIDADO.md](docs/TESIS-CONSOLIDADO.md)**
+Índice completo: **[docs/README.md](docs/README.md)**
 
 | Documento | Contenido |
 |-----------|-----------|
-| [docs/TESIS-CONSOLIDADO.md](docs/TESIS-CONSOLIDADO.md) | Índice maestro — todo lo validado para la tesis |
+| [docs/README.md](docs/README.md) | Índice — material alineado a la tesis |
 | [docs/METODOLOGIA.md](docs/METODOLOGIA.md) | Metodología en cascada, cronograma y trazabilidad |
 | [docs/REQUERIMIENTOS.md](docs/REQUERIMIENTOS.md) | Requisitos funcionales y no funcionales |
 | [docs/BENEFICIARIOS.md](docs/BENEFICIARIOS.md) | Beneficiarios directos e indirectos |
@@ -880,7 +877,6 @@ npm run deploy:hosting
 | [docs/IMPLEMENTACION.md](docs/IMPLEMENTACION.md) | Caso ingreso #13, 33 %, kardex $41,94 |
 | [docs/diagramas/](docs/diagramas/) | Diagramas UML y cronograma |
 | [docs/DEPLOY.md](docs/DEPLOY.md) | Checklist y pasos de despliegue |
-| [docs/CHANGELOG.md](docs/CHANGELOG.md) | Historial resumido de entregas |
 | [docs/backup-demo-ieca.json](docs/backup-demo-ieca.json) | Dataset demo para restauración y kardex |
 
 ---

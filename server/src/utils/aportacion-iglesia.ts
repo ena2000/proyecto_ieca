@@ -4,7 +4,9 @@ const {
   getById,
   updateInCollection,
   formatDateDDMMYYYY,
-  listCollectionByField
+  listCollection,
+  listCollectionByField,
+  allocateNextId
 } = require('./firestore');
 const {
   calcularMontoAportacionIglesia,
@@ -34,9 +36,28 @@ function referenciaIngresoOrigen(ingreso) {
   return detalle || 'Sin descripción';
 }
 
-/** Id determinístico del hijo 33 % (evita duplicados en carrera). */
+/** Id legacy determinístico (docs antiguos); los nuevos usan ID numérico secuencial. */
 function aportacionDocId(origenId) {
   return `aportacion-${origenId}`;
+}
+
+/** Resuelve el ministerio General (fondo iglesia / aportación 33 %). */
+async function resolverMinisterioIglesia() {
+  const ministerios = await listCollection('ministerios');
+  const m = ministerios.find(
+    (row) => String(row?.nombre ?? '').trim().toLowerCase() === MINISTERIO_IGLESIA_NOMBRE.toLowerCase()
+  );
+  if (!m || m.id == null || m.id === '') {
+    const err = new Error(
+      'No está configurado el ministerio General para registrar la aportación del 33 %.'
+    );
+    err.status = 500;
+    throw err;
+  }
+  return {
+    id: Number(m.id),
+    nombre: String(m.nombre).trim() || MINISTERIO_IGLESIA_NOMBRE
+  };
 }
 
 async function vincularPadreConAportacion(ingreso, hijoId, montoBruto, montoAportacion) {
@@ -77,15 +98,32 @@ async function generarAportacionIglesiaPorIngreso(ingreso, req) {
   }
   const ya = candidatos.find((r) => r?.esAportacionIglesia);
   if (ya) {
+    if (ya.ministerioId == null) {
+      const general = await resolverMinisterioIglesia();
+      await updateInCollection('ingresos', ya.id, {
+        ministerioId: general.id,
+        ministerio: general.nombre
+      });
+    }
     return vincularPadreConAportacion(ingreso, ya.id, montoBruto, montoAportacion);
   }
 
-  const childId = aportacionDocId(ingreso.id);
-  const existingChild = await getById('ingresos', childId);
-  if (existingChild?.esAportacionIglesia) {
-    return vincularPadreConAportacion(ingreso, existingChild.id, montoBruto, montoAportacion);
+  // Legacy: docs creados con id "aportacion-{origen}"
+  const legacyId = aportacionDocId(ingreso.id);
+  const existingLegacy = await getById('ingresos', legacyId);
+  if (existingLegacy?.esAportacionIglesia) {
+    const general = await resolverMinisterioIglesia();
+    if (existingLegacy.ministerioId == null) {
+      await updateInCollection('ingresos', legacyId, {
+        ministerioId: general.id,
+        ministerio: general.nombre
+      });
+    }
+    return vincularPadreConAportacion(ingreso, existingLegacy.id, montoBruto, montoAportacion);
   }
 
+  const general = await resolverMinisterioIglesia();
+  const childId = await allocateNextId('ingresos');
   const montoNetoMinisterio = Math.round((montoBruto - montoAportacion) * 100) / 100;
   const pct = etiquetaPorcentajeAportacion();
   const ministerioNombre = ingreso.ministerio || 'ministerio';
@@ -102,8 +140,8 @@ async function generarAportacionIglesiaPorIngreso(ingreso, req) {
     categoria: 'Aportación de ministerio',
     cuentaCodigo: '4101',
     cuentaNombre: 'Ingresos generales',
-    ministerio: MINISTERIO_IGLESIA_NOMBRE,
-    ministerioId: null,
+    ministerio: general.nombre,
+    ministerioId: general.id,
     estado: 'aprobado',
     motivoRechazo: null,
     esAportacionIglesia: true,
@@ -141,10 +179,14 @@ async function generarAportacionIglesiaPorIngreso(ingreso, req) {
       await updateInCollection('ingresos', ingreso.id, parentPatch);
     }
   } catch {
-    // Carrera: otro request creó el doc
-    const race = await getById('ingresos', childId);
-    if (race) {
-      return vincularPadreConAportacion(ingreso, race.id, montoBruto, montoAportacion);
+    // Carrera: otro request creó el doc (por origen o por id)
+    for (const valor of [Number(ingreso.id), String(ingreso.id)]) {
+      if (valor == null || valor === '' || Number.isNaN(Number(valor))) continue;
+      const rows = await listCollectionByField('ingresos', 'ingresoOrigenId', valor);
+      const race = rows.find((r) => r?.esAportacionIglesia);
+      if (race) {
+        return vincularPadreConAportacion(ingreso, race.id, montoBruto, montoAportacion);
+      }
     }
     throw new Error('No se pudo generar la aportación del 33 % a la iglesia');
   }
@@ -243,13 +285,16 @@ async function actualizarAportacionIglesiaPorIngreso(ingreso, _req, previous) {
   const fecha = ingreso.fecha || previous?.fecha || new Date().toISOString();
   const fechaFormateada = ingreso.fechaFormateada || formatDateDDMMYYYY(fecha);
 
+  const general = await resolverMinisterioIglesia();
   const ingresoIglesia = await getById('ingresos', ingreso.ingresoIglesiaId);
   if (ingresoIglesia) {
     await updateInCollection('ingresos', ingreso.ingresoIglesiaId, {
       monto: montoAportacion,
       descripcion: `Aportación de ${ministerioNombre} (${pct}) — ${ref}`,
       fecha,
-      fechaFormateada
+      fechaFormateada,
+      ministerio: general.nombre,
+      ministerioId: general.id
     });
   }
 
