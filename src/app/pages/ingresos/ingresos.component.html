@@ -83,14 +83,14 @@
           <div class="hybrid-date-container">
             <ion-input
               #fechaInput
-              [(ngModel)]="fechaManualForm"
+              [ngModel]="fechaManualForm"
+              (ngModelChange)="onFechaManualFormChange($event)"
               name="fechaManualForm"
               placeholder="DD/MM/AAAA"
               maxlength="10"
               class="manual-input"
               inputmode="numeric"
-              autocomplete="off"
-              (ionInput)="validarFechaManualForm($event)">
+              autocomplete="off">
             </ion-input>
             <ion-button
               fill="clear"

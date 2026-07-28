@@ -1,7 +1,10 @@
-/** Convierte ISO a valor para input type="date" (YYYY-MM-DD). */
+/** Convierte ISO a valor para input type="date" (YYYY-MM-DD) en calendario local. */
 export function isoToDateInputValue(iso?: string): string {
   if (!iso) return '';
-  const d = new Date(iso);
+  const s = String(iso).trim();
+  const soloDia = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (soloDia) return `${soloDia[1]}-${soloDia[2]}-${soloDia[3]}`;
+  const d = new Date(s);
   if (Number.isNaN(d.getTime())) return '';
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, '0');

@@ -35,6 +35,7 @@ import {
   CampoFechaMovimiento,
   hoyLocalYYYYMMDD,
   esFechaMovimientoFutura,
+  fechaIsoHoyLocal,
   MENSAJE_FECHA_MOVIMIENTO_FUTURA
 } from '../../shared/utils/movimiento-fecha.util';
 import {
@@ -87,7 +88,7 @@ registerLocaleData(localeEs);
 const GASTO_VACIO = (): Gasto => {
   const gasto: Gasto = {
     id: 0,
-    fecha: new Date().toISOString(),
+    fecha: fechaIsoHoyLocal(),
     descripcion: '',
     monto: null,
     foto: '',
@@ -345,9 +346,14 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
       ?? (event.target as HTMLInputElement)?.value
       ?? this.fechaManualForm
       ?? '';
-    this.fechaManualForm = formatearEntradaFechaManual(String(raw));
+    this.onFechaManualFormChange(String(raw));
+  }
+
+  onFechaManualFormChange(raw: string | null | undefined): void {
+    this.fechaManualForm = formatearEntradaFechaManual(String(raw ?? ''));
     const iso = isoDesdeFechaManualDDMMYYYY(this.fechaManualForm);
     if (iso) this.nuevoGasto.fecha = iso;
+    this.cdr.markForCheck();
   }
 
   abrirSelectorFecha(tipo: CampoFechaMovimiento): void {
@@ -363,7 +369,7 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
     const upd = actualizarDesdeFechaNativa(value, tipo);
     if (tipo === 'form') {
       if (upd.fechaIso !== undefined) {
-        this.nuevoGasto.fecha = upd.fechaIso || new Date().toISOString();
+        this.nuevoGasto.fecha = upd.fechaIso || fechaIsoHoyLocal();
       }
       if (upd.fechaManualForm != null) this.fechaManualForm = upd.fechaManualForm;
       this.cdr.markForCheck();

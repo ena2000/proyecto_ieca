@@ -468,17 +468,27 @@ ion-select {
 /* Input date oculto: se abre con showPicker() al pulsar el ícono de calendario */
 .ieca-date-picker-hidden {
   position: absolute;
-  width: 0;
-  height: 0;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 1px;
   margin: 0;
   padding: 0;
   border: 0;
   opacity: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
   pointer-events: none;
+  color: transparent;
+  caret-color: transparent;
 }
 
 .manual-input {
   font-weight: 700;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
 }
 
 .calendar-icon-btn {

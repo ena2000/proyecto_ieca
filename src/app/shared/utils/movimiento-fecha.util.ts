@@ -1,5 +1,3 @@
-import { formatearISOaDDMMYYYY } from './date.util';
-
 export type CampoFechaMovimiento = 'form' | 'desde' | 'hasta';
 
 /** Máscara DD/MM/AAAA sobre dígitos. */
@@ -10,12 +8,24 @@ export function formatearEntradaFechaManual(raw: string): string {
   return val;
 }
 
-/** Convierte DD/MM/AAAA a ISO o null si es inválida (incluye día/mes inexistentes). */
+/** Convierte DD/MM/AAAA a ISO (mediodía local) o null si es inválida. */
 export function isoDesdeFechaManualDDMMYYYY(val: string): string | null {
   if (!esFechaCalendarioValidaDDMMYYYY(val)) return null;
   const parts = val.split('/');
-  const dateObj = new Date(+parts[2], +parts[1] - 1, +parts[0]);
-  return dateObj.toISOString();
+  const yyyy = Number(parts[2]);
+  const mm = Number(parts[1]);
+  const dd = Number(parts[0]);
+  return fechaIsoMediodiaLocal(yyyy, mm, dd);
+}
+
+/** ISO estable a mediodía local (evita que UTC cambie el día calendario). */
+export function fechaIsoMediodiaLocal(yyyy: number, mm: number, dd: number): string {
+  return new Date(yyyy, mm - 1, dd, 12, 0, 0).toISOString();
+}
+
+/** Hoy (calendario local) como ISO a mediodía. */
+export function fechaIsoHoyLocal(hoy: Date = new Date()): string {
+  return fechaIsoMediodiaLocal(hoy.getFullYear(), hoy.getMonth() + 1, hoy.getDate());
 }
 
 /** True si DD/MM/AAAA es un día de calendario real (rechaza 31/02, etc.). */
@@ -109,12 +119,19 @@ export function actualizarDesdeFechaNativa(
   const yyyyMMdd = String(value || '').trim();
   if (!yyyyMMdd) return limpiarActualizacionFechaNativa(tipo);
 
-  const iso = new Date(`${yyyyMMdd}T00:00:00`).toISOString();
-  if (tipo === 'form') {
-    return { fechaIso: iso, fechaManualForm: formatearISOaDDMMYYYY(iso) };
-  }
+  const ymd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(yyyyMMdd);
+  if (!ymd) return limpiarActualizacionFechaNativa(tipo);
 
-  const formateada = formatearISOaDDMMYYYY(iso);
+  const yyyy = Number(ymd[1]);
+  const mm = Number(ymd[2]);
+  const dd = Number(ymd[3]);
+  const iso = fechaIsoMediodiaLocal(yyyy, mm, dd);
+  // DD/MM desde el valor del picker (no desde UTC del ISO).
+  const formateada = `${String(dd).padStart(2, '0')}/${String(mm).padStart(2, '0')}/${yyyy}`;
+
+  if (tipo === 'form') {
+    return { fechaIso: iso, fechaManualForm: formateada };
+  }
   if (tipo === 'desde') {
     return { filtroFechaInicio: iso, fechaManualDesde: formateada };
   }

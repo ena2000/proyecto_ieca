@@ -137,10 +137,10 @@ async function deleteFromCollection(collection, id) {
 function formatDateDDMMYYYY(iso) {
   if (!iso) return '';
   const s = String(iso).trim();
-  // Fecha calendario YYYY-MM-DD: no usar Date UTC (desfase de zona)
-  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
-  if (m) {
-    return `${m[3]}/${m[2]}/${m[1]}`;
+  // Solo día calendario YYYY-MM-DD (sin hora): no reinterpretar como UTC.
+  const soloDia = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (soloDia) {
+    return `${soloDia[3]}/${soloDia[2]}/${soloDia[1]}`;
   }
   const date = new Date(s);
   if (Number.isNaN(date.getTime())) return '';

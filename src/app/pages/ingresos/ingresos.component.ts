@@ -35,6 +35,7 @@ import {
   CampoFechaMovimiento,
   hoyLocalYYYYMMDD,
   esFechaMovimientoFutura,
+  fechaIsoHoyLocal,
   MENSAJE_FECHA_MOVIMIENTO_FUTURA
 } from '../../shared/utils/movimiento-fecha.util';
 import { accionesTablaMovimiento } from '../../shared/utils/movimiento-acciones.util';
@@ -88,7 +89,7 @@ registerLocaleData(localeEs);
 const INGRESO_VACIO = (): Ingreso => {
   const ingreso: Ingreso = {
     id: 0,
-    fecha: new Date().toISOString(),
+    fecha: fechaIsoHoyLocal(),
     descripcion: '',
     monto: null,
     foto: '',
@@ -344,7 +345,11 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   validarFechaManualForm(event: Event): void {
-    const val = formatearEntradaFechaManual(leerValorIonInput(event));
+    this.onFechaManualFormChange(leerValorIonInput(event));
+  }
+
+  onFechaManualFormChange(raw: string | null | undefined): void {
+    const val = formatearEntradaFechaManual(String(raw ?? ''));
     this.fechaManualForm = val;
     const iso = isoDesdeFechaManualDDMMYYYY(val);
     if (iso) {
@@ -382,7 +387,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
     const upd = actualizarDesdeFechaNativa(value, tipo);
     if (tipo === 'form') {
       if (upd.fechaIso !== undefined) {
-        this.nuevoIngreso.fecha = upd.fechaIso || new Date().toISOString();
+        this.nuevoIngreso.fecha = upd.fechaIso || fechaIsoHoyLocal();
       }
       if (upd.fechaManualForm != null) this.fechaManualForm = upd.fechaManualForm;
       this.cdr.markForCheck();

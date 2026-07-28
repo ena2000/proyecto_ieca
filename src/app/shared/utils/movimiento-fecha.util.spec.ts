@@ -3,7 +3,8 @@ import {
   aplicarFechaManualFiltro,
   limpiarActualizacionFechaNativa,
   actualizarEstadoFiltroFechaMovimiento,
-  rangoFechasFiltroInvalido
+  rangoFechasFiltroInvalido,
+  fechaIsoHoyLocal
 } from './movimiento-fecha.util';
 
 describe('movimiento-fecha.util', () => {
@@ -25,6 +26,25 @@ describe('movimiento-fecha.util', () => {
     const upd = actualizarDesdeFechaNativa('2026-05-15', 'desde');
     expect(upd.fechaManualDesde).toBe('15/05/2026');
     expect(upd.filtroFechaInicio).toBeTruthy();
+  });
+
+  it('formulario: fecha nativa no se distorsiona al DD/MM/AAAA', () => {
+    const upd = actualizarDesdeFechaNativa('2026-07-27', 'form');
+    expect(upd.fechaManualForm).toBe('27/07/2026');
+    expect(upd.fechaIso).toBeTruthy();
+    const d = new Date(upd.fechaIso!);
+    expect(d.getFullYear()).toBe(2026);
+    expect(d.getMonth()).toBe(6);
+    expect(d.getDate()).toBe(27);
+  });
+
+  it('hoy local coincide con el calendario local', () => {
+    const hoy = new Date(2026, 6, 27, 21, 30, 0); // 27 jul 21:30 local
+    expect(fechaIsoHoyLocal(hoy)).toBeTruthy();
+    const d = new Date(fechaIsoHoyLocal(hoy));
+    expect(d.getFullYear()).toBe(2026);
+    expect(d.getMonth()).toBe(6);
+    expect(d.getDate()).toBe(27);
   });
 
   it('limpia ISO al borrar texto manual del filtro desde', () => {
