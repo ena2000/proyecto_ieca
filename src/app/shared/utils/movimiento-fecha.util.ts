@@ -1,11 +1,29 @@
 export type CampoFechaMovimiento = 'form' | 'desde' | 'hasta';
 
-/** Máscara DD/MM/AAAA sobre dígitos. */
+/** Máscara DD/MM/AAAA sobre dígitos (máx. 8 dígitos = día+mes+año). */
 export function formatearEntradaFechaManual(raw: string): string {
-  let val = String(raw).replace(/\D/g, '');
-  if (val.length > 2) val = val.substring(0, 2) + '/' + val.substring(2);
-  if (val.length > 5) val = val.substring(0, 5) + '/' + val.substring(5, 9);
-  return val;
+  const s = String(raw ?? '').trim();
+  if (!s) return '';
+
+  // Ya está en DD/MM/AAAA (completo o parcial con barras).
+  if (/^\d{1,2}(\/\d{0,2}(\/\d{0,4})?)?$/.test(s)) {
+    const digits = s.replace(/\D/g, '').slice(0, 8);
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+    return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+  }
+
+  // ISO o YYYY-MM-DD: convertir a calendario local, no enmascarar dígitos crudos.
+  const ymd = yyyyMmDdDesdeValorFecha(s);
+  if (ymd) {
+    const [y, m, d] = ymd.split('-');
+    return `${d}/${m}/${y}`;
+  }
+
+  const digits = s.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
 }
 
 /** Convierte DD/MM/AAAA a ISO (mediodía local) o null si es inválida. */

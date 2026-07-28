@@ -81,17 +81,18 @@
             Fecha del ingreso *
           </ion-label>
           <div class="hybrid-date-container">
-            <ion-input
+            <input
               #fechaInput
-              [ngModel]="fechaManualForm"
-              (ngModelChange)="onFechaManualFormChange($event)"
+              type="text"
+              class="manual-date-input"
+              [value]="fechaManualForm"
+              (input)="onFechaManualFormChange($any($event.target).value)"
               name="fechaManualForm"
               placeholder="DD/MM/AAAA"
               maxlength="10"
-              class="manual-input"
               inputmode="numeric"
-              autocomplete="off">
-            </ion-input>
+              autocomplete="off"
+              aria-label="Fecha del ingreso" />
             <ion-button
               fill="clear"
               type="button"
@@ -110,7 +111,8 @@
               [value]="isoToDateInputValue(nuevoIngreso.fecha)"
               [max]="fechaMaximaInput"
               (change)="onNativeDateChange($any($event.target).value, 'form')"
-              aria-label="Seleccionar fecha del ingreso" />
+              tabindex="-1"
+              aria-hidden="true" />
           </div>
         </div>
 

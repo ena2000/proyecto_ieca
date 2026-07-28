@@ -491,6 +491,28 @@ ion-select {
   font-variant-numeric: tabular-nums;
 }
 
+.manual-date-input {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 0 var(--space-2) 0 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.manual-date-input::placeholder {
+  color: #94a3b8;
+  font-weight: 600;
+}
+
 .calendar-icon-btn {
   --color: var(--ieca-blue);
 }

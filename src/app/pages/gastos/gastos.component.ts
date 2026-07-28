@@ -126,7 +126,7 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
   @ViewChild('comprobanteInput') comprobanteInput?: ElementRef<HTMLInputElement>;
   @ViewChild('montoInput') montoInput?: IonInput;
   @ViewChild('descripcionInput') descripcionInput?: IonInput;
-  @ViewChild('fechaInput') fechaInput?: IonInput;
+  @ViewChild('fechaInput') fechaInput?: ElementRef<HTMLInputElement>;
   @ViewChild(IonContent) private content?: IonContent;
 
   fechaManualForm = '';
@@ -350,8 +350,13 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   onFechaManualFormChange(raw: string | null | undefined): void {
-    this.fechaManualForm = formatearEntradaFechaManual(String(raw ?? ''));
-    const iso = isoDesdeFechaManualDDMMYYYY(this.fechaManualForm);
+    const val = formatearEntradaFechaManual(String(raw ?? ''));
+    this.fechaManualForm = val;
+    const el = this.fechaInput?.nativeElement;
+    if (el && el.value !== val) {
+      el.value = val;
+    }
+    const iso = isoDesdeFechaManualDDMMYYYY(val);
     if (iso) this.nuevoGasto.fecha = iso;
     this.cdr.markForCheck();
   }
@@ -371,7 +376,12 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
       if (upd.fechaIso !== undefined) {
         this.nuevoGasto.fecha = upd.fechaIso || fechaIsoHoyLocal();
       }
-      if (upd.fechaManualForm != null) this.fechaManualForm = upd.fechaManualForm;
+      if (upd.fechaManualForm != null) {
+        this.fechaManualForm = upd.fechaManualForm;
+        if (this.fechaInput?.nativeElement) {
+          this.fechaInput.nativeElement.value = upd.fechaManualForm;
+        }
+      }
       this.cdr.markForCheck();
       return;
     }
@@ -616,11 +626,11 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   private async sincronizarFormularioAntesDeGuardar(): Promise<void> {
-    const [montoRaw, descripcionRaw, fechaRaw] = await Promise.all([
+    const [montoRaw, descripcionRaw] = await Promise.all([
       leerValorIonInputAsync(this.montoInput),
-      leerValorIonInputAsync(this.descripcionInput),
-      leerValorIonInputAsync(this.fechaInput)
+      leerValorIonInputAsync(this.descripcionInput)
     ]);
+    const fechaRaw = this.fechaInput?.nativeElement?.value ?? this.fechaManualForm;
 
     this.nuevoGasto = aplicarValoresTextoAlMovimiento(
       this.nuevoGasto,

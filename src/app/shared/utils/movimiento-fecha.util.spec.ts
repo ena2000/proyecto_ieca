@@ -4,7 +4,8 @@ import {
   limpiarActualizacionFechaNativa,
   actualizarEstadoFiltroFechaMovimiento,
   rangoFechasFiltroInvalido,
-  fechaIsoHoyLocal
+  fechaIsoHoyLocal,
+  formatearEntradaFechaManual
 } from './movimiento-fecha.util';
 
 describe('movimiento-fecha.util', () => {
@@ -26,6 +27,13 @@ describe('movimiento-fecha.util', () => {
     const upd = actualizarDesdeFechaNativa('2026-05-15', 'desde');
     expect(upd.fechaManualDesde).toBe('15/05/2026');
     expect(upd.filtroFechaInicio).toBeTruthy();
+  });
+
+  it('máscara DD/MM/AAAA no distorsiona con dígitos de ISO', () => {
+    expect(formatearEntradaFechaManual('27072026')).toBe('27/07/2026');
+    expect(formatearEntradaFechaManual('27/07/2026')).toBe('27/07/2026');
+    expect(formatearEntradaFechaManual('2026-07-27')).toBe('27/07/2026');
+    expect(formatearEntradaFechaManual('2026-07-27T12:00:00.000Z')).toBe('27/07/2026');
   });
 
   it('formulario: fecha nativa no se distorsiona al DD/MM/AAAA', () => {
