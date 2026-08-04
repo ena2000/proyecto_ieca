@@ -67,7 +67,7 @@ import {
 } from '../../shared/constants/contabilidad-cuentas.constants';
 import { aplicarResponsableSesion, etiquetaResponsableMovimiento } from '../../shared/utils/movimiento-responsable.util';
 import { aplicarCuentaEnIngreso, inicializarCuentaIngreso } from '../../shared/utils/contabilidad-cuenta-form.util';
-import { ingresoEsTalento } from '../../shared/utils/aportacion-iglesia.util';
+import { ingresoEsTalento, montoIngresoParaListado } from '../../shared/utils/aportacion-iglesia.util';
 import { Ingreso, Ministerio, Usuario } from '../../core/models';
 import { DataService } from '../../services/data.service';
 import { IngresosService } from '../../services/ingresos.service';
@@ -174,7 +174,8 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
     { field: 'cuentaNombre', header: 'Cuenta', type: 'badge' },
     { field: 'ministerio', header: 'Ministerio' },
     { field: 'descripcion', header: 'Descripción' },
-    { field: 'monto', header: 'Monto', type: 'currency' }
+    // Talento aprobado muestra el 67 % del fondo; General muestra el 33 %.
+    { field: 'montoListado', header: 'Monto', type: 'currency' }
   ];
 
   acciones: TableActions = { edit: true, delete: true };
@@ -534,7 +535,14 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
         ...i,
         cuentaNombre: i.cuentaNombre || categoriaIngreso(i) || '—',
         estado: estadoIngreso(i),
-        estadoEtiqueta: etiquetaEstadoIngreso(estadoIngreso(i))
+        estadoEtiqueta: etiquetaEstadoIngreso(estadoIngreso(i)),
+        montoListado: montoIngresoParaListado(i),
+        // Aportaciones viejas sin foto: reutilizan el comprobante del ingreso origen.
+        foto: i.foto?.trim()
+          ? i.foto
+          : (i.esAportacionIglesia && i.ingresoOrigenId != null
+            ? (this.listaIngresos.find(o => Number(o.id) === Number(i.ingresoOrigenId))?.foto ?? '')
+            : (i.foto ?? ''))
       })
     });
     const enAlcance = itemsEnAlcanceMinisterio(

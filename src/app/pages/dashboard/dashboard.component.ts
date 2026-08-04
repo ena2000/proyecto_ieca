@@ -67,15 +67,15 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit, Vie
   private lastChartFingerprint = '';
   private lastRemoteRefresh = 0;
   private readonly remoteRefreshMs = 120_000;
+  /** Evita reutilizar alcance/KPIs del usuario anterior al cambiar de sesión. */
+  private lastSessionUserId: string | number | null = null;
 
   constructor(
     private dataService: DataService,
     private authService: AuthService,
     private ngZone: NgZone
   ) {
-    this.ministerioScopeId = this.authService.getMinisterioScopeId();
-    this.puedeAprobar = this.authService.isAdministrador();
-    this.actualizarAlcanceMinisterio();
+    this.sincronizarSesionYAlcance();
   }
 
   ngOnInit() {
@@ -86,7 +86,19 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit, Vie
     void this.inicializarDatos();
   }
 
+  private sincronizarSesionYAlcance(): boolean {
+    const session = this.authService.getSession();
+    const userId = session?.id ?? null;
+    const cambioUsuario = userId !== this.lastSessionUserId;
+    this.lastSessionUserId = userId;
+    this.ministerioScopeId = this.authService.getMinisterioScopeId();
+    this.puedeAprobar = this.authService.isAdministrador();
+    this.actualizarAlcanceMinisterio();
+    return cambioUsuario;
+  }
+
   private async inicializarDatos(): Promise<void> {
+    this.sincronizarSesionYAlcance();
     if (!this.dataService.hasRemoteData()) {
       await this.dataService.bootstrapRemote();
     }
@@ -108,8 +120,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit, Vie
   }
 
   ionViewWillEnter() {
-    if (!this.dataService.hasRemoteData()) {
-      void this.dataService.bootstrapRemote().then(() => this.cargarDatos(false));
+    const cambioUsuario = this.sincronizarSesionYAlcance();
+
+    if (cambioUsuario || !this.dataService.hasRemoteData()) {
+      void this.dataService.bootstrapRemote(cambioUsuario).then(() => this.cargarDatos(true));
       return;
     }
 
@@ -137,6 +151,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit, Vie
   }
 
   private cargarDatos(forceChartUpdate = false) {
+    this.sincronizarSesionYAlcance();
     const scope = this.ministerioScopeId ?? undefined;
     this.kpis        = this.dataService.calcularKPIs(scope);
     this.chartData   = this.dataService.getChartData(scope);
