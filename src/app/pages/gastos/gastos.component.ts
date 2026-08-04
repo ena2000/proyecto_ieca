@@ -126,7 +126,7 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
   @ViewChild('comprobanteInput') comprobanteInput?: ElementRef<HTMLInputElement>;
   @ViewChild('montoInput') montoInput?: IonInput;
   @ViewChild('descripcionInput') descripcionInput?: IonInput;
-  @ViewChild('fechaInput') fechaInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('fechaInput') fechaInput?: IonInput;
   @ViewChild(IonContent) private content?: IonContent;
 
   fechaManualForm = '';
@@ -351,14 +351,26 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
   onFechaManualFormChange(raw: string | null | undefined): void {
     const val = formatearEntradaFechaManual(String(raw ?? ''));
-    this.fechaManualForm = val;
-    const el = this.fechaInput?.nativeElement;
-    if (el && el.value !== val) {
-      el.value = val;
+    if (val === this.fechaManualForm) {
+      void this.sincronizarDomFechaManual(val);
+      return;
     }
+    this.fechaManualForm = val;
+    void this.sincronizarDomFechaManual(val);
     const iso = isoDesdeFechaManualDDMMYYYY(val);
     if (iso) this.nuevoGasto.fecha = iso;
     this.cdr.markForCheck();
+  }
+
+  private async sincronizarDomFechaManual(val: string): Promise<void> {
+    try {
+      const el = await this.fechaInput?.getInputElement();
+      if (el && el.value !== val) {
+        el.value = val;
+      }
+    } catch {
+      // ion-input aún no listo
+    }
   }
 
   abrirSelectorFecha(tipo: CampoFechaMovimiento): void {
@@ -378,9 +390,7 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
       }
       if (upd.fechaManualForm != null) {
         this.fechaManualForm = upd.fechaManualForm;
-        if (this.fechaInput?.nativeElement) {
-          this.fechaInput.nativeElement.value = upd.fechaManualForm;
-        }
+        void this.sincronizarDomFechaManual(upd.fechaManualForm);
       }
       this.cdr.markForCheck();
       return;
@@ -626,11 +636,11 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   private async sincronizarFormularioAntesDeGuardar(): Promise<void> {
-    const [montoRaw, descripcionRaw] = await Promise.all([
+    const [montoRaw, descripcionRaw, fechaRaw] = await Promise.all([
       leerValorIonInputAsync(this.montoInput),
-      leerValorIonInputAsync(this.descripcionInput)
+      leerValorIonInputAsync(this.descripcionInput),
+      leerValorIonInputAsync(this.fechaInput)
     ]);
-    const fechaRaw = this.fechaInput?.nativeElement?.value ?? this.fechaManualForm;
 
     this.nuevoGasto = aplicarValoresTextoAlMovimiento(
       this.nuevoGasto,
@@ -640,6 +650,7 @@ export class GastosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
     if (fechaRaw.trim()) {
       this.fechaManualForm = formatearEntradaFechaManual(fechaRaw);
+      void this.sincronizarDomFechaManual(this.fechaManualForm);
     }
 
     const monto = normalizarMontoFormulario(this.nuevoGasto.monto);

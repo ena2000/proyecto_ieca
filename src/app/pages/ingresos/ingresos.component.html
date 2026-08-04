@@ -81,18 +81,18 @@
             Fecha del ingreso *
           </ion-label>
           <div class="hybrid-date-container">
-            <input
+            <ion-input
               #fechaInput
-              type="text"
-              class="manual-date-input"
+              class="manual-input"
               [value]="fechaManualForm"
-              (input)="onFechaManualFormChange($any($event.target).value)"
+              (ionInput)="onFechaManualFormChange($any($event).detail?.value)"
               name="fechaManualForm"
               placeholder="DD/MM/AAAA"
               maxlength="10"
               inputmode="numeric"
               autocomplete="off"
-              aria-label="Fecha del ingreso" />
+              aria-label="Fecha del ingreso">
+            </ion-input>
             <ion-button
               fill="clear"
               type="button"

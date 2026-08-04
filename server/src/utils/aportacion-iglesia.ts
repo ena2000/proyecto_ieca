@@ -136,7 +136,9 @@ async function generarAportacionIglesiaPorIngreso(ingreso, req) {
     fechaFormateada,
     descripcion: `Aportación de ${ministerioNombre} (${pct}) — ${ref}`,
     monto: montoAportacion,
-    foto: '',
+    // Mismo comprobante del ingreso origen (visible en General).
+    foto: ingreso.foto || '',
+    ...(ingreso.comprobanteTipo ? { comprobanteTipo: ingreso.comprobanteTipo } : {}),
     categoria: 'Aportación de ministerio',
     cuentaCodigo: '4101',
     cuentaNombre: 'Ingresos generales',
@@ -273,7 +275,16 @@ async function actualizarAportacionIglesiaPorIngreso(ingreso, _req, previous) {
   if (!Number.isFinite(montoNuevo) || montoNuevo <= 0) {
     return ingreso;
   }
-  if (montoAnterior === montoNuevo) {
+
+  const fotoCambio = (ingreso.foto || '') !== (previous?.foto || '');
+  const tipoCambio = (ingreso.comprobanteTipo || '') !== (previous?.comprobanteTipo || '');
+  const fechaCambio =
+    (ingreso.fecha || '') !== (previous?.fecha || '') ||
+    (ingreso.fechaFormateada || '') !== (previous?.fechaFormateada || '');
+  const descCambio = (ingreso.descripcion || '') !== (previous?.descripcion || '');
+  const montoCambio = montoAnterior !== montoNuevo;
+
+  if (!montoCambio && !fotoCambio && !tipoCambio && !fechaCambio && !descCambio) {
     return ingreso;
   }
 
@@ -293,6 +304,10 @@ async function actualizarAportacionIglesiaPorIngreso(ingreso, _req, previous) {
       descripcion: `Aportación de ${ministerioNombre} (${pct}) — ${ref}`,
       fecha,
       fechaFormateada,
+      foto: ingreso.foto || '',
+      ...(ingreso.comprobanteTipo
+        ? { comprobanteTipo: ingreso.comprobanteTipo }
+        : { comprobanteTipo: null }),
       ministerio: general.nombre,
       ministerioId: general.id
     });

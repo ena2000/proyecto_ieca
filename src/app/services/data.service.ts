@@ -12,6 +12,7 @@ import { API } from '../core/constants/api.constants';
 import { environment } from '../../environments/environment';
 import { isUnauthorizedHttpError } from '../shared/utils/error-message.util';
 import { formatearISOaDDMMYYYY } from '../shared/utils/date.util';
+import { formatSoloHoraDesdeIso } from '../shared/utils/auditoria-csv.util';
 import { etiquetaCuentaReporte } from '../shared/utils/reportes-cuenta.util';
 import { IngresosService } from './ingresos.service';
 import { GastosService } from './gastos.service';
@@ -649,7 +650,9 @@ export class DataService {
 
     const movimientos = [
       ...ingresos.map(i => ({
+        id: Number(i.id) || 0,
         fecha: i.fecha,
+        auditCreadoEn: i.auditCreadoEn,
         descripcion: i.descripcion,
         cuentaCodigo: i.cuentaCodigo,
         cuentaNombre: i.cuentaNombre || i.categoria,
@@ -657,23 +660,35 @@ export class DataService {
         monto: esGeneral ? (i.monto || 0) : calcularMontoNetoMinisterio(i)
       })),
       ...gastos.map(g => ({
+        id: Number(g.id) || 0,
         fecha: g.fecha,
+        auditCreadoEn: g.auditCreadoEn,
         descripcion: g.descripcion,
         cuentaCodigo: g.cuentaCodigo,
         cuentaNombre: g.cuentaNombre || g.categoria,
         tipo: 'gasto' as const,
         monto: g.monto || 0
       }))
-    ].sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+    ].sort((a, b) => {
+      const byFecha = new Date(a.fecha).getTime() - new Date(b.fecha).getTime();
+      if (byFecha !== 0) return byFecha;
+      // Misma fecha calendario: ordenar por hora real de creación.
+      const byCreacion =
+        new Date(a.auditCreadoEn || 0).getTime() - new Date(b.auditCreadoEn || 0).getTime();
+      if (byCreacion !== 0) return byCreacion;
+      return a.id - b.id;
+    });
 
     let saldo = 0;
     return movimientos.map(m => {
       const ingreso = m.tipo === 'ingreso' ? m.monto : 0;
       const gasto = m.tipo === 'gasto' ? m.monto : 0;
       saldo += ingreso - gasto;
+      const dia = formatearISOaDDMMYYYY(m.fecha);
+      const hora = formatSoloHoraDesdeIso(m.auditCreadoEn);
       return {
         fecha: m.fecha,
-        fechaFormateada: formatearISOaDDMMYYYY(m.fecha),
+        fechaFormateada: hora ? `${dia} ${hora}` : dia,
         descripcion: m.descripcion,
         cuentaEtiqueta: etiquetaCuentaReporte({
           cuentaCodigo: m.cuentaCodigo,

@@ -127,6 +127,16 @@ export class ReportesComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   ionViewWillEnter(): void {
+    // Releer rol/alcance: la página puede quedar viva tras cambio de sesión.
+    this.esAdministrador = this.authService.isAdministrador();
+    this.ministerioScopeId = this.authService.getMinisterioScopeId();
+    if (this.ministerioScopeId != null) {
+      this.filtroMinisterioId = this.ministerioScopeId;
+      this.filtroMinisterioBloqueado = true;
+    } else {
+      this.filtroMinisterioBloqueado = false;
+    }
+
     if (!this.dataService.hasRemoteData()) {
       void this.dataService.bootstrapRemote().then(() => this.actualizarVista());
       return;

@@ -30,7 +30,9 @@ router.get('/', async (req, res) => {
     const cached = getCachedBootstrap(user);
     if (cached) {
       res.set('X-Bootstrap-Cache', 'HIT');
-      res.set('Cache-Control', 'private, max-age=30');
+      // no-store + Vary: evita que el navegador reutilice el bootstrap de otro usuario.
+      res.set('Cache-Control', 'private, no-store');
+      res.set('Vary', 'Authorization');
       return res.json(cached);
     }
 
@@ -69,7 +71,8 @@ router.get('/', async (req, res) => {
 
     setCachedBootstrap(user, payload);
     res.set('X-Bootstrap-Cache', 'MISS');
-    res.set('Cache-Control', 'private, max-age=30');
+    res.set('Cache-Control', 'private, no-store');
+    res.set('Vary', 'Authorization');
     res.json(payload);
   } catch (err) {
     console.error('[bootstrap GET]', err);

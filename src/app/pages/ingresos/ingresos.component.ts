@@ -67,7 +67,10 @@ import {
 } from '../../shared/constants/contabilidad-cuentas.constants';
 import { aplicarResponsableSesion, etiquetaResponsableMovimiento } from '../../shared/utils/movimiento-responsable.util';
 import { aplicarCuentaEnIngreso, inicializarCuentaIngreso } from '../../shared/utils/contabilidad-cuenta-form.util';
-import { ingresoEsTalento } from '../../shared/utils/aportacion-iglesia.util';
+import {
+  calcularMontoNetoMinisterio,
+  ingresoEsTalento
+} from '../../shared/utils/aportacion-iglesia.util';
 import { Ingreso, Ministerio, Usuario } from '../../core/models';
 import { DataService } from '../../services/data.service';
 import { IngresosService } from '../../services/ingresos.service';
@@ -127,7 +130,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
   @ViewChild('comprobanteInput') comprobanteInput?: ElementRef<HTMLInputElement>;
   @ViewChild('montoInput') montoInput?: IonInput;
   @ViewChild('descripcionInput') descripcionInput?: IonInput;
-  @ViewChild('fechaInput') fechaInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('fechaInput') fechaInput?: IonInput;
   @ViewChild(IonContent) private content?: IonContent;
 
   fechaManualForm = '';
@@ -174,7 +177,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
     { field: 'cuentaNombre', header: 'Cuenta', type: 'badge' },
     { field: 'ministerio', header: 'Ministerio' },
     { field: 'descripcion', header: 'Descripción' },
-    { field: 'monto', header: 'Monto', type: 'currency' }
+    { field: 'montoVista', header: 'Monto', type: 'currency' }
   ];
 
   acciones: TableActions = { edit: true, delete: true };
@@ -350,16 +353,28 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
   onFechaManualFormChange(raw: string | null | undefined): void {
     const val = formatearEntradaFechaManual(String(raw ?? ''));
-    this.fechaManualForm = val;
-    const el = this.fechaInput?.nativeElement;
-    if (el && el.value !== val) {
-      el.value = val;
+    if (val === this.fechaManualForm) {
+      void this.sincronizarDomFechaManual(val);
+      return;
     }
+    this.fechaManualForm = val;
+    void this.sincronizarDomFechaManual(val);
     const iso = isoDesdeFechaManualDDMMYYYY(val);
     if (iso) {
       this.nuevoIngreso = { ...this.nuevoIngreso, fecha: iso };
     }
     this.cdr.markForCheck();
+  }
+
+  private async sincronizarDomFechaManual(val: string): Promise<void> {
+    try {
+      const el = await this.fechaInput?.getInputElement();
+      if (el && el.value !== val) {
+        el.value = val;
+      }
+    } catch {
+      // ion-input aún no listo
+    }
   }
 
   onFormFieldChange(): void {
@@ -395,9 +410,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
       }
       if (upd.fechaManualForm != null) {
         this.fechaManualForm = upd.fechaManualForm;
-        if (this.fechaInput?.nativeElement) {
-          this.fechaInput.nativeElement.value = upd.fechaManualForm;
-        }
+        void this.sincronizarDomFechaManual(upd.fechaManualForm);
       }
       this.cdr.markForCheck();
       return;
@@ -530,12 +543,22 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
         i.cuentaCodigo ?? ''
       ],
       resolverEstado: i => estadoIngreso(i),
-      enriquecer: i => ({
-        ...i,
-        cuentaNombre: i.cuentaNombre || categoriaIngreso(i) || '—',
-        estado: estadoIngreso(i),
-        estadoEtiqueta: etiquetaEstadoIngreso(estadoIngreso(i))
-      })
+      enriquecer: i => {
+        const fotoOrigen =
+          i.esAportacionIglesia && !i.foto && i.ingresoOrigenId != null
+            ? this.listaIngresos.find(o => Number(o.id) === Number(i.ingresoOrigenId))
+            : undefined;
+        return {
+          ...i,
+          foto: i.foto || fotoOrigen?.foto || '',
+          comprobanteTipo: i.comprobanteTipo || fotoOrigen?.comprobanteTipo,
+          cuentaNombre: i.cuentaNombre || categoriaIngreso(i) || '—',
+          estado: estadoIngreso(i),
+          estadoEtiqueta: etiquetaEstadoIngreso(estadoIngreso(i)),
+          // Neto del ministerio (67 %) si hay aportación; aportación/General ya es 33 %.
+          montoVista: calcularMontoNetoMinisterio(i)
+        };
+      }
     });
     const enAlcance = itemsEnAlcanceMinisterio(
       this.listaIngresos,
@@ -647,11 +670,11 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   private async sincronizarFormularioAntesDeGuardar(): Promise<void> {
-    const [montoRaw, descripcionRaw] = await Promise.all([
+    const [montoRaw, descripcionRaw, fechaRaw] = await Promise.all([
       leerValorIonInputAsync(this.montoInput),
-      leerValorIonInputAsync(this.descripcionInput)
+      leerValorIonInputAsync(this.descripcionInput),
+      leerValorIonInputAsync(this.fechaInput)
     ]);
-    const fechaRaw = this.fechaInput?.nativeElement?.value ?? this.fechaManualForm;
 
     this.nuevoIngreso = aplicarValoresTextoAlMovimiento(
       this.nuevoIngreso,
@@ -661,6 +684,7 @@ export class IngresosComponent implements OnInit, OnDestroy, ViewWillEnter {
 
     if (fechaRaw.trim()) {
       this.fechaManualForm = formatearEntradaFechaManual(fechaRaw);
+      void this.sincronizarDomFechaManual(this.fechaManualForm);
     }
 
     const monto = normalizarMontoFormulario(this.nuevoIngreso.monto);

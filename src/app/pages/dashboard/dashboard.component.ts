@@ -108,8 +108,13 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit, Vie
   }
 
   ionViewWillEnter() {
+    // Releer rol/alcance: ion-router-outlet reutiliza la página tras logout/login.
+    this.ministerioScopeId = this.authService.getMinisterioScopeId();
+    this.puedeAprobar = this.authService.isAdministrador();
+    this.actualizarAlcanceMinisterio();
+
     if (!this.dataService.hasRemoteData()) {
-      void this.dataService.bootstrapRemote().then(() => this.cargarDatos(false));
+      void this.dataService.bootstrapRemote().then(() => this.cargarDatos(true));
       return;
     }
 
@@ -118,7 +123,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit, Vie
       this.lastRemoteRefresh = now;
       void this.dataService.refreshFinanzas();
     }
-    this.cargarDatos(false);
+    this.cargarDatos(true);
   }
 
   ionViewDidEnter() {
