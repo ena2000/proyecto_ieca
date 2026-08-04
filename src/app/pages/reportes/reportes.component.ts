@@ -127,6 +127,15 @@ export class ReportesComponent implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   ionViewWillEnter(): void {
+    this.esAdministrador = this.authService.isAdministrador();
+    const scope = this.authService.getMinisterioScopeId();
+    this.ministerioScopeId = scope;
+    if (scope != null) {
+      this.filtroMinisterioId = scope;
+      this.filtroMinisterioBloqueado = true;
+    } else {
+      this.filtroMinisterioBloqueado = false;
+    }
     if (!this.dataService.hasRemoteData()) {
       void this.dataService.bootstrapRemote().then(() => this.actualizarVista());
       return;

@@ -649,7 +649,11 @@ export class DataService {
 
     const movimientos = [
       ...ingresos.map(i => ({
+        id: Number(i.id) || 0,
         fecha: i.fecha,
+        ordenExtra: Date.parse(
+          i.auditCreadoEn || (i as Ingreso & { fechaAprobacion?: string }).fechaAprobacion || i.fecha
+        ) || 0,
         descripcion: i.descripcion,
         cuentaCodigo: i.cuentaCodigo,
         cuentaNombre: i.cuentaNombre || i.categoria,
@@ -657,14 +661,25 @@ export class DataService {
         monto: esGeneral ? (i.monto || 0) : calcularMontoNetoMinisterio(i)
       })),
       ...gastos.map(g => ({
+        id: Number(g.id) || 0,
         fecha: g.fecha,
+        ordenExtra: Date.parse(
+          g.auditCreadoEn || (g as Gasto & { fechaAprobacion?: string }).fechaAprobacion || g.fecha
+        ) || 0,
         descripcion: g.descripcion,
         cuentaCodigo: g.cuentaCodigo,
         cuentaNombre: g.cuentaNombre || g.categoria,
         tipo: 'gasto' as const,
         monto: g.monto || 0
       }))
-    ].sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+    ].sort((a, b) => {
+      const ta = new Date(a.fecha).getTime();
+      const tb = new Date(b.fecha).getTime();
+      if (ta !== tb) return ta - tb;
+      // Misma fecha de movimiento: ordenar por hora de registro y luego por id.
+      if (a.ordenExtra !== b.ordenExtra) return a.ordenExtra - b.ordenExtra;
+      return a.id - b.id;
+    });
 
     let saldo = 0;
     return movimientos.map(m => {

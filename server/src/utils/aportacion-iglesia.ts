@@ -136,7 +136,11 @@ async function generarAportacionIglesiaPorIngreso(ingreso, req) {
     fechaFormateada,
     descripcion: `Aportación de ${ministerioNombre} (${pct}) — ${ref}`,
     monto: montoAportacion,
-    foto: '',
+    // Conserva el comprobante del ingreso de talento origen.
+    foto: typeof ingreso.foto === 'string' && ingreso.foto.trim() ? ingreso.foto : '',
+    ...(ingreso.comprobanteTipo === 'imagen' || ingreso.comprobanteTipo === 'pdf'
+      ? { comprobanteTipo: ingreso.comprobanteTipo }
+      : {}),
     categoria: 'Aportación de ministerio',
     cuentaCodigo: '4101',
     cuentaNombre: 'Ingresos generales',

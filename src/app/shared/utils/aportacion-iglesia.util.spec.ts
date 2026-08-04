@@ -12,7 +12,8 @@ import {
   idAportacionOptimista,
   filtrarIngresosTrasEliminarOrigen,
   ingresoEsTalento,
-  ingresoRequiereAportacion
+  ingresoRequiereAportacion,
+  montoIngresoParaListado
 } from './aportacion-iglesia.util';
 import { Ingreso } from '../../core/models';
 
@@ -73,7 +74,12 @@ describe('aportacion-iglesia.util', () => {
   });
 
   it('crea ingreso de iglesia vinculado al ingreso origen', () => {
-    const ingresoIglesia = crearIngresoIglesiaPorAportacion(ingresoTalento, 99, '01/06/2026', 22);
+    const origenConFoto: Ingreso = {
+      ...ingresoTalento,
+      foto: 'data:image/png;base64,abc',
+      comprobanteTipo: 'imagen'
+    };
+    const ingresoIglesia = crearIngresoIglesiaPorAportacion(origenConFoto, 99, '01/06/2026', 22);
     expect(ingresoIglesia.monto).toBe(33);
     expect(ingresoIglesia.esAportacionIglesia).toBeTrue();
     expect(ingresoIglesia.ingresoOrigenId).toBe(10);
@@ -82,6 +88,20 @@ describe('aportacion-iglesia.util', () => {
     expect(ingresoIglesia.descripcion).toContain('Evento talento');
     expect(ingresoIglesia.descripcion).toContain('33%');
     expect(ingresoIglesia.descripcion).not.toContain('ingreso #');
+    expect(ingresoIglesia.foto).toBe('data:image/png;base64,abc');
+    expect(ingresoIglesia.comprobanteTipo).toBe('imagen');
+  });
+
+  it('en listado muestra 67% para talento aprobado y 33% para aportación', () => {
+    expect(montoIngresoParaListado(ingresoTalento)).toBe(67);
+    expect(montoIngresoParaListado({ ...ingresoTalento, estado: 'pendiente' })).toBe(100);
+    expect(montoIngresoParaListado({
+      ...ingresoTalento,
+      id: 99,
+      esAportacionIglesia: true,
+      monto: 33,
+      ministerio: MINISTERIO_IGLESIA_NOMBRE
+    })).toBe(33);
   });
 
   it('aplica aportación optimista al aprobar talento antes del API', () => {

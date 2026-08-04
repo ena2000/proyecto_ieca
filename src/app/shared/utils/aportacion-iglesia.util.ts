@@ -143,7 +143,9 @@ export function crearIngresoIglesiaPorAportacion(
     fechaFormateada,
     descripcion: descripcionIngresoIglesiaPorAportacion(ministerioNombre, pct, ref),
     monto: montoAportacion,
-    foto: '',
+    // Misma evidencia del ingreso origen (talento) para auditoría en General.
+    foto: ingreso.foto?.trim() ? ingreso.foto : '',
+    ...(ingreso.comprobanteTipo ? { comprobanteTipo: ingreso.comprobanteTipo } : {}),
     categoria: CATEGORIA_APORTACION,
     cuentaCodigo: '4101',
     cuentaNombre: 'Ingresos generales',
@@ -154,6 +156,18 @@ export function crearIngresoIglesiaPorAportacion(
     ingresoOrigenId: ingreso.id,
     registradoPor: 'Sistema IECA'
   };
+}
+
+/**
+ * Monto a mostrar en listados: talento aprobado → fondo del ministerio (67 %);
+ * aportación iglesia → 33 %; resto → monto registrado.
+ */
+export function montoIngresoParaListado(ingreso: Ingreso): number {
+  if (ingreso.esAportacionIglesia) return Number(ingreso.monto) || 0;
+  if (ingresoEsTalento(ingreso) && ingresoEstaAprobadoParaAportacion(ingreso)) {
+    return calcularMontoNetoMinisterio(ingreso);
+  }
+  return Number(ingreso.monto) || 0;
 }
 
 export function marcarIngresoConAportacion(
